@@ -3,17 +3,23 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-export type Role = 'Admin' | 'Teacher' | 'Student' | null;
+export type Role = 'Admin' | 'Teacher' | 'Student';
 
 interface User {
   name: string;
   email: string;
 }
 
+interface LoginCredentials {
+  username: string;
+  password: string;
+  role: Exclude<Role, null>;
+}
+
 interface AuthContextType {
-  role: Role;
+  role: Role | null;
   user: User | null;
-  login: (role: Role) => void;
+  login: (credentials: LoginCredentials) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -21,13 +27,20 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const mockUsers: Record<Exclude<Role, null>, User> = {
-  Admin: { name: 'Alex Doe', email: 'admin@edudesk.com' },
-  Teacher: { name: 'Dr. Evelyn Reed', email: 'e.reed@edudesk.com' },
-  Student: { name: 'Sam Wilson', email: 's.wilson@edudesk.com' },
+  Admin: { name: 'Dr. Sarah Johnson', email: 's.johnson@edumanage.com' },
+  Teacher: { name: 'Prof. Michael Chen', email: 'm.chen@edumanage.com' },
+  Student: { name: 'Emma Rodriguez', email: 'e.rodriguez@edumanage.com' },
 };
 
+const credentials: Record<string, string> = {
+    admin: 'admin123',
+    teacher: 'teacher123',
+    student: 'student123',
+};
+
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [role, setRole] = useState<Role>(null);
+  const [role, setRole] = useState<Role | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -45,8 +58,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const login = (newRole: Role) => {
-    if (newRole) {
+  const login = async (creds: LoginCredentials): Promise<boolean> => {
+    const expectedPassword = credentials[creds.username.toLowerCase()];
+    if (creds.role && creds.username.toLowerCase() === creds.role.toLowerCase() && expectedPassword === creds.password) {
+      const newRole = creds.role;
       setRole(newRole);
       setUser(mockUsers[newRole]);
       try {
@@ -54,7 +69,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (e) {
         console.error("Local storage is not available.");
       }
+      return true;
     }
+    return false;
   };
 
   const logout = () => {

@@ -17,14 +17,14 @@ export default function LoginPage() {
 
   if (isLoading || (!isLoading && role)) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
+      <div className="flex h-screen w-full items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-4">
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 p-4">
       <LoginForm />
     </main>
   );

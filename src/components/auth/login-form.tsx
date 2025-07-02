@@ -1,44 +1,139 @@
 'use client';
-import { BookOpenCheck } from 'lucide-react';
+
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/auth-context';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useAuth, Role } from '@/context/auth-context';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { GraduationCap, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+const formSchema = z.object({
+  username: z.string().min(1, { message: 'Username is required.' }),
+  password: z.string().min(1, { message: 'Password is required.' }),
+  role: z.enum(['Admin', 'Teacher', 'Student'], { required_error: 'You must select a role.' }),
+});
+
+type LoginFormValues = z.infer<typeof formSchema>;
 
 export function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (role: 'Admin' | 'Teacher' | 'Student') => {
-    login(role);
-    router.push('/dashboard');
-  };
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      username: '',
+      password: '',
+    },
+  });
+
+  async function onSubmit(values: LoginFormValues) {
+    setIsLoading(true);
+    const success = await login({
+        username: values.username,
+        password: values.password,
+        role: values.role as Exclude<Role, null>
+    });
+
+    if (success) {
+      router.push('/dashboard');
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: 'Invalid credentials. Please check the demo credentials and try again.',
+      });
+      form.setError('root', { message: 'Invalid credentials' });
+      form.setValue('password', '');
+    }
+    setIsLoading(false);
+  }
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
       <CardHeader className="text-center">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary">
-          <BookOpenCheck className="h-8 w-8 text-primary-foreground" />
+          <GraduationCap className="h-8 w-8 text-primary-foreground" />
         </div>
-        <CardTitle className="text-3xl font-headline">Welcome to EduDesk</CardTitle>
-        <CardDescription>Your Digital Education Hub. Select a role to continue.</CardDescription>
+        <CardTitle className="text-3xl font-headline">EduManage</CardTitle>
+        <CardDescription>School Management System</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <Button onClick={() => handleLogin('Admin')} size="lg" className="w-full">
-          Login as Admin
-        </Button>
-        <Button onClick={() => handleLogin('Teacher')} size="lg" className="w-full">
-          Login as Teacher
-        </Button>
-        <Button onClick={() => handleLogin('Student')} size="lg" className="w-full">
-          Login as Student
-        </Button>
-      </CardContent>
-      <CardFooter>
-        <p className="text-center text-xs text-muted-foreground">
-          This is a demo application. No real authentication is performed.
-        </p>
-      </CardFooter>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter username" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="Enter password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Admin">School Administrator</SelectItem>
+                      <SelectItem value="Teacher">Teacher</SelectItem>
+                      <SelectItem value="Student">Student</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
+            <Button type="submit" disabled={isLoading} className="w-full" size="lg">
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Sign In
+            </Button>
+            <div className="text-center text-sm text-muted-foreground">
+              <p>Demo Credentials:</p>
+              <p><strong>Admin:</strong> admin/admin123</p>
+              <p><strong>Teacher:</strong> teacher/teacher123</p>
+              <p><strong>Student:</strong> student/student123</p>
+            </div>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 }

@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'EduDesk',
-  description: 'Your Digital Education Hub',
+  title: 'EduManage',
+  description: 'School Management System',
 };
 
 export default function RootLayout({

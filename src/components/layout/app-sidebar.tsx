@@ -1,4 +1,3 @@
-
 'use client';
 import {
   SidebarHeader,
@@ -9,7 +8,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { useAuth, Role } from '@/context/auth-context';
-import { BookOpenCheck, LayoutDashboard, Calendar, User, BookMarked, PenSquare, ShieldCheck } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, Calendar, User, BookMarked, PenSquare, ShieldCheck } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { type LucideIcon } from 'lucide-react';
@@ -41,7 +40,6 @@ export function AppSidebar() {
   const { role } = useAuth();
   const pathname = usePathname();
   
-  // Combine links, filtering out duplicates, ensuring common links are first.
   const allLinks = role ? [...commonLinks, ...roleLinks[role]] : [];
   const uniqueLinks = allLinks.filter((link, index, self) =>
     index === self.findIndex((l) => (
@@ -54,9 +52,9 @@ export function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-            <BookOpenCheck className="h-6 w-6 text-primary-foreground" />
+            <GraduationCap className="h-6 w-6 text-primary-foreground" />
           </div>
-          <span className="text-lg font-semibold font-headline">EduDesk</span>
+          <span className="text-lg font-semibold font-headline">EduManage</span>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -77,7 +75,7 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <div className="p-2 text-center text-xs text-muted-foreground">
-          © 2024 EduDesk Inc.
+          © 2024 EduManage Inc.
         </div>
       </SidebarFooter>
     </>

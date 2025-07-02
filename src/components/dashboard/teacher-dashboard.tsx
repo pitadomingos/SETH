@@ -2,11 +2,16 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { PenSquare, BookMarked, Bell } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 
 export default function TeacherDashboard() {
+  const { user } = useAuth();
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold tracking-tight">Teacher Dashboard</h2>
+      <header>
+        <h2 className="text-3xl font-bold tracking-tight">Teacher Dashboard</h2>
+        <p className="text-muted-foreground">Welcome back, {user?.name}</p>
+      </header>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="flex flex-col">
           <CardHeader>
