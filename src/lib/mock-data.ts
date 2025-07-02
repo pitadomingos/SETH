@@ -51,3 +51,19 @@ export const classesData = [
   { id: 'C003', name: 'Class 10-A', grade: '10', teacher: 'Prof. Michael Chen', students: 30, room: '201' },
   { id: 'C004', name: 'Class 11-B', grade: '11', teacher: 'Dr. Lisa Anderson', students: 25, room: '301' }
 ];
+
+export const assignments = [
+    { id: 'A001', title: 'Math Problem Set 5', subject: 'Mathematics', grade: '10', dueDate: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(), status: 'pending' },
+    { id: 'A002', title: 'Physics Lab Report', subject: 'Physics', grade: '11', dueDate: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(), status: 'submitted' },
+    { id: 'A003', title: 'English Essay Draft', subject: 'English', grade: '9', dueDate: new Date(new Date().setDate(new Date().getDate() + 8)).toISOString(), status: 'pending' },
+    { id: 'A004', name: 'History Reading Questions', subject: 'World History', grade: '10', dueDate: new Date(new Date().setDate(new Date().getDate() - 5)).toISOString(), status: 'overdue' },
+
+];
+
+export const grades = [
+    { studentId: 'S001', subject: 'Mathematics', grade: 'A-', points: 88 },
+    { studentId: 'S001', subject: 'Physics', grade: 'B+', points: 85 },
+    { studentId: 'S001', subject: 'English', grade: 'A', points: 92 },
+    { studentId: 'S002', subject: 'Mathematics', grade: 'B', points: 82 },
+    { studentId: 'S002', subject: 'Chemistry', grade: 'A-', points: 87 }
+];

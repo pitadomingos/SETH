@@ -1,5 +1,83 @@
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Users, BookOpen, School, CalendarDays } from "lucide-react";
+'use client';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
+import { Users, BookOpen, School, CalendarDays, Activity, TrendingUp } from "lucide-react";
+import { Pie, PieChart, Cell } from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent
+} from '@/components/ui/chart';
+import { studentsData, teachersData } from "@/lib/mock-data";
+
+
+const attendanceChartData = [
+  { status: 'present', value: 1150, fill: 'var(--color-present)' },
+  { status: 'absent', value: 87, fill: 'var(--color-absent)' },
+  { status: 'late', value: 20, fill: 'var(--color-late)' },
+];
+
+const attendanceChartConfig = {
+  present: {
+    label: 'Present',
+    color: 'hsl(var(--chart-2))',
+  },
+  absent: {
+    label: 'Absent',
+    color: 'hsl(var(--destructive))',
+  },
+  late: {
+    label: 'Late',
+    color: 'hsl(var(--chart-4))',
+  },
+};
+
+function AttendanceChart() {
+  return (
+    <Card className="flex flex-col h-full">
+      <CardHeader className="items-center pb-0">
+        <CardTitle>Attendance Overview</CardTitle>
+        <CardDescription>Today's student attendance</CardDescription>
+      </CardHeader>
+      <CardContent className="flex-1 pb-0">
+        <ChartContainer
+          config={attendanceChartConfig}
+          className="mx-auto aspect-square max-h-[250px]"
+        >
+          <PieChart>
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent hideLabel />}
+            />
+            <Pie
+              data={attendanceChartData}
+              dataKey="value"
+              nameKey="status"
+              innerRadius={60}
+              strokeWidth={5}
+            >
+                {attendanceChartData.map((entry) => (
+                    <Cell key={`cell-${entry.status}`} fill={`var(--color-${entry.status})`} />
+                ))}
+            </Pie>
+            <ChartLegend content={<ChartLegendContent nameKey="status" />} className="flex-wrap" />
+          </PieChart>
+        </ChartContainer>
+      </CardContent>
+      <CardFooter className="flex-col gap-2 text-sm pt-4">
+        <div className="flex items-center gap-2 font-medium leading-none">
+          92% Overall Attendance Rate
+          <TrendingUp className="h-4 w-4" />
+        </div>
+        <div className="leading-none text-muted-foreground">
+          Trending up by 5% this month
+        </div>
+      </CardFooter>
+    </Card>
+  );
+}
+
 
 export default function AdminDashboard() {
   return (
@@ -49,6 +127,51 @@ export default function AdminDashboard() {
             <p className="text-xs text-muted-foreground">Science fair next week</p>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-5">
+         <div className="lg:col-span-3">
+             <Card>
+                <CardHeader>
+                    <CardTitle>Recent Activity</CardTitle>
+                    <CardDescription>A log of recent system events and actions.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ul className="space-y-4">
+                        <li className="flex items-start gap-4">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                <Users className="h-5 w-5"/>
+                            </div>
+                            <div>
+                                <p className="font-medium">New Student Added</p>
+                                <p className="text-sm text-muted-foreground">{studentsData[0].name} was enrolled in Grade {studentsData[0].grade}.</p>
+                            </div>
+                        </li>
+                         <li className="flex items-start gap-4">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                <Activity className="h-5 w-5"/>
+                            </div>
+                            <div>
+                                <p className="font-medium">New Teacher Onboarded</p>
+                                <p className="text-sm text-muted-foreground">{teachersData[0].name} has joined as a {teachersData[0].subject} teacher.</p>
+                            </div>
+                        </li>
+                         <li className="flex items-start gap-4">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                <CalendarDays className="h-5 w-5"/>
+                            </div>
+                            <div>
+                                <p className="font-medium">Event Scheduled</p>
+                                <p className="text-sm text-muted-foreground">The annual Science Fair has been scheduled.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </CardContent>
+            </Card>
+         </div>
+         <div className="lg:col-span-2">
+            <AttendanceChart />
+         </div>
       </div>
     </div>
   );
