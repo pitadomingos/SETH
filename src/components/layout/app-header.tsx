@@ -13,6 +13,7 @@ import { LogOut, User, Bell, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
+import { ThemeToggle } from './theme-toggle';
 
 export function AppHeader() {
   const { user, logout } = useAuth();
@@ -28,6 +29,7 @@ export function AppHeader() {
         </div>
       </div>
       <div className="flex items-center gap-4">
+        <ThemeToggle />
         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
             <Bell className="h-4 w-4" />
             <span className="sr-only">Notifications</span>

@@ -7,6 +7,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { useAuth, Role } from '@/context/auth-context';
 import { 
@@ -26,7 +27,10 @@ import {
     Trophy,
     CalendarDays,
     BarChart3,
-    Settings
+    Settings,
+    FileText,
+    BookUser,
+    ListTodo
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -43,6 +47,12 @@ const commonLinks: NavLink[] = [
   { href: '/dashboard/schedule', label: 'Schedules', icon: BookMarked },
   { href: '/dashboard/events', label: 'Events', icon: CalendarDays },
   { href: '/dashboard/profile', label: 'Profile', icon: User },
+];
+
+const documentationLinks: NavLink[] = [
+    { href: '/dashboard/system-documentation', label: 'System Docs', icon: FileText },
+    { href: '/dashboard/user-manual', label: 'User Manual', icon: BookUser },
+    { href: '/dashboard/todo-list', label: 'To-Do List', icon: ListTodo },
 ];
 
 const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
@@ -90,6 +100,19 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarMenu>
           {uniqueLinks.map((link) => (
+            <SidebarMenuItem key={link.href}>
+              <Link href={link.href}>
+                <SidebarMenuButton asChild isActive={pathname === link.href} tooltip={link.label}>
+                    <span>
+                      <link.icon className="h-4 w-4" />
+                      <span>{link.label}</span>
+                    </span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+          ))}
+          <SidebarSeparator />
+           {documentationLinks.map((link) => (
             <SidebarMenuItem key={link.href}>
               <Link href={link.href}>
                 <SidebarMenuButton asChild isActive={pathname === link.href} tooltip={link.label}>
