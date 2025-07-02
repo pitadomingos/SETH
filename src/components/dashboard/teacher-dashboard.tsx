@@ -1,9 +1,101 @@
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { PenSquare, BookMarked, Bell } from "lucide-react";
+import { PenSquare, BookMarked, Bell, BarChart, LineChart } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { teacherCourses, events } from "@/lib/mock-data";
+import { teacherCourses, events, grades, assignments } from "@/lib/mock-data";
+import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartConfig
+} from '@/components/ui/chart';
+import { addDays, format } from 'date-fns';
+
+function GradeDistributionChart() {
+  const gradeCounts = grades.reduce((acc, grade) => {
+    const gradeLetter = grade.grade.replace(/[\+\-]/, '');
+    acc[gradeLetter] = (acc[gradeLetter] || 0) + 1;
+    return acc;
+  }, {});
+
+  const chartData = Object.keys(gradeCounts).map(grade => ({
+    grade,
+    count: gradeCounts[grade],
+  }));
+
+  const chartConfig = {
+    count: {
+      label: "Count",
+      color: "hsl(var(--chart-2))",
+    },
+  } satisfies ChartConfig;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Grade Distribution</CardTitle>
+        <CardDescription>Overview of grades assigned this semester</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
+          <RechartsBarChart accessibilityLayer data={chartData}>
+            <CartesianGrid vertical={false} />
+            <XAxis dataKey="grade" tickLine={false} tickMargin={10} axisLine={false} />
+            <YAxis />
+            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+            <Bar dataKey="count" fill="var(--color-count)" radius={8} />
+          </RechartsBarChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+function UpcomingDeadlinesChart() {
+  const today = new Date();
+  const nextWeek = Array.from({ length: 7 }, (_, i) => addDays(today, i));
+  
+  const deadlines = assignments
+    .map(a => ({ date: new Date(a.dueDate), type: 'Assignment' }))
+    .concat(events.map(e => ({ date: e.date, type: 'Event' })));
+
+  const chartData = nextWeek.map(day => {
+    const formattedDay = format(day, 'yyyy-MM-dd');
+    return {
+      date: format(day, 'MMM d'),
+      count: deadlines.filter(d => format(d.date, 'yyyy-MM-dd') === formattedDay).length,
+    };
+  });
+
+  const chartConfig = {
+    count: {
+      label: 'Deadlines',
+      color: 'hsl(var(--chart-1))',
+    },
+  } satisfies ChartConfig;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Upcoming Deadlines</CardTitle>
+        <CardDescription>Assignments and events due in the next 7 days</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
+          <RechartsLineChart accessibilityLayer data={chartData}>
+            <CartesianGrid vertical={false} />
+            <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+            <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+            <Line type="monotone" dataKey="count" stroke="var(--color-count)" strokeWidth={2} dot={false} />
+          </RechartsLineChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
@@ -61,6 +153,10 @@ export default function TeacherDashboard() {
             </Link>
           </CardFooter>
         </Card>
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <GradeDistributionChart />
+        <UpcomingDeadlinesChart />
       </div>
     </div>
   );

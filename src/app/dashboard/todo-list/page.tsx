@@ -1,8 +1,8 @@
-
 'use client';
-
+import { useAuth } from '@/context/auth-context';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2, Circle, Clock } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Loader2 } from 'lucide-react';
 
 const completedTasks = [
   'User authentication with three roles (Admin, Teacher, Student)',
@@ -28,6 +28,18 @@ const upcomingFeatures = [
 ];
 
 export default function TodoListPage() {
+  const { role, isLoading } = useAuth();
+  const router = useRouter();
+
+  if (isLoading) {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  if (!isLoading && role !== 'Admin') {
+    router.push('/dashboard');
+    return null;
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>

@@ -7,9 +7,9 @@ export const teacherCourses = [
 ];
 
 export const studentCourses = [
-  { id: 'PHY101', name: 'Introduction to Physics', teacher: 'Dr. Evelyn Reed', grade: 'A-', progress: 85 },
+  { id: 'PHY101', name: 'Physics Intro', teacher: 'Dr. Evelyn Reed', grade: 'A-', progress: 85 },
   { id: 'ENG201', name: 'Modern Literature', teacher: 'Prof. Hemlock', grade: 'B+', progress: 70 },
-  { id: 'CS101', name: 'Introduction to Programming', teacher: 'Dr. Turing', grade: 'A', progress: 92 },
+  { id: 'CS101', name: 'Programming Intro', teacher: 'Dr. Turing', grade: 'A', progress: 92 },
   { id: 'HIST105', name: 'World History', teacher: 'Prof. Jones', grade: 'C+', progress: 65 },
   { id: 'ART210', name: 'Art History', teacher: 'Ms. Kahlo', grade: 'B', progress: 80 },
   { id: 'PE100', name: 'Physical Education', teacher: 'Coach Armstrong', grade: 'A+', progress: 95 },
@@ -53,10 +53,11 @@ export const classesData = [
 ];
 
 export const assignments = [
-    { id: 'A001', title: 'Math Problem Set 5', subject: 'Mathematics', grade: '10', dueDate: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(), status: 'pending' },
+    { id: 'A001', title: 'Math Problem Set 5', subject: 'Mathematics', grade: '10', dueDate: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString(), status: 'pending' },
     { id: 'A002', title: 'Physics Lab Report', subject: 'Physics', grade: '11', dueDate: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(), status: 'submitted' },
-    { id: 'A003', title: 'English Essay Draft', subject: 'English', grade: '9', dueDate: new Date(new Date().setDate(new Date().getDate() + 8)).toISOString(), status: 'pending' },
+    { id: 'A003', title: 'English Essay Draft', subject: 'English', grade: '9', dueDate: new Date(new Date().setDate(new Date().getDate() + 4)).toISOString(), status: 'pending' },
     { id: 'A004', name: 'History Reading Questions', subject: 'World History', grade: '10', dueDate: new Date(new Date().setDate(new Date().getDate() - 5)).toISOString(), status: 'overdue' },
+    { id: 'A005', title: 'Chemistry Quiz Prep', subject: 'Chemistry', grade: '11', dueDate: new Date(new Date().setDate(new Date().getDate() + 6)).toISOString(), status: 'pending' },
 
 ];
 
@@ -65,5 +66,21 @@ export const grades = [
     { studentId: 'S001', subject: 'Physics', grade: 'B+', points: 85 },
     { studentId: 'S001', subject: 'English', grade: 'A', points: 92 },
     { studentId: 'S002', subject: 'Mathematics', grade: 'B', points: 82 },
-    { studentId: 'S002', subject: 'Chemistry', grade: 'A-', points: 87 }
+    { studentId: 'S002', subject: 'Chemistry', grade: 'A-', points: 87 },
+    { studentId: 'S003', subject: 'English', grade: 'C+', points: 75 },
+    { studentId: 'S004', subject: 'Physics', grade: 'B-', points: 80 },
+    { studentId: 'S003', subject: 'Mathematics', grade: 'A', points: 95 },
+    { studentId: 'S004', subject: 'English', grade: 'B', points: 83 },
+];
+
+export const attendance = [
+  { studentId: 'S001', date: '2024-05-10', status: 'present' },
+  { studentId: 'S001', date: '2024-05-11', status: 'present' },
+  { studentId: 'S001', date: '2024-05-12', status: 'late' },
+  { studentId: 'S001', date: '2024-05-13', status: 'present' },
+  { studentId: 'S001', date: '2024-05-14', status: 'absent' },
+  { studentId: 'S001', date: '2024-05-15', status: 'present' },
+  { studentId: 'S001', date: '2024-05-16', status: 'present' },
+  { studentId: 'S002', date: '2024-05-15', status: 'present' },
+  { studentId: 'S003', date: '2024-05-15', status: 'absent' },
 ];

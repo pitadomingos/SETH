@@ -50,9 +50,7 @@ const commonLinks: NavLink[] = [
 ];
 
 const documentationLinks: NavLink[] = [
-    { href: '/dashboard/system-documentation', label: 'System Docs', icon: FileText },
     { href: '/dashboard/user-manual', label: 'User Manual', icon: BookUser },
-    { href: '/dashboard/todo-list', label: 'To-Do List', icon: ListTodo },
 ];
 
 const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
@@ -69,6 +67,8 @@ const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
     { href: '/dashboard/admin', label: 'Admin Panel', icon: ShieldCheck },
+    { href: '/dashboard/system-documentation', label: 'System Docs', icon: FileText },
+    { href: '/dashboard/todo-list', label: 'To-Do List', icon: ListTodo },
   ],
   Teacher: [
     { href: '/dashboard/lesson-planner', label: 'Lesson Planner', icon: PenSquare },

@@ -1,9 +1,115 @@
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookCopy, Clock, Star, FileText, Award } from "lucide-react";
+import { BookCopy, Clock, Star, FileText, Award, TrendingUp } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { assignments, grades } from "@/lib/mock-data";
+import { assignments, grades, studentCourses, attendance } from "@/lib/mock-data";
+import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart, Cell } from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  ChartConfig
+} from '@/components/ui/chart';
+
+function SubjectPerformanceChart() {
+  const chartData = studentCourses.map(course => ({
+    subject: course.name.split(' ')[0],
+    progress: course.progress,
+    fill: `hsl(var(--chart-${Math.floor(Math.random() * 5) + 1}))`
+  }));
+
+  const chartConfig = {
+    progress: {
+      label: "Progress",
+    },
+    ...studentCourses.reduce((acc, course) => {
+        const subject = course.name.split(' ')[0];
+        acc[subject] = {
+            label: subject,
+            color: `hsl(var(--chart-${Math.floor(Math.random() * 5) + 1}))`
+        }
+        return acc;
+    }, {})
+  } satisfies ChartConfig
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Subject Performance</CardTitle>
+        <CardDescription>Your progress in each course</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+          <BarChart accessibilityLayer data={chartData}>
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="subject"
+              tickLine={false}
+              tickMargin={10}
+              axisLine={false}
+              tickFormatter={(value) => value.slice(0, 3)}
+            />
+            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+            <Bar dataKey="progress" radius={8}>
+                {chartData.map((entry) => (
+                    <Cell key={`cell-${entry.subject}`} fill={entry.fill} />
+                ))}
+            </Bar>
+          </BarChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AttendanceBreakdownChart() {
+  const studentAttendance = attendance.filter(a => a.studentId === 'S001');
+  const breakdown = studentAttendance.reduce((acc, record) => {
+    acc[record.status] = (acc[record.status] || 0) + 1;
+    return acc;
+  }, { present: 0, late: 0, absent: 0});
+
+  const chartData = [
+    { status: 'Present', value: breakdown.present, fill: 'var(--color-present)' },
+    { status: 'Late', value: breakdown.late, fill: 'var(--color-late)' },
+    { status: 'Absent', value: breakdown.absent, fill: 'var(--color-absent)' },
+  ];
+
+  const chartConfig = {
+    present: { label: 'Present', color: 'hsl(var(--chart-2))' },
+    late: { label: 'Late', color: 'hsl(var(--chart-4))' },
+    absent: { label: 'Absent', color: 'hsl(var(--destructive))' },
+  } satisfies ChartConfig;
+
+  return (
+    <Card className="flex flex-col">
+      <CardHeader className="items-center pb-0">
+        <CardTitle>Attendance</CardTitle>
+        <CardDescription>Your attendance this semester</CardDescription>
+      </CardHeader>
+      <CardContent className="flex-1 pb-0">
+        <ChartContainer
+          config={chartConfig}
+          className="mx-auto aspect-square max-h-[200px]"
+        >
+          <PieChart>
+            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+            <Pie data={chartData} dataKey="value" nameKey="status" innerRadius={30} strokeWidth={5}>
+              {chartData.map((entry) => (
+                <Cell key={`cell-${entry.status}`} fill={entry.fill} />
+              ))}
+            </Pie>
+            <ChartLegend content={<ChartLegendContent nameKey="status" />} />
+          </PieChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -33,7 +139,7 @@ export default function StudentDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{pendingAssignments.length}</div>
-            <p className="text-xs text-muted-foreground">{pendingAssignments.filter(a => new Date(a.dueDate) < new Date()).length} overdue</p>
+            <p className="text-xs text-muted-foreground">{assignments.filter(a => a.status === 'overdue').length} overdue</p>
           </CardContent>
         </Card>
          <Card>
@@ -48,51 +154,8 @@ export default function StudentDashboard() {
         </Card>
       </div>
        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-              <CardHeader>
-                  <CardTitle>Upcoming Assignments</CardTitle>
-                  <CardDescription>Tasks that are due soon.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                   <ul className="space-y-4">
-                      {pendingAssignments.slice(0, 3).map((item) => (
-                        <li key={item.id} className="flex items-start gap-4">
-                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                            <FileText className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <p className="font-semibold">{item.title}</p>
-                            <p className="text-sm text-muted-foreground">{item.subject} &middot; Due {new Date(item.dueDate).toLocaleDateString()}</p>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-              </CardContent>
-          </Card>
-          <Card>
-              <CardHeader>
-                  <CardTitle>Recent Grades</CardTitle>
-                  <CardDescription>Your latest graded assignments.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                   <ul className="space-y-4">
-                      {grades.slice(0, 3).map((item, index) => (
-                        <li key={index} className="flex items-center justify-between gap-4">
-                            <div className="flex items-start gap-4">
-                               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                                <Award className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <p className="font-semibold">{item.subject}</p>
-                                <p className="text-sm text-muted-foreground">{item.points}/100</p>
-                              </div>
-                            </div>
-                           <Badge variant="secondary" className="text-base font-bold">{item.grade}</Badge>
-                        </li>
-                      ))}
-                    </ul>
-              </CardContent>
-          </Card>
+          <SubjectPerformanceChart />
+          <AttendanceBreakdownChart />
       </div>
     </div>
   );

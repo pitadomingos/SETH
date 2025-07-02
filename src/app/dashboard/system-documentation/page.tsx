@@ -1,10 +1,22 @@
-
 'use client';
-
+import { useAuth } from '@/context/auth-context';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Code, GitBranch, LayoutTemplate, Palette, Rocket } from 'lucide-react';
+import { Code, GitBranch, LayoutTemplate, Palette, Rocket, Loader2 } from 'lucide-react';
 
 export default function SystemDocumentationPage() {
+  const { role, isLoading } = useAuth();
+  const router = useRouter();
+
+  if (isLoading) {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  if (!isLoading && role !== 'Admin') {
+    router.push('/dashboard');
+    return null;
+  }
+  
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>
