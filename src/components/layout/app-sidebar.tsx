@@ -1,3 +1,4 @@
+
 'use client';
 import {
   SidebarHeader,
@@ -8,7 +9,25 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { useAuth, Role } from '@/context/auth-context';
-import { GraduationCap, LayoutDashboard, Calendar, User, BookMarked, PenSquare, ShieldCheck } from 'lucide-react';
+import { 
+    GraduationCap, 
+    LayoutDashboard, 
+    User, 
+    BookMarked, 
+    PenSquare, 
+    ShieldCheck,
+    Presentation,
+    School,
+    UserPlus,
+    BookOpen,
+    ClipboardList,
+    CalendarCheck,
+    DollarSign,
+    Trophy,
+    CalendarDays,
+    BarChart3,
+    Settings
+} from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { type LucideIcon } from 'lucide-react';
@@ -22,12 +41,23 @@ interface NavLink {
 const commonLinks: NavLink[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/schedule', label: 'Schedules', icon: BookMarked },
-  { href: '/dashboard/calendar', label: 'Calendar', icon: Calendar },
+  { href: '/dashboard/events', label: 'Events', icon: CalendarDays },
   { href: '/dashboard/profile', label: 'Profile', icon: User },
 ];
 
 const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
   Admin: [
+    { href: '/dashboard/students', label: 'Students', icon: GraduationCap },
+    { href: '/dashboard/teachers', label: 'Teachers', icon: Presentation },
+    { href: '/dashboard/classes', label: 'Classes', icon: School },
+    { href: '/dashboard/admissions', label: 'Admissions', icon: UserPlus },
+    { href: '/dashboard/academics', label: 'Academics', icon: BookOpen },
+    { href: '/dashboard/examinations', label: 'Examinations', icon: ClipboardList },
+    { href: '/dashboard/attendance', label: 'Attendance', icon: CalendarCheck },
+    { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
+    { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
+    { href: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
+    { href: '/dashboard/settings', label: 'Settings', icon: Settings },
     { href: '/dashboard/admin', label: 'Admin Panel', icon: ShieldCheck },
   ],
   Teacher: [
@@ -61,7 +91,7 @@ export function AppSidebar() {
         <SidebarMenu>
           {uniqueLinks.map((link) => (
             <SidebarMenuItem key={link.href}>
-              <Link href={link.href} passHref>
+              <Link href={link.href}>
                 <SidebarMenuButton asChild isActive={pathname === link.href} tooltip={link.label}>
                     <span>
                       <link.icon className="h-4 w-4" />

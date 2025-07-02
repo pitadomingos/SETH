@@ -1,18 +1,19 @@
+
 'use client';
 import * as React from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { events } from '@/lib/mock-data';
 
-export default function CalendarPage() {
+export default function EventsPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const eventDates = events.map(event => event.date);
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>
-        <h2 className="text-3xl font-bold tracking-tight">Academic Calendar</h2>
-        <p className="text-muted-foreground">Stay up-to-date with important school dates.</p>
+        <h2 className="text-3xl font-bold tracking-tight">School Events</h2>
+        <p className="text-muted-foreground">Stay up-to-date with important school dates and events.</p>
       </header>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="lg:col-span-2">

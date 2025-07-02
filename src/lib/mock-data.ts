@@ -23,10 +23,31 @@ export const events = [
 ];
 
 export const users = [
-  { id: 'usr_001', name: 'Alex Doe', email: 'admin@edudesk.com', role: 'Admin', status: 'Active' },
-  { id: 'usr_002', name: 'Dr. Evelyn Reed', email: 'e.reed@edudesk.com', role: 'Teacher', status: 'Active' },
-  { id: 'usr_003', name: 'Sam Wilson', email: 's.wilson@edudesk.com', role: 'Student', status: 'Active' },
-  { id: 'usr_004', name: 'Jane Smith', email: 'j.smith@example.com', role: 'Student', status: 'Active' },
-  { id: 'usr_005', name: 'John Johnson', email: 'j.johnson@example.com', role: 'Teacher', status: 'Inactive' },
-  { id: 'usr_006', name: 'Peter Jones', email: 'p.jones@example.com', role: 'Student', status: 'Active' },
+  { id: 'usr_001', name: 'Dr. Sarah Johnson', email: 's.johnson@edumanage.com', role: 'Admin', status: 'Active' },
+  { id: 'usr_002', name: 'Prof. Michael Chen', email: 'm.chen@edumanage.com', role: 'Teacher', status: 'Active' },
+  { id: 'usr_003', name: 'Emma Rodriguez', email: 'e.rodriguez@edumanage.com', role: 'Student', status: 'Active' },
+  { id: 'usr_004', name: 'James Wilson', email: 'j.wilson@edumanage.com', role: 'Student', status: 'Active' },
+  { id: 'usr_005', name: 'Dr. Lisa Anderson', email: 'l.anderson@edumanage.com', role: 'Teacher', status: 'Inactive' },
+  { id: 'usr_006', name: 'Sofia Kim', email: 's.kim@edumanage.com', role: 'Student', status: 'Active' },
+];
+
+export const studentsData = [
+  { id: 'S001', name: 'Emma Rodriguez', grade: '10', class: '10-A', email: 'e.rodriguez@edumanage.com', gpa: 3.8 },
+  { id: 'S002', name: 'James Wilson', grade: '10', class: '10-A', email: 'j.wilson@edumanage.com', gpa: 3.6 },
+  { id: 'S003', name: 'Sofia Kim', grade: '11', class: '11-B', email: 's.kim@edumanage.com', gpa: 3.9 },
+  { id: 'S004', name: 'Alex Johnson', grade: '9', class: '9-C', email: 'a.johnson@edumanage.com', gpa: 3.5 }
+];
+
+export const teachersData = [
+  { id: 'T001', name: 'Prof. Michael Chen', subject: 'Mathematics', email: 'm.chen@edumanage.com', experience: '8 years' },
+  { id: 'T002', name: 'Dr. Lisa Anderson', subject: 'Physics', email: 'l.anderson@edumanage.com', experience: '12 years' },
+  { id: 'T003', name: 'Ms. Jennifer Davis', subject: 'English', email: 'j.davis@edumanage.com', experience: '6 years' },
+  { id: 'T004', name: 'Mr. Robert Smith', subject: 'Chemistry', email: 'r.smith@edumanage.com', experience: '10 years' }
+];
+
+export const classesData = [
+  { id: 'C001', name: 'Class 9-A', grade: '9', teacher: 'Ms. Jennifer Davis', students: 28, room: '101' },
+  { id: 'C002', name: 'Class 9-B', grade: '9', teacher: 'Mr. Robert Smith', students: 26, room: '102' },
+  { id: 'C003', name: 'Class 10-A', grade: '10', teacher: 'Prof. Michael Chen', students: 30, room: '201' },
+  { id: 'C004', name: 'Class 11-B', grade: '11', teacher: 'Dr. Lisa Anderson', students: 25, room: '301' }
 ];
