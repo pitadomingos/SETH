@@ -62,12 +62,12 @@ export function AppSidebar() {
         <SidebarMenu>
           {uniqueLinks.map((link) => (
             <SidebarMenuItem key={link.href}>
-              <Link href={link.href} passHref legacyBehavior>
-                <SidebarMenuButton isActive={pathname === link.href} tooltip={link.label}>
+              <SidebarMenuButton asChild isActive={pathname === link.href} tooltip={link.label}>
+                <Link href={link.href}>
                   <link.icon className="h-4 w-4" />
                   <span>{link.label}</span>
-                </SidebarMenuButton>
-              </Link>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
