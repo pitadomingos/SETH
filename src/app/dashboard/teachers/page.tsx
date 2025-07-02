@@ -43,6 +43,7 @@ export default function TeachersPage() {
                                 <TableHead>Subject</TableHead>
                                 <TableHead>Contact</TableHead>
                                 <TableHead>Experience</TableHead>
+                                <TableHead>Qualifications</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -52,6 +53,7 @@ export default function TeachersPage() {
                                     <TableCell>{teacher.subject}</TableCell>
                                     <TableCell>{teacher.email}</TableCell>
                                     <TableCell>{teacher.experience}</TableCell>
+                                    <TableCell>{teacher.qualifications}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

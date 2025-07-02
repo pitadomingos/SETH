@@ -39,10 +39,10 @@ export const studentsData = [
 ];
 
 export const teachersData = [
-  { id: 'T001', name: 'Prof. Michael Chen', subject: 'Mathematics', email: 'm.chen@edumanage.com', experience: '8 years' },
-  { id: 'T002', name: 'Dr. Lisa Anderson', subject: 'Physics', email: 'l.anderson@edumanage.com', experience: '12 years' },
-  { id: 'T003', name: 'Ms. Jennifer Davis', subject: 'English', email: 'j.davis@edumanage.com', experience: '6 years' },
-  { id: 'T004', name: 'Mr. Robert Smith', subject: 'Chemistry', email: 'r.smith@edumanage.com', experience: '10 years' }
+  { id: 'T001', name: 'Prof. Michael Chen', subject: 'Mathematics', email: 'm.chen@edumanage.com', experience: '8 years', qualifications: 'Ph.D. in Mathematics' },
+  { id: 'T002', name: 'Dr. Lisa Anderson', subject: 'Physics', email: 'l.anderson@edumanage.com', experience: '12 years', qualifications: 'Ph.D. in Physics' },
+  { id: 'T003', name: 'Ms. Jennifer Davis', subject: 'English', email: 'j.davis@edumanage.com', experience: '6 years', qualifications: 'M.A. in English Literature' },
+  { id: 'T004', name: 'Mr. Robert Smith', subject: 'Chemistry', email: 'r.smith@edumanage.com', experience: '10 years', qualifications: 'M.Sc. in Chemistry' }
 ];
 
 export const classesData = [
