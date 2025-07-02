@@ -51,7 +51,10 @@ export default function StudentsPage() {
                                 <TableRow key={student.id}>
                                     <TableCell className="font-medium">{student.name}</TableCell>
                                     <TableCell>Grade {student.grade} - {student.class}</TableCell>
-                                    <TableCell>{student.email}</TableCell>
+                                    <TableCell>
+                                        <div>{student.email}</div>
+                                        <div className="text-muted-foreground">{student.phone}</div>
+                                    </TableCell>
                                     <TableCell>
                                         <Badge variant={student.gpa >= 3.5 ? 'secondary' : 'outline'}>
                                             {student.gpa}

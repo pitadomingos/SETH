@@ -51,7 +51,10 @@ export default function TeachersPage() {
                                 <TableRow key={teacher.id}>
                                     <TableCell className="font-medium">{teacher.name}</TableCell>
                                     <TableCell>{teacher.subject}</TableCell>
-                                    <TableCell>{teacher.email}</TableCell>
+                                    <TableCell>
+                                        <div>{teacher.email}</div>
+                                        <div className="text-muted-foreground">{teacher.phone}</div>
+                                    </TableCell>
                                     <TableCell>{teacher.experience}</TableCell>
                                     <TableCell>{teacher.qualifications}</TableCell>
                                 </TableRow>
