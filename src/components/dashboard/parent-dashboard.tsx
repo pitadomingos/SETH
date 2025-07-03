@@ -8,83 +8,60 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, User, GraduationCap, DollarSign, ListChecks } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-export default function ParentDashboard() {
-  const { user } = useAuth();
-  const { studentsData, grades, attendance, financeData, isLoading: schoolDataLoading } = useSchoolData();
+function ChildSummaryCard({ child, allGrades, allAttendance, allFinance }) {
   const { toast } = useToast();
-  
   const [advice, setAdvice] = useState<GenerateParentAdviceOutput | null>(null);
   const [isLoadingAdvice, setIsLoadingAdvice] = useState(true);
 
-  const childId = user?.childrenIds?.[0];
-  const child = useMemo(() => studentsData.find(s => s.id === childId), [studentsData, childId]);
+  const childGrades = useMemo(() => allGrades.filter(g => g.studentId === child.id), [allGrades, child.id]);
+  
+  const childAttendanceSummary = useMemo(() => {
+    const records = allAttendance.filter(a => a.studentId === child.id);
+    return records.reduce((acc, record) => {
+      acc[record.status] = (acc[record.status] || 0) + 1;
+      return acc;
+    }, { present: 0, late: 0, absent: 0 });
+  }, [allAttendance, child.id]);
 
   useEffect(() => {
-    if (child && grades.length > 0 && attendance.length > 0) {
-      const fetchAdvice = async () => {
-        setIsLoadingAdvice(true);
-        try {
-          const childGrades = grades
-            .filter(g => g.studentId === child.id)
-            .map(g => ({ subject: g.subject, grade: g.grade }));
-          
-          const childAttendance = attendance.filter(a => a.studentId === child.id);
-          const attendanceSummary = childAttendance.reduce((acc, record) => {
-              acc[record.status] = (acc[record.status] || 0) + 1;
-              return acc;
-          }, { present: 0, late: 0, absent: 0 });
-
-          if (childGrades.length === 0) {
-              setAdvice({
-                  summary: `${child.name} doesn't have any grades recorded yet. Check back soon for AI-powered insights!`,
-                  strengths: 'No data available.',
-                  recommendations: 'Encourage regular study habits and participation in class.'
-              });
-              return;
-          }
-
-          const result = await generateParentAdvice({
-            studentName: child.name,
-            grades: childGrades,
-            attendanceSummary: attendanceSummary,
+    const fetchAdvice = async () => {
+      setIsLoadingAdvice(true);
+      try {
+        const gradesForAdvice = childGrades.map(g => ({ subject: g.subject, grade: g.grade }));
+        
+        if (gradesForAdvice.length === 0) {
+          setAdvice({
+            summary: `${child.name} doesn't have any grades recorded yet. Check back soon for AI-powered insights!`,
+            strengths: 'No data available.',
+            recommendations: 'Encourage regular study habits and participation in class.'
           });
-          setAdvice(result);
-        } catch (error) {
-          console.error('Failed to generate parent advice:', error);
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'Could not load AI-powered advice. Please try again later.',
-          });
-        } finally {
-          setIsLoadingAdvice(false);
+          return;
         }
-      };
-      fetchAdvice();
-    }
-  }, [child, grades, attendance, toast]);
 
-  if (schoolDataLoading) {
-    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
-
-  if (!child) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Error</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>Could not find student data. Please contact school administration.</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const childFinance = financeData.find(f => f.studentId === child.id);
-  const recentGrades = grades.filter(g => g.studentId === child.id).slice(0, 5);
+        const result = await generateParentAdvice({
+          studentName: child.name,
+          grades: gradesForAdvice,
+          attendanceSummary: childAttendanceSummary,
+        });
+        setAdvice(result);
+      } catch (error) {
+        console.error('Failed to generate parent advice:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: `Could not load AI advice for ${child.name}. Please try again later.`,
+        });
+      } finally {
+        setIsLoadingAdvice(false);
+      }
+    };
+    fetchAdvice();
+  }, [child, childGrades, childAttendanceSummary, toast]);
   
-  const getFinanceBadgeVariant = (status: string) => {
+  const childFinance = allFinance.find(f => f.studentId === child.id);
+  const recentGrades = childGrades.slice(0, 5);
+  
+  const getFinanceBadgeVariant = (status?: string) => {
     switch (status) {
       case 'Paid': return 'secondary';
       case 'Pending': return 'outline';
@@ -94,14 +71,14 @@ export default function ParentDashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
-        <p className="text-muted-foreground">Welcome, {user?.name}. Here is an overview for {child.name}.</p>
-      </header>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+    <Card>
+      <CardHeader>
+        <CardTitle>{child.name}</CardTitle>
+        <CardDescription>{child.schoolName}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Card className="lg:col-span-2">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> AI-Powered Insights</CardTitle>
                 <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
@@ -132,8 +109,8 @@ export default function ParentDashboard() {
         
         <div className="space-y-6">
             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><DollarSign /> Fee Status</CardTitle>
+                <CardHeader className="pb-4">
+                    <CardTitle className="text-base flex items-center gap-2"><DollarSign /> Fee Status</CardTitle>
                 </CardHeader>
                 <CardContent>
                 {childFinance ? (
@@ -150,8 +127,8 @@ export default function ParentDashboard() {
                 </CardContent>
             </Card>
              <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><GraduationCap /> Recent Grades</CardTitle>
+                <CardHeader className="pb-4">
+                    <CardTitle className="text-base flex items-center gap-2"><GraduationCap /> Recent Grades</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <ul className="space-y-2">
@@ -165,6 +142,49 @@ export default function ParentDashboard() {
                 </CardContent>
             </Card>
         </div>
+      </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+export default function ParentDashboard() {
+  const { user } = useAuth();
+  const { studentsData, grades, attendance, financeData, isLoading: schoolDataLoading } = useSchoolData();
+  
+  if (schoolDataLoading) {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  if (!studentsData || studentsData.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>No Student Data Found</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>No student information is linked to your account. Please contact school administration.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <header>
+        <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+        <p className="text-muted-foreground">Welcome, {user?.name}. Here is an overview for your children.</p>
+      </header>
+      <div className="space-y-8">
+        {studentsData.map(child => (
+          <ChildSummaryCard 
+            key={child.id} 
+            child={child} 
+            allGrades={grades} 
+            allAttendance={attendance}
+            allFinance={financeData}
+          />
+        ))}
       </div>
     </div>
   );

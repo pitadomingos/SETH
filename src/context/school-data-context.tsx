@@ -49,8 +49,43 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setIsLoading(true);
     if (role === 'GlobalAdmin') {
-        setCurrentSchoolData(null); // Global admin doesn't belong to a single school
+        setCurrentSchoolData(null);
         setIsLoading(false);
+    } else if (role === 'Parent' && user?.childrenIds) {
+      const childrenIds = user.childrenIds;
+      
+      const allStudents: any[] = [];
+      const allGrades: any[] = [];
+      const allAttendance: any[] = [];
+      const allFinance: any[] = [];
+      
+      for (const schoolId in schoolData) {
+        const school = schoolData[schoolId];
+
+        const studentsInSchool = school.students
+          .filter(s => childrenIds.includes(s.id))
+          .map(s => ({ ...s, schoolName: school.profile.name }));
+        allStudents.push(...studentsInSchool);
+
+        allGrades.push(...school.grades.filter(g => childrenIds.includes(g.studentId)));
+        allAttendance.push(...school.attendance.filter(a => childrenIds.includes(a.studentId)));
+        allFinance.push(...school.finance.filter(f => childrenIds.includes(f.studentId)));
+      }
+
+      const parentViewData = {
+          profile: null,
+          students: allStudents,
+          grades: allGrades,
+          attendance: allAttendance,
+          finance: allFinance,
+          teachers: [], classes: [], admissions: [], exams: [],
+          assets: [], assignments: [], events: [],
+          courses: { teacher: [], student: [] }
+      };
+      
+      setCurrentSchoolData(parentViewData);
+      setSubjects([]);
+      setIsLoading(false);
     } else if (user?.schoolId && schoolData[user.schoolId]) {
       const data = schoolData[user.schoolId];
       setCurrentSchoolData(data);
@@ -59,6 +94,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           setSubjects(initialSubjects);
       }
       setIsLoading(false);
+    } else {
+        setCurrentSchoolData(null);
+        setIsLoading(false);
     }
   }, [user, role]);
 

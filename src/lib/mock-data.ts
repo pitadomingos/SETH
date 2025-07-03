@@ -116,6 +116,7 @@ const oakridgeStudents: Student[] = [
   { id: 'S101', name: 'Benjamin Carter', grade: '10', class: 'A', email: 'b.carter@oakridge.com', phone: '+1 (555) 101-1010', address: '1 Apple St', gpa: 3.9 },
   { id: 'S102', name: 'Charlotte Lee', grade: '11', class: 'A', email: 'c.lee@oakridge.com', phone: '+1 (555) 102-1020', address: '2 Pear Ave', gpa: 3.7 },
   { id: 'S103', name: 'Daniel Park', grade: '9', class: 'B', email: 'd.park@oakridge.com', phone: '+1 (555) 103-1030', address: '3 Cherry Ln', gpa: 3.5 },
+  { id: 'S104', name: 'Miguel Rodriguez', grade: '9', class: 'B', email: 'm.rodriguez.jr@oakridge.com', phone: '+1 (555) 104-1040', address: '123 Main St, Anytown', gpa: 3.4 },
 ];
 
 const oakridgeTeachers: Teacher[] = [
@@ -131,6 +132,7 @@ const oakridgeClasses: Class[] = [
 const oakridgeGrades: Grade[] = [
     { studentId: 'S101', subject: 'Biology', grade: 'A', points: 91, date: new Date(now.getFullYear(), now.getMonth() - 1) },
     { studentId: 'S102', subject: 'Geography', grade: 'B+', points: 86, date: new Date(now.getFullYear(), now.getMonth() - 1) },
+    { studentId: 'S104', subject: 'Geography', grade: 'B', points: 84, date: new Date(now.getFullYear(), now.getMonth()) },
 ];
 
 const oakridgeAttendance: Attendance[] = oakridgeStudents.flatMap(student => {
@@ -148,6 +150,7 @@ const oakridgeAttendance: Attendance[] = oakridgeStudents.flatMap(student => {
 const oakridgeFinance: Finance[] = [
   { studentId: 'S101', studentName: 'Benjamin Carter', amountDue: 2200, dueDate: '2024-06-30', status: 'Paid' },
   { studentId: 'S102', studentName: 'Charlotte Lee', amountDue: 2200, dueDate: '2024-06-30', status: 'Pending' },
+  { studentId: 'S104', studentName: 'Miguel Rodriguez', amountDue: 2200, dueDate: '2024-06-30', status: 'Paid' },
 ];
 
 // --- Data for School 3: Maplewood International School ---
@@ -303,5 +306,3 @@ export const schoolData: Record<string, SchoolData> = {
     },
   },
 };
-
-    

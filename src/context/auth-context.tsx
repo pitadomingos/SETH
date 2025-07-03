@@ -34,7 +34,7 @@ const mockUsers: Record<string, { user: User, role: Role }> = {
   admin1: { user: { username: 'admin1', name: 'Dr. Sarah Johnson', email: 's.johnson@northwood.edu', schoolId: 'northwood' }, role: 'Admin' },
   teacher1: { user: { username: 'teacher1', name: 'Prof. Michael Chen', email: 'm.chen@northwood.edu', schoolId: 'northwood' }, role: 'Teacher' },
   student1: { user: { username: 'student1', name: 'Emma Rodriguez', email: 'e.rodriguez@northwood.edu', schoolId: 'northwood' }, role: 'Student' },
-  parent1: { user: { username: 'parent1', name: 'Maria Rodriguez', email: 'm.rodriguez@family.com', schoolId: 'northwood', childrenIds: ['S001'] }, role: 'Parent' },
+  parent1: { user: { username: 'parent1', name: 'Maria Rodriguez', email: 'm.rodriguez@family.com', schoolId: 'northwood', childrenIds: ['S001', 'S104'] }, role: 'Parent' },
   admin2: { user: { username: 'admin2', name: 'Mr. James Maxwell', email: 'j.maxwell@oakridge.edu', schoolId: 'oakridge' }, role: 'Admin' },
   teacher2: { user: { username: 'teacher2', name: 'Ms. Rachel Adams', email: 'r.adams@oakridge.edu', schoolId: 'oakridge' }, role: 'Teacher' },
   student2: { user: { username: 'student2', name: 'Benjamin Carter', email: 'b.carter@oakridge.edu', schoolId: 'oakridge' }, role: 'Student' },
