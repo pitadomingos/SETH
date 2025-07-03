@@ -26,6 +26,7 @@ interface SchoolData {
         teacher: Course[];
         student: Course[];
     };
+    feeDescriptions: string[];
 }
 
 interface SchoolProfile {
@@ -237,6 +238,7 @@ export const schoolData: Record<string, SchoolData> = {
     grades: northwoodGrades,
     attendance: northwoodAttendance,
     finance: northwoodFinance,
+    feeDescriptions: ['Term 1 Tuition', 'Lab Fees', 'Sports Uniform', 'Library Fine', 'Exam Fee'],
     // Using shared data for simplicity in this simulation
     admissions: [
         { id: 'ADM001', name: 'John Smith', appliedFor: 'Grade 9', date: '2024-05-10', status: 'Pending', formerSchool: 'Eastwood Elementary', grades: 'A average in all subjects.' },
@@ -278,6 +280,7 @@ export const schoolData: Record<string, SchoolData> = {
     grades: oakridgeGrades,
     attendance: oakridgeAttendance,
     finance: oakridgeFinance,
+    feeDescriptions: ['Annual Tuition', 'Activity Fee', 'Technology Fee'],
     // Using shared/generic data for simplicity
     admissions: [
         { id: 'OAK-ADM001', name: 'Alice Wonder', appliedFor: 'Grade 9', date: '2024-05-15', status: 'Approved', formerSchool: 'Wonderland Middle', grades: 'Top of class.' },
@@ -312,6 +315,7 @@ export const schoolData: Record<string, SchoolData> = {
     grades: maplewoodGrades,
     attendance: maplewoodAttendance,
     finance: maplewoodFinance,
+    feeDescriptions: ['Semester 1 Fees', 'Capital Levy', 'IB Exam Fee', 'Technology Fee'],
     admissions: [
         { id: 'MAP-ADM001', name: 'Leo Tolstoy', appliedFor: 'Grade 9', date: '2024-06-01', status: 'Pending', formerSchool: 'Literary Prep', grades: 'Strong in humanities.' },
     ],

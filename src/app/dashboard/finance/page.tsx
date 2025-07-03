@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,7 +30,7 @@ type PaymentFormValues = z.infer<typeof paymentSchema>;
 
 const newTransactionSchema = z.object({
     studentId: z.string({ required_error: "Please select a student." }),
-    description: z.string().min(3, "Description must be at least 3 characters."),
+    description: z.string({ required_error: "Please select a fee description." }),
     totalAmount: z.coerce.number().positive("Amount must be a positive number."),
     dueDate: z.date({ required_error: "A due date is required."}),
 });
@@ -37,7 +38,7 @@ const newTransactionSchema = z.object({
 type NewTransactionFormValues = z.infer<typeof newTransactionSchema>;
 
 function NewTransactionDialog() {
-  const { studentsData, addFee } = useSchoolData();
+  const { studentsData, feeDescriptions, addFee } = useSchoolData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const form = useForm<NewTransactionFormValues>({
@@ -95,9 +96,18 @@ function NewTransactionDialog() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Term 2 Tuition, Exam Fee" {...field} />
-                  </FormControl>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a fee description" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {feeDescriptions.map(desc => (
+                        <SelectItem key={desc} value={desc}>{desc}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

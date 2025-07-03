@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
@@ -43,6 +44,8 @@ interface SchoolDataContextType {
   addSubject: (subject: string) => void;
   examBoards: string[];
   addExamBoard: (board: string) => void;
+  feeDescriptions: string[];
+  addFeeDescription: (description: string) => void;
   isLoading: boolean;
 }
 
@@ -56,6 +59,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [financeData, setFinanceData] = useState<FinanceRecord[]>([]);
   const [subjects, setSubjects] = useState<string[]>([]);
   const [examBoards, setExamBoards] = useState<string[]>(initialExamBoards);
+  const [feeDescriptions, setFeeDescriptions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -119,6 +123,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setCurrentSchoolData(parentViewData);
       setFinanceData(allFinance);
       setSubjects([]);
+      setFeeDescriptions([]);
       setIsLoading(false);
     } else if (user?.schoolId && schoolData[user.schoolId]) {
       schoolId = user.schoolId;
@@ -129,6 +134,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
           setSubjects(initialSubjects);
       }
+      setFeeDescriptions(data.feeDescriptions || []);
       setIsLoading(false);
     } else {
         setCurrentSchoolData(null);
@@ -146,6 +152,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addExamBoard = (board: string) => {
     if (!examBoards.includes(board)) {
       setExamBoards(prev => [...prev, board].sort());
+    }
+  };
+  
+  const addFeeDescription = (description: string) => {
+    if (!feeDescriptions.includes(description)) {
+      setFeeDescriptions(prev => [...prev, description].sort());
     }
   };
 
@@ -199,6 +211,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     addSubject,
     examBoards,
     addExamBoard,
+    feeDescriptions,
+    addFeeDescription,
     isLoading,
   };
 

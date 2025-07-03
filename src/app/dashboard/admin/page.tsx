@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/context/auth-context';
@@ -20,16 +21,21 @@ import { Input } from '@/components/ui/input';
 const boardSchema = z.object({
   name: z.string().min(2, "Board name must be at least 2 characters."),
 });
-
 type BoardFormValues = z.infer<typeof boardSchema>;
+
+const descriptionSchema = z.object({
+  name: z.string().min(3, "Description must be at least 3 characters."),
+});
+type DescriptionFormValues = z.infer<typeof descriptionSchema>;
 
 
 export default function AdminPanelPage() {
     const { role, isLoading: authLoading } = useAuth();
     const router = useRouter();
 
-    const { examBoards, addExamBoard, studentsData, teachersData } = useSchoolData();
+    const { examBoards, addExamBoard, studentsData, teachersData, feeDescriptions, addFeeDescription } = useSchoolData();
     const [isBoardDialogOpen, setIsBoardDialogOpen] = useState(false);
+    const [isDescriptionDialogOpen, setIsDescriptionDialogOpen] = useState(false);
 
     useEffect(() => {
         if (!authLoading && role !== 'Admin') {
@@ -62,10 +68,21 @@ export default function AdminPanelPage() {
         defaultValues: { name: '' },
     });
 
+    const descriptionForm = useForm<DescriptionFormValues>({
+        resolver: zodResolver(descriptionSchema),
+        defaultValues: { name: '' },
+    });
+
     function onBoardSubmit(values: BoardFormValues) {
         addExamBoard(values.name);
         boardForm.reset();
         setIsBoardDialogOpen(false);
+    }
+
+    function onDescriptionSubmit(values: DescriptionFormValues) {
+        addFeeDescription(values.name);
+        descriptionForm.reset();
+        setIsDescriptionDialogOpen(false);
     }
 
     if (authLoading || role !== 'Admin') {
@@ -192,6 +209,57 @@ export default function AdminPanelPage() {
                                 ))}
                             </ul>
                         </div>
+
+                         <div>
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-semibold">Fee Descriptions</h4>
+                                 <Dialog open={isDescriptionDialogOpen} onOpenChange={setIsDescriptionDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4" /> Add Description</Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[425px]">
+                                        <DialogHeader>
+                                            <DialogTitle>Add New Fee Description</DialogTitle>
+                                            <DialogDescription>Enter a new fee description to be used in transactions.</DialogDescription>
+                                        </DialogHeader>
+                                        <Form {...descriptionForm}>
+                                        <form onSubmit={descriptionForm.handleSubmit(onDescriptionSubmit)} className="space-y-4 py-4">
+                                            <FormField
+                                            control={descriptionForm.control}
+                                            name="name"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                <FormLabel>Description</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="e.g., Field Trip" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                                </FormItem>
+                                            )}
+                                            />
+                                            <DialogFooter>
+                                                <DialogClose asChild>
+                                                    <Button type="button" variant="secondary">Cancel</Button>
+                                                </DialogClose>
+                                                <Button type="submit" disabled={descriptionForm.formState.isSubmitting}>
+                                                    {descriptionForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                    Save Description
+                                                </Button>
+                                            </DialogFooter>
+                                        </form>
+                                        </Form>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                            <ul className="mt-3 space-y-2">
+                                {feeDescriptions.map(desc => (
+                                    <li key={desc} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm">
+                                        <span>{desc}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
                     </CardContent>
                 </Card>
             </div>
