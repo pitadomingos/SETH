@@ -8,7 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useSchoolData } from '@/context/school-data-context';
-import { Award } from 'lucide-react';
+import { Award, Trophy, BookOpen } from 'lucide-react';
+import { useAuth } from '@/context/auth-context';
+import { schoolData } from '@/lib/mock-data';
 
 const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
 
@@ -60,10 +62,113 @@ const LeaderboardTable = ({ students }) => {
     );
 };
 
+
+const ParentLeaderboardView = () => {
+  const { studentsData: parentChildren } = useSchoolData();
+
+  const allStudentsWithGpaBySchool = useMemo(() => {
+    const data = {};
+    for (const schoolId in schoolData) {
+      const school = schoolData[schoolId];
+      data[schoolId] = {
+        students: school.students.map(student => ({
+          ...student,
+          calculatedGpa: parseFloat(calculateAverageGpa(student.id, school.grades)),
+        })).sort((a, b) => b.calculatedGpa - a.calculatedGpa),
+      };
+    }
+    return data;
+  }, []);
+
+  const getRank = (studentId, rankedList) => {
+    const rank = rankedList.findIndex(s => s.id === studentId) + 1;
+    return { rank, total: rankedList.length };
+  };
+
+  const getSubjectRanks = (student, schoolId) => {
+      const schoolGrades = schoolData[schoolId]?.grades || [];
+      const studentSubjects = [...new Set(schoolGrades.filter(g => g.studentId === student.id).map(g => g.subject))];
+
+      return studentSubjects.map(subject => {
+          const subjectGradesForSchool = schoolGrades.filter(g => g.subject === subject);
+          const studentIdsInSubject = [...new Set(subjectGradesForSchool.map(g => g.studentId))];
+          
+          const rankedStudents = studentIdsInSubject.map(sId => {
+              const studentGradesForSubject = subjectGradesForSchool.filter(g => g.studentId === sId);
+              const totalPoints = studentGradesForSubject.reduce((acc, g) => acc + (gpaMap[g.grade] || 0), 0);
+              return { id: sId, gpa: totalPoints / studentGradesForSubject.length };
+          }).sort((a, b) => b.gpa - a.gpa);
+
+          const rankInfo = getRank(student.id, rankedStudents);
+          return { subject, ...rankInfo };
+      }).sort((a, b) => a.rank - b.rank);
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in-50">
+      <header>
+        <h2 className="text-3xl font-bold tracking-tight">My Children's Rankings</h2>
+        <p className="text-muted-foreground">A detailed look at your children's academic performance for the 2024-2025 year.</p>
+      </header>
+      <div className="space-y-6">
+        {parentChildren.map(child => {
+          const schoolRanks = allStudentsWithGpaBySchool[child.schoolId]?.students || [];
+          const classRanks = schoolRanks.filter(s => s.grade === child.grade && s.class === child.class);
+          
+          const overallRank = getRank(child.id, schoolRanks);
+          const classRank = getRank(child.id, classRanks);
+          const subjectRanks = getSubjectRanks(child, child.schoolId);
+
+          return (
+            <Card key={child.id}>
+              <CardHeader>
+                <CardTitle>{child.name}</CardTitle>
+                <CardDescription>{child.schoolName} - Grade {child.grade}, Class {child.class}</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-4">
+                  <h3 className="font-semibold flex items-center gap-2"><Trophy className="text-primary"/> Overall & Class Rank</h3>
+                  <div className="p-4 bg-muted rounded-lg space-y-2">
+                      <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">School Rank</span>
+                          <span className="font-bold">{overallRank.rank > 0 ? `${overallRank.rank} / ${overallRank.total}` : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Class Rank</span>
+                          <span className="font-bold">{classRank.rank > 0 ? `${classRank.rank} / ${classRank.total}` : 'N/A'}</span>
+                      </div>
+                  </div>
+                </div>
+                 <div className="space-y-4">
+                  <h3 className="font-semibold flex items-center gap-2"><BookOpen className="text-primary"/> Subject Ranks</h3>
+                    <div className="p-4 bg-muted rounded-lg space-y-2 max-h-48 overflow-y-auto">
+                       {subjectRanks.length > 0 ? subjectRanks.map(sr => (
+                           <div key={sr.subject} className="flex justify-between items-center text-sm">
+                               <span className="text-muted-foreground">{sr.subject}</span>
+                               <span className="font-bold">{sr.rank > 0 ? `${sr.rank} / ${sr.total}` : 'N/A'}</span>
+                           </div>
+                       )) : <p className="text-sm text-muted-foreground">No subject ranks available.</p>}
+                    </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+
 export default function LeaderboardsPage() {
+    const { role } = useAuth();
     const { studentsData, classesData, grades } = useSchoolData();
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+
+    if (role === 'Parent') {
+        return <ParentLeaderboardView />;
+    }
 
     const allStudentsWithGpa = useMemo(() => studentsData.map(student => ({
         ...student,

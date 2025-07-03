@@ -66,7 +66,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
         const studentsInSchool = school.students
           .filter(s => childrenIds.includes(s.id))
-          .map(s => ({ ...s, schoolName: school.profile.name }));
+          .map(s => ({ ...s, schoolName: school.profile.name, schoolId: school.profile.id }));
 
         if (studentsInSchool.length > 0) {
             schoolIdsOfChildren.add(schoolId);
