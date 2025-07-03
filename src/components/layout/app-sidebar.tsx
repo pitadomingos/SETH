@@ -31,7 +31,8 @@ import {
     FileText,
     BookUser,
     ListTodo,
-    Package
+    Package,
+    Building
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -56,6 +57,7 @@ const documentationLinks: NavLink[] = [
 
 const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
   Admin: [
+    { href: '/dashboard/school-profile', label: 'School Profile', icon: Building },
     { href: '/dashboard/students', label: 'Students', icon: GraduationCap },
     { href: '/dashboard/teachers', label: 'Teachers', icon: Presentation },
     { href: '/dashboard/classes', label: 'Classes', icon: School },

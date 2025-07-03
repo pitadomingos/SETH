@@ -14,9 +14,11 @@ import { useAuth } from '@/context/auth-context';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { ThemeToggle } from './theme-toggle';
+import { useSchoolData } from '@/context/school-data-context';
 
 export function AppHeader() {
   const { user, logout } = useAuth();
+  const { schoolProfile } = useSchoolData();
   const initials = user?.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
 
   return (
@@ -25,7 +27,7 @@ export function AppHeader() {
         <SidebarTrigger className="md:hidden" />
          <div className="hidden items-center gap-2 md:flex">
             <GraduationCap className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-semibold font-headline">EduManage</h1>
+            <h1 className="text-xl font-semibold font-headline">{schoolProfile?.name || 'EduManage'}</h1>
         </div>
       </div>
       <div className="flex items-center gap-4">

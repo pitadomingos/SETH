@@ -172,3 +172,12 @@ export const assetsData = [
   { id: 'ASSET006', name: 'Basketballs (Set of 10)', category: 'Sports Equipment', status: 'Available', location: 'Gym', assignedTo: 'Mr. Chris Green' },
   { id: 'ASSET007', name: 'MacBook Pro 14"', category: 'IT Equipment', status: 'In Use', location: 'Art Room', assignedTo: 'Ms. Emily White' },
 ];
+
+export const schoolProfileData = {
+  name: 'Northwood High School',
+  head: 'Dr. Sarah Johnson',
+  address: '123 Education Lane, Anytown, USA 12345',
+  phone: '+1 (555) 123-4567',
+  email: 'contact@northwoodhigh.edu',
+  motto: 'Excellence in Education',
+};
