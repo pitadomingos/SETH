@@ -11,7 +11,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const GenerateTestInputSchema = z.object({
+const GenerateTestInputSchema = z.object({
   subject: z.string().describe('The subject of the test.'),
   topic: z.string().describe('The specific topic within the subject for the test.'),
   gradeLevel: z.string().describe('The grade level for which the test is intended.'),
@@ -25,7 +25,7 @@ const QuestionSchema = z.object({
   correctAnswer: z.string().describe('The correct answer from the options array.'),
 });
 
-export const GenerateTestOutputSchema = z.object({
+const GenerateTestOutputSchema = z.object({
   questions: z.array(QuestionSchema).describe('An array of generated test questions.'),
 });
 export type GenerateTestOutput = z.infer<typeof GenerateTestOutputSchema>;

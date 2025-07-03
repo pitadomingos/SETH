@@ -13,10 +13,17 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Sparkles, FlaskConical, ChevronRight } from 'lucide-react';
-import { generateTest, GenerateTestInputSchema, GenerateTestOutput } from '@/ai/flows/generate-test';
+import { generateTest, type GenerateTestOutput } from '@/ai/flows/generate-test';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+
+const GenerateTestInputSchema = z.object({
+  subject: z.string().min(1, 'Subject is required.'),
+  topic: z.string().min(1, 'Topic is required.'),
+  gradeLevel: z.string().min(1, 'Grade level is required.'),
+  numQuestions: z.coerce.number().int().min(1).max(10),
+});
 
 export default function AiTestingPage() {
   const { role, isLoading: authLoading } = useAuth();
