@@ -96,9 +96,10 @@ export const admissionsData = [
 ];
 
 export const examsData = [
-  { id: 'EXM001', title: 'Mid-term Mathematics', subject: 'Mathematics', grade: '10', date: new Date(new Date().setDate(new Date().getDate() + 10)), time: '09:00', duration: '2 hours', room: '201' },
-  { id: 'EXM002', title: 'Physics Quiz', subject: 'Physics', grade: '11', date: new Date(new Date().setDate(new Date().getDate() + 12)), time: '10:00', duration: '1 hour', room: '301' },
-  { id: 'EXM003', title: 'English Essay', subject: 'English', grade: '9', date: new Date(new Date().setDate(new Date().getDate() + 15)), time: '11:00', duration: '90 minutes', room: '101' },
+  { id: 'EXM001', title: 'Mid-term Mathematics', subject: 'Mathematics', grade: '10', date: new Date(new Date().setDate(new Date().getDate() + 10)), time: '09:00', duration: '2 hours', room: '201', board: 'Internal' },
+  { id: 'EXM002', title: 'Physics Quiz', subject: 'Physics', grade: '11', date: new Date(new Date().setDate(new Date().getDate() + 12)), time: '10:00', duration: '1 hour', room: '301', board: 'Internal' },
+  { id: 'EXM003', title: 'English Essay', subject: 'English', grade: '9', date: new Date(new Date().setDate(new Date().getDate() + 15)), time: '11:00', duration: '90 minutes', room: '101', board: 'Internal' },
+  { id: 'EXM004', title: 'IGCSE Physics Paper 4', subject: 'Physics', grade: '10', date: new Date(new Date().setDate(new Date().getDate() + 20)), time: '13:00', duration: '75 minutes', room: 'Hall A', board: 'Cambridge' },
 ];
 
 export const financeData = [
