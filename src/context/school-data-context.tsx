@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
@@ -16,6 +15,13 @@ interface SchoolProfile {
   motto: string;
 }
 
+interface NewFeeData {
+    studentId: string;
+    description: string;
+    totalAmount: number;
+    dueDate: string;
+}
+
 interface SchoolDataContextType {
   schoolProfile: SchoolProfile | null;
   allSchoolData: typeof schoolData | null;
@@ -26,6 +32,7 @@ interface SchoolDataContextType {
   examsData: any[];
   financeData: FinanceRecord[];
   recordPayment: (feeId: string, amount: number) => void;
+  addFee: (data: NewFeeData) => void;
   assetsData: any[];
   assignments: any[];
   grades: any[];
@@ -153,6 +160,23 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       })
     );
   };
+
+  const addFee = (data: NewFeeData) => {
+    const student = currentSchoolData?.students?.find(s => s.id === data.studentId);
+    if (!student) return;
+
+    const newFee: FinanceRecord = {
+        id: `FEE${Date.now()}`,
+        studentId: data.studentId,
+        studentName: student.name,
+        description: data.description,
+        totalAmount: data.totalAmount,
+        amountPaid: 0,
+        dueDate: data.dueDate,
+    };
+
+    setFinanceData(prev => [newFee, ...prev]);
+  };
   
   const value = {
     schoolProfile: currentSchoolData?.profile || null,
@@ -164,6 +188,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     examsData: currentSchoolData?.exams || [],
     financeData,
     recordPayment,
+    addFee,
     assetsData: currentSchoolData?.assets || [],
     assignments: currentSchoolData?.assignments || [],
     grades: currentSchoolData?.grades || [],
