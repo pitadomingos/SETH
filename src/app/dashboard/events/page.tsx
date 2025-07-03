@@ -4,9 +4,12 @@ import * as React from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { useSchoolData } from '@/context/school-data-context';
+import { useAuth } from '@/context/auth-context';
+import { Building } from 'lucide-react';
 
 export default function EventsPage() {
   const { events } = useSchoolData();
+  const { role } = useAuth();
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const eventDates = events.map(event => event.date);
 
@@ -16,14 +19,14 @@ export default function EventsPage() {
         <h2 className="text-3xl font-bold tracking-tight">School Events</h2>
         <p className="text-muted-foreground">Stay up-to-date with important school dates and events.</p>
       </header>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardContent className="p-0">
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
+        <Card>
+          <CardContent className="p-0 flex justify-center">
             <Calendar
               mode="single"
               selected={date}
               onSelect={setDate}
-              className="p-4 w-full"
+              className="p-4"
               modifiers={{
                 event: eventDates,
               }}
@@ -33,7 +36,7 @@ export default function EventsPage() {
             />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Upcoming Events</CardTitle>
             <CardDescription>A list of key dates and events.</CardDescription>
@@ -52,6 +55,12 @@ export default function EventsPage() {
                   <div>
                     <p className="font-semibold">{event.title}</p>
                     <p className="text-sm text-muted-foreground">{event.date.toLocaleDateString('en-US', { weekday: 'long' })}</p>
+                    {role === 'Parent' && event.schoolName && (
+                        <div className="flex items-center text-xs text-primary font-medium mt-1">
+                            <Building className="mr-1.5 h-3 w-3" />
+                            <span>{event.schoolName}</span>
+                        </div>
+                    )}
                   </div>
                 </li>
               ))}

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
@@ -79,7 +80,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       }
 
       schoolIdsOfChildren.forEach(schoolId => {
-          allEvents.push(...schoolData[schoolId].events);
+          const school = schoolData[schoolId];
+          const schoolEventsWithSchoolName = school.events.map(event => ({
+              ...event,
+              schoolName: school.profile.name
+          }));
+          allEvents.push(...schoolEventsWithSchoolName);
       });
 
       const parentViewData = {
