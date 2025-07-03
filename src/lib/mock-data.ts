@@ -90,45 +90,42 @@ export const assignments = [
     { id: 'A007', title: 'Data Structures Exercise', subject: 'Computer Science', grade: '10', dueDate: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(), status: 'submitted' },
 ];
 
+const now = new Date();
 export const grades = [
-    { studentId: 'S001', subject: 'Mathematics', grade: 'A-', points: 88 },
-    { studentId: 'S001', subject: 'Physics', grade: 'B+', points: 85 },
-    { studentId: 'S001', subject: 'English', grade: 'A', points: 92 },
-    { studentId: 'S002', subject: 'Mathematics', grade: 'B', points: 82 },
-    { studentId: 'S002', subject: 'Chemistry', grade: 'A-', points: 87 },
-    { studentId: 'S003', subject: 'English', grade: 'C+', points: 75 },
-    { studentId: 'S004', subject: 'Physics', grade: 'B-', points: 80 },
-    { studentId: 'S003', subject: 'Mathematics', grade: 'A', points: 95 },
-    { studentId: 'S004', subject: 'English', grade: 'B', points: 83 },
-    { studentId: 'S005', subject: 'Physics', grade: 'A+', points: 98 },
-    { studentId: 'S006', subject: 'Mathematics', grade: 'C', points: 71 },
-    { studentId: 'S007', subject: 'Art', grade: 'A', points: 94 },
-    { studentId: 'S008', subject: 'Computer Science', grade: 'B+', points: 86 },
+    { studentId: 'S001', subject: 'Mathematics', grade: 'A-', points: 88, date: new Date(now.getFullYear(), now.getMonth() - 2) },
+    { studentId: 'S001', subject: 'Physics', grade: 'B+', points: 85, date: new Date(now.getFullYear(), now.getMonth() - 2) },
+    { studentId: 'S001', subject: 'English', grade: 'A', points: 92, date: new Date(now.getFullYear(), now.getMonth() - 1) },
+    { studentId: 'S002', subject: 'Mathematics', grade: 'B', points: 82, date: new Date(now.getFullYear(), now.getMonth() - 1) },
+    { studentId: 'S002', subject: 'Chemistry', grade: 'A-', points: 87, date: new Date(now.getFullYear(), now.getMonth() - 1) },
+    { studentId: 'S003', subject: 'English', grade: 'C+', points: 75, date: new Date(now.getFullYear(), now.getMonth()) },
+    { studentId: 'S004', subject: 'Physics', grade: 'B-', points: 80, date: new Date(now.getFullYear(), now.getMonth()) },
+    { studentId: 'S003', subject: 'Mathematics', grade: 'A', points: 95, date: new Date(now.getFullYear(), now.getMonth()) },
+    { studentId: 'S004', subject: 'English', grade: 'B', points: 83, date: new Date(now.getFullYear(), now.getMonth() - 2) },
+    { studentId: 'S005', subject: 'Physics', grade: 'A+', points: 98, date: new Date(now.getFullYear(), now.getMonth() - 1) },
+    { studentId: 'S006', subject: 'Mathematics', grade: 'C', points: 71, date: new Date(now.getFullYear(), now.getMonth()) },
+    { studentId: 'S007', subject: 'Art', grade: 'A', points: 94, date: new Date(now.getFullYear(), now.getMonth() - 1) },
+    { studentId: 'S008', subject: 'Computer Science', grade: 'B+', points: 86, date: new Date(now.getFullYear(), now.getMonth()) },
 ];
 
-export const attendance = [
-  { studentId: 'S001', date: '2024-05-10', status: 'present' },
-  { studentId: 'S001', date: '2024-05-11', status: 'present' },
-  { studentId: 'S001', date: '2024-05-12', status: 'late' },
-  { studentId: 'S001', date: '2024-05-13', status: 'present' },
-  { studentId: 'S001', date: '2024-05-14', status: 'absent' },
-  { studentId: 'S001', date: '2024-05-15', status: 'present' },
-  { studentId: 'S001', date: '2024-05-16', status: 'present' },
-  { studentId: 'S002', date: '2024-05-15', status: 'present' },
-  { studentId: 'S003', date: '2024-05-15', status: 'absent' },
-  { studentId: 'S004', date: '2024-05-15', status: 'present' },
-  { studentId: 'S005', date: '2024-05-15', status: 'late' },
-  { studentId: 'S006', date: '2024-05-15', status: 'present' },
-  { studentId: 'S007', date: '2024-05-15', status: 'present' },
-  { studentId: 'S008', date: '2024-05-15', status: 'present' },
-  { studentId: 'S009', date: '2024-05-15', status: 'absent' },
-  { studentId: 'S010', date: '2024-05-15', status: 'present' },
-  { studentId: 'S011', date: '2024-05-15', status: 'present' },
-  { studentId: 'S012', date: '2024-05-15', status: 'late' },
-  { studentId: 'S013', date: '2024-05-15', status: 'present' },
-  { studentId: 'S014', date: '2024-05-15', status: 'present' },
-  { studentId: 'S015', date: '2024-05-15', status: 'present' },
-];
+const generateAttendance = () => {
+  const records = [];
+  const today = new Date();
+  for (let i = 30; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    studentsData.forEach(student => {
+      const rand = Math.random();
+      let status = 'present';
+      if (rand > 0.95) status = 'absent';
+      else if (rand > 0.9) status = 'late';
+      records.push({ studentId: student.id, date: date.toISOString().split('T')[0], status });
+    });
+  }
+  return records;
+};
+
+export const attendance = generateAttendance();
+
 
 export const admissionsData = [
   { id: 'ADM001', name: 'John Smith', appliedFor: 'Grade 9', date: '2024-05-10', status: 'Pending', formerSchool: 'Eastwood Elementary', grades: 'A average in all subjects.' },
@@ -164,4 +161,14 @@ export const financeData = [
   { studentId: 'S013', studentName: 'Mia Taylor', amountDue: 1500, dueDate: '2024-06-30', status: 'Overdue' },
   { studentId: 'S014', studentName: 'Lucas Anderson', amountDue: 950, dueDate: '2024-06-30', status: 'Paid' },
   { studentId: 'S015', studentName: 'Harper Thomas', amountDue: 1200, dueDate: '2024-06-30', status: 'Pending' },
+];
+
+export const assetsData = [
+  { id: 'ASSET001', name: 'Dell Latitude Laptop', category: 'IT Equipment', status: 'In Use', location: 'Room 201', assignedTo: 'Prof. Michael Chen' },
+  { id: 'ASSET002', name: 'Epson Projector', category: 'AV Equipment', status: 'Available', location: 'Storage', assignedTo: 'N/A' },
+  { id: 'ASSET003', name: 'Student Desk', category: 'Furniture', status: 'In Use', location: 'Room 101', assignedTo: 'N/A' },
+  { id: 'ASSET004', name: 'Microscope', category: 'Lab Equipment', status: 'In Use', location: 'Science Lab', assignedTo: 'Dr. Lisa Anderson' },
+  { id: 'ASSET005', name: 'HP LaserJet Printer', category: 'IT Equipment', status: 'Maintenance', location: 'Admin Office', assignedTo: 'N/A' },
+  { id: 'ASSET006', name: 'Basketballs (Set of 10)', category: 'Sports Equipment', status: 'Available', location: 'Gym', assignedTo: 'Mr. Chris Green' },
+  { id: 'ASSET007', name: 'MacBook Pro 14"', category: 'IT Equipment', status: 'In Use', location: 'Art Room', assignedTo: 'Ms. Emily White' },
 ];

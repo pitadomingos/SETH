@@ -30,7 +30,8 @@ import {
     Settings,
     FileText,
     BookUser,
-    ListTodo
+    ListTodo,
+    Package
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -64,6 +65,7 @@ const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/attendance', label: 'Attendance', icon: CalendarCheck },
     { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
     { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
+    { href: '/dashboard/assets', label: 'Assets', icon: Package },
     { href: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
     { href: '/dashboard/admin', label: 'Admin Panel', icon: ShieldCheck },

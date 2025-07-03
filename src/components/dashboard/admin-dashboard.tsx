@@ -1,79 +1,131 @@
+
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
-import { Users, BookOpen, School, CalendarDays, Activity, TrendingUp, DollarSign, Hourglass, TrendingDown } from "lucide-react";
-import { Pie, PieChart, Cell } from 'recharts';
+import { Users, BookOpen, School, CalendarDays, TrendingUp, DollarSign, Hourglass, TrendingDown } from "lucide-react";
+import { Line, LineChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent
+  ChartConfig
 } from '@/components/ui/chart';
-import { studentsData, teachersData, financeData } from "@/lib/mock-data";
+import { studentsData, financeData, attendance, grades } from "@/lib/mock-data";
+import { format, subDays } from "date-fns";
+
+function AttendanceTrendChart() {
+  const thirtyDaysAgo = subDays(new Date(), 30);
+  const relevantAttendance = attendance.filter(a => new Date(a.date) >= thirtyDaysAgo);
+  
+  const dailyData = relevantAttendance.reduce((acc, record) => {
+    const date = format(new Date(record.date), 'MMM d');
+    if (!acc[date]) {
+      acc[date] = { present: 0, total: 0 };
+    }
+    acc[date].total++;
+    if (record.status === 'present' || record.status === 'late') {
+      acc[date].present++;
+    }
+    return acc;
+  }, {});
+
+  const chartData = Object.keys(dailyData).map(date => ({
+    date,
+    percentage: Math.round((dailyData[date].present / dailyData[date].total) * 100)
+  })).sort((a, b) => new Date(a.date) - new Date(b.date));
 
 
-const attendanceChartData = [
-  { status: 'present', value: 1150, fill: 'var(--color-present)' },
-  { status: 'absent', value: 87, fill: 'var(--color-absent)' },
-  { status: 'late', value: 20, fill: 'var(--color-late)' },
-];
+  const chartConfig = {
+    percentage: {
+      label: 'Attendance %',
+      color: 'hsl(var(--chart-2))',
+    },
+  } satisfies ChartConfig;
 
-const attendanceChartConfig = {
-  present: {
-    label: 'Present',
-    color: 'hsl(var(--chart-2))',
-  },
-  absent: {
-    label: 'Absent',
-    color: 'hsl(var(--destructive))',
-  },
-  late: {
-    label: 'Late',
-    color: 'hsl(var(--chart-4))',
-  },
-};
-
-function AttendanceChart() {
   return (
-    <Card className="flex flex-col h-full">
-      <CardHeader className="items-center pb-0">
-        <CardTitle>Attendance Overview</CardTitle>
-        <CardDescription>Today's student attendance</CardDescription>
+    <Card>
+      <CardHeader>
+        <CardTitle>Attendance Trend</CardTitle>
+        <CardDescription>Daily attendance percentage for the last 30 days</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 pb-0">
-        <ChartContainer
-          config={attendanceChartConfig}
-          className="mx-auto aspect-square max-h-[250px]"
-        >
-          <PieChart>
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+      <CardContent>
+        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+          <LineChart data={chartData} margin={{ left: -20, right: 10 }}>
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="date"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tickFormatter={(value) => value.slice(0, 3)}
             />
-            <Pie
-              data={attendanceChartData}
-              dataKey="value"
-              nameKey="status"
-              innerRadius={60}
-              strokeWidth={5}
-            >
-                {attendanceChartData.map((entry) => (
-                    <Cell key={`cell-${entry.status}`} fill={`var(--color-${entry.status})`} />
-                ))}
-            </Pie>
-            <ChartLegend content={<ChartLegendContent nameKey="status" />} className="flex-wrap" />
-          </PieChart>
+             <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              domain={[80, 100]}
+              tickFormatter={(value) => `${value}%`}
+            />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Line type="monotone" dataKey="percentage" stroke="var(--color-percentage)" strokeWidth={2} dot={false} />
+          </LineChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className="flex-col gap-2 text-sm pt-4">
-        <div className="flex items-center gap-2 font-medium leading-none">
-          92% Overall Attendance Rate
-          <TrendingUp className="h-4 w-4" />
-        </div>
-        <div className="leading-none text-muted-foreground">
-          Trending up by 5% this month
-        </div>
-      </CardFooter>
+    </Card>
+  );
+}
+
+function AcademicPerformanceChart() {
+    const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
+    
+    const monthlyGpa = grades.reduce((acc, grade) => {
+        const month = format(new Date(grade.date), 'MMM yyyy');
+        if (!acc[month]) {
+            acc[month] = { totalPoints: 0, count: 0 };
+        }
+        acc[month].totalPoints += gpaMap[grade.grade] || 0;
+        acc[month].count++;
+        return acc;
+    }, {});
+
+    const chartData = Object.keys(monthlyGpa).map(month => ({
+        month,
+        avgGpa: (monthlyGpa[month].totalPoints / monthlyGpa[month].count).toFixed(2),
+    })).sort((a,b) => new Date(a.month) - new Date(b.month));
+
+    const chartConfig = {
+      avgGpa: {
+        label: "Average GPA",
+        color: "hsl(var(--chart-1))",
+      },
+    } satisfies ChartConfig;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Academic Performance</CardTitle>
+        <CardDescription>Monthly average GPA across all students</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+            <BarChart data={chartData} margin={{ left: -20, right: 10 }}>
+                <CartesianGrid vertical={false} />
+                 <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                />
+                 <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    domain={[2.5, 4.0]}
+                 />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="avgGpa" fill="var(--color-avgGpa)" radius={8} />
+            </BarChart>
+        </ChartContainer>
+      </CardContent>
     </Card>
   );
 }
@@ -97,7 +149,7 @@ export default function AdminDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,257</div>
+            <div className="text-2xl font-bold">{studentsData.length}</div>
             <p className="text-xs text-muted-foreground">+5% from last month</p>
           </CardContent>
         </Card>
@@ -176,49 +228,9 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
-         <div className="lg:col-span-3">
-             <Card>
-                <CardHeader>
-                    <CardTitle>Recent Activity</CardTitle>
-                    <CardDescription>A log of recent system events and actions.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <ul className="space-y-4">
-                        <li className="flex items-start gap-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                <Users className="h-5 w-5"/>
-                            </div>
-                            <div>
-                                <p className="font-medium">New Student Added</p>
-                                <p className="text-sm text-muted-foreground">{studentsData[0].name} was enrolled in Grade {studentsData[0].grade}.</p>
-                            </div>
-                        </li>
-                         <li className="flex items-start gap-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                <Activity className="h-5 w-5"/>
-                            </div>
-                            <div>
-                                <p className="font-medium">New Teacher Onboarded</p>
-                                <p className="text-sm text-muted-foreground">{teachersData[0].name} has joined as a {teachersData[0].subject} teacher.</p>
-                            </div>
-                        </li>
-                         <li className="flex items-start gap-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                                <CalendarDays className="h-5 w-5"/>
-                            </div>
-                            <div>
-                                <p className="font-medium">Event Scheduled</p>
-                                <p className="text-sm text-muted-foreground">The annual Science Fair has been scheduled.</p>
-                            </div>
-                        </li>
-                    </ul>
-                </CardContent>
-            </Card>
-         </div>
-         <div className="lg:col-span-2">
-            <AttendanceChart />
-         </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+         <AttendanceTrendChart />
+         <AcademicPerformanceChart />
       </div>
     </div>
   );
