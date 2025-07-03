@@ -1,4 +1,5 @@
 
+
 export const teacherCourses = [
   { id: 'PHY101', name: 'Introduction to Physics', schedule: 'Mon, Wed 10:00-11:30', students: 45 },
   { id: 'CHEM202', name: 'Organic Chemistry', schedule: 'Tue, Thu 13:00-14:30', students: 32 },
@@ -16,10 +17,12 @@ export const studentCourses = [
 ];
 
 export const events = [
-    { date: new Date(new Date().setDate(new Date().getDate() + 3)), title: 'Science Fair' },
-    { date: new Date(new Date().setDate(new Date().getDate() + 10)), title: 'Mid-term Exams Start' },
-    { date: new Date(new Date().setDate(new Date().getDate() + 20)), title: 'Parent-Teacher Conference' },
-    { date: new Date(new Date().setMonth(new Date().getMonth() + 1)), title: 'Spring Break' },
+    { date: new Date(new Date().setDate(new Date().getDate() + 3)), title: 'Science Fair', type: 'Academic' },
+    { date: new Date(new Date().setDate(new Date().getDate() + 10)), title: 'Mid-term Exams Start', type: 'Academic' },
+    { date: new Date(new Date().setDate(new Date().getDate() + 20)), title: 'Parent-Teacher Conference', type: 'Meeting' },
+    { date: new Date(new Date().setMonth(new Date().getMonth() + 1)), title: 'Spring Break', type: 'Holiday' },
+    { date: new Date(new Date().setDate(new Date().getDate() + 25)), title: 'Basketball Championship', type: 'Sports' },
+    { date: new Date(new Date().setDate(new Date().getDate() + 35)), title: 'Annual Sports Day', type: 'Sports' },
 ];
 
 export const users = [
@@ -83,4 +86,24 @@ export const attendance = [
   { studentId: 'S001', date: '2024-05-16', status: 'present' },
   { studentId: 'S002', date: '2024-05-15', status: 'present' },
   { studentId: 'S003', date: '2024-05-15', status: 'absent' },
+];
+
+export const admissionsData = [
+  { id: 'ADM001', name: 'John Smith', appliedFor: 'Grade 9', date: '2024-05-10', status: 'Pending' },
+  { id: 'ADM002', name: 'Emily White', appliedFor: 'Grade 10', date: '2024-05-09', status: 'Approved' },
+  { id: 'ADM003', name: 'David Green', appliedFor: 'Grade 9', date: '2024-05-08', status: 'Rejected' },
+  { id: 'ADM004', name: 'Jessica Blue', appliedFor: 'Grade 11', date: '2024-05-11', status: 'Pending' },
+];
+
+export const examsData = [
+  { id: 'EXM001', title: 'Mid-term Mathematics', subject: 'Mathematics', grade: '10', date: new Date(new Date().setDate(new Date().getDate() + 10)), time: '09:00', duration: '2 hours', room: '201' },
+  { id: 'EXM002', title: 'Physics Quiz', subject: 'Physics', grade: '11', date: new Date(new Date().setDate(new Date().getDate() + 12)), time: '10:00', duration: '1 hour', room: '301' },
+  { id: 'EXM003', title: 'English Essay', subject: 'English', grade: '9', date: new Date(new Date().setDate(new Date().getDate() + 15)), time: '11:00', duration: '90 minutes', room: '101' },
+];
+
+export const financeData = [
+  { studentId: 'S001', studentName: 'Emma Rodriguez', amountDue: 1200, dueDate: '2024-06-30', status: 'Paid' },
+  { studentId: 'S002', studentName: 'James Wilson', amountDue: 1200, dueDate: '2024-06-30', status: 'Pending' },
+  { studentId: 'S003', studentName: 'Sofia Kim', amountDue: 1500, dueDate: '2024-06-30', status: 'Overdue' },
+  { studentId: 'S004', studentName: 'Alex Johnson', amountDue: 950, dueDate: '2024-06-30', status: 'Paid' },
 ];

@@ -1,9 +1,10 @@
 
 'use client';
-import { Card, CardContent } from '@/components/ui/card';
-import { Wrench } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
+import { BarChart3, GraduationCap, Users, DollarSign, Download } from 'lucide-react';
 
 export default function ReportsPage() {
   const { role } = useAuth();
@@ -13,19 +14,72 @@ export default function ReportsPage() {
       router.push('/dashboard');
       return null;
   }
+  
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>
         <h2 className="text-3xl font-bold tracking-tight">Reports</h2>
         <p className="text-muted-foreground">Generate and view school performance reports.</p>
       </header>
-      <Card className="flex items-center justify-center min-h-[400px]">
-        <CardContent className="text-center text-muted-foreground p-6">
-          <Wrench className="h-16 w-16 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold">Coming Soon!</h3>
-          <p>The reporting and analytics feature is currently being built.</p>
+
+      <Card>
+        <CardHeader>
+            <CardTitle>Generate Reports</CardTitle>
+            <CardDescription>Select a report type to download.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="flex flex-col items-center justify-center p-6 bg-muted rounded-lg text-center space-y-3">
+                <GraduationCap className="h-10 w-10 text-primary" />
+                <h3 className="font-semibold">Student Performance</h3>
+                <p className="text-sm text-muted-foreground">Academic results and progress reports.</p>
+                <Button><Download className="mr-2 h-4 w-4" />Generate</Button>
+            </div>
+             <div className="flex flex-col items-center justify-center p-6 bg-muted rounded-lg text-center space-y-3">
+                <BarChart3 className="h-10 w-10 text-primary" />
+                <h3 className="font-semibold">Attendance Summary</h3>
+                <p className="text-sm text-muted-foreground">Overall attendance rates and records.</p>
+                <Button><Download className="mr-2 h-4 w-4" />Generate</Button>
+            </div>
+             <div className="flex flex-col items-center justify-center p-6 bg-muted rounded-lg text-center space-y-3">
+                <Users className="h-10 w-10 text-primary" />
+                <h3 className="font-semibold">Enrollment Statistics</h3>
+                <p className="text-sm text-muted-foreground">Student enrollment and demographics.</p>
+                <Button><Download className="mr-2 h-4 w-4" />Generate</Button>
+            </div>
+             <div className="flex flex-col items-center justify-center p-6 bg-muted rounded-lg text-center space-y-3">
+                <DollarSign className="h-10 w-10 text-primary" />
+                <h3 className="font-semibold">Financial Report</h3>
+                <p className="text-sm text-muted-foreground">Revenue, expenses, and fee collection.</p>
+                <Button><Download className="mr-2 h-4 w-4" />Generate</Button>
+            </div>
         </CardContent>
       </Card>
+      
+      <Card>
+        <CardHeader>
+            <CardTitle>Quick Stats</CardTitle>
+            <CardDescription>A real-time snapshot of key school metrics.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div>
+                <p className="text-3xl font-bold text-primary">95%</p>
+                <p className="text-sm text-muted-foreground">Average Attendance</p>
+            </div>
+            <div>
+                <p className="text-3xl font-bold text-primary">3.6</p>
+                <p className="text-sm text-muted-foreground">Average GPA</p>
+            </div>
+            <div>
+                <p className="text-3xl font-bold text-primary">98%</p>
+                <p className="text-sm text-muted-foreground">Pass Rate</p>
+            </div>
+            <div>
+                <p className="text-3xl font-bold text-primary">24</p>
+                <p className="text-sm text-muted-foreground">Active Events</p>
+            </div>
+        </CardContent>
+      </Card>
+
     </div>
   );
 }
