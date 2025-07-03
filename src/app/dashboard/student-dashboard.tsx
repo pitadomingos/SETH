@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { FileText, Award, Trophy, CheckCircle, Download, XCircle } from "lucide-react";
+import { FileText, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData } from "@/context/school-data-context";
 import { useToast } from '@/hooks/use-toast';
@@ -134,6 +134,31 @@ function AttendanceBreakdownChart() {
   );
 }
 
+function CompletionStatusContent({ hasPassed, areAllFeesPaid }) {
+  if (!hasPassed) {
+    return (
+      <p className="text-sm text-destructive">
+        You are not eligible for completion documents due to your current academic standing. Please consult with your academic advisor.
+      </p>
+    );
+  }
+
+  if (!areAllFeesPaid) {
+    return (
+      <p className="text-sm text-amber-600 dark:text-amber-500">
+        You have an outstanding balance on your account. Please clear all pending fees to enable document previews and downloads.
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-sm text-muted-foreground">
+      Congratulations! You have met all requirements for completion. You can now preview and download your official documents.
+    </p>
+  );
+}
+
+
 export default function StudentDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -147,12 +172,21 @@ export default function StudentDashboard() {
   const pendingAssignments = assignments.filter(a => a.status === 'pending' || a.status === 'overdue').sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   const recentGrades = grades.filter(g => g.studentId === studentId).slice(0, 4);
 
+  const studentGpa = useMemo(() => {
+    if (!studentId) return 0;
+    return calculateAverageGpa(studentId, grades);
+  }, [studentId, grades]);
+
+  const hasPassed = useMemo(() => studentGpa >= 2.0, [studentGpa]);
+
   const areAllFeesPaid = useMemo(() => {
     if (!studentId) return false;
     const studentFees = financeData.filter(f => f.studentId === studentId);
     if (studentFees.length === 0) return true; // No fees means they are considered paid up
     return studentFees.every(fee => (fee.totalAmount - fee.amountPaid) <= 0);
   }, [studentId, financeData]);
+  
+  const isEligibleForCompletion = hasPassed && areAllFeesPaid;
 
   const handleDownloadCertificate = () => {
     toast({
@@ -219,7 +253,13 @@ export default function StudentDashboard() {
        <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    {areAllFeesPaid ? <CheckCircle className="text-green-500"/> : <XCircle className="text-destructive"/>}
+                    {isEligibleForCompletion ? (
+                        <CheckCircle className="text-green-500"/>
+                    ) : !hasPassed ? (
+                         <XCircle className="text-destructive"/>
+                    ) : (
+                        <AlertTriangle className="text-amber-500" />
+                    )}
                     Completion Documents
                 </CardTitle>
                 <CardDescription>
@@ -227,22 +267,14 @@ export default function StudentDashboard() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                {areAllFeesPaid ? (
-                    <p className="text-sm text-muted-foreground">
-                        Congratulations on your hard work! All your fees are settled. You can now preview and download your official documents.
-                    </p>
-                ) : (
-                    <p className="text-sm text-destructive">
-                        You have an outstanding balance on your account. Please clear all pending fees to enable document previews and downloads.
-                    </p>
-                )}
+                 <CompletionStatusContent hasPassed={hasPassed} areAllFeesPaid={areAllFeesPaid} />
             </CardContent>
             <CardFooter className="flex flex-col items-start gap-2">
                 <div className="flex w-full gap-2">
                     {/* Certificate Dialog */}
                     <Dialog>
                         <DialogTrigger asChild>
-                            <Button disabled={!areAllFeesPaid} className="w-full">
+                            <Button disabled={!isEligibleForCompletion} className="w-full">
                                 <FileText className="mr-2 h-4 w-4" />
                                 Preview Certificate
                             </Button>
@@ -279,7 +311,7 @@ export default function StudentDashboard() {
                     {/* Transcript Dialog */}
                     <Dialog>
                         <DialogTrigger asChild>
-                            <Button variant="secondary" disabled={!areAllFeesPaid} className="w-full">
+                            <Button variant="secondary" disabled={!isEligibleForCompletion} className="w-full">
                                 <FileText className="mr-2 h-4 w-4" />
                                 Preview Transcript
                             </Button>
