@@ -58,19 +58,29 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       const allGrades: any[] = [];
       const allAttendance: any[] = [];
       const allFinance: any[] = [];
-      
+      const allEvents: any[] = [];
+      const schoolIdsOfChildren = new Set<string>();
+
       for (const schoolId in schoolData) {
         const school = schoolData[schoolId];
 
         const studentsInSchool = school.students
           .filter(s => childrenIds.includes(s.id))
           .map(s => ({ ...s, schoolName: school.profile.name }));
-        allStudents.push(...studentsInSchool);
 
+        if (studentsInSchool.length > 0) {
+            schoolIdsOfChildren.add(schoolId);
+        }
+
+        allStudents.push(...studentsInSchool);
         allGrades.push(...school.grades.filter(g => childrenIds.includes(g.studentId)));
         allAttendance.push(...school.attendance.filter(a => childrenIds.includes(a.studentId)));
         allFinance.push(...school.finance.filter(f => childrenIds.includes(f.studentId)));
       }
+
+      schoolIdsOfChildren.forEach(schoolId => {
+          allEvents.push(...schoolData[schoolId].events);
+      });
 
       const parentViewData = {
           profile: null,
@@ -78,8 +88,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           grades: allGrades,
           attendance: allAttendance,
           finance: allFinance,
+          events: allEvents,
           teachers: [], classes: [], admissions: [], exams: [],
-          assets: [], assignments: [], events: [],
+          assets: [], assignments: [],
           courses: { teacher: [], student: [] }
       };
       
