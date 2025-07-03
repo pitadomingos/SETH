@@ -59,12 +59,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (creds: LoginCredentials): Promise<boolean> => {
-    const userRecord = Object.values(mockUsers).find(
-      (record) => record.user.username.toLowerCase() === creds.username.toLowerCase() && record.role === creds.role
-    );
+    // Find user record by username first. The keys of mockUsers are the usernames.
+    const userRecord = mockUsers[creds.username.toLowerCase()];
     
-    if (!userRecord) return false;
+    // Check if user exists AND if the role from the form matches the user's actual role.
+    if (!userRecord || userRecord.role !== creds.role) {
+      return false;
+    }
 
+    // Now check password based on role.
     let correctPassword = '';
     switch (creds.role) {
       case 'Admin': correctPassword = 'admin123'; break;
@@ -84,6 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       return true;
     }
+    
     return false;
   };
 
