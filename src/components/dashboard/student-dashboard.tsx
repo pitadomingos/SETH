@@ -5,9 +5,10 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { FileText, Award, Trophy } from "lucide-react";
+import { FileText, Award, Trophy, CheckCircle, Download, XCircle } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData } from "@/context/school-data-context";
+import { useToast } from '@/hooks/use-toast';
 import { Pie, PieChart, Cell } from 'recharts';
 import {
   ChartContainer,
@@ -133,7 +134,8 @@ function AttendanceBreakdownChart() {
 
 export default function StudentDashboard() {
   const { user } = useAuth();
-  const { assignments, grades } = useSchoolData();
+  const { toast } = useToast();
+  const { assignments, grades, financeData } = useSchoolData();
   const studentIdMap = {
         student1: 'S001',
         student2: 'S101',
@@ -142,6 +144,20 @@ export default function StudentDashboard() {
   const studentId = studentIdMap[user?.username] || null;
   const pendingAssignments = assignments.filter(a => a.status === 'pending' || a.status === 'overdue').sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   const recentGrades = grades.filter(g => g.studentId === studentId).slice(0, 4);
+
+  const areAllFeesPaid = useMemo(() => {
+    if (!studentId) return false;
+    const studentFees = financeData.filter(f => f.studentId === studentId);
+    if (studentFees.length === 0) return true; // No fees means they are considered paid up
+    return studentFees.every(fee => (fee.totalAmount - fee.amountPaid) <= 0);
+  }, [studentId, financeData]);
+
+  const handleDownloadCertificate = () => {
+    toast({
+      title: "Certificate Download Started",
+      description: "Your completion certificate is being prepared. (This is a demo feature)",
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -190,6 +206,38 @@ export default function StudentDashboard() {
             </CardContent>
         </Card>
       </div>
+
+       <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    {areAllFeesPaid ? <CheckCircle className="text-green-500"/> : <XCircle className="text-destructive"/>}
+                    Completion Certificate
+                </CardTitle>
+                <CardDescription>
+                    Your official certificate of completion.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                {areAllFeesPaid ? (
+                    <p className="text-sm text-muted-foreground">
+                        Congratulations on your hard work! All your fees are settled. You can now download your certificate.
+                    </p>
+                ) : (
+                    <p className="text-sm text-destructive">
+                        You have an outstanding balance on your account. Please clear all pending fees to enable certificate emission.
+                    </p>
+                )}
+            </CardContent>
+            <CardFooter className="flex flex-col items-start gap-2">
+                <Button onClick={handleDownloadCertificate} disabled={!areAllFeesPaid} className="w-full">
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Certificate
+                </Button>
+                <p className="text-xs text-muted-foreground self-center">
+                    Certificate created by EduManage System {new Date().getFullYear()}
+                </p>
+            </CardFooter>
+        </Card>
     </div>
   );
 }

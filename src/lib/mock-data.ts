@@ -122,7 +122,7 @@ const northwoodFinance: FinanceRecord[] = [
   { id: 'FEE002', studentId: 'S002', studentName: 'James Wilson', description: 'Term 1 Tuition', totalAmount: 1200, amountPaid: 500, dueDate: '2024-08-31' },
   { id: 'FEE003', studentId: 'S003', studentName: 'Sofia Kim', description: 'Term 1 Tuition', totalAmount: 1500, amountPaid: 0, dueDate: '2024-07-31' }, // Overdue
   { id: 'FEE004', studentId: 'S009', studentName: 'Sophia Davis', description: 'Term 1 Tuition', totalAmount: 1200, amountPaid: 1200, dueDate: '2024-08-31' },
-  { id: 'FEE005', studentId: 'S001', studentName: 'Emma Rodriguez', description: 'Lab Fees', totalAmount: 150, amountPaid: 0, dueDate: '2024-09-15' },
+  { id: 'FEE005', studentId: 'S001', studentName: 'Emma Rodriguez', description: 'Lab Fees', totalAmount: 150, amountPaid: 150, dueDate: '2024-09-15' },
 ];
 
 
@@ -225,7 +225,7 @@ const maplewoodAttendance: Attendance[] = maplewoodStudents.flatMap(student => {
 
 const maplewoodFinance: FinanceRecord[] = [
   { id: 'FEE201', studentId: 'S201', studentName: 'Chloe Dubois', description: 'Semester 1 Fees', totalAmount: 3500, amountPaid: 1000, dueDate: '2024-09-01' },
-  { id: 'FEE202', studentId: 'S204', studentName: 'Lucas Martinez', description: 'Semester 1 Fees', totalAmount: 3500, amountPaid: 0, dueDate: '2024-07-01' },
+  { id: 'FEE202', studentId: 'S204', studentName: 'Lucas Martinez', description: 'Semester 1 Fees', totalAmount: 3500, amountPaid: 3500, dueDate: '2024-07-01' },
 ];
 
 
