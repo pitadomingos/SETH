@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -7,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { events } from '@/lib/mock-data';
 import { BookOpen, Calendar, ChevronRight, Loader2, PlusCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -23,7 +23,7 @@ type SubjectFormValues = z.infer<typeof subjectSchema>;
 export default function AcademicsPage() {
   const { role, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const { subjects, addSubject, teachersData } = useSchoolData();
+  const { subjects, addSubject, teachersData, events } = useSchoolData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
