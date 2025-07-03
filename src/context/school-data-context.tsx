@@ -73,8 +73,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     
-    if (role === 'Parent' && user?.childrenIds) {
-      const childrenIds = user.childrenIds;
+    if (role === 'Parent' && user?.email) {
+      const parentEmail = user.email;
       
       const allStudents: any[] = [];
       const allGrades: any[] = [];
@@ -82,22 +82,29 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       const allFinance: any[] = [];
       const allEvents: any[] = [];
       const schoolIdsOfChildren = new Set<string>();
+      const childrenIds = new Set<string>();
 
       for (const schoolIdKey in schoolData) {
         const school = schoolData[schoolIdKey];
 
-        const studentsInSchool = school.students
-          .filter(s => childrenIds.includes(s.id))
+        const childrenInSchool = school.students
+          .filter(s => s.parentEmail === parentEmail)
           .map(s => ({ ...s, schoolName: school.profile.name, schoolId: school.profile.id }));
 
-        if (studentsInSchool.length > 0) {
+        if (childrenInSchool.length > 0) {
             schoolIdsOfChildren.add(schoolIdKey);
-            allStudents.push(...studentsInSchool);
+            childrenInSchool.forEach(child => {
+                allStudents.push(child);
+                childrenIds.add(child.id);
+            });
         }
+      }
 
-        allGrades.push(...school.grades.filter(g => childrenIds.includes(g.studentId)));
-        allAttendance.push(...school.attendance.filter(a => childrenIds.includes(a.studentId)));
-        allFinance.push(...school.finance.filter(f => childrenIds.includes(f.studentId)));
+      for (const schoolIdKey in schoolData) {
+        const school = schoolData[schoolIdKey];
+        allGrades.push(...school.grades.filter(g => childrenIds.has(g.studentId)));
+        allAttendance.push(...school.attendance.filter(a => childrenIds.has(a.studentId)));
+        allFinance.push(...school.finance.filter(f => childrenIds.has(f.studentId)));
       }
 
       schoolIdsOfChildren.forEach(sId => {

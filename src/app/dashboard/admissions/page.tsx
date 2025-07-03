@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -23,6 +24,8 @@ const applicationSchema = z.object({
   appliedFor: z.string().min(1, "Please specify the grade being applied for."),
   formerSchool: z.string().min(2, "Former school is required."),
   grades: z.string().min(10, "Please provide a brief summary of previous grades."),
+  parentName: z.string().min(2, "Parent name is required."),
+  parentEmail: z.string().email("Invalid email address for parent."),
 });
 
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
@@ -47,6 +50,8 @@ export default function AdmissionsPage() {
       appliedFor: '',
       formerSchool: '',
       grades: '',
+      parentName: '',
+      parentEmail: '',
     },
   });
 
@@ -63,6 +68,8 @@ export default function AdmissionsPage() {
       status: 'Pending' as const,
       formerSchool: values.formerSchool,
       grades: values.grades,
+      parentName: values.parentName,
+      parentEmail: values.parentEmail,
     };
     setApplications([newApplication, ...applications]);
     form.reset();
@@ -85,7 +92,7 @@ export default function AdmissionsPage() {
           <DialogTrigger asChild>
             <Button><UserPlus className="mr-2 h-4 w-4" />New Application</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>New Admission Application</DialogTitle>
               <DialogDescription>
@@ -94,58 +101,86 @@ export default function AdmissionsPage() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Applicant Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Jane Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="appliedFor"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Applying for Grade</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Grade 9" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="formerSchool"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Former School</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Anytown Middle School" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="grades"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Former School Grades</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Summarize previous grades or note that a transcript is attached." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Applicant Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Jane Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="appliedFor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Applying for Grade</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Grade 9" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="parentName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Parent Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., John Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="parentEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Parent Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="e.g., j.doe@family.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="formerSchool"
+                    render={({ field }) => (
+                      <FormItem className="col-span-1 md:col-span-2">
+                        <FormLabel>Former School</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Anytown Middle School" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="grades"
+                    render={({ field }) => (
+                      <FormItem className="col-span-1 md:col-span-2">
+                        <FormLabel>Former School Grades</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Summarize previous grades or note that a transcript is attached." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button type="button" variant="secondary">
@@ -206,9 +241,8 @@ export default function AdmissionsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Applicant Name</TableHead>
+                <TableHead>Parent</TableHead>
                 <TableHead>Applied For</TableHead>
-                <TableHead>Former School</TableHead>
-                <TableHead>Grades Summary</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead><span className="sr-only">Actions</span></TableHead>
@@ -218,9 +252,8 @@ export default function AdmissionsPage() {
               {applications.map((application) => (
                 <TableRow key={application.id}>
                   <TableCell className="font-medium">{application.name}</TableCell>
+                  <TableCell>{application.parentName} <span className="text-muted-foreground">({application.parentEmail})</span></TableCell>
                   <TableCell>{application.appliedFor}</TableCell>
-                  <TableCell>{application.formerSchool}</TableCell>
-                  <TableCell>{application.grades}</TableCell>
                   <TableCell>{application.date}</TableCell>
                   <TableCell>
                     <Badge variant={
