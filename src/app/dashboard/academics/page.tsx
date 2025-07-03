@@ -12,6 +12,7 @@ import { BookOpen, Calendar, ChevronRight, Loader2, PlusCircle } from 'lucide-re
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { useSchoolData } from '@/context/school-data-context';
 
 const subjectSchema = z.object({
   name: z.string().min(2, "Subject name must be at least 2 characters."),
@@ -22,7 +23,7 @@ type SubjectFormValues = z.infer<typeof subjectSchema>;
 export default function AcademicsPage() {
   const { role } = useAuth();
   const router = useRouter();
-  const [subjects, setSubjects] = useState([...new Set(teachersData.map(t => t.subject))]);
+  const { subjects, addSubject } = useSchoolData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const form = useForm<SubjectFormValues>({
@@ -38,11 +39,7 @@ export default function AcademicsPage() {
   }
 
   function onSubmit(values: SubjectFormValues) {
-    // In a real app, you'd call an API here.
-    // For this demo, we'll just update the local state.
-    if (!subjects.includes(values.name)) {
-      setSubjects([...subjects, values.name].sort());
-    }
+    addSubject(values.name);
     form.reset();
     setIsDialogOpen(false);
   }

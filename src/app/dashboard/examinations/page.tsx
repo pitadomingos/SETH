@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { examsData as initialExamsData } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 import { ClipboardList, GraduationCap, Calendar as CalendarIcon, Clock, MapPin, PlusCircle, Loader2 } from 'lucide-react';
+import { useSchoolData } from '@/context/school-data-context';
 
 const examSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters."),
@@ -38,6 +39,7 @@ export default function ExaminationsPage() {
   const router = useRouter();
   const [exams, setExams] = useState(initialExamsData);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { examBoards } = useSchoolData();
 
   const form = useForm<ExamFormValues>({
     resolver: zodResolver(examSchema),
@@ -140,10 +142,9 @@ export default function ExaminationsPage() {
                                 </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                                <SelectItem value="Internal">Internal</SelectItem>
-                                <SelectItem value="Cambridge">Cambridge</SelectItem>
-                                <SelectItem value="IB">IB Diploma</SelectItem>
-                                <SelectItem value="State">State Board</SelectItem>
+                                {examBoards.map(board => (
+                                    <SelectItem key={board} value={board}>{board}</SelectItem>
+                                ))}
                             </SelectContent>
                             </Select>
                             <FormMessage />
