@@ -1,4 +1,13 @@
 
+export interface FinanceRecord {
+  id: string;
+  studentId: string;
+  studentName: string;
+  description: string;
+  totalAmount: number;
+  amountPaid: number;
+  dueDate: string;
+}
 
 interface SchoolData {
     profile: SchoolProfile;
@@ -7,7 +16,7 @@ interface SchoolData {
     classes: Class[];
     admissions: Admission[];
     exams: Exam[];
-    finance: Finance[];
+    finance: FinanceRecord[];
     assets: Asset[];
     assignments: Assignment[];
     grades: Grade[];
@@ -28,17 +37,16 @@ interface SchoolProfile {
   email: string;
   motto: string;
 }
-interface Student { id: string; name: string; grade: string; class: string; email: string; phone: string; address: string; gpa: number; }
+interface Student { id: string; name: string; grade: string; class: string; email: string; phone: string; address: string; gpa: number; schoolId?: string, schoolName?: string }
 interface Teacher { id: string; name: string; subject: string; email: string; phone: string; address: string; experience: string; qualifications: string; }
 interface Class { id: string; name: string; grade: string; teacher: string; students: number; room: string; }
 interface Admission { id: string; name: string; appliedFor: string; date: string; status: 'Pending' | 'Approved' | 'Rejected'; formerSchool: string; grades: string; }
 interface Exam { id: string; title: string; subject: string; grade: string; date: Date; time: string; duration: string; room: string; board: string; }
-interface Finance { studentId: string; studentName: string; amountDue: number; dueDate: string; status: 'Paid' | 'Pending' | 'Overdue'; }
 interface Asset { id: string; name: string; category: string; status: 'In Use' | 'Available' | 'Maintenance'; location: string; assignedTo: string; }
 interface Assignment { id: string; title: string; subject: string; grade: string; dueDate: string; status: 'pending' | 'submitted' | 'overdue'; }
 interface Grade { studentId: string; subject: string; grade: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D' | 'F'; date: Date; }
 interface Attendance { studentId: string; date: string; status: string; }
-interface SchoolEvent { date: Date; title: string; type: string; }
+interface SchoolEvent { date: Date; title: string; type: string; schoolName?: string; }
 interface Course { id: string; name: string; schedule?: string; students?: number; teacher?: string; grade?: string; progress?: number; }
 
 
@@ -108,12 +116,14 @@ const northwoodAttendance: Attendance[] = northwoodStudents.flatMap(student => {
   });
 });
 
-const northwoodFinance: Finance[] = [
-  { studentId: 'S001', studentName: 'Emma Rodriguez', amountDue: 1200, dueDate: '2024-06-30', status: 'Paid' },
-  { studentId: 'S002', studentName: 'James Wilson', amountDue: 1200, dueDate: '2024-06-30', status: 'Pending' },
-  { studentId: 'S003', studentName: 'Sofia Kim', amountDue: 1500, dueDate: '2024-06-30', status: 'Overdue' },
-  { studentId: 'S009', studentName: 'Sophia Davis', amountDue: 1200, dueDate: '2024-06-30', status: 'Paid' },
+const northwoodFinance: FinanceRecord[] = [
+  { id: 'FEE001', studentId: 'S001', studentName: 'Emma Rodriguez', description: 'Term 1 Tuition', totalAmount: 1200, amountPaid: 1200, dueDate: '2024-08-31' },
+  { id: 'FEE002', studentId: 'S002', studentName: 'James Wilson', description: 'Term 1 Tuition', totalAmount: 1200, amountPaid: 500, dueDate: '2024-08-31' },
+  { id: 'FEE003', studentId: 'S003', studentName: 'Sofia Kim', description: 'Term 1 Tuition', totalAmount: 1500, amountPaid: 0, dueDate: '2024-07-31' }, // Overdue
+  { id: 'FEE004', studentId: 'S009', studentName: 'Sophia Davis', description: 'Term 1 Tuition', totalAmount: 1200, amountPaid: 1200, dueDate: '2024-08-31' },
+  { id: 'FEE005', studentId: 'S001', studentName: 'Emma Rodriguez', description: 'Lab Fees', totalAmount: 150, amountPaid: 0, dueDate: '2024-09-15' },
 ];
+
 
 // --- Data for School 2: Oakridge Academy ---
 const oakridgeProfile: SchoolProfile = {
@@ -162,11 +172,12 @@ const oakridgeAttendance: Attendance[] = oakridgeStudents.flatMap(student => {
   });
 });
 
-const oakridgeFinance: Finance[] = [
-  { studentId: 'S101', studentName: 'Benjamin Carter', amountDue: 2200, dueDate: '2024-06-30', status: 'Paid' },
-  { studentId: 'S102', studentName: 'Charlotte Lee', amountDue: 2200, dueDate: '2024-06-30', status: 'Pending' },
-  { studentId: 'S104', studentName: 'Miguel Rodriguez', amountDue: 2200, dueDate: '2024-06-30', status: 'Paid' },
+const oakridgeFinance: FinanceRecord[] = [
+  { id: 'FEE101', studentId: 'S101', studentName: 'Benjamin Carter', description: 'Annual Tuition', totalAmount: 2200, amountPaid: 2200, dueDate: '2024-08-31' },
+  { id: 'FEE102', studentId: 'S102', studentName: 'Charlotte Lee', description: 'Annual Tuition', totalAmount: 2200, amountPaid: 0, dueDate: '2024-08-31' },
+  { id: 'FEE103', studentId: 'S104', studentName: 'Miguel Rodriguez', description: 'Annual Tuition', totalAmount: 2200, amountPaid: 2200, dueDate: '2024-08-31' },
 ];
+
 
 // --- Data for School 3: Maplewood International School ---
 const maplewoodProfile: SchoolProfile = {
@@ -211,9 +222,9 @@ const maplewoodAttendance: Attendance[] = maplewoodStudents.flatMap(student => {
   });
 });
 
-const maplewoodFinance: Finance[] = [
-  { studentId: 'S201', studentName: 'Chloe Dubois', amountDue: 3500, dueDate: '2024-06-30', status: 'Pending' },
-  { studentId: 'S204', studentName: 'Lucas Martinez', amountDue: 3500, dueDate: '2024-06-30', status: 'Overdue' },
+const maplewoodFinance: FinanceRecord[] = [
+  { id: 'FEE201', studentId: 'S201', studentName: 'Chloe Dubois', description: 'Semester 1 Fees', totalAmount: 3500, amountPaid: 1000, dueDate: '2024-09-01' },
+  { id: 'FEE202', studentId: 'S204', studentName: 'Lucas Martinez', description: 'Semester 1 Fees', totalAmount: 3500, amountPaid: 0, dueDate: '2024-07-01' },
 ];
 
 

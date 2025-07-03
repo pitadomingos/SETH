@@ -2,8 +2,10 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { schoolData } from '@/lib/mock-data';
+import { schoolData, FinanceRecord as InitialFinanceRecord } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
+
+export type FinanceRecord = InitialFinanceRecord;
 
 interface SchoolProfile {
   name: string;
@@ -22,7 +24,8 @@ interface SchoolDataContextType {
   classesData: any[];
   admissionsData: any[];
   examsData: any[];
-  financeData: any[];
+  financeData: FinanceRecord[];
+  recordPayment: (feeId: string, amount: number) => void;
   assetsData: any[];
   assignments: any[];
   grades: any[];
@@ -43,16 +46,23 @@ const initialExamBoards = ['Internal', 'Cambridge', 'IB', 'State Board', 'Advanc
 export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { user, role } = useAuth();
   const [currentSchoolData, setCurrentSchoolData] = useState<any>(null);
+  const [financeData, setFinanceData] = useState<FinanceRecord[]>([]);
   const [subjects, setSubjects] = useState<string[]>([]);
   const [examBoards, setExamBoards] = useState<string[]>(initialExamBoards);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setIsLoading(true);
+    let schoolId: string | undefined;
+
     if (role === 'GlobalAdmin') {
-        setCurrentSchoolData(null);
-        setIsLoading(false);
-    } else if (role === 'Parent' && user?.childrenIds) {
+      setCurrentSchoolData(null);
+      setFinanceData([]);
+      setIsLoading(false);
+      return;
+    }
+    
+    if (role === 'Parent' && user?.childrenIds) {
       const childrenIds = user.childrenIds;
       
       const allStudents: any[] = [];
@@ -62,25 +72,25 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       const allEvents: any[] = [];
       const schoolIdsOfChildren = new Set<string>();
 
-      for (const schoolId in schoolData) {
-        const school = schoolData[schoolId];
+      for (const schoolIdKey in schoolData) {
+        const school = schoolData[schoolIdKey];
 
         const studentsInSchool = school.students
           .filter(s => childrenIds.includes(s.id))
           .map(s => ({ ...s, schoolName: school.profile.name, schoolId: school.profile.id }));
 
         if (studentsInSchool.length > 0) {
-            schoolIdsOfChildren.add(schoolId);
+            schoolIdsOfChildren.add(schoolIdKey);
+            allStudents.push(...studentsInSchool);
         }
 
-        allStudents.push(...studentsInSchool);
         allGrades.push(...school.grades.filter(g => childrenIds.includes(g.studentId)));
         allAttendance.push(...school.attendance.filter(a => childrenIds.includes(a.studentId)));
         allFinance.push(...school.finance.filter(f => childrenIds.includes(f.studentId)));
       }
 
-      schoolIdsOfChildren.forEach(schoolId => {
-          const school = schoolData[schoolId];
+      schoolIdsOfChildren.forEach(sId => {
+          const school = schoolData[sId];
           const schoolEventsWithSchoolName = school.events.map(event => ({
               ...event,
               schoolName: school.profile.name
@@ -93,7 +103,6 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           students: allStudents,
           grades: allGrades,
           attendance: allAttendance,
-          finance: allFinance,
           events: allEvents,
           teachers: [], classes: [], admissions: [], exams: [],
           assets: [], assignments: [],
@@ -101,11 +110,14 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       };
       
       setCurrentSchoolData(parentViewData);
+      setFinanceData(allFinance);
       setSubjects([]);
       setIsLoading(false);
     } else if (user?.schoolId && schoolData[user.schoolId]) {
-      const data = schoolData[user.schoolId];
+      schoolId = user.schoolId;
+      const data = schoolData[schoolId];
       setCurrentSchoolData(data);
+      setFinanceData(data.finance || []);
       if(data.teachers) {
           const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
           setSubjects(initialSubjects);
@@ -113,6 +125,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
     } else {
         setCurrentSchoolData(null);
+        setFinanceData([]);
         setIsLoading(false);
     }
   }, [user, role]);
@@ -128,6 +141,18 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setExamBoards(prev => [...prev, board].sort());
     }
   };
+
+  const recordPayment = (feeId: string, amount: number) => {
+    setFinanceData(prevData =>
+      prevData.map(fee => {
+        if (fee.id === feeId) {
+          const newAmountPaid = Math.min(fee.totalAmount, fee.amountPaid + amount);
+          return { ...fee, amountPaid: newAmountPaid };
+        }
+        return fee;
+      })
+    );
+  };
   
   const value = {
     schoolProfile: currentSchoolData?.profile || null,
@@ -137,7 +162,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     classesData: currentSchoolData?.classes || [],
     admissionsData: currentSchoolData?.admissions || [],
     examsData: currentSchoolData?.exams || [],
-    financeData: currentSchoolData?.finance || [],
+    financeData,
+    recordPayment,
     assetsData: currentSchoolData?.assets || [],
     assignments: currentSchoolData?.assignments || [],
     grades: currentSchoolData?.grades || [],
