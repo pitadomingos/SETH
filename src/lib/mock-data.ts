@@ -150,6 +150,51 @@ const oakridgeFinance: Finance[] = [
   { studentId: 'S102', studentName: 'Charlotte Lee', amountDue: 2200, dueDate: '2024-06-30', status: 'Pending' },
 ];
 
+// --- Data for School 3: Maplewood International School ---
+const maplewoodProfile: SchoolProfile = {
+  id: 'maplewood',
+  name: 'Maplewood International',
+  head: 'Ms. Eleanor Vance',
+  address: '789 Global St, Metropolis, USA 67890',
+  phone: '+1 (555) 456-7890',
+  email: 'info@maplewood.edu',
+  motto: 'Globally Minded, Locally Rooted',
+};
+
+const maplewoodStudents: Student[] = [
+  { id: 'S201', name: 'Chloe Dubois', grade: '10', class: 'A', email: 'c.dubois@maplewood.com', phone: '+1 (555) 201-2010', address: '1 Eiffel Tower Rd', gpa: 3.8 },
+  { id: 'S202', name: 'Kenji Tanaka', grade: '11', class: 'B', email: 'k.tanaka@maplewood.com', phone: '+1 (555) 202-2020', address: '2 Tokyo Skytree Ave', gpa: 3.9 },
+  { id: 'S203', name: 'Priya Singh', grade: '9', class: 'C', email: 'p.singh@maplewood.com', phone: '+1 (555) 203-2030', address: '3 Taj Mahal Blvd', gpa: 3.7 },
+];
+
+const maplewoodTeachers: Teacher[] = [
+  { id: 'T201', name: 'Mr. David Lee', subject: 'History', email: 'd.lee@maplewood.com', phone: '+1 (555) 301-3010', address: '10 History Lane', experience: '15 years', qualifications: 'M.Ed. in History' },
+];
+
+const maplewoodClasses: Class[] = [
+  { id: 'C201', name: 'Grade 9 History', grade: '9', teacher: 'Mr. David Lee', students: 22, room: 'H1' },
+];
+
+const maplewoodGrades: Grade[] = [
+    { studentId: 'S201', subject: 'History', grade: 'A', points: 92, date: new Date(now.getFullYear(), now.getMonth() - 1) },
+];
+
+const maplewoodAttendance: Attendance[] = maplewoodStudents.flatMap(student => {
+  return Array.from({length: 30}).map((_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const rand = Math.random();
+    let status = 'present';
+    if (rand > 0.98) status = 'absent';
+    else if (rand > 0.95) status = 'late';
+    return { studentId: student.id, date: date.toISOString().split('T')[0], status };
+  });
+});
+
+const maplewoodFinance: Finance[] = [
+  { studentId: 'S201', studentName: 'Chloe Dubois', amountDue: 3500, dueDate: '2024-06-30', status: 'Pending' },
+];
+
 
 export const schoolData: Record<string, SchoolData> = {
   northwood: {
@@ -225,4 +270,38 @@ export const schoolData: Record<string, SchoolData> = {
         ],
     },
   },
+  maplewood: {
+    profile: maplewoodProfile,
+    students: maplewoodStudents,
+    teachers: maplewoodTeachers,
+    classes: maplewoodClasses,
+    grades: maplewoodGrades,
+    attendance: maplewoodAttendance,
+    finance: maplewoodFinance,
+    admissions: [
+        { id: 'MAP-ADM001', name: 'Leo Tolstoy', appliedFor: 'Grade 9', date: '2024-06-01', status: 'Pending', formerSchool: 'Literary Prep', grades: 'Strong in humanities.' },
+    ],
+    exams: [
+        { id: 'MAP-EXM001', title: 'World History Final', subject: 'History', grade: '9', date: new Date(new Date().setDate(new Date().getDate() + 15)), time: '10:00', duration: '90 minutes', room: 'H1', board: 'IB' },
+    ],
+    assets: [
+        { id: 'MAP-ASSET001', name: 'Smart Board', category: 'AV Equipment', status: 'In Use', location: 'H1', assignedTo: 'Mr. David Lee' },
+    ],
+    assignments: [
+        { id: 'MAP-A001', title: 'Essay on Renaissance Art', subject: 'History', grade: '9', dueDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(), status: 'pending' },
+    ],
+    events: [
+        { date: new Date(new Date().setDate(new Date().getDate() + 20)), title: 'International Day', type: 'Cultural' },
+    ],
+    courses: {
+        teacher: [
+            { id: 'HIST101', name: 'World History', schedule: 'Mon, Fri 13:00-14:30', students: 22 },
+        ],
+        student: [
+            { id: 'HIST101', name: 'World History', teacher: 'Mr. David Lee', grade: 'A', progress: 95 },
+        ],
+    },
+  },
 };
+
+    
