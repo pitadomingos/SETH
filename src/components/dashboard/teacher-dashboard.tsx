@@ -126,12 +126,15 @@ export default function TeacherDashboard() {
           <CardContent className="space-y-3">
             <div className="text-3xl font-bold">{teacherCourses.length} Courses</div>
             <p className="text-sm text-muted-foreground">You are currently teaching {teacherCourses.reduce((acc, c) => acc + c.students, 0)} students this semester.</p>
+            <div className="flex gap-2 pt-2">
+                 <Link href="/dashboard/schedule" passHref className="flex-1">
+                  <Button variant="secondary" className="w-full">View Schedule</Button>
+                </Link>
+                 <Link href="/dashboard/leaderboards" passHref className="flex-1">
+                  <Button variant="outline" className="w-full">Rankings</Button>
+                </Link>
+            </div>
           </CardContent>
-          <CardFooter>
-             <Link href="/dashboard/schedule" passHref className="w-full">
-              <Button variant="outline" className="w-full">View Schedule</Button>
-            </Link>
-          </CardFooter>
         </Card>
         <Card>
           <CardHeader>

@@ -32,7 +32,8 @@ import {
     BookUser,
     ListTodo,
     Package,
-    Building
+    Building,
+    Award
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -47,6 +48,7 @@ interface NavLink {
 const commonLinks: NavLink[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/schedule', label: 'Schedules', icon: BookMarked },
+  { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Award },
   { href: '/dashboard/events', label: 'Events', icon: CalendarDays },
   { href: '/dashboard/profile', label: 'Profile', icon: User },
 ];

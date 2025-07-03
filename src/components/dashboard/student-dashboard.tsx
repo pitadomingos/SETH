@@ -1,9 +1,12 @@
 'use client';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { useMemo } from 'react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Award } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from 'next/link';
+import { FileText, Award, Trophy } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { assignments, grades, studentCourses, attendance } from "@/lib/mock-data";
+import { assignments, grades, studentCourses, attendance, studentsData } from "@/lib/mock-data";
 import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart, Cell } from 'recharts';
 import {
   ChartContainer,
@@ -15,56 +18,45 @@ import {
 } from '@/components/ui/chart';
 import { format } from "date-fns";
 
-function SubjectPerformanceChart() {
-  const chartData = studentCourses.map(course => ({
-    subject: course.name.split(' ')[0],
-    progress: course.progress,
-    fill: `hsl(var(--chart-${Math.floor(Math.random() * 5) + 1}))`
-  }));
 
-  const chartConfig = {
-    progress: {
-      label: "Progress",
-    },
-    ...studentCourses.reduce((acc, course) => {
-        const subject = course.name.split(' ')[0];
-        acc[subject] = {
-            label: subject,
-            color: `hsl(var(--chart-${Math.floor(Math.random() * 5) + 1}))`
-        }
-        return acc;
-    }, {})
-  } satisfies ChartConfig
+const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Subject Performance</CardTitle>
-        <CardDescription>Your progress in each course</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-          <BarChart accessibilityLayer data={chartData}>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="subject"
-              tickLine={false}
-              tickMargin={10}
-              axisLine={false}
-              tickFormatter={(value) => value.slice(0, 3)}
-            />
-            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-            <Bar dataKey="progress" radius={8}>
-                {chartData.map((entry) => (
-                    <Cell key={`cell-${entry.subject}`} fill={entry.fill} />
-                ))}
-            </Bar>
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
-  );
+const calculateAverageGpa = (studentId: string) => {
+    const studentGrades = grades.filter(g => g.studentId === studentId);
+    if (studentGrades.length === 0) return 0;
+    const totalPoints = studentGrades.reduce((acc, g) => acc + (gpaMap[g.grade] || 0), 0);
+    return (totalPoints / studentGrades.length);
+};
+
+function RankCard() {
+    const studentId = 'S001'; // hardcoded for demo
+  
+    const allStudentsWithGpa = useMemo(() => studentsData.map(student => ({
+        ...student,
+        calculatedGpa: parseFloat(calculateAverageGpa(student.id).toFixed(2)),
+    })).sort((a, b) => b.calculatedGpa - a.calculatedGpa), []);
+
+    const studentRank = useMemo(() => allStudentsWithGpa.findIndex(s => s.id === studentId) + 1, [allStudentsWithGpa, studentId]);
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Trophy /> School Rank</CardTitle>
+                <CardDescription>Your overall academic position.</CardDescription>
+            </CardHeader>
+            <CardContent className="text-center">
+                <p className="text-6xl font-bold text-primary">{studentRank > 0 ? studentRank : 'N/A'}</p>
+                <p className="text-muted-foreground">out of {allStudentsWithGpa.length} students</p>
+            </CardContent>
+            <CardFooter>
+                 <Link href="/dashboard/leaderboards" passHref className="w-full">
+                    <Button variant="outline" className="w-full">View Leaderboards</Button>
+                </Link>
+            </CardFooter>
+        </Card>
+    );
 }
+
 
 function AttendanceBreakdownChart() {
   const studentAttendance = attendance.filter(a => a.studentId === 'S001');
@@ -124,7 +116,7 @@ export default function StudentDashboard() {
         <p className="text-muted-foreground">Welcome back, {user?.name}</p>
       </header>
        <div className="grid gap-6 lg:grid-cols-2">
-          <SubjectPerformanceChart />
+          <RankCard />
           <AttendanceBreakdownChart />
           <Card>
             <CardHeader>
