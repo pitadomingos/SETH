@@ -13,9 +13,11 @@ const completedTasks = [
   'Admin panel for user viewing and system data management',
   'Student, Teacher, and Class management pages (view-only)',
   'AI-powered Lesson Planner for Teachers',
-  'Parent Portal with AI-powered advice and multi-child support',
+  'Dynamic Parent Portal with multi-child, multi-school support and AI-powered advice',
+  'Personalized leaderboards view for parents',
   'Schedule, Profile, and Events pages for all roles',
-  'Implemented Admissions, Academics, Examinations, Attendance, and Finance pages',
+  'Implemented Admissions, Academics, Examinations, and Attendance pages',
+  'Upgraded Finance module with partial payments and ad-hoc transaction creation',
   'Added Asset Management, Sports, and Reports pages',
   'Created a "Leaderboards" page for academic rankings',
   'Added a "School Profile" page for admins',
@@ -24,6 +26,7 @@ const completedTasks = [
 
 const upcomingFeatures = [
   'Implement full CRUD (Create, Read, Update, Delete) on all management pages',
+  'Develop a configurable fee management system for admins (e.g., termly tuition, ad-hoc fees)',
   'Connect mock data to a real database (e.g., Firestore) to enable persistence',
   'Implement a site-wide notification and communication hub',
   'Enable profile editing with photo uploads for all users',

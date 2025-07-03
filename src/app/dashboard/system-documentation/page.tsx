@@ -88,8 +88,8 @@ export default function SystemDocumentationPage() {
               <p className="text-sm text-muted-foreground">The app currently uses static mock data from <code>/src/lib/mock-data.ts</code> for rapid prototyping and to simulate a multi-school environment.</p>
             </div>
             <div>
-              <h3 className="font-semibold">Context for State Management</h3>
-              <p className="text-sm text-muted-foreground">React Context (<code>SchoolDataProvider</code> and <code>AuthProvider</code>) is used to manage and share application-wide data and user state, laying the groundwork for a more dynamic, database-driven system.</p>
+              <h3 className="font-semibold">Stateful Context for Interactivity</h3>
+              <p className="text-sm text-muted-foreground">React Context (<code>SchoolDataProvider</code>) now manages dynamic, in-memory state changes. This simulates a real backend by allowing actions like recording payments or adding new fee transactions to persist and be reflected across the app for the duration of the user's session.</p>
             </div>
           </CardContent>
         </Card>

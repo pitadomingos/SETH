@@ -44,7 +44,8 @@ export default function UserManualPage() {
                   <li><strong>Dashboard:</strong> Get a high-level overview of your school's statistics, including student counts, financial summaries, and performance charts.</li>
                   <li><strong>School Profile:</strong> View your school's core information like name, address, and contact details.</li>
                   <li><strong>User Management:</strong> View student and teacher profiles via the Students and Teachers pages.</li>
-                  <li><strong>Admissions, Academics, Finance, etc:</strong> Manage all core school functions from their respective pages in the sidebar.</li>
+                  <li><strong>Finance:</strong> Track school-wide revenue and expenses. Record partial or full payments for student fees and create new ad-hoc fee transactions (e.g., for lab fees or field trips).</li>
+                  <li><strong>Admissions, Academics, etc:</strong> Manage all core school functions from their respective pages in the sidebar.</li>
                   <li><strong>Leaderboards:</strong> View top student rankings across the school by overall GPA, class, and subject.</li>
                   <li><strong>Admin Panel:</strong> Manage system-wide data, such as adding new Examination Boards.</li>
                 </ul>
@@ -98,9 +99,9 @@ export default function UserManualPage() {
                  <ul className="list-disc space-y-2 pl-6">
                   <li><strong>Dashboard:</strong> Get a complete overview of your children's school life. Click on a child's card to update the dashboard with their specific information.</li>
                   <li><strong>AI-Powered Insights:</strong> Receive AI-generated advice on how to support your selected child's learning, including their strengths and areas for improvement.</li>
-                  <li><strong>Dynamic Information:</strong> View fee status, recent grades, and a grade distribution chart for the currently selected child.</li>
-                  <li><strong>Leaderboards:</strong> Check the school-wide leaderboards to see top student rankings.</li>
-                  <li><strong>Events:</strong> Keep track of important school events and holidays for all schools your children attend.</li>
+                  <li><strong>Finance Portal:</strong> View detailed fee information for each child, including total amount, amount paid, and outstanding balance.</li>
+                  <li><strong>Leaderboards:</strong> View a personalized report of your children's academic rankings in their school, class, and subjects.</li>
+                  <li><strong>Events:</strong> Keep track of important school events, with clear labels for which school an event belongs to.</li>
                   <li><strong>Profile:</strong> View your personal details.</li>
                 </ul>
               </AccordionContent>
