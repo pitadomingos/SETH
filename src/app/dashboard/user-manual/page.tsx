@@ -2,29 +2,46 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake } from 'lucide-react';
+import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe } from 'lucide-react';
 
 export default function UserManualPage() {
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>
         <h2 className="text-3xl font-bold tracking-tight">User Manual</h2>
-        <p className="text-muted-foreground">Guides for each user role on how to use EduManage.</p>
+        <p className="text-muted-foreground">Guides for each user role on how to use EduManage. The application is designed to be fully responsive on desktops, tablets, and mobile devices.</p>
       </header>
 
       <Card>
         <CardContent className="p-6">
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="admin">
+            <AccordionItem value="global-admin">
               <AccordionTrigger>
                 <div className="flex items-center gap-3">
-                  <ShieldCheck className="h-5 w-5 text-primary" />
-                  <span className="text-lg font-semibold">Administrator Guide</span>
+                  <Globe className="h-5 w-5 text-primary" />
+                  <span className="text-lg font-semibold">Global Administrator Guide</span>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pt-2 text-muted-foreground">
                 <ul className="list-disc space-y-2 pl-6">
-                  <li><strong>Dashboard:</strong> Get a high-level overview of school statistics, including student counts, financial summaries, and performance charts.</li>
+                  <li><strong>Global Dashboard:</strong> Get a high-level overview of all schools in the system.</li>
+                  <li><strong>School Management:</strong> View key statistics for each school and access their individual management dashboards (simulation).</li>
+                  <li><strong>System Documentation:</strong> Access technical documentation about the application's architecture and technology stack.</li>
+                  <li><strong>To-Do List:</strong> View the project's development progress and upcoming features.</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="admin">
+              <AccordionTrigger>
+                <div className="flex items-center gap-3">
+                  <ShieldCheck className="h-5 w-5 text-primary" />
+                  <span className="text-lg font-semibold">School Administrator Guide</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 text-muted-foreground">
+                <ul className="list-disc space-y-2 pl-6">
+                  <li><strong>Dashboard:</strong> Get a high-level overview of your school's statistics, including student counts, financial summaries, and performance charts.</li>
                   <li><strong>School Profile:</strong> View your school's core information like name, address, and contact details.</li>
                   <li><strong>User Management:</strong> View student and teacher profiles via the Students and Teachers pages.</li>
                   <li><strong>Admissions, Academics, Finance, etc:</strong> Manage all core school functions from their respective pages in the sidebar.</li>
@@ -79,10 +96,10 @@ export default function UserManualPage() {
               </AccordionTrigger>
               <AccordionContent className="pt-2 text-muted-foreground">
                  <ul className="list-disc space-y-2 pl-6">
-                  <li><strong>Dashboard:</strong> Get a complete overview of your child's school life in one place.</li>
-                  <li><strong>AI-Powered Insights:</strong> Receive AI-generated advice on how to support your child's learning, including their strengths and areas for improvement.</li>
-                  <li><strong>Fee Status:</strong> Check the status of school fee payments.</li>
-                  <li><strong>Recent Grades:</strong> Stay updated with your child's latest academic performance.</li>
+                  <li><strong>Dashboard:</strong> Get a complete overview of your children's school life in one place, even if they attend different schools in the system.</li>
+                  <li><strong>AI-Powered Insights:</strong> Receive AI-generated advice on how to support your children's learning, including their strengths and areas for improvement.</li>
+                  <li><strong>Fee Status:</strong> Check the status of school fee payments for each child.</li>
+                  <li><strong>Recent Grades:</strong> Stay updated with your children's latest academic performance.</li>
                   <li><strong>Events:</strong> Keep track of important school events and holidays.</li>
                   <li><strong>Profile:</strong> View your personal details.</li>
                 </ul>

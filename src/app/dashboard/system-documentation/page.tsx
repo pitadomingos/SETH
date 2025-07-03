@@ -2,7 +2,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Code, GitBranch, LayoutTemplate, Palette, Rocket, Loader2, Database, Share2 } from 'lucide-react';
+import { Code, GitBranch, LayoutTemplate, Palette, Rocket, Loader2, Database, Share2, Smartphone } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function SystemDocumentationPage() {
@@ -84,12 +84,12 @@ export default function SystemDocumentationPage() {
           </CardHeader>
           <CardContent className="space-y-4">
              <div>
-              <h3 className="font-semibold">Mock Data</h3>
-              <p className="text-sm text-muted-foreground">The app currently uses static mock data from <code>/src/lib/mock-data.ts</code> for rapid prototyping and demonstration.</p>
+              <h3 className="font-semibold">Mock Data Simulation</h3>
+              <p className="text-sm text-muted-foreground">The app currently uses static mock data from <code>/src/lib/mock-data.ts</code> for rapid prototyping and to simulate a multi-school environment.</p>
             </div>
             <div>
-              <h3 className="font-semibold">Shared State via Context</h3>
-              <p className="text-sm text-muted-foreground">React Context (<code>SchoolDataProvider</code>) is used to manage and share application-wide data like subjects and exam boards, laying the groundwork for a more dynamic, database-driven system.</p>
+              <h3 className="font-semibold">Context for State Management</h3>
+              <p className="text-sm text-muted-foreground">React Context (<code>SchoolDataProvider</code> and <code>AuthProvider</code>) is used to manage and share application-wide data and user state, laying the groundwork for a more dynamic, database-driven system.</p>
             </div>
           </CardContent>
         </Card>
@@ -102,6 +102,17 @@ export default function SystemDocumentationPage() {
           <CardContent className="space-y-4">
             <p className="text-sm">The application uses Tailwind CSS with CSS variables for theming, defined in <code>/src/app/globals.css</code>. This allows for easy customization of the color palette.</p>
             <p className="text-sm">Dark mode is supported out-of-the-box and can be toggled using the theme switcher in the header. The <code>next-themes</code> package manages the theme state and applies the `.dark` class to the HTML element.</p>
+          </CardContent>
+        </Card>
+
+         <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Smartphone /> Responsiveness & Mobile</CardTitle>
+            <CardDescription>How the app adapts to different devices.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm">The app is built with a responsive-first approach using Tailwind CSS, ensuring it is usable across devices, from desktops to mobile phones.</p>
+            <p className="text-sm">Future development plans include further optimizing the mobile experience and building dedicated native applications for iOS and Android to provide the best possible performance and accessibility for all users.</p>
           </CardContent>
         </Card>
       </div>

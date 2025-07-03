@@ -6,19 +6,17 @@ import { CheckCircle2, Circle, Clock, Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 
 const completedTasks = [
-  'User authentication with three roles (Admin, Teacher, Student)',
+  'User authentication with roles (Global Admin, Admin, Teacher, Student, Parent)',
   'Role-based dashboards and side navigation',
+  'Multi-school simulation with dynamic data loading based on user role',
+  'Global Admin dashboard for viewing all schools',
   'Admin panel for user viewing and system data management',
   'Student, Teacher, and Class management pages (view-only)',
   'AI-powered Lesson Planner for Teachers',
+  'Parent Portal with AI-powered advice and multi-child support',
   'Schedule, Profile, and Events pages for all roles',
-  'Implemented Admissions page with "New Application" form',
-  'Implemented Academics page with "Add Subject" form',
-  'Implemented Examinations page with scheduling and multi-board support',
-  'Implemented Attendance page with class/date filtering',
-  'Implemented Finance, Sports, and Reports pages with data overviews',
-  'Added Asset Management page for tracking school resources',
-  'Enhanced dashboards with relevant charts and data cards for each role',
+  'Implemented Admissions, Academics, Examinations, Attendance, and Finance pages',
+  'Added Asset Management, Sports, and Reports pages',
   'Created a "Leaderboards" page for academic rankings',
   'Added a "School Profile" page for admins',
   'Personalized login loading screen with school and user details',
@@ -27,14 +25,15 @@ const completedTasks = [
 const upcomingFeatures = [
   'Implement full CRUD (Create, Read, Update, Delete) on all management pages',
   'Connect mock data to a real database (e.g., Firestore) to enable persistence',
-  'Implement a site-wide notification and communication hub for announcements and messaging',
-  'Develop a Parent/Guardian Portal for viewing student progress and communicating with teachers',
+  'Implement a site-wide notification and communication hub',
   'Enable profile editing with photo uploads for all users',
-  'Expand AI features with student performance analysis and an early warning system to identify at-risk students',
+  'Expand AI features with student performance analysis and an early warning system',
   'Implement an advanced report generation engine for custom data exports',
-  'Build a resource booking system for labs, projectors, and other shared assets',
-  'Introduce student-centric features like goal setting and digital portfolios to boost motivation',
+  'Build a resource booking system for labs and other shared assets',
+  'Introduce student-centric features like goal setting and digital portfolios',
   'Develop district, provincial, and national data views for higher-level administration',
+  'Enhance mobile-first responsive design for a seamless experience on phones and tablets',
+  'Plan and scope development for native Android and iOS applications',
 ];
 
 export default function TodoListPage() {
