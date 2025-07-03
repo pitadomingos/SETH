@@ -1,22 +1,51 @@
-
 'use client';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { teachersData, events } from '@/lib/mock-data';
-import { BookOpen, Calendar, ChevronRight } from 'lucide-react';
+import { BookOpen, Calendar, ChevronRight, Loader2, PlusCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+
+const subjectSchema = z.object({
+  name: z.string().min(2, "Subject name must be at least 2 characters."),
+});
+
+type SubjectFormValues = z.infer<typeof subjectSchema>;
 
 export default function AcademicsPage() {
   const { role } = useAuth();
   const router = useRouter();
+  const [subjects, setSubjects] = useState([...new Set(teachersData.map(t => t.subject))]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const form = useForm<SubjectFormValues>({
+    resolver: zodResolver(subjectSchema),
+    defaultValues: {
+      name: '',
+    },
+  });
 
   if (role && role !== 'Admin') {
       router.push('/dashboard');
       return null;
   }
-  
-  const subjects = [...new Set(teachersData.map(t => t.subject))];
+
+  function onSubmit(values: SubjectFormValues) {
+    // In a real app, you'd call an API here.
+    // For this demo, we'll just update the local state.
+    if (!subjects.includes(values.name)) {
+      setSubjects([...subjects, values.name].sort());
+    }
+    form.reset();
+    setIsDialogOpen(false);
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
@@ -25,7 +54,47 @@ export default function AcademicsPage() {
             <h2 className="text-3xl font-bold tracking-tight">Academics</h2>
             <p className="text-muted-foreground">Manage curriculum, subjects, and academic programs.</p>
         </div>
-        <Button>Add Subject</Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button><PlusCircle className="mr-2 h-4 w-4" /> Add Subject</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add New Subject</DialogTitle>
+              <DialogDescription>
+                Enter the name of the new subject to add it to the curriculum.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subject Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Computer Science" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" variant="secondary">
+                      Cancel
+                    </Button>
+                  </DialogClose>
+                  <Button type="submit" disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Subject
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-2">
