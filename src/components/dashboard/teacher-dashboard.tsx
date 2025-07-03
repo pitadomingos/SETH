@@ -17,18 +17,41 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { analyzeClassPerformance, AnalyzeClassPerformanceOutput } from "@/ai/flows/analyze-class-performance";
 import { useToast } from "@/hooks/use-toast";
 
+// Helper to standardize grades for the chart
+const getStandardLetterGrade = (grade: string): string => {
+  const numericGrade = parseFloat(grade);
+  if (!isNaN(numericGrade) && isFinite(numericGrade)) {
+    if (numericGrade >= 16) return 'A';
+    if (numericGrade >= 14) return 'B';
+    if (numericGrade >= 10) return 'C';
+    if (numericGrade >= 8) return 'D';
+    return 'F';
+  }
+  const letter = grade.charAt(0).toUpperCase();
+  if (['A', 'B', 'C', 'D', 'F'].includes(letter)) {
+    return letter;
+  }
+  return 'N/A'; // Fallback for any unexpected grade formats
+};
+
 function GradeDistributionChart() {
   const { grades } = useSchoolData();
-  const gradeCounts = grades.reduce((acc, grade) => {
-    const gradeLetter = grade.grade.replace(/[\+\-]/, '');
-    acc[gradeLetter] = (acc[gradeLetter] || 0) + 1;
-    return acc;
-  }, {});
+  
+  const chartData = useMemo(() => {
+    const counts = grades.reduce((acc, gradeItem) => {
+      const standardGrade = getStandardLetterGrade(gradeItem.grade);
+      if (standardGrade !== 'N/A') {
+        acc[standardGrade] = (acc[standardGrade] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
 
-  const chartData = Object.keys(gradeCounts).map(grade => ({
-    grade,
-    count: gradeCounts[grade],
-  }));
+    const orderedGrades = ['A', 'B', 'C', 'D', 'F'];
+    return orderedGrades.map(g => ({
+      grade: g,
+      count: counts[g] || 0,
+    }));
+  }, [grades]);
 
   const chartConfig = {
     count: {
@@ -48,7 +71,7 @@ function GradeDistributionChart() {
           <RechartsBarChart accessibilityLayer data={chartData}>
             <CartesianGrid vertical={false} />
             <XAxis dataKey="grade" tickLine={false} tickMargin={10} axisLine={false} />
-            <YAxis />
+            <YAxis allowDecimals={false} />
             <ChartTooltip content={<ChartTooltipContent hideLabel />} />
             <Bar dataKey="count" fill="var(--color-count)" radius={8} />
           </RechartsBarChart>
