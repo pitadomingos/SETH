@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { PenSquare, BookMarked, Bell, BarChart, LineChart } from "lucide-react";
+import { PenSquare, BookMarked, Bell, BrainCircuit, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData } from "@/context/school-data-context";
 import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis } from 'recharts';
@@ -12,6 +12,10 @@ import {
   ChartConfig
 } from '@/components/ui/chart';
 import { addDays, format } from 'date-fns';
+import { useMemo, useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { analyzeClassPerformance, AnalyzeClassPerformanceOutput } from "@/ai/flows/analyze-class-performance";
+import { useToast } from "@/hooks/use-toast";
 
 function GradeDistributionChart() {
   const { grades } = useSchoolData();
@@ -98,6 +102,119 @@ function UpcomingDeadlinesChart() {
   );
 }
 
+function AIClassPerformanceAnalyzer() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { classesData, teachersData, studentsData, grades } = useSchoolData();
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<AnalyzeClassPerformanceOutput | null>(null);
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
+
+  const teacherInfo = useMemo(() => {
+    return teachersData.find(t => t.name === user?.name);
+  }, [teachersData, user]);
+
+  const teacherClasses = useMemo(() => {
+    if (!teacherInfo) return [];
+    return classesData.filter(c => c.teacher === teacherInfo.name);
+  }, [classesData, teacherInfo]);
+
+  const handleAnalysis = async (classId: string) => {
+    if (!classId) return;
+    setSelectedClassId(classId);
+    setIsLoading(true);
+    setResult(null);
+
+    try {
+      const selectedClass = classesData.find(c => c.id === classId);
+      if (!selectedClass || !teacherInfo) {
+        throw new Error('Could not find class or teacher information.');
+      }
+
+      // Find students in the selected class
+      const studentsInClass = studentsData.filter(s => 
+        s.grade === selectedClass.grade &&
+        s.class === selectedClass.name.split('-')[1].trim()
+      ).map(s => s.id);
+      
+      // Get grades for those students in the teacher's subject
+      const relevantGrades = grades
+        .filter(g => studentsInClass.includes(g.studentId) && g.subject === teacherInfo.subject)
+        .map(g => g.grade);
+
+      const analysisResult = await analyzeClassPerformance({
+        className: selectedClass.name,
+        subject: teacherInfo.subject,
+        grades: relevantGrades,
+      });
+
+      setResult(analysisResult);
+
+      if (analysisResult.interventionNeeded) {
+        toast({
+          title: 'AI Recommendation',
+          description: `Intervention suggested for ${selectedClass.name}.`,
+        });
+      }
+
+    } catch (error) {
+      console.error("Failed to analyze class performance:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Analysis Failed',
+        description: 'Could not get AI-powered analysis. Please try again later.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (teacherClasses.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><BrainCircuit /> AI Performance Analyst</CardTitle>
+        <CardDescription>Select a class to get an AI-powered performance analysis and recommendations.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Select onValueChange={handleAnalysis} value={selectedClassId}>
+          <SelectTrigger className="w-full md:w-[280px]">
+            <SelectValue placeholder="Select a class to analyze..." />
+          </SelectTrigger>
+          <SelectContent>
+            {teacherClasses.map(c => (
+              <SelectItem key={c.id} value={c.id}>{c.name} - {teacherInfo?.subject}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {isLoading && (
+          <div className="flex items-center justify-center p-8 text-muted-foreground">
+            <Loader2 className="h-6 w-6 animate-spin mr-2"/>
+            <p>Analyzing performance data...</p>
+          </div>
+        )}
+
+        {result && (
+          <div className="space-y-4 pt-4 text-sm">
+            <div className={`p-4 rounded-md ${result.interventionNeeded ? 'bg-destructive/10 border border-destructive/20' : 'bg-muted'}`}>
+                <h4 className="font-semibold mb-1">Analysis:</h4>
+                <p className="text-muted-foreground">{result.analysis}</p>
+            </div>
+             <div className={`p-4 rounded-md ${result.interventionNeeded ? 'bg-destructive/10 border border-destructive/20' : 'bg-muted'}`}>
+                <h4 className="font-semibold mb-1">Recommendation:</h4>
+                <p className="text-muted-foreground">{result.recommendation}</p>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
@@ -161,6 +278,7 @@ export default function TeacherDashboard() {
           </CardFooter>
         </Card>
       </div>
+      <AIClassPerformanceAnalyzer />
       <div className="grid gap-6 lg:grid-cols-2">
         <GradeDistributionChart />
         <UpcomingDeadlinesChart />
