@@ -2,7 +2,7 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe } from 'lucide-react';
+import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Award } from 'lucide-react';
 
 export default function UserManualPage() {
   return (
@@ -45,7 +45,7 @@ export default function UserManualPage() {
                   <li><strong>School Profile:</strong> View your school's core information like name, address, and contact details.</li>
                   <li><strong>User Management:</strong> View student and teacher profiles via the Students and Teachers pages.</li>
                   <li><strong>Admissions, Academics, Finance, etc:</strong> Manage all core school functions from their respective pages in the sidebar.</li>
-                  <li><strong>Leaderboards:</strong> View top student rankings across the school.</li>
+                  <li><strong>Leaderboards:</strong> View top student rankings across the school by overall GPA, class, and subject.</li>
                   <li><strong>Admin Panel:</strong> Manage system-wide data, such as adding new Examination Boards.</li>
                 </ul>
               </AccordionContent>
@@ -63,7 +63,7 @@ export default function UserManualPage() {
                   <li><strong>Dashboard:</strong> Quickly access common actions, view your courses, see upcoming deadlines, and analyze grade distributions.</li>
                   <li><strong>AI Lesson Planner:</strong> Use the AI-powered tool to automatically generate detailed lesson plans.</li>
                   <li><strong>Schedules:</strong> View your teaching schedule and assigned courses.</li>
-                  <li><strong>Leaderboards:</strong> Check academic rankings to see how students are performing.</li>
+                  <li><strong>Leaderboards:</strong> Check academic rankings to see how students are performing overall, within classes, and by subject.</li>
                   <li><strong>Profile:</strong> View your personal information.</li>
                 </ul>
               </AccordionContent>
@@ -96,11 +96,11 @@ export default function UserManualPage() {
               </AccordionTrigger>
               <AccordionContent className="pt-2 text-muted-foreground">
                  <ul className="list-disc space-y-2 pl-6">
-                  <li><strong>Dashboard:</strong> Get a complete overview of your children's school life in one place, even if they attend different schools in the system.</li>
-                  <li><strong>AI-Powered Insights:</strong> Receive AI-generated advice on how to support your children's learning, including their strengths and areas for improvement.</li>
-                  <li><strong>Fee Status:</strong> Check the status of school fee payments for each child.</li>
-                  <li><strong>Recent Grades:</strong> Stay updated with your children's latest academic performance.</li>
-                  <li><strong>Events:</strong> Keep track of important school events and holidays.</li>
+                  <li><strong>Dashboard:</strong> Get a complete overview of your children's school life. Click on a child's card to update the dashboard with their specific information.</li>
+                  <li><strong>AI-Powered Insights:</strong> Receive AI-generated advice on how to support your selected child's learning, including their strengths and areas for improvement.</li>
+                  <li><strong>Dynamic Information:</strong> View fee status, recent grades, and a grade distribution chart for the currently selected child.</li>
+                  <li><strong>Leaderboards:</strong> Check the school-wide leaderboards to see top student rankings.</li>
+                  <li><strong>Events:</strong> Keep track of important school events and holidays for all schools your children attend.</li>
                   <li><strong>Profile:</strong> View your personal details.</li>
                 </ul>
               </AccordionContent>

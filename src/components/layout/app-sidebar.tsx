@@ -97,8 +97,9 @@ const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     ...studentAndTeacherLinks,
   ],
   Parent: [
-      ...commonLinks,
-      { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
+    ...commonLinks,
+    { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Award },
+    { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
   ],
 };
 

@@ -36,7 +36,7 @@ interface Exam { id: string; title: string; subject: string; grade: string; date
 interface Finance { studentId: string; studentName: string; amountDue: number; dueDate: string; status: 'Paid' | 'Pending' | 'Overdue'; }
 interface Asset { id: string; name: string; category: string; status: 'In Use' | 'Available' | 'Maintenance'; location: string; assignedTo: string; }
 interface Assignment { id: string; title: string; subject: string; grade: string; dueDate: string; status: 'pending' | 'submitted' | 'overdue'; }
-interface Grade { studentId: string; subject: string; grade: string; points: number; date: Date; }
+interface Grade { studentId: string; subject: string; grade: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D' | 'F'; date: Date; }
 interface Attendance { studentId: string; date: string; status: string; }
 interface SchoolEvent { date: Date; title: string; type: string; }
 interface Course { id: string; name: string; schedule?: string; students?: number; teacher?: string; grade?: string; progress?: number; }
@@ -67,20 +67,30 @@ const northwoodStudents: Student[] = [
 const northwoodTeachers: Teacher[] = [
   { id: 'T001', name: 'Prof. Michael Chen', subject: 'Mathematics', email: 'm.chen@edumanage.com', phone: '+1 (555) 111-2222', address: '123 Calculus Rd, Mathville', experience: '8 years', qualifications: 'Ph.D. in Mathematics' },
   { id: 'T002', name: 'Dr. Lisa Anderson', subject: 'Physics', email: 'l.anderson@edumanage.com', phone: '+1 (555) 222-3333', address: '456 Quantum Way, Physburg', experience: '12 years', qualifications: 'Ph.D. in Physics' },
+  { id: 'T003', name: 'Ms. Jennifer Davis', subject: 'English', email: 'j.davis@northwood.edu', phone: '+1 (555) 111-3333', address: '101 Literature Lane', experience: '5 years', qualifications: 'M.A. in English' },
 ];
 
 const northwoodClasses: Class[] = [
   { id: 'C001', name: 'Class 9-A', grade: '9', teacher: 'Ms. Jennifer Davis', students: 28, room: '101' },
+  { id: 'C002', name: 'Class 9-C', grade: '9', teacher: 'Prof. Michael Chen', students: 22, room: '103' },
   { id: 'C003', name: 'Class 10-A', grade: '10', teacher: 'Prof. Michael Chen', students: 30, room: '201' },
   { id: 'C004', name: 'Class 11-B', grade: '11', teacher: 'Dr. Lisa Anderson', students: 25, room: '301' },
 ];
 
 const now = new Date();
 const northwoodGrades: Grade[] = [
-    { studentId: 'S001', subject: 'Mathematics', grade: 'A-', points: 88, date: new Date(now.getFullYear(), now.getMonth() - 2) },
-    { studentId: 'S001', subject: 'Physics', grade: 'B+', points: 85, date: new Date(now.getFullYear(), now.getMonth() - 2) },
-    { studentId: 'S002', subject: 'Mathematics', grade: 'B', points: 82, date: new Date(now.getFullYear(), now.getMonth() - 1) },
-    { studentId: 'S003', subject: 'English', grade: 'C+', points: 75, date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S001', subject: 'Mathematics', grade: 'A-', date: new Date(now.getFullYear(), now.getMonth() - 2) },
+  { studentId: 'S001', subject: 'Physics', grade: 'B+', date: new Date(now.getFullYear(), now.getMonth() - 2) },
+  { studentId: 'S001', subject: 'English', grade: 'A', date: new Date(now.getFullYear(), now.getMonth() - 2) },
+  { studentId: 'S002', subject: 'Mathematics', grade: 'B', date: new Date(now.getFullYear(), now.getMonth() - 1) },
+  { studentId: 'S002', subject: 'Physics', grade: 'B-', date: new Date(now.getFullYear(), now.getMonth() - 1) },
+  { studentId: 'S003', subject: 'English', grade: 'A+', date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S003', subject: 'Physics', grade: 'A', date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S004', subject: 'English', grade: 'B+', date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S005', subject: 'Mathematics', grade: 'A+', date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S006', subject: 'English', grade: 'C+', date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S007', subject: 'Physics', grade: 'A-', date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S008', subject: 'Mathematics', grade: 'B', date: new Date(now.getFullYear(), now.getMonth()) },
 ];
 
 const northwoodAttendance: Attendance[] = northwoodStudents.flatMap(student => {
@@ -125,14 +135,15 @@ const oakridgeTeachers: Teacher[] = [
 ];
 
 const oakridgeClasses: Class[] = [
-  { id: 'C101', name: 'Grade 9 Geo', grade: '9', teacher: 'Mr. Steven Shaw', students: 25, room: 'G1' },
-  { id: 'C102', name: 'Grade 10 Bio', grade: '10', teacher: 'Ms. Rachel Adams', students: 30, room: 'L1' },
+  { id: 'C101', name: 'Class 9-B', grade: '9', teacher: 'Mr. Steven Shaw', students: 25, room: 'G1' },
+  { id: 'C102', name: 'Class 10-A', grade: '10', teacher: 'Ms. Rachel Adams', students: 30, room: 'L1' },
 ];
 
 const oakridgeGrades: Grade[] = [
-    { studentId: 'S101', subject: 'Biology', grade: 'A', points: 91, date: new Date(now.getFullYear(), now.getMonth() - 1) },
-    { studentId: 'S102', subject: 'Geography', grade: 'B+', points: 86, date: new Date(now.getFullYear(), now.getMonth() - 1) },
-    { studentId: 'S104', subject: 'Geography', grade: 'B', points: 84, date: new Date(now.getFullYear(), now.getMonth()) },
+    { studentId: 'S101', subject: 'Biology', grade: 'A', date: new Date(now.getFullYear(), now.getMonth() - 1) },
+    { studentId: 'S102', subject: 'Geography', grade: 'B+', date: new Date(now.getFullYear(), now.getMonth() - 1) },
+    { studentId: 'S104', subject: 'Geography', grade: 'B', date: new Date(now.getFullYear(), now.getMonth()) },
+    { studentId: 'S104', subject: 'Biology', grade: 'C+', date: new Date(now.getFullYear(), now.getMonth()) },
 ];
 
 const oakridgeAttendance: Attendance[] = oakridgeStudents.flatMap(student => {
@@ -175,11 +186,11 @@ const maplewoodTeachers: Teacher[] = [
 ];
 
 const maplewoodClasses: Class[] = [
-  { id: 'C201', name: 'Grade 9 History', grade: '9', teacher: 'Mr. David Lee', students: 22, room: 'H1' },
+  { id: 'C201', name: 'Class 9-C', grade: '9', teacher: 'Mr. David Lee', students: 22, room: 'H1' },
 ];
 
 const maplewoodGrades: Grade[] = [
-    { studentId: 'S201', subject: 'History', grade: 'A', points: 92, date: new Date(now.getFullYear(), now.getMonth() - 1) },
+    { studentId: 'S201', subject: 'History', grade: 'A', date: new Date(now.getFullYear(), now.getMonth() - 1) },
 ];
 
 const maplewoodAttendance: Attendance[] = maplewoodStudents.flatMap(student => {
@@ -228,6 +239,7 @@ export const schoolData: Record<string, SchoolData> = {
     events: [
         { date: new Date(new Date().setDate(new Date().getDate() + 3)), title: 'Science Fair', type: 'Academic' },
         { date: new Date(new Date().setDate(new Date().getDate() + 10)), title: 'Mid-term Exams Start', type: 'Academic' },
+        { date: new Date(new Date().setDate(new Date().getDate() + 12)), title: 'Basketball Match vs. Southside', type: 'Sports' },
     ],
     courses: {
         teacher: [
@@ -263,6 +275,7 @@ export const schoolData: Record<string, SchoolData> = {
     ],
     events: [
         { date: new Date(new Date().setDate(new Date().getDate() + 5)), title: 'Welcome Orientation', type: 'Meeting' },
+        { date: new Date(new Date().setDate(new Date().getDate() + 18)), title: 'Annual Sports Day', type: 'Sports' },
     ],
     courses: {
         teacher: [

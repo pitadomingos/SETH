@@ -30,14 +30,25 @@ const calculateAverageGpa = (studentId: string, grades) => {
 function RankCard() {
     const { user } = useAuth();
     const { studentsData, grades } = useSchoolData();
-    const studentId = user?.username === 'student1' ? 'S001' : 'S101'; // hardcoded for demo
+
+    // This logic needs to find the student's ID from the user object.
+    // For the demo, we map usernames to student IDs.
+    const studentIdMap = {
+        student1: 'S001',
+        student2: 'S101',
+        student3: 'S201',
+    };
+    const studentId = studentIdMap[user?.username] || null;
   
     const allStudentsWithGpa = useMemo(() => studentsData.map(student => ({
         ...student,
         calculatedGpa: parseFloat(calculateAverageGpa(student.id, grades).toFixed(2)),
     })).sort((a, b) => b.calculatedGpa - a.calculatedGpa), [studentsData, grades]);
 
-    const studentRank = useMemo(() => allStudentsWithGpa.findIndex(s => s.id === studentId) + 1, [allStudentsWithGpa, studentId]);
+    const studentRank = useMemo(() => {
+        if (!studentId) return -1;
+        return allStudentsWithGpa.findIndex(s => s.id === studentId) + 1;
+    }, [allStudentsWithGpa, studentId]);
 
     return (
         <Card>
@@ -61,7 +72,12 @@ function RankCard() {
 function AttendanceBreakdownChart() {
   const { user } = useAuth();
   const { attendance } = useSchoolData();
-  const studentId = user?.username === 'student1' ? 'S001' : 'S101';
+  const studentIdMap = {
+        student1: 'S001',
+        student2: 'S101',
+        student3: 'S201',
+    };
+  const studentId = studentIdMap[user?.username] || null;
   const studentAttendance = attendance.filter(a => a.studentId === studentId);
   const breakdown = studentAttendance.reduce((acc, record) => {
     acc[record.status] = (acc[record.status] || 0) + 1;
@@ -109,7 +125,12 @@ function AttendanceBreakdownChart() {
 export default function StudentDashboard() {
   const { user } = useAuth();
   const { assignments, grades } = useSchoolData();
-  const studentId = user?.username === 'student1' ? 'S001' : 'S101';
+  const studentIdMap = {
+        student1: 'S001',
+        student2: 'S101',
+        student3: 'S201',
+    };
+  const studentId = studentIdMap[user?.username] || null;
   const pendingAssignments = assignments.filter(a => a.status === 'pending' || a.status === 'overdue').sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   const recentGrades = grades.filter(g => g.studentId === studentId).slice(0, 4);
 

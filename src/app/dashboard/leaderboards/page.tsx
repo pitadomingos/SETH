@@ -79,7 +79,7 @@ export default function LeaderboardsPage() {
         if (!classInfo) return [];
 
         const studentsInClass = allStudentsWithGpa.filter(s =>
-            s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1]
+            s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim()
         );
         return studentsInClass.sort((a, b) => b.calculatedGpa - a.calculatedGpa);
     }, [selectedClass, classesData, allStudentsWithGpa]);
