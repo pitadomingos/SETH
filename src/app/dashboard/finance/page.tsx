@@ -6,11 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { financeData } from '@/lib/mock-data';
+import { useSchoolData } from '@/context/school-data-context';
 import { DollarSign, TrendingUp, TrendingDown, Hourglass, PlusCircle } from 'lucide-react';
 
 export default function FinancePage() {
   const { role } = useAuth();
+  const { financeData } = useSchoolData();
   const router = useRouter();
 
   if (role && role !== 'Admin') {

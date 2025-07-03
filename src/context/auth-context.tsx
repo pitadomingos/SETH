@@ -6,8 +6,10 @@ import { Loader2 } from 'lucide-react';
 export type Role = 'Admin' | 'Teacher' | 'Student';
 
 interface User {
+  username: string;
   name: string;
   email: string;
+  schoolId: string;
 }
 
 interface LoginCredentials {
@@ -26,16 +28,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const mockUsers: Record<Exclude<Role, null>, User> = {
-  Admin: { name: 'Dr. Sarah Johnson', email: 's.johnson@edumanage.com' },
-  Teacher: { name: 'Prof. Michael Chen', email: 'm.chen@edumanage.com' },
-  Student: { name: 'Emma Rodriguez', email: 'e.rodriguez@edumanage.com' },
+const mockUsers: Record<string, { user: User, role: Role }> = {
+  admin1: { user: { username: 'admin1', name: 'Dr. Sarah Johnson', email: 's.johnson@northwood.edu', schoolId: 'northwood' }, role: 'Admin' },
+  teacher1: { user: { username: 'teacher1', name: 'Prof. Michael Chen', email: 'm.chen@northwood.edu', schoolId: 'northwood' }, role: 'Teacher' },
+  student1: { user: { username: 'student1', name: 'Emma Rodriguez', email: 'e.rodriguez@northwood.edu', schoolId: 'northwood' }, role: 'Student' },
+  admin2: { user: { username: 'admin2', name: 'Mr. James Maxwell', email: 'j.maxwell@oakridge.edu', schoolId: 'oakridge' }, role: 'Admin' },
+  teacher2: { user: { username: 'teacher2', name: 'Ms. Rachel Adams', email: 'r.adams@oakridge.edu', schoolId: 'oakridge' }, role: 'Teacher' },
+  student2: { user: { username: 'student2', name: 'Benjamin Carter', email: 'b.carter@oakridge.edu', schoolId: 'oakridge' }, role: 'Student' },
 };
 
 const credentials: Record<string, string> = {
-    admin: 'admin123',
-    teacher: 'teacher123',
-    student: 'student123',
+    admin1: 'admin123',
+    teacher1: 'teacher123',
+    student1: 'student123',
+    admin2: 'admin123',
+    teacher2: 'teacher123',
+    student2: 'student123',
 };
 
 
@@ -46,26 +54,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     try {
+      const savedUser = localStorage.getItem('user');
       const savedRole = localStorage.getItem('userRole') as Role;
-      if (savedRole && ['Admin', 'Teacher', 'Student'].includes(savedRole)) {
+      if (savedUser && savedRole) {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
         setRole(savedRole);
-        setUser(mockUsers[savedRole]);
       }
     } catch (e) {
-      console.error("Local storage is not available.");
+      console.error("Local storage is not available or data is corrupted.");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   const login = async (creds: LoginCredentials): Promise<boolean> => {
-    const expectedPassword = credentials[creds.username.toLowerCase()];
-    if (creds.role && creds.username.toLowerCase() === creds.role.toLowerCase() && expectedPassword === creds.password) {
-      const newRole = creds.role;
-      setRole(newRole);
-      setUser(mockUsers[newRole]);
+    const userRecord = Object.values(mockUsers).find(
+      (record) => record.user.username.toLowerCase() === creds.username.toLowerCase() && record.role === creds.role
+    );
+    
+    if (userRecord && credentials[creds.username.toLowerCase()] === creds.password) {
+      const { user, role } = userRecord;
+      setUser(user);
+      setRole(role);
       try {
-        localStorage.setItem('userRole', newRole);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('userRole', role);
       } catch (e) {
         console.error("Local storage is not available.");
       }
@@ -79,6 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     try {
       localStorage.removeItem('userRole');
+      localStorage.removeItem('user');
       window.location.href = '/';
     } catch (e) {
       console.error("Local storage is not available.");

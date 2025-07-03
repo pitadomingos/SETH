@@ -1,6 +1,6 @@
 
 'use client';
-import { classesData } from '@/lib/mock-data';
+import { useSchoolData } from '@/context/school-data-context';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, Presentation, MapPin, UserPlus } from 'lucide-react';
@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 
 export default function ClassesPage() {
     const { role } = useAuth();
+    const { classesData } = useSchoolData();
     const router = useRouter();
 
     if (role && role !== 'Admin') {

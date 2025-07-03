@@ -9,10 +9,11 @@ import {
   ChartTooltipContent,
   ChartConfig
 } from '@/components/ui/chart';
-import { studentsData, financeData, attendance, grades } from "@/lib/mock-data";
+import { useSchoolData } from "@/context/school-data-context";
 import { format, subDays } from "date-fns";
 
 function AttendanceTrendChart() {
+  const { attendance } = useSchoolData();
   const thirtyDaysAgo = subDays(new Date(), 30);
   const relevantAttendance = attendance.filter(a => new Date(a.date) >= thirtyDaysAgo);
   
@@ -30,7 +31,7 @@ function AttendanceTrendChart() {
 
   const chartData = Object.keys(dailyData).map(date => ({
     date,
-    percentage: Math.round((dailyData[date].present / dailyData[date].total) * 100)
+    percentage: dailyData[date].total > 0 ? Math.round((dailyData[date].present / dailyData[date].total) * 100) : 0
   })).sort((a, b) => new Date(a.date) - new Date(b.date));
 
 
@@ -75,6 +76,7 @@ function AttendanceTrendChart() {
 }
 
 function AcademicPerformanceChart() {
+    const { grades } = useSchoolData();
     const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
     
     const monthlyGpa = grades.reduce((acc, grade) => {
@@ -132,6 +134,7 @@ function AcademicPerformanceChart() {
 
 
 export default function AdminDashboard() {
+  const { studentsData, teachersData, classesData, financeData, events } = useSchoolData();
   const totalRevenue = financeData.filter(f => f.status === 'Paid').reduce((acc, f) => acc + f.amountDue, 0);
   const pendingFees = financeData.filter(f => f.status === 'Pending').reduce((acc, f) => acc + f.amountDue, 0);
   const overdueFees = financeData.filter(f => f.status === 'Overdue').reduce((acc, f) => acc + f.amountDue, 0);
@@ -159,7 +162,7 @@ export default function AdminDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">82</div>
+            <div className="text-2xl font-bold">{teachersData.length}</div>
             <p className="text-xs text-muted-foreground">+2 since last month</p>
           </CardContent>
         </Card>
@@ -169,7 +172,7 @@ export default function AdminDashboard() {
             <School className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">54</div>
+            <div className="text-2xl font-bold">{classesData.length}</div>
             <p className="text-xs text-muted-foreground">4 new classes this semester</p>
           </CardContent>
         </Card>
@@ -179,7 +182,7 @@ export default function AdminDashboard() {
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
+            <div className="text-2xl font-bold">{events.length}</div>
             <p className="text-xs text-muted-foreground">Science fair next week</p>
           </CardContent>
         </Card>

@@ -2,14 +2,13 @@
 
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { users } from '@/lib/mock-data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, UserPlus, Loader2, PlusCircle, Settings } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -29,8 +28,28 @@ export default function AdminPanelPage() {
     const { role, isLoading: authLoading } = useAuth();
     const router = useRouter();
 
-    const { examBoards, addExamBoard } = useSchoolData();
+    const { examBoards, addExamBoard, studentsData, teachersData } = useSchoolData();
     const [isBoardDialogOpen, setIsBoardDialogOpen] = useState(false);
+
+    const users = useMemo(() => {
+        const studentUsers = studentsData.map(s => ({
+            id: s.id,
+            name: s.name,
+            email: s.email,
+            role: 'Student' as const,
+            status: 'Active' as const
+        }));
+
+        const teacherUsers = teachersData.map(t => ({
+            id: t.id,
+            name: t.name,
+            email: t.email,
+            role: 'Teacher' as const,
+            status: 'Active' as const
+        }));
+        
+        return [...teacherUsers, ...studentUsers];
+    }, [studentsData, teachersData]);
 
     const boardForm = useForm<BoardFormValues>({
         resolver: zodResolver(boardSchema),

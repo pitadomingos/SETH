@@ -4,12 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { events } from '@/lib/mock-data';
+import { useSchoolData } from '@/context/school-data-context';
 import { Trophy, Users, CalendarPlus, PlusCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function SportsPage() {
   const { role } = useAuth();
+  const { events } = useSchoolData();
   const router = useRouter();
 
   if (role && role !== 'Admin') {

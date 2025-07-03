@@ -16,10 +16,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { examsData as initialExamsData } from '@/lib/mock-data';
+import { useSchoolData } from '@/context/school-data-context';
 import { cn } from '@/lib/utils';
 import { ClipboardList, GraduationCap, Calendar as CalendarIcon, Clock, MapPin, PlusCircle, Loader2 } from 'lucide-react';
-import { useSchoolData } from '@/context/school-data-context';
 
 const examSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters."),
@@ -36,10 +35,10 @@ type ExamFormValues = z.infer<typeof examSchema>;
 
 export default function ExaminationsPage() {
   const { role } = useAuth();
+  const { examsData, examBoards } = useSchoolData();
   const router = useRouter();
-  const [exams, setExams] = useState(initialExamsData);
+  const [exams, setExams] = useState(examsData);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { examBoards } = useSchoolData();
 
   const form = useForm<ExamFormValues>({
     resolver: zodResolver(examSchema),
@@ -258,7 +257,7 @@ export default function ExaminationsPage() {
                     <div className="flex flex-col items-end gap-2">
                          <Badge variant={exam.board === 'Internal' ? 'secondary' : 'default'}>{exam.board}</Badge>
                          <span className="px-3 py-1 text-sm rounded-full bg-muted text-muted-foreground">
-                            {exam.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            {new Date(exam.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </span>
                     </div>
                 </CardHeader>
@@ -270,7 +269,7 @@ export default function ExaminationsPage() {
                         </div>
                          <div className="flex items-center gap-2">
                             <CalendarIcon className="h-4 w-4" />
-                            <span>{exam.date.toLocaleDateString('en-US', { weekday: 'long' })}</span>
+                            <span>{new Date(exam.date).toLocaleDateString('en-US', { weekday: 'long' })}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4" />

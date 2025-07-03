@@ -7,9 +7,10 @@ import { Loader2, Building, User, Mail, Phone, MapPin, Edit, Star } from 'lucide
 import { useSchoolData } from '@/context/school-data-context';
 
 export default function SchoolProfilePage() {
-  const { role, isLoading } = useAuth();
+  const { role, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const { schoolProfile } = useSchoolData();
+  const { schoolProfile, isLoading: schoolLoading } = useSchoolData();
+  const isLoading = authLoading || schoolLoading;
 
   if (isLoading) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -18,6 +19,10 @@ export default function SchoolProfilePage() {
   if (!isLoading && role !== 'Admin') {
     router.push('/dashboard');
     return null;
+  }
+
+  if (!schoolProfile) {
+    return <div className="flex h-full items-center justify-center">School data not found.</div>
   }
 
   return (

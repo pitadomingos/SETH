@@ -3,9 +3,10 @@
 import * as React from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { events } from '@/lib/mock-data';
+import { useSchoolData } from '@/context/school-data-context';
 
 export default function EventsPage() {
+  const { events } = useSchoolData();
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const eventDates = events.map(event => event.date);
 

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { PenSquare, BookMarked, Bell, BarChart, LineChart } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { teacherCourses, events, grades, assignments } from "@/lib/mock-data";
+import { useSchoolData } from "@/context/school-data-context";
 import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import {
   ChartContainer,
@@ -14,6 +14,7 @@ import {
 import { addDays, format } from 'date-fns';
 
 function GradeDistributionChart() {
+  const { grades } = useSchoolData();
   const gradeCounts = grades.reduce((acc, grade) => {
     const gradeLetter = grade.grade.replace(/[\+\-]/, '');
     acc[gradeLetter] = (acc[gradeLetter] || 0) + 1;
@@ -54,6 +55,7 @@ function GradeDistributionChart() {
 }
 
 function UpcomingDeadlinesChart() {
+  const { assignments, events } = useSchoolData();
   const today = new Date();
   const nextWeek = Array.from({ length: 7 }, (_, i) => addDays(today, i));
   
@@ -99,6 +101,8 @@ function UpcomingDeadlinesChart() {
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
+  const { courses, events } = useSchoolData();
+  const teacherCourses = courses.teacher;
   const nextEvent = events.filter(e => e.date >= new Date()).sort((a,b) => a.date.getTime() - b.date.getTime())[0];
 
   return (

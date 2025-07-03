@@ -7,26 +7,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { studentsData, classesData, grades } from '@/lib/mock-data';
+import { useSchoolData } from '@/context/school-data-context';
 import { Award } from 'lucide-react';
 
-// Re-using the GPA map from admin dashboard
 const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
 
-const calculateAverageGpa = (studentId: string) => {
+const calculateAverageGpa = (studentId: string, grades: any[]) => {
     const studentGrades = grades.filter(g => g.studentId === studentId);
     if (studentGrades.length === 0) return 0;
     const totalPoints = studentGrades.reduce((acc, g) => acc + (gpaMap[g.grade] || 0), 0);
     return (totalPoints / studentGrades.length).toFixed(2);
 };
-
-const allStudentsWithGpa = studentsData.map(student => ({
-    ...student,
-    calculatedGpa: parseFloat(calculateAverageGpa(student.id)),
-})).sort((a, b) => b.calculatedGpa - a.calculatedGpa);
-
-
-const subjects = [...new Set(grades.map(g => g.subject))];
 
 const LeaderboardTable = ({ students }) => {
     if (!students || students.length === 0) {
@@ -70,8 +61,17 @@ const LeaderboardTable = ({ students }) => {
 };
 
 export default function LeaderboardsPage() {
+    const { studentsData, classesData, grades } = useSchoolData();
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+
+    const allStudentsWithGpa = useMemo(() => studentsData.map(student => ({
+        ...student,
+        calculatedGpa: parseFloat(calculateAverageGpa(student.id, grades)),
+    })).sort((a, b) => b.calculatedGpa - a.calculatedGpa), [studentsData, grades]);
+
+
+    const subjects = [...new Set(grades.map(g => g.subject))];
 
     const topStudentsInClass = useMemo(() => {
         if (!selectedClass) return [];
@@ -82,7 +82,7 @@ export default function LeaderboardsPage() {
             s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1]
         );
         return studentsInClass.sort((a, b) => b.calculatedGpa - a.calculatedGpa);
-    }, [selectedClass]);
+    }, [selectedClass, classesData, allStudentsWithGpa]);
 
     const topStudentsBySubject = useMemo(() => {
         if (!selectedSubject) return [];
@@ -108,7 +108,7 @@ export default function LeaderboardsPage() {
         }).sort((a, b) => b.score - a.score);
 
         return rankedStudents;
-    }, [selectedSubject]);
+    }, [selectedSubject, grades, studentsData]);
 
 
     return (

@@ -1,6 +1,6 @@
 'use client';
 import { useAuth } from '@/context/auth-context';
-import { studentCourses, teacherCourses } from '@/lib/mock-data';
+import { useSchoolData } from '@/context/school-data-context';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
@@ -32,6 +32,8 @@ export default function SchedulePage() {
 }
 
 function TeacherSchedule() {
+  const { courses } = useSchoolData();
+  const teacherCourses = courses.teacher;
   return (
     <Card>
       <CardHeader>
@@ -65,6 +67,8 @@ function TeacherSchedule() {
 }
 
 function StudentSchedule() {
+  const { courses } = useSchoolData();
+  const studentCourses = courses.student;
   return (
     <Card>
       <CardHeader>

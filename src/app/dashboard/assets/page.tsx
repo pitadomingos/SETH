@@ -7,10 +7,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Loader2 } from 'lucide-react';
-import { assetsData } from '@/lib/mock-data';
+import { useSchoolData } from '@/context/school-data-context';
 
 export default function AssetsPage() {
   const { role, isLoading } = useAuth();
+  const { assetsData } = useSchoolData();
   const router = useRouter();
 
   if (isLoading) {

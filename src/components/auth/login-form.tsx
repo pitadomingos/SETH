@@ -66,7 +66,7 @@ export function LoginForm() {
           <GraduationCap className="h-8 w-8 text-primary-foreground" />
         </div>
         <CardTitle className="text-3xl font-headline">EduManage</CardTitle>
-        <CardDescription>School Management System</CardDescription>
+        <CardDescription>Multi-School Management System</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -126,10 +126,11 @@ export function LoginForm() {
               Sign In
             </Button>
             <div className="text-center text-sm text-muted-foreground">
-              <p>Demo Credentials:</p>
-              <p><strong>Admin:</strong> admin/admin123</p>
-              <p><strong>Teacher:</strong> teacher/teacher123</p>
-              <p><strong>Student:</strong> student/student123</p>
+              <p className="font-bold">Northwood High:</p>
+              <p>Admin: `admin1`, Teacher: `teacher1`, Student: `student1`</p>
+              <p className="font-bold mt-2">Oakridge Academy:</p>
+               <p>Admin: `admin2`, Teacher: `teacher2`, Student: `student2`</p>
+              <p className="mt-2">Password for all is `admin123` or `teacher123` or `student123` respectively.</p>
             </div>
           </CardFooter>
         </form>

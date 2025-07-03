@@ -1,6 +1,6 @@
 
 'use client';
-import { studentsData } from '@/lib/mock-data';
+import { useSchoolData } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 
 export default function StudentsPage() {
     const { role } = useAuth();
+    const { studentsData } = useSchoolData();
     const router = useRouter();
 
     if (role && role !== 'Admin') {

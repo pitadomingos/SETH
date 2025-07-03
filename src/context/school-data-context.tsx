@@ -1,8 +1,10 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { teachersData, schoolProfileData } from '@/lib/mock-data';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { schoolData } from '@/lib/mock-data';
+import { useAuth } from './auth-context';
 
+// Re-defining interfaces here for clarity, though they are also in mock-data
 interface SchoolProfile {
   name: string;
   head: string;
@@ -13,22 +15,48 @@ interface SchoolProfile {
 }
 
 interface SchoolDataContextType {
+  schoolProfile: SchoolProfile | null;
+  studentsData: any[];
+  teachersData: any[];
+  classesData: any[];
+  admissionsData: any[];
+  examsData: any[];
+  financeData: any[];
+  assetsData: any[];
+  assignments: any[];
+  grades: any[];
+  attendance: any[];
+  events: any[];
+  courses: { teacher: any[], student: any[] };
   subjects: string[];
   addSubject: (subject: string) => void;
   examBoards: string[];
   addExamBoard: (board: string) => void;
-  schoolProfile: SchoolProfile;
+  isLoading: boolean;
 }
 
 const SchoolDataContext = createContext<SchoolDataContextType | undefined>(undefined);
 
-const initialSubjects = [...new Set(teachersData.map(t => t.subject))].sort();
-const initialExamBoards = ['Internal', 'Cambridge', 'IB', 'State Board'];
+const initialExamBoards = ['Internal', 'Cambridge', 'IB', 'State Board', 'Advanced Placement'];
 
 export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
-  const [subjects, setSubjects] = useState<string[]>(initialSubjects);
+  const { user } = useAuth();
+  const [currentSchoolData, setCurrentSchoolData] = useState<any>(null);
+  const [subjects, setSubjects] = useState<string[]>([]);
   const [examBoards, setExamBoards] = useState<string[]>(initialExamBoards);
-  const [schoolProfile] = useState<SchoolProfile>(schoolProfileData);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.schoolId && schoolData[user.schoolId]) {
+      const data = schoolData[user.schoolId];
+      setCurrentSchoolData(data);
+      const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
+      setSubjects(initialSubjects);
+      setIsLoading(false);
+    } else {
+        setIsLoading(true);
+    }
+  }, [user]);
 
   const addSubject = (subject: string) => {
     if (!subjects.includes(subject)) {
@@ -41,9 +69,30 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setExamBoards(prev => [...prev, board].sort());
     }
   };
+  
+  const value = {
+    schoolProfile: currentSchoolData?.profile || null,
+    studentsData: currentSchoolData?.students || [],
+    teachersData: currentSchoolData?.teachers || [],
+    classesData: currentSchoolData?.classes || [],
+    admissionsData: currentSchoolData?.admissions || [],
+    examsData: currentSchoolData?.exams || [],
+    financeData: currentSchoolData?.finance || [],
+    assetsData: currentSchoolData?.assets || [],
+    assignments: currentSchoolData?.assignments || [],
+    grades: currentSchoolData?.grades || [],
+    attendance: currentSchoolData?.attendance || [],
+    events: currentSchoolData?.events || [],
+    courses: currentSchoolData?.courses || { teacher: [], student: [] },
+    subjects,
+    addSubject,
+    examBoards,
+    addExamBoard,
+    isLoading,
+  };
 
   return (
-    <SchoolDataContext.Provider value={{ subjects, addSubject, examBoards, addExamBoard, schoolProfile }}>
+    <SchoolDataContext.Provider value={value}>
       {children}
     </SchoolDataContext.Provider>
   );

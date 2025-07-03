@@ -13,11 +13,12 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, UserCheck, UserX, Clock } from 'lucide-react';
-import { studentsData, classesData } from '@/lib/mock-data';
+import { useSchoolData } from '@/context/school-data-context';
 import { cn } from '@/lib/utils';
 
 export default function AttendancePage() {
   const { role } = useAuth();
+  const { studentsData, classesData } = useSchoolData();
   const router = useRouter();
   const [date, setDate] = useState<Date>(new Date());
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);

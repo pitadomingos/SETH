@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { FileText, Award, Trophy } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { assignments, grades, studentCourses, attendance, studentsData } from "@/lib/mock-data";
-import { Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart, Cell } from 'recharts';
+import { useSchoolData } from "@/context/school-data-context";
+import { Pie, PieChart, Cell } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -18,10 +18,9 @@ import {
 } from '@/components/ui/chart';
 import { format } from "date-fns";
 
-
 const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
 
-const calculateAverageGpa = (studentId: string) => {
+const calculateAverageGpa = (studentId: string, grades) => {
     const studentGrades = grades.filter(g => g.studentId === studentId);
     if (studentGrades.length === 0) return 0;
     const totalPoints = studentGrades.reduce((acc, g) => acc + (gpaMap[g.grade] || 0), 0);
@@ -29,12 +28,14 @@ const calculateAverageGpa = (studentId: string) => {
 };
 
 function RankCard() {
-    const studentId = 'S001'; // hardcoded for demo
+    const { user } = useAuth();
+    const { studentsData, grades } = useSchoolData();
+    const studentId = user?.username === 'student1' ? 'S001' : 'S101'; // hardcoded for demo
   
     const allStudentsWithGpa = useMemo(() => studentsData.map(student => ({
         ...student,
-        calculatedGpa: parseFloat(calculateAverageGpa(student.id).toFixed(2)),
-    })).sort((a, b) => b.calculatedGpa - a.calculatedGpa), []);
+        calculatedGpa: parseFloat(calculateAverageGpa(student.id, grades).toFixed(2)),
+    })).sort((a, b) => b.calculatedGpa - a.calculatedGpa), [studentsData, grades]);
 
     const studentRank = useMemo(() => allStudentsWithGpa.findIndex(s => s.id === studentId) + 1, [allStudentsWithGpa, studentId]);
 
@@ -57,9 +58,11 @@ function RankCard() {
     );
 }
 
-
 function AttendanceBreakdownChart() {
-  const studentAttendance = attendance.filter(a => a.studentId === 'S001');
+  const { user } = useAuth();
+  const { attendance } = useSchoolData();
+  const studentId = user?.username === 'student1' ? 'S001' : 'S101';
+  const studentAttendance = attendance.filter(a => a.studentId === studentId);
   const breakdown = studentAttendance.reduce((acc, record) => {
     acc[record.status] = (acc[record.status] || 0) + 1;
     return acc;
@@ -103,11 +106,12 @@ function AttendanceBreakdownChart() {
   );
 }
 
-
 export default function StudentDashboard() {
   const { user } = useAuth();
+  const { assignments, grades } = useSchoolData();
+  const studentId = user?.username === 'student1' ? 'S001' : 'S101';
   const pendingAssignments = assignments.filter(a => a.status === 'pending' || a.status === 'overdue').sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-  const recentGrades = grades.filter(g => g.studentId === 'S001').slice(0, 4);
+  const recentGrades = grades.filter(g => g.studentId === studentId).slice(0, 4);
 
   return (
     <div className="space-y-6">

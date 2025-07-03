@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { admissionsData as initialAdmissionsData } from '@/lib/mock-data';
+import { useSchoolData } from '@/context/school-data-context';
 import { MoreHorizontal, Check, X, FileText, UserPlus, Loader2 } from 'lucide-react';
 
 const applicationSchema = z.object({
@@ -29,8 +29,9 @@ type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 export default function AdmissionsPage() {
   const { role } = useAuth();
+  const { admissionsData } = useSchoolData();
   const router = useRouter();
-  const [applications, setApplications] = useState(initialAdmissionsData);
+  const [applications, setApplications] = useState(admissionsData);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const form = useForm<ApplicationFormValues>({

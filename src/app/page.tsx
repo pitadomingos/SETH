@@ -8,9 +8,11 @@ import { useSchoolData } from '@/context/school-data-context';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 export default function LoginPage() {
-  const { user, role, isLoading } = useAuth();
-  const { schoolProfile } = useSchoolData();
+  const { user, role, isLoading: authIsLoading } = useAuth();
+  const { schoolProfile, isLoading: schoolDataIsLoading } = useSchoolData();
   const router = useRouter();
+
+  const isLoading = authIsLoading || (user && schoolDataIsLoading);
 
   useEffect(() => {
     if (!isLoading && role) {
@@ -20,8 +22,8 @@ export default function LoginPage() {
       return () => clearTimeout(timer);
     }
   }, [role, isLoading, router]);
-
-  if (isLoading || (!isLoading && role)) {
+  
+  if (isLoading || (!authIsLoading && role)) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 p-4">
         {role && user && schoolProfile ? (
