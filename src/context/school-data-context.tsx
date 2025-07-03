@@ -1,11 +1,11 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { schoolData, FinanceRecord as InitialFinanceRecord } from '@/lib/mock-data';
+import { schoolData, FinanceRecord as InitialFinanceRecord, Grade as InitialGrade } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 
 export type FinanceRecord = InitialFinanceRecord;
+export type Grade = InitialGrade;
 
 interface SchoolProfile {
   name: string;
@@ -23,6 +23,12 @@ interface NewFeeData {
     dueDate: string;
 }
 
+interface NewGradeData {
+    studentId: string;
+    subject: string;
+    grade: string;
+}
+
 interface SchoolDataContextType {
   schoolProfile: SchoolProfile | null;
   allSchoolData: typeof schoolData | null;
@@ -36,7 +42,8 @@ interface SchoolDataContextType {
   addFee: (data: NewFeeData) => void;
   assetsData: any[];
   assignments: any[];
-  grades: any[];
+  grades: Grade[];
+  addGrade: (data: NewGradeData) => void;
   attendance: any[];
   events: any[];
   courses: { teacher: any[], student: any[] };
@@ -57,6 +64,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { user, role } = useAuth();
   const [currentSchoolData, setCurrentSchoolData] = useState<any>(null);
   const [financeData, setFinanceData] = useState<FinanceRecord[]>([]);
+  const [grades, setGrades] = useState<Grade[]>([]);
   const [subjects, setSubjects] = useState<string[]>([]);
   const [examBoards, setExamBoards] = useState<string[]>(initialExamBoards);
   const [feeDescriptions, setFeeDescriptions] = useState<string[]>([]);
@@ -69,6 +77,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if (role === 'GlobalAdmin') {
       setCurrentSchoolData(null);
       setFinanceData([]);
+      setGrades([]);
       setIsLoading(false);
       return;
     }
@@ -77,7 +86,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       const parentEmail = user.email;
       
       const allStudents: any[] = [];
-      const allGrades: any[] = [];
+      const allGrades: Grade[] = [];
       const allAttendance: any[] = [];
       const allFinance: any[] = [];
       const allEvents: any[] = [];
@@ -119,7 +128,6 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       const parentViewData = {
           profile: null,
           students: allStudents,
-          grades: allGrades,
           attendance: allAttendance,
           events: allEvents,
           teachers: [], classes: [], admissions: [], exams: [],
@@ -129,6 +137,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       
       setCurrentSchoolData(parentViewData);
       setFinanceData(allFinance);
+      setGrades(allGrades);
       setSubjects([]);
       setFeeDescriptions([]);
       setIsLoading(false);
@@ -137,6 +146,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       const data = schoolData[schoolId];
       setCurrentSchoolData(data);
       setFinanceData(data.finance || []);
+      setGrades(data.grades || []);
       if(data.teachers) {
           const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
           setSubjects(initialSubjects);
@@ -146,6 +156,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     } else {
         setCurrentSchoolData(null);
         setFinanceData([]);
+        setGrades([]);
         setIsLoading(false);
     }
   }, [user, role]);
@@ -196,6 +207,16 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
     setFinanceData(prev => [newFee, ...prev]);
   };
+
+  const addGrade = (data: NewGradeData) => {
+    const newGrade: Grade = {
+      studentId: data.studentId,
+      subject: data.subject,
+      grade: data.grade as Grade['grade'],
+      date: new Date(),
+    };
+    setGrades(prev => [newGrade, ...prev]);
+  };
   
   const value = {
     schoolProfile: currentSchoolData?.profile || null,
@@ -210,7 +231,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     addFee,
     assetsData: currentSchoolData?.assets || [],
     assignments: currentSchoolData?.assignments || [],
-    grades: currentSchoolData?.grades || [],
+    grades,
+    addGrade,
     attendance: currentSchoolData?.attendance || [],
     events: currentSchoolData?.events || [],
     courses: currentSchoolData?.courses || { teacher: [], student: [] },

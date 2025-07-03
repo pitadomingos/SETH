@@ -36,6 +36,7 @@ import {
     Globe,
     HeartHandshake,
     FlaskConical,
+    FileCheck,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -91,6 +92,7 @@ const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
   Teacher: [
     ...commonLinks,
     ...studentAndTeacherLinks,
+    { href: '/dashboard/grading', label: 'Grading', icon: FileCheck },
     { href: '/dashboard/lesson-planner', label: 'Lesson Planner', icon: PenSquare },
     { href: '/dashboard/ai-testing', label: 'AI Test Generator', icon: FlaskConical },
   ],

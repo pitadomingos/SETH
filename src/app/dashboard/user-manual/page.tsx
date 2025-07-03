@@ -32,6 +32,7 @@ const userGuides = {
     title: 'Teacher Guide',
     points: [
       'Dashboard: Quickly access common actions, view your courses, see upcoming deadlines, and analyze grade distributions.',
+      'Grading: Access a dedicated page to enter grades for students in your classes. These grades are instantly reflected throughout the app.',
       'AI Lesson Planner: Use the AI-powered tool to automatically generate detailed lesson plans.',
       'AI Test Generator: Create ad-hoc multiple-choice tests on any topic for your classes. The AI generates questions and answers for your review before deployment.',
       'Schedules: View your teaching schedule and assigned courses.',
