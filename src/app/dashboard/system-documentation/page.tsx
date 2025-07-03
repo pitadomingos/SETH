@@ -85,7 +85,7 @@ export default function SystemDocumentationPage() {
           <CardContent className="space-y-4">
              <div>
               <h3 className="font-semibold">Mock Data Simulation</h3>
-              <p className="text-sm text-muted-foreground">The app currently uses static mock data from <code>/src/lib/mock-data.ts</code> for rapid prototyping and to simulate a multi-school environment.</p>
+              <p className="text-sm text-muted-foreground">The app currently uses static mock data from codesrc/lib/mock-data.ts</code> for rapid prototyping and to simulate a multi-school environment.</p>
             </div>
             <div>
               <h3 className="font-semibold">Stateful Context for Interactivity</h3>
@@ -126,7 +126,7 @@ export default function SystemDocumentationPage() {
             <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
                 <li><strong>Starter Tier:</strong> For small schools, providing core management features with limited AI usage.</li>
                 <li><strong>Professional Tier:</strong> For most schools, including the full suite of AI tools and advanced reporting.</li>
-                <li><strong>Enterprise Tier:</strong> Custom pricing for large institutions or school districts, featuring multi-school management tools and premium support.</li>
+                <li><strong>Enterprise Tier:</strong> Custom pricing for large institutions or school districts. This tier is ideal for multi-school organizations, providing centralized management via the Global Admin role, consolidated billing, and premium support.</li>
             </ul>
           </CardContent>
         </Card>
