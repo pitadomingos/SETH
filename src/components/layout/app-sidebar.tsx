@@ -33,7 +33,8 @@ import {
     ListTodo,
     Package,
     Building,
-    Award
+    Award,
+    Globe,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -58,6 +59,11 @@ const documentationLinks: NavLink[] = [
 ];
 
 const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
+  GlobalAdmin: [
+    { href: '/dashboard/global-admin', label: 'All Schools', icon: Globe },
+    { href: '/dashboard/system-documentation', label: 'System Docs', icon: FileText },
+    { href: '/dashboard/todo-list', label: 'To-Do List', icon: ListTodo },
+  ],
   Admin: [
     { href: '/dashboard/school-profile', label: 'School Profile', icon: Building },
     { href: '/dashboard/students', label: 'Students', icon: GraduationCap },
@@ -73,8 +79,6 @@ const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
     { href: '/dashboard/admin', label: 'Admin Panel', icon: ShieldCheck },
-    { href: '/dashboard/system-documentation', label: 'System Docs', icon: FileText },
-    { href: '/dashboard/todo-list', label: 'To-Do List', icon: ListTodo },
   ],
   Teacher: [
     { href: '/dashboard/lesson-planner', label: 'Lesson Planner', icon: PenSquare },
@@ -86,7 +90,16 @@ export function AppSidebar() {
   const { role } = useAuth();
   const pathname = usePathname();
   
-  const allLinks = role ? [...commonLinks, ...roleLinks[role]] : [];
+  const getLinksForRole = () => {
+    if (!role) return [];
+    if (role === 'GlobalAdmin') {
+      return roleLinks.GlobalAdmin;
+    }
+    return [...commonLinks, ...roleLinks[role]];
+  }
+
+  const allLinks = getLinksForRole();
+
   const uniqueLinks = allLinks.filter((link, index, self) =>
     index === self.findIndex((l) => (
       l.href === link.href
@@ -108,7 +121,7 @@ export function AppSidebar() {
           {uniqueLinks.map((link) => (
             <SidebarMenuItem key={link.href}>
               <Link href={link.href}>
-                <SidebarMenuButton asChild isActive={pathname === link.href} tooltip={link.label}>
+                <SidebarMenuButton asChild isActive={pathname.startsWith(link.href) && (link.href !== '/dashboard' || pathname === '/dashboard')} tooltip={link.label}>
                     <span>
                       <link.icon className="h-4 w-4" />
                       <span>{link.label}</span>

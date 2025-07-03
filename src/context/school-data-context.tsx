@@ -4,7 +4,6 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { schoolData } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 
-// Re-defining interfaces here for clarity, though they are also in mock-data
 interface SchoolProfile {
   name: string;
   head: string;
@@ -16,6 +15,7 @@ interface SchoolProfile {
 
 interface SchoolDataContextType {
   schoolProfile: SchoolProfile | null;
+  allSchoolData: typeof schoolData | null;
   studentsData: any[];
   teachersData: any[];
   classesData: any[];
@@ -40,23 +40,27 @@ const SchoolDataContext = createContext<SchoolDataContextType | undefined>(undef
 const initialExamBoards = ['Internal', 'Cambridge', 'IB', 'State Board', 'Advanced Placement'];
 
 export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [currentSchoolData, setCurrentSchoolData] = useState<any>(null);
   const [subjects, setSubjects] = useState<string[]>([]);
   const [examBoards, setExamBoards] = useState<string[]>(initialExamBoards);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (user?.schoolId && schoolData[user.schoolId]) {
+    setIsLoading(true);
+    if (role === 'GlobalAdmin') {
+        setCurrentSchoolData(null); // Global admin doesn't belong to a single school
+        setIsLoading(false);
+    } else if (user?.schoolId && schoolData[user.schoolId]) {
       const data = schoolData[user.schoolId];
       setCurrentSchoolData(data);
-      const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
-      setSubjects(initialSubjects);
+      if(data.teachers) {
+          const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
+          setSubjects(initialSubjects);
+      }
       setIsLoading(false);
-    } else {
-        setIsLoading(true);
     }
-  }, [user]);
+  }, [user, role]);
 
   const addSubject = (subject: string) => {
     if (!subjects.includes(subject)) {
@@ -72,6 +76,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   
   const value = {
     schoolProfile: currentSchoolData?.profile || null,
+    allSchoolData: role === 'GlobalAdmin' ? schoolData : null,
     studentsData: currentSchoolData?.students || [],
     teachersData: currentSchoolData?.teachers || [],
     classesData: currentSchoolData?.classes || [],

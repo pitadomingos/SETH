@@ -3,13 +3,13 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-export type Role = 'Admin' | 'Teacher' | 'Student';
+export type Role = 'GlobalAdmin' | 'Admin' | 'Teacher' | 'Student';
 
 interface User {
   username: string;
   name: string;
   email: string;
-  schoolId: string;
+  schoolId?: string;
 }
 
 interface LoginCredentials {
@@ -29,6 +29,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const mockUsers: Record<string, { user: User, role: Role }> = {
+  developer: { user: { username: 'developer', name: 'App Developer', email: 'dev@edumanage.app' }, role: 'GlobalAdmin' },
   admin1: { user: { username: 'admin1', name: 'Dr. Sarah Johnson', email: 's.johnson@northwood.edu', schoolId: 'northwood' }, role: 'Admin' },
   teacher1: { user: { username: 'teacher1', name: 'Prof. Michael Chen', email: 'm.chen@northwood.edu', schoolId: 'northwood' }, role: 'Teacher' },
   student1: { user: { username: 'student1', name: 'Emma Rodriguez', email: 'e.rodriguez@northwood.edu', schoolId: 'northwood' }, role: 'Student' },
@@ -62,17 +63,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (creds: LoginCredentials): Promise<boolean> => {
-    // Find user record by username first. The keys of mockUsers are the usernames.
     const userRecord = mockUsers[creds.username.toLowerCase()];
     
-    // Check if user exists AND if the role from the form matches the user's actual role.
     if (!userRecord || userRecord.role !== creds.role) {
       return false;
     }
 
-    // Now check password based on role.
     let correctPassword = '';
     switch (creds.role) {
+      case 'GlobalAdmin': correctPassword = 'dev123'; break;
       case 'Admin': correctPassword = 'admin123'; break;
       case 'Teacher': correctPassword = 'teacher123'; break;
       case 'Student': correctPassword = 'student123'; break;
@@ -141,5 +140,3 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   return <>{children}</>;
 }
-
-    
