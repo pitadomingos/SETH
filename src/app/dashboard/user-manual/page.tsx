@@ -12,6 +12,7 @@ const userGuides = {
       'School Management: View key statistics for each school and access their individual management dashboards (simulation).',
       'System Documentation: Access technical documentation about the application\'s architecture and technology stack.',
       'To-Do List: View the project\'s development progress and upcoming features.',
+      'Subscription & Billing: Oversee the subscription tiers for schools, forming the basis for the app\'s monetization strategy.',
     ],
   },
   Admin: {

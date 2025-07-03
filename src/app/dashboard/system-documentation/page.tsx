@@ -2,7 +2,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Code, GitBranch, LayoutTemplate, Palette, Rocket, Loader2, Database, Share2, Smartphone } from 'lucide-react';
+import { Code, GitBranch, LayoutTemplate, Palette, Rocket, Loader2, Database, Share2, Smartphone, Briefcase } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function SystemDocumentationPage() {
@@ -113,6 +113,21 @@ export default function SystemDocumentationPage() {
           <CardContent className="space-y-4">
             <p className="text-sm">The app is built with a responsive-first approach using Tailwind CSS, ensuring it is usable across devices, from desktops to mobile phones.</p>
             <p className="text-sm">Future development plans include further optimizing the mobile experience and building dedicated native applications for iOS and Android to provide the best possible performance and accessibility for all users.</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Briefcase /> Business Model (Proposed)</CardTitle>
+            <CardDescription>A suggested SaaS pricing strategy for monetization.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm">The proposed business model is a tiered, "per student, per year" subscription. This scales fairly with school size and the value provided.</p>
+            <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+                <li><strong>Starter Tier:</strong> For small schools, providing core management features with limited AI usage.</li>
+                <li><strong>Professional Tier:</strong> For most schools, including the full suite of AI tools and advanced reporting.</li>
+                <li><strong>Enterprise Tier:</strong> Custom pricing for large institutions or school districts, featuring multi-school management tools and premium support.</li>
+            </ul>
           </CardContent>
         </Card>
       </div>
