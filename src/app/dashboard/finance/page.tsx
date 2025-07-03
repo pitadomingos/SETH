@@ -7,30 +7,18 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData } from '@/context/school-data-context';
-import { DollarSign, TrendingUp, TrendingDown, Hourglass, PlusCircle, Loader2 } from 'lucide-react';
+import { DollarSign, TrendingDown, Hourglass, PlusCircle, Loader2, CreditCard } from 'lucide-react';
 import { useEffect } from 'react';
 
-export default function FinancePage() {
-  const { role, isLoading } = useAuth();
+function AdminFinanceView() {
   const { financeData } = useSchoolData();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && role !== 'Admin') {
-      router.push('/dashboard');
-    }
-  }, [role, isLoading, router]);
-
-  if (isLoading || role !== 'Admin') {
-    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
   
   const totalRevenue = financeData.filter(f => f.status === 'Paid').reduce((acc, f) => acc + f.amountDue, 0);
   const pendingFees = financeData.filter(f => f.status === 'Pending').reduce((acc, f) => acc + f.amountDue, 0);
   const overdueFees = financeData.filter(f => f.status === 'Overdue').reduce((acc, f) => acc + f.amountDue, 0);
 
   return (
-    <div className="space-y-6 animate-in fade-in-50">
+    <div className="space-y-6">
       <header className="flex justify-between items-center">
         <div>
             <h2 className="text-3xl font-bold tracking-tight">Finance</h2>
@@ -119,7 +107,97 @@ export default function FinancePage() {
             </Table>
         </CardContent>
       </Card>
+    </div>
+  );
+}
 
+function ParentFinanceView() {
+    const { studentsData, financeData } = useSchoolData();
+
+    const getStatusVariant = (status?: 'Paid' | 'Pending' | 'Overdue') => {
+        switch (status) {
+            case 'Paid': return 'secondary';
+            case 'Pending': return 'outline';
+            case 'Overdue': return 'destructive';
+            default: return 'outline';
+        }
+    };
+    
+    return (
+        <div className="space-y-6">
+            <header>
+                <h2 className="text-3xl font-bold tracking-tight">Family Fee Portal</h2>
+                <p className="text-muted-foreground">Manage tuition and fee payments for your children.</p>
+            </header>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Fee Status per Child</CardTitle>
+                    <CardDescription>An overview of current and upcoming fee payments for your family.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Child's Name</TableHead>
+                                <TableHead>School</TableHead>
+                                <TableHead>Amount Due</TableHead>
+                                <TableHead>Due Date</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Action</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {studentsData.map(child => {
+                                const feeInfo = financeData.find(f => f.studentId === child.id);
+                                if (!feeInfo) {
+                                    return (
+                                        <TableRow key={child.id}>
+                                            <TableCell className="font-medium">{child.name}</TableCell>
+                                            <TableCell>{child.schoolName}</TableCell>
+                                            <TableCell colSpan={4} className="text-muted-foreground text-center">No fee information available</TableCell>
+                                        </TableRow>
+                                    );
+                                }
+                                return (
+                                    <TableRow key={child.id}>
+                                        <TableCell className="font-medium">{child.name}</TableCell>
+                                        <TableCell>{child.schoolName}</TableCell>
+                                        <TableCell>${feeInfo.amountDue.toLocaleString()}</TableCell>
+                                        <TableCell>{feeInfo.dueDate}</TableCell>
+                                        <TableCell><Badge variant={getStatusVariant(feeInfo.status)}>{feeInfo.status}</Badge></TableCell>
+                                        <TableCell className="text-right">
+                                            {feeInfo.status !== 'Paid' && <Button><CreditCard className="mr-2 h-4 w-4" />Pay Now</Button>}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+
+export default function FinancePage() {
+  const { role, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && role !== 'Admin' && role !== 'Parent') {
+      router.push('/dashboard');
+    }
+  }, [role, isLoading, router]);
+
+  if (isLoading || (role !== 'Admin' && role !== 'Parent')) {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+  
+  return (
+    <div className="animate-in fade-in-50">
+        {role === 'Admin' && <AdminFinanceView />}
+        {role === 'Parent' && <ParentFinanceView />}
     </div>
   );
 }
