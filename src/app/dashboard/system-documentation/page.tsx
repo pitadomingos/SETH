@@ -2,7 +2,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Code, GitBranch, LayoutTemplate, Palette, Rocket, Loader2 } from 'lucide-react';
+import { Code, GitBranch, LayoutTemplate, Palette, Rocket, Loader2, Database, Share2 } from 'lucide-react';
 
 export default function SystemDocumentationPage() {
   const { role, isLoading } = useAuth();
@@ -32,8 +32,8 @@ export default function SystemDocumentationPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h3 className="font-semibold">Next.js</h3>
-              <p className="text-sm text-muted-foreground">The React framework for building the user interface and server-side logic.</p>
+              <h3 className="font-semibold">Next.js & React</h3>
+              <p className="text-sm text-muted-foreground">The framework for building the user interface and server-side logic, using the App Router.</p>
             </div>
             <div>
               <h3 className="font-semibold">ShadCN UI & Tailwind CSS</h3>
@@ -43,9 +43,9 @@ export default function SystemDocumentationPage() {
               <h3 className="font-semibold">Genkit</h3>
               <p className="text-sm text-muted-foreground">Powers the AI features, such as the Lesson Planner, by connecting to generative models.</p>
             </div>
-            <div>
-              <h3 className="font-semibold">TypeScript</h3>
-              <p className="text-sm text-muted-foreground">Ensures type safety and improves code quality across the project.</p>
+             <div>
+              <h3 className="font-semibold">Recharts & Zod</h3>
+              <p className="text-sm text-muted-foreground">Recharts is used for data visualization and charts. Zod is used for schema validation in forms.</p>
             </div>
           </CardContent>
         </Card>
@@ -69,13 +69,30 @@ export default function SystemDocumentationPage() {
               <p className="text-sm text-muted-foreground">Houses the Genkit flows and AI-related logic for generative features.</p>
             </div>
              <div>
-              <h3 className="font-semibold"><code>/src/lib</code></h3>
-              <p className="text-sm text-muted-foreground">Utility functions and mock data used throughout the application.</p>
+              <h3 className="font-semibold"><code>/src/context</code></h3>
+              <p className="text-sm text-muted-foreground">Contains React Context providers for managing global state like authentication and shared school data.</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Database /> Data Management</CardTitle>
+            <CardDescription>How application data is currently handled.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+             <div>
+              <h3 className="font-semibold">Mock Data</h3>
+              <p className="text-sm text-muted-foreground">The app currently uses static mock data from <code>/src/lib/mock-data.ts</code> for rapid prototyping and demonstration.</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Shared State via Context</h3>
+              <p className="text-sm text-muted-foreground">React Context (<code>SchoolDataProvider</code>) is used to manage and share application-wide data like subjects and exam boards, laying the groundwork for a more dynamic, database-driven system.</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Palette /> Styling and Theming</CardTitle>
             <CardDescription>How colors, fonts, and dark mode are handled.</CardDescription>

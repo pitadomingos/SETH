@@ -7,24 +7,31 @@ import { CheckCircle2, Circle, Clock, Loader2 } from 'lucide-react';
 const completedTasks = [
   'User authentication with three roles (Admin, Teacher, Student)',
   'Role-based dashboards and side navigation',
-  'Admin panel for user management',
-  'Student, Teacher, and Class management pages for Admins',
+  'Admin panel for user viewing and system data management',
+  'Student, Teacher, and Class management pages (view-only)',
   'AI-powered Lesson Planner for Teachers',
-  'Schedule and Events pages for all roles',
-  'Profile page for users to view their information',
-  'Theme switching (light/dark/system)',
-  'Initial placeholder pages for all sidebar links',
+  'Schedule, Profile, and Events pages for all roles',
+  'Implemented Admissions page with "New Application" form',
+  'Implemented Academics page with "Add Subject" form',
+  'Implemented Examinations page with scheduling and multi-board support',
+  'Implemented Attendance page with class/date filtering',
+  'Implemented Finance, Sports, and Reports pages with data overviews',
+  'Added Asset Management page for tracking school resources',
+  'Enhanced dashboards with relevant charts and data cards for each role',
+  'Created a "Leaderboards" page for academic rankings',
+  'Added a "School Profile" page for admins',
+  'Personalized login loading screen with school and user details',
 ];
 
 const upcomingFeatures = [
-  'Fully implement Admissions, Academics, Examinations, Attendance, Finance, Sports, and Reports pages',
-  'Add functionality to "Add User", "Add Student", "Add Teacher", and "Create Class" buttons',
+  'Implement full CRUD (Create, Read, Update, Delete) on all management pages',
+  'Add functionality to "Add User", "Add Student", "Add Teacher", etc. buttons',
   'Enable profile editing and picture uploading',
-  'Implement a notification system',
-  'Teacher functionality: Grade assignments, take attendance, manage resources',
-  'Student functionality: Submit assignments, view detailed grades',
+  'Implement report generation functionality',
+  'Implement a site-wide notification system',
   'Connect mock data to a real database (e.g., Firestore)',
   'Expand AI features (e.g., grading assistance, student performance analysis)',
+  'Develop district, provincial, and national data views for higher-level administration',
 ];
 
 export default function TodoListPage() {
