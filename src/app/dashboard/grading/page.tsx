@@ -13,18 +13,38 @@ import { useSchoolData } from '@/context/school-data-context';
 import { Loader2, FileCheck, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const gradeOptions = [
-  ...Array.from({ length: 21 }, (_, i) => String(20 - i)),
-  'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D', 'F'
-];
+// A helper function to map numeric grades to letters for display
+const getLetterGrade = (numericGrade: number): string => {
+  if (numericGrade >= 18) return 'A+';
+  if (numericGrade >= 16) return 'A';
+  if (numericGrade >= 15) return 'B+';
+  if (numericGrade >= 14) return 'B';
+  if (numericGrade >= 12) return 'C+';
+  if (numericGrade >= 10) return 'C';
+  if (numericGrade >= 8) return 'D';
+  return 'F';
+};
+
+// Generate options from 20 down to 0 with letter equivalents
+const numericGradeOptions = Array.from({ length: 21 }, (_, i) => {
+  const value = 20 - i;
+  return { value: String(value), label: `${value} (${getLetterGrade(value)})` };
+});
+
+// Letter-only grades for cases where that's preferred
+const letterGradeOptions = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D', 'F'].map(g => ({ value: g, label: g }));
+
+// Combine them for the dropdown
+const gradeOptions = [...numericGradeOptions, ...letterGradeOptions];
 
 export default function GradingPage() {
   const { role, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const { classesData, studentsData, teachersData, addGrade } = useSchoolData();
+  const { classesData, studentsData, teachersData, subjects, addGrade } = useSchoolData();
   const { toast } = useToast();
   
   const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm();
@@ -55,12 +75,17 @@ export default function GradingPage() {
   }, [selectedClassId, classesData, studentsData]);
 
   useEffect(() => {
-    form.reset(); // Reset form when students list changes
-  }, [studentsInClass, form]);
+    form.reset();
+    setSelectedSubject('');
+  }, [selectedClassId, form]);
+  
+  useEffect(() => {
+    form.reset(); 
+  }, [studentsInClass, selectedSubject, form]);
 
   async function onSubmit(data: Record<string, string>) {
-    if (!teacherInfo?.subject) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not find teacher subject information.' });
+    if (!selectedSubject) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Please select a subject.' });
         return;
     }
     setIsSubmitting(true);
@@ -69,7 +94,7 @@ export default function GradingPage() {
       if (grade) {
         addGrade({
           studentId,
-          subject: teacherInfo.subject,
+          subject: selectedSubject,
           grade,
         });
         gradesAdded++;
@@ -78,7 +103,7 @@ export default function GradingPage() {
     
     toast({
       title: 'Grades Saved',
-      description: `${gradesAdded} grade(s) have been successfully recorded.`,
+      description: `${gradesAdded} grade(s) for ${selectedSubject} have been successfully recorded.`,
     });
     form.reset();
     setIsSubmitting(false);
@@ -88,21 +113,25 @@ export default function GradingPage() {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
+  const selectedClassName = classesData.find(c => c.id === selectedClassId)?.name;
+
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>
         <h2 className="text-3xl font-bold tracking-tight">Gradebook</h2>
-        <p className="text-muted-foreground">Select a class to enter grades for your students.</p>
+        <p className="text-muted-foreground">Select a class and subject to enter grades for your students.</p>
       </header>
 
       <Card>
         <CardHeader>
           <CardTitle>Enter Grades</CardTitle>
           <CardDescription>
-            Grades entered here are for the subject: <span className="font-bold text-primary">{teacherInfo?.subject || 'N/A'}</span>.
-            Select a class below to begin.
+            {selectedClassName && selectedSubject 
+              ? `Entering grades for ${selectedClassName} - Subject: ${selectedSubject}`
+              : "Select a class and subject to begin."
+            }
           </CardDescription>
-          <div className="pt-4">
+          <div className="pt-4 flex flex-wrap gap-4">
             <Select onValueChange={setSelectedClassId} value={selectedClassId}>
               <SelectTrigger className="w-full md:w-[280px]">
                 <SelectValue placeholder="Select a class..." />
@@ -113,9 +142,20 @@ export default function GradingPage() {
                 ))}
               </SelectContent>
             </Select>
+
+            <Select onValueChange={setSelectedSubject} value={selectedSubject} disabled={!selectedClassId}>
+              <SelectTrigger className="w-full md:w-[280px]">
+                <SelectValue placeholder="Select a subject..." />
+              </SelectTrigger>
+              <SelectContent>
+                {subjects.map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
-        {selectedClassId && (
+        {selectedClassId && selectedSubject && (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <CardContent>
@@ -124,7 +164,7 @@ export default function GradingPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Student Name</TableHead>
-                        <TableHead className="w-[150px]">Enter Grade</TableHead>
+                        <TableHead className="w-[180px]">Enter Grade</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -144,8 +184,8 @@ export default function GradingPage() {
                                       </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                      {gradeOptions.map(grade => (
-                                        <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                                      {gradeOptions.map(option => (
+                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                                       ))}
                                     </SelectContent>
                                   </Select>
@@ -172,10 +212,10 @@ export default function GradingPage() {
             </form>
           </Form>
         )}
-        {!selectedClassId && (
+        {(!selectedClassId || !selectedSubject) && (
           <CardContent className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground">
             <FileCheck className="h-10 w-10 mb-4" />
-            <p>Please select a class to view the gradebook.</p>
+            <p>Please select a class and a subject to view the gradebook.</p>
           </CardContent>
         )}
       </Card>
