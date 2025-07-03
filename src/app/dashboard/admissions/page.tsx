@@ -55,6 +55,8 @@ export default function AdmissionsPage() {
       appliedFor: values.appliedFor,
       date: format(new Date(), 'yyyy-MM-dd'),
       status: 'Pending' as const,
+      formerSchool: values.formerSchool,
+      grades: values.grades,
     };
     setApplications([newApplication, ...applications]);
     form.reset();
@@ -162,7 +164,7 @@ export default function AdmissionsPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-500">{stats.Pending}</div>
+            <div className="text-2xl font-bold text-orange-500">{stats.Pending || 0}</div>
             <p className="text-xs text-muted-foreground">Awaiting review</p>
           </CardContent>
         </Card>
@@ -172,7 +174,7 @@ export default function AdmissionsPage() {
             <Check className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-500">{stats.Approved}</div>
+            <div className="text-2xl font-bold text-green-500">{stats.Approved || 0}</div>
             <p className="text-xs text-muted-foreground">Ready for enrollment</p>
           </CardContent>
         </Card>
@@ -182,7 +184,7 @@ export default function AdmissionsPage() {
             <X className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-500">{stats.Rejected}</div>
+            <div className="text-2xl font-bold text-red-500">{stats.Rejected || 0}</div>
             <p className="text-xs text-muted-foreground">Did not meet criteria</p>
           </CardContent>
         </Card>
@@ -199,6 +201,8 @@ export default function AdmissionsPage() {
               <TableRow>
                 <TableHead>Applicant Name</TableHead>
                 <TableHead>Applied For</TableHead>
+                <TableHead>Former School</TableHead>
+                <TableHead>Grades Summary</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead><span className="sr-only">Actions</span></TableHead>
@@ -209,6 +213,8 @@ export default function AdmissionsPage() {
                 <TableRow key={application.id}>
                   <TableCell className="font-medium">{application.name}</TableCell>
                   <TableCell>{application.appliedFor}</TableCell>
+                  <TableCell>{application.formerSchool}</TableCell>
+                  <TableCell>{application.grades}</TableCell>
                   <TableCell>{application.date}</TableCell>
                   <TableCell>
                     <Badge variant={

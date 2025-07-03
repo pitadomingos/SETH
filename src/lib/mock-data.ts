@@ -89,10 +89,10 @@ export const attendance = [
 ];
 
 export const admissionsData = [
-  { id: 'ADM001', name: 'John Smith', appliedFor: 'Grade 9', date: '2024-05-10', status: 'Pending' },
-  { id: 'ADM002', name: 'Emily White', appliedFor: 'Grade 10', date: '2024-05-09', status: 'Approved' },
-  { id: 'ADM003', name: 'David Green', appliedFor: 'Grade 9', date: '2024-05-08', status: 'Rejected' },
-  { id: 'ADM004', name: 'Jessica Blue', appliedFor: 'Grade 11', date: '2024-05-11', status: 'Pending' },
+  { id: 'ADM001', name: 'John Smith', appliedFor: 'Grade 9', date: '2024-05-10', status: 'Pending', formerSchool: 'Eastwood Elementary', grades: 'A average in all subjects.' },
+  { id: 'ADM002', name: 'Emily White', appliedFor: 'Grade 10', date: '2024-05-09', status: 'Approved', formerSchool: 'Westwood Middle', grades: 'Excellent academic record, especially in sciences.' },
+  { id: 'ADM003', name: 'David Green', appliedFor: 'Grade 9', date: '2024-05-08', status: 'Rejected', formerSchool: 'Northwood Prep', grades: 'Below average scores in core subjects.' },
+  { id: 'ADM004', name: 'Jessica Blue', appliedFor: 'Grade 11', date: '2024-05-11', status: 'Pending', formerSchool: 'Southwood High', grades: 'Strong in STEM subjects, transcript attached.' },
 ];
 
 export const examsData = [
