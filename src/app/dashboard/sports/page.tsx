@@ -5,17 +5,23 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData } from '@/context/school-data-context';
-import { Trophy, Users, CalendarPlus, PlusCircle } from 'lucide-react';
+import { Trophy, Users, CalendarPlus, PlusCircle, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useEffect } from 'react';
 
 export default function SportsPage() {
-  const { role } = useAuth();
+  const { role, isLoading } = useAuth();
   const { events } = useSchoolData();
   const router = useRouter();
 
-  if (role && role !== 'Admin') {
+  useEffect(() => {
+    if (!isLoading && role !== 'Admin') {
       router.push('/dashboard');
-      return null;
+    }
+  }, [role, isLoading, router]);
+
+  if (isLoading || role !== 'Admin') {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
   
   const sportsEvents = events.filter(e => e.type === 'Sports');

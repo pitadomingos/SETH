@@ -3,6 +3,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2, Circle, Clock, Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 
 const completedTasks = [
   'User authentication with three roles (Admin, Teacher, Student)',
@@ -40,13 +41,15 @@ export default function TodoListPage() {
   const { role, isLoading } = useAuth();
   const router = useRouter();
 
-  if (isLoading) {
-    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  }
+  useEffect(() => {
+    if (!isLoading && role !== 'GlobalAdmin') {
+      router.push('/dashboard');
+    }
+  }, [role, isLoading, router]);
 
-  if (!isLoading && role !== 'Admin') {
-    router.push('/dashboard');
-    return null;
+
+  if (isLoading || role !== 'GlobalAdmin') {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   return (

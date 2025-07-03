@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,7 +24,13 @@ export default function LessonPlannerPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [lessonPlan, setLessonPlan] = useState<CreateLessonPlanOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && role !== 'Teacher') {
+      router.push('/dashboard');
+    }
+  }, [role, authLoading, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -35,7 +41,7 @@ export default function LessonPlannerPage() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true);
+    setIsSubmitting(true);
     setLessonPlan(null);
     try {
       const result = await createLessonPlan(values);
@@ -48,14 +54,12 @@ export default function LessonPlannerPage() {
         description: 'Failed to generate lesson plan. Please try again.',
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   }
 
-  if (authLoading) return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  if (!authLoading && role !== 'Teacher') {
-    router.push('/dashboard');
-    return null;
+  if (authLoading || role !== 'Teacher') {
+    return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (
@@ -102,8 +106,8 @@ export default function LessonPlannerPage() {
                   />
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" disabled={isLoading} className="w-full">
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  <Button type="submit" disabled={isSubmitting} className="w-full">
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                     Generate Plan
                   </Button>
                 </CardFooter>
@@ -118,7 +122,7 @@ export default function LessonPlannerPage() {
               <CardTitle>Generated Lesson Plan</CardTitle>
             </CardHeader>
             <CardContent>
-              {isLoading && (
+              {isSubmitting && (
                 <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
                   <Loader2 className="h-10 w-10 animate-spin mb-4 text-primary" />
                   <p>Our AI is crafting your lesson plan...</p>
@@ -140,7 +144,7 @@ export default function LessonPlannerPage() {
                   </div>
                 </div>
               ) : (
-                !isLoading && (
+                !isSubmitting && (
                   <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground">
                     <Sparkles className="h-10 w-10 mb-4" />
                     <p>Your generated lesson plan will appear here.</p>

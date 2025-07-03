@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Loader2, Building, User, Mail, Phone, MapPin, Edit, Star } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
+import { useEffect } from 'react';
 
 export default function SchoolProfilePage() {
   const { role, isLoading: authLoading } = useAuth();
@@ -12,13 +13,14 @@ export default function SchoolProfilePage() {
   const { schoolProfile, isLoading: schoolLoading } = useSchoolData();
   const isLoading = authLoading || schoolLoading;
 
-  if (isLoading) {
-    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  }
+  useEffect(() => {
+    if (!isLoading && role !== 'Admin') {
+      router.push('/dashboard');
+    }
+  }, [role, isLoading, router]);
 
-  if (!isLoading && role !== 'Admin') {
-    router.push('/dashboard');
-    return null;
+  if (isLoading || role !== 'Admin') {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   if (!schoolProfile) {

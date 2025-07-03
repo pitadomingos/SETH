@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, UserPlus, Loader2, PlusCircle, Settings } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -30,6 +30,12 @@ export default function AdminPanelPage() {
 
     const { examBoards, addExamBoard, studentsData, teachersData } = useSchoolData();
     const [isBoardDialogOpen, setIsBoardDialogOpen] = useState(false);
+
+    useEffect(() => {
+        if (!authLoading && role !== 'Admin') {
+            router.push('/dashboard');
+        }
+    }, [role, authLoading, router]);
 
     const users = useMemo(() => {
         const studentUsers = studentsData.map(s => ({
@@ -62,13 +68,8 @@ export default function AdminPanelPage() {
         setIsBoardDialogOpen(false);
     }
 
-    if (authLoading) {
+    if (authLoading || role !== 'Admin') {
         return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-    }
-
-    if (!authLoading && role !== 'Admin') {
-        router.push('/dashboard');
-        return null;
     }
 
     return (

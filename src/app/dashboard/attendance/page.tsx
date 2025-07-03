@@ -10,22 +10,27 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, UserCheck, UserX, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, UserCheck, UserX, Clock, Loader2 } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { cn } from '@/lib/utils';
 
 export default function AttendancePage() {
-  const { role } = useAuth();
+  const { role, isLoading } = useAuth();
   const { studentsData, classesData } = useSchoolData();
   const router = useRouter();
   const [date, setDate] = useState<Date>(new Date());
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
 
-  if (role && role !== 'Admin') {
+  useEffect(() => {
+    if (!isLoading && role !== 'Admin') {
       router.push('/dashboard');
-      return null;
+    }
+  }, [role, isLoading, router]);
+
+  if (isLoading || role !== 'Admin') {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   const selectedClassInfo = selectedClassId ? classesData.find(c => c.id === selectedClassId) : null;
@@ -33,7 +38,7 @@ export default function AttendancePage() {
   const studentsInClass = selectedClassInfo
     ? studentsData.filter(student => 
         student.grade === selectedClassInfo.grade && 
-        student.class === selectedClassInfo.name.split('-')[1]
+        student.class === selectedClassInfo.name.split('-')[1].trim()
       )
     : [];
 

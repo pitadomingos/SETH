@@ -4,15 +4,21 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { BarChart3, GraduationCap, Users, DollarSign, Download } from 'lucide-react';
+import { BarChart3, GraduationCap, Users, DollarSign, Download, Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 
 export default function ReportsPage() {
-  const { role } = useAuth();
+  const { role, isLoading } = useAuth();
   const router = useRouter();
 
-  if (role && role !== 'Admin') {
+  useEffect(() => {
+    if (!isLoading && role !== 'Admin') {
       router.push('/dashboard');
-      return null;
+    }
+  }, [role, isLoading, router]);
+
+  if (isLoading || role !== 'Admin') {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
   
   return (

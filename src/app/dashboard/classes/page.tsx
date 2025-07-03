@@ -3,19 +3,26 @@
 import { useSchoolData } from '@/context/school-data-context';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Presentation, MapPin, UserPlus } from 'lucide-react';
+import { Users, Presentation, MapPin, UserPlus, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function ClassesPage() {
-    const { role } = useAuth();
+    const { role, isLoading } = useAuth();
     const { classesData } = useSchoolData();
     const router = useRouter();
 
-    if (role && role !== 'Admin') {
-        router.push('/dashboard');
-        return null;
+    useEffect(() => {
+        if (!isLoading && role !== 'Admin') {
+            router.push('/dashboard');
+        }
+    }, [role, isLoading, router]);
+
+    if (isLoading || role !== 'Admin') {
+        return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
+
     return (
         <div className="space-y-6 animate-in fade-in-50">
             <header className="flex justify-between items-center">

@@ -3,18 +3,20 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Code, GitBranch, LayoutTemplate, Palette, Rocket, Loader2, Database, Share2 } from 'lucide-react';
+import { useEffect } from 'react';
 
 export default function SystemDocumentationPage() {
   const { role, isLoading } = useAuth();
   const router = useRouter();
 
-  if (isLoading) {
-    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  }
+  useEffect(() => {
+    if (!isLoading && role !== 'GlobalAdmin') {
+      router.push('/dashboard');
+    }
+  }, [role, isLoading, router]);
 
-  if (!isLoading && role !== 'Admin') {
-    router.push('/dashboard');
-    return null;
+  if (isLoading || role !== 'GlobalAdmin') {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
   
   return (

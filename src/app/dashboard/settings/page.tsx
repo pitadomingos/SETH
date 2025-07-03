@@ -1,18 +1,25 @@
 
 'use client';
 import { Card, CardContent } from '@/components/ui/card';
-import { Wrench } from 'lucide-react';
+import { Wrench, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function SettingsPage() {
-  const { role } = useAuth();
+  const { role, isLoading } = useAuth();
   const router = useRouter();
 
-  if (role && role !== 'Admin') {
+  useEffect(() => {
+    if (!isLoading && role !== 'Admin') {
       router.push('/dashboard');
-      return null;
+    }
+  }, [role, isLoading, router]);
+
+  if (isLoading || role !== 'Admin') {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
+
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>

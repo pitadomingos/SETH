@@ -7,16 +7,22 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData } from '@/context/school-data-context';
-import { DollarSign, TrendingUp, TrendingDown, Hourglass, PlusCircle } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Hourglass, PlusCircle, Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 
 export default function FinancePage() {
-  const { role } = useAuth();
+  const { role, isLoading } = useAuth();
   const { financeData } = useSchoolData();
   const router = useRouter();
 
-  if (role && role !== 'Admin') {
+  useEffect(() => {
+    if (!isLoading && role !== 'Admin') {
       router.push('/dashboard');
-      return null;
+    }
+  }, [role, isLoading, router]);
+
+  if (isLoading || role !== 'Admin') {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
   
   const totalRevenue = financeData.filter(f => f.status === 'Paid').reduce((acc, f) => acc + f.amountDue, 0);

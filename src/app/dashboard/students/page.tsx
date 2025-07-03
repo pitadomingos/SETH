@@ -5,18 +5,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function StudentsPage() {
-    const { role } = useAuth();
+    const { role, isLoading } = useAuth();
     const { studentsData } = useSchoolData();
     const router = useRouter();
 
-    if (role && role !== 'Admin') {
-        router.push('/dashboard');
-        return null;
+    useEffect(() => {
+        if (!isLoading && role !== 'Admin') {
+            router.push('/dashboard');
+        }
+    }, [role, isLoading, router]);
+
+    if (isLoading || role !== 'Admin') {
+        return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
     
     return (

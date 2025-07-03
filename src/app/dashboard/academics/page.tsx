@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { teachersData, events } from '@/lib/mock-data';
+import { events } from '@/lib/mock-data';
 import { BookOpen, Calendar, ChevronRight, Loader2, PlusCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -21,10 +21,16 @@ const subjectSchema = z.object({
 type SubjectFormValues = z.infer<typeof subjectSchema>;
 
 export default function AcademicsPage() {
-  const { role } = useAuth();
+  const { role, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const { subjects, addSubject } = useSchoolData();
+  const { subjects, addSubject, teachersData } = useSchoolData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && role !== 'Admin') {
+      router.push('/dashboard');
+    }
+  }, [role, authLoading, router]);
 
   const form = useForm<SubjectFormValues>({
     resolver: zodResolver(subjectSchema),
@@ -33,15 +39,14 @@ export default function AcademicsPage() {
     },
   });
 
-  if (role && role !== 'Admin') {
-      router.push('/dashboard');
-      return null;
-  }
-
   function onSubmit(values: SubjectFormValues) {
     addSubject(values.name);
     form.reset();
     setIsDialogOpen(false);
+  }
+
+  if (authLoading || role !== 'Admin') {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (

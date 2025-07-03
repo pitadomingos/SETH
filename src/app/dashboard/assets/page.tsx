@@ -8,19 +8,21 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
+import { useEffect } from 'react';
 
 export default function AssetsPage() {
   const { role, isLoading } = useAuth();
   const { assetsData } = useSchoolData();
   const router = useRouter();
 
-  if (isLoading) {
-    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  }
+  useEffect(() => {
+    if (!isLoading && role !== 'Admin') {
+      router.push('/dashboard');
+    }
+  }, [role, isLoading, router]);
 
-  if (!isLoading && role !== 'Admin') {
-    router.push('/dashboard');
-    return null;
+  if (isLoading || role !== 'Admin') {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   const getStatusVariant = (status: string) => {

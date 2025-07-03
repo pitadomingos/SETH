@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Loader2, Building, Users, Presentation, Settings } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
+import { useEffect } from 'react';
 
 export default function GlobalAdminDashboard() {
   const { role, isLoading: authLoading } = useAuth();
@@ -13,13 +14,14 @@ export default function GlobalAdminDashboard() {
 
   const isLoading = authLoading || schoolLoading;
 
-  if (isLoading) {
-    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  }
+  useEffect(() => {
+    if (!isLoading && role !== 'GlobalAdmin') {
+      router.push('/dashboard');
+    }
+  }, [role, isLoading, router]);
 
-  if (role !== 'GlobalAdmin') {
-    router.push('/dashboard');
-    return null;
+  if (isLoading || role !== 'GlobalAdmin') {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   return (

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -28,11 +28,17 @@ const applicationSchema = z.object({
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 export default function AdmissionsPage() {
-  const { role } = useAuth();
+  const { role, isLoading: authLoading } = useAuth();
   const { admissionsData } = useSchoolData();
   const router = useRouter();
   const [applications, setApplications] = useState(admissionsData);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && role !== 'Admin') {
+      router.push('/dashboard');
+    }
+  }, [role, authLoading, router]);
 
   const form = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema),
@@ -44,9 +50,8 @@ export default function AdmissionsPage() {
     },
   });
 
-  if (role && role !== 'Admin') {
-    router.push('/dashboard');
-    return null;
+  if (authLoading || role !== 'Admin') {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   async function onSubmit(values: ApplicationFormValues) {
