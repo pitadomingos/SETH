@@ -85,7 +85,7 @@ export default function SystemDocumentationPage() {
           <CardContent className="space-y-4">
              <div>
               <h3 className="font-semibold">Mock Data Simulation</h3>
-              <p className="text-sm text-muted-foreground">The app currently uses static mock data from codesrc/lib/mock-data.ts</code> for rapid prototyping and to simulate a multi-school environment.</p>
+              <p className="text-sm text-muted-foreground">The app currently uses static mock data from <code>src/lib/mock-data.ts</code> for rapid prototyping and to simulate a multi-school environment.</p>
             </div>
             <div>
               <h3 className="font-semibold">Stateful Context for Interactivity</h3>
@@ -100,7 +100,7 @@ export default function SystemDocumentationPage() {
             <CardDescription>How colors, fonts, and dark mode are handled.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm">The application uses Tailwind CSS with CSS variables for theming, defined in <code>/src/app/globals.css</code>. This allows for easy customization of the color palette.</p>
+            <p className="text-sm">The application uses Tailwind CSS with CSS variables for theming, defined in <code>src/app/globals.css</code>. This allows for easy customization of the color palette.</p>
             <p className="text-sm">Dark mode is supported out-of-the-box and can be toggled using the theme switcher in the header. The <code>next-themes</code> package manages the theme state and applies the `.dark` class to the HTML element.</p>
           </CardContent>
         </Card>
