@@ -1,6 +1,6 @@
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
-import { Users, BookOpen, School, CalendarDays, Activity, TrendingUp } from "lucide-react";
+import { Users, BookOpen, School, CalendarDays, Activity, TrendingUp, DollarSign, Hourglass, TrendingDown } from "lucide-react";
 import { Pie, PieChart, Cell } from 'recharts';
 import {
   ChartContainer,
@@ -9,7 +9,7 @@ import {
   ChartLegend,
   ChartLegendContent
 } from '@/components/ui/chart';
-import { studentsData, teachersData } from "@/lib/mock-data";
+import { studentsData, teachersData, financeData } from "@/lib/mock-data";
 
 
 const attendanceChartData = [
@@ -80,6 +80,10 @@ function AttendanceChart() {
 
 
 export default function AdminDashboard() {
+  const totalRevenue = financeData.filter(f => f.status === 'Paid').reduce((acc, f) => acc + f.amountDue, 0);
+  const pendingFees = financeData.filter(f => f.status === 'Pending').reduce((acc, f) => acc + f.amountDue, 0);
+  const overdueFees = financeData.filter(f => f.status === 'Overdue').reduce((acc, f) => acc + f.amountDue, 0);
+
   return (
     <div className="space-y-6">
       <header>
@@ -125,6 +129,49 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">5</div>
             <p className="text-xs text-muted-foreground">Science fair next week</p>
+          </CardContent>
+        </Card>
+      </div>
+
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-500">${totalRevenue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">This academic year</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Fees</CardTitle>
+            <Hourglass className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-500">${pendingFees.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Awaiting payment</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Overdue Fees</CardTitle>
+            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-500">${overdueFees.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Action required</p>
+          </CardContent>
+        </Card>
+         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">$45,200</div>
+            <p className="text-xs text-muted-foreground">This academic year</p>
           </CardContent>
         </Card>
       </div>
