@@ -62,6 +62,7 @@ const northwoodStudents: Student[] = [
   { id: 'S006', name: 'Liam Garcia', grade: '9', class: 'A', email: 'l.garcia@edumanage.com', phone: '+1 (555) 555-1122', address: '753 Birch Ln, Anytown', gpa: 3.2 },
   { id: 'S007', name: 'Ava Martinez', grade: '11', class: 'A', email: 'a.martinez@edumanage.com', phone: '+1 (555) 555-3344', address: '951 Cedar Ct, Anytown', gpa: 3.7 },
   { id: 'S008', name: 'Noah Brown', grade: '10', class: 'B', email: 'n.brown@edumanage.com', phone: '+1 (555) 555-5566', address: '852 Spruce Ave, Anytown', gpa: 3.4 },
+  { id: 'S009', name: 'Sophia Davis', grade: '9', class: 'B', email: 's.davis@edumanage.com', phone: '+1 (555) 555-7788', address: '147 Walnut St, Anytown', gpa: 3.8 },
 ];
 
 const northwoodTeachers: Teacher[] = [
@@ -91,6 +92,8 @@ const northwoodGrades: Grade[] = [
   { studentId: 'S006', subject: 'English', grade: 'C+', date: new Date(now.getFullYear(), now.getMonth()) },
   { studentId: 'S007', subject: 'Physics', grade: 'A-', date: new Date(now.getFullYear(), now.getMonth()) },
   { studentId: 'S008', subject: 'Mathematics', grade: 'B', date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S009', subject: 'English', grade: 'A', date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S009', subject: 'Mathematics', grade: 'A-', date: new Date(now.getFullYear(), now.getMonth()) },
 ];
 
 const northwoodAttendance: Attendance[] = northwoodStudents.flatMap(student => {
@@ -109,6 +112,7 @@ const northwoodFinance: Finance[] = [
   { studentId: 'S001', studentName: 'Emma Rodriguez', amountDue: 1200, dueDate: '2024-06-30', status: 'Paid' },
   { studentId: 'S002', studentName: 'James Wilson', amountDue: 1200, dueDate: '2024-06-30', status: 'Pending' },
   { studentId: 'S003', studentName: 'Sofia Kim', amountDue: 1500, dueDate: '2024-06-30', status: 'Overdue' },
+  { studentId: 'S009', studentName: 'Sophia Davis', amountDue: 1200, dueDate: '2024-06-30', status: 'Paid' },
 ];
 
 // --- Data for School 2: Oakridge Academy ---
@@ -179,6 +183,7 @@ const maplewoodStudents: Student[] = [
   { id: 'S201', name: 'Chloe Dubois', grade: '10', class: 'A', email: 'c.dubois@maplewood.com', phone: '+1 (555) 201-2010', address: '1 Eiffel Tower Rd', gpa: 3.8 },
   { id: 'S202', name: 'Kenji Tanaka', grade: '11', class: 'B', email: 'k.tanaka@maplewood.com', phone: '+1 (555) 202-2020', address: '2 Tokyo Skytree Ave', gpa: 3.9 },
   { id: 'S203', name: 'Priya Singh', grade: '9', class: 'C', email: 'p.singh@maplewood.com', phone: '+1 (555) 203-2030', address: '3 Taj Mahal Blvd', gpa: 3.7 },
+  { id: 'S204', name: 'Lucas Martinez', grade: '10', class: 'B', email: 'l.martinez@maplewood.com', phone: '+1 (555) 204-2040', address: '4 Berlin Gate', gpa: 3.6 },
 ];
 
 const maplewoodTeachers: Teacher[] = [
@@ -191,6 +196,7 @@ const maplewoodClasses: Class[] = [
 
 const maplewoodGrades: Grade[] = [
     { studentId: 'S201', subject: 'History', grade: 'A', date: new Date(now.getFullYear(), now.getMonth() - 1) },
+    { studentId: 'S204', subject: 'History', grade: 'B+', date: new Date(now.getFullYear(), now.getMonth()) },
 ];
 
 const maplewoodAttendance: Attendance[] = maplewoodStudents.flatMap(student => {
@@ -207,6 +213,7 @@ const maplewoodAttendance: Attendance[] = maplewoodStudents.flatMap(student => {
 
 const maplewoodFinance: Finance[] = [
   { studentId: 'S201', studentName: 'Chloe Dubois', amountDue: 3500, dueDate: '2024-06-30', status: 'Pending' },
+  { studentId: 'S204', studentName: 'Lucas Martinez', amountDue: 3500, dueDate: '2024-06-30', status: 'Overdue' },
 ];
 
 
