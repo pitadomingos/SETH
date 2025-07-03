@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { PenSquare, BookMarked, Bell, BrainCircuit, Loader2 } from "lucide-react";
+import { PenSquare, BookMarked, Bell, BrainCircuit, Loader2, X } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData } from "@/context/school-data-context";
 import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis } from 'recharts';
@@ -169,6 +169,12 @@ function AIClassPerformanceAnalyzer() {
     }
   };
 
+  const handleReset = () => {
+    setIsLoading(false);
+    setResult(null);
+    setSelectedClassId('');
+  };
+
   if (teacherClasses.length === 0) {
     return null;
   }
@@ -180,16 +186,24 @@ function AIClassPerformanceAnalyzer() {
         <CardDescription>Select a class to get an AI-powered performance analysis and recommendations.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Select onValueChange={handleAnalysis} value={selectedClassId}>
-          <SelectTrigger className="w-full md:w-[280px]">
-            <SelectValue placeholder="Select a class to analyze..." />
-          </SelectTrigger>
-          <SelectContent>
-            {teacherClasses.map(c => (
-              <SelectItem key={c.id} value={c.id}>{c.name} - {teacherInfo?.subject}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap gap-2 items-center">
+            <Select onValueChange={handleAnalysis} value={selectedClassId}>
+            <SelectTrigger className="w-full md:w-[280px]">
+                <SelectValue placeholder="Select a class to analyze..." />
+            </SelectTrigger>
+            <SelectContent>
+                {teacherClasses.map(c => (
+                <SelectItem key={c.id} value={c.id}>{c.name} - {teacherInfo?.subject}</SelectItem>
+                ))}
+            </SelectContent>
+            </Select>
+            {(isLoading || result) && (
+                <Button variant="ghost" onClick={handleReset}>
+                    <X className="mr-2 h-4 w-4" />
+                    Clear
+                </Button>
+            )}
+        </div>
 
         {isLoading && (
           <div className="flex items-center justify-center p-8 text-muted-foreground">
