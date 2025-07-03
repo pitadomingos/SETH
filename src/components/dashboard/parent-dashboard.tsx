@@ -1,7 +1,8 @@
+
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { useSchoolData } from '@/context/school-data-context';
+import { useSchoolData, FinanceRecord } from '@/context/school-data-context';
 import { generateParentAdvice, GenerateParentAdviceOutput } from '@/ai/flows/generate-parent-advice';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -131,6 +132,21 @@ function GradeDistribution({ grades }) {
   )
 }
 
+const getStatusInfo = (fee: FinanceRecord) => {
+    const balance = fee.totalAmount - fee.amountPaid;
+    const isOverdue = new Date(fee.dueDate) < new Date() && balance > 0;
+
+    if (balance <= 0) {
+        return { text: 'Paid', variant: 'secondary' as const };
+    }
+    if (isOverdue) {
+        return { text: 'Overdue', variant: 'destructive' as const };
+    }
+     if (fee.amountPaid > 0) {
+        return { text: 'Partially Paid', variant: 'outline' as const };
+    }
+    return { text: 'Pending', variant: 'outline' as const };
+};
 
 export default function ParentDashboard() {
   const { user } = useAuth();
@@ -159,9 +175,16 @@ export default function ParentDashboard() {
     }, { present: 0, late: 0, absent: 0 });
   }, [attendance, selectedChildId]);
 
-  const childFinance = useMemo(() => {
+  const childFinanceSummary = useMemo(() => {
     if (!selectedChildId) return null;
-    return financeData.find(f => f.studentId === selectedChildId);
+    const childFees = financeData.filter(f => f.studentId === selectedChildId);
+    if (childFees.length === 0) return null;
+    // Prioritize showing an overdue fee, then a partially paid/pending one.
+    const overdue = childFees.find(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < new Date());
+    if (overdue) return overdue;
+    const pending = childFees.find(f => f.totalAmount - f.amountPaid > 0);
+    if (pending) return pending;
+    return childFees[0]; // Otherwise show the first one (likely a paid one)
   }, [financeData, selectedChildId]);
 
   if (schoolDataLoading) {
@@ -180,15 +203,6 @@ export default function ParentDashboard() {
       </Card>
     );
   }
-
-  const getFinanceBadgeVariant = (status?: string) => {
-    switch (status) {
-      case 'Paid': return 'secondary';
-      case 'Pending': return 'outline';
-      case 'Overdue': return 'destructive';
-      default: return 'outline';
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -237,13 +251,13 @@ export default function ParentDashboard() {
                         <CardTitle className="text-base flex items-center gap-2"><DollarSign /> Fee Status</CardTitle>
                     </CardHeader>
                     <CardContent>
-                    {childFinance ? (
+                    {childFinanceSummary ? (
                         <div className="flex justify-between items-center">
                             <div>
-                                <p className="font-bold text-lg">${childFinance.amountDue.toLocaleString()}</p>
-                                <p className="text-xs text-muted-foreground">Due: {childFinance.dueDate}</p>
+                                <p className="font-semibold">Balance: <span className="font-bold text-lg">${(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid).toLocaleString()}</span></p>
+                                <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
                             </div>
-                            <Badge variant={getFinanceBadgeVariant(childFinance.status)}>{childFinance.status}</Badge>
+                            <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>
                         </div>
                     ) : (
                         <p className="text-muted-foreground text-sm">No fee information available.</p>

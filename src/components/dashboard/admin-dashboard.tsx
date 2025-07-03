@@ -135,9 +135,17 @@ function AcademicPerformanceChart() {
 
 export default function AdminDashboard() {
   const { studentsData, teachersData, classesData, financeData, events } = useSchoolData();
-  const totalRevenue = financeData.filter(f => f.status === 'Paid').reduce((acc, f) => acc + f.amountDue, 0);
-  const pendingFees = financeData.filter(f => f.status === 'Pending').reduce((acc, f) => acc + f.amountDue, 0);
-  const overdueFees = financeData.filter(f => f.status === 'Overdue').reduce((acc, f) => acc + f.amountDue, 0);
+  const now = new Date();
+
+  const totalRevenue = financeData.reduce((acc, f) => acc + f.amountPaid, 0);
+  
+  const pendingFees = financeData
+    .filter(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) >= now)
+    .reduce((acc, f) => acc + (f.totalAmount - f.amountPaid), 0);
+  
+  const overdueFees = financeData
+    .filter(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < now)
+    .reduce((acc, f) => acc + (f.totalAmount - f.amountPaid), 0);
 
   return (
     <div className="space-y-6">
