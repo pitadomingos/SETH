@@ -25,12 +25,14 @@ const completedTasks = [
 
 const upcomingFeatures = [
   'Implement full CRUD (Create, Read, Update, Delete) on all management pages',
-  'Add functionality to "Add User", "Add Student", "Add Teacher", etc. buttons',
-  'Enable profile editing and picture uploading',
-  'Implement report generation functionality',
-  'Implement a site-wide notification system',
-  'Connect mock data to a real database (e.g., Firestore)',
-  'Expand AI features (e.g., grading assistance, student performance analysis)',
+  'Connect mock data to a real database (e.g., Firestore) to enable persistence',
+  'Implement a site-wide notification and communication hub for announcements and messaging',
+  'Develop a Parent/Guardian Portal for viewing student progress and communicating with teachers',
+  'Enable profile editing with photo uploads for all users',
+  'Expand AI features with student performance analysis and an early warning system to identify at-risk students',
+  'Implement an advanced report generation engine for custom data exports',
+  'Build a resource booking system for labs, projectors, and other shared assets',
+  'Introduce student-centric features like goal setting and digital portfolios to boost motivation',
   'Develop district, provincial, and national data views for higher-level administration',
 ];
 
