@@ -45,7 +45,7 @@ interface Admission { id: string; name: string; appliedFor: string; date: string
 interface Exam { id: string; title: string; subject: string; grade: string; date: Date; time: string; duration: string; room: string; board: string; }
 interface Asset { id: string; name: string; category: string; status: 'In Use' | 'Available' | 'Maintenance'; location: string; assignedTo: string; }
 interface Assignment { id: string; title: string; subject: string; grade: string; dueDate: string; status: 'pending' | 'submitted' | 'overdue'; }
-interface Grade { studentId: string; subject: string; grade: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D' | 'F'; date: Date; }
+export interface Grade { studentId: string; subject: string; grade: string; date: Date; }
 interface Attendance { studentId: string; date: string; status: string; }
 interface SchoolEvent { date: Date; title: string; type: string; schoolName?: string; }
 interface Course { id: string; name: string; schedule?: string; students?: number; teacher?: string; grade?: string; progress?: number; }
@@ -90,19 +90,19 @@ const northwoodClasses: Class[] = [
 const now = new Date();
 const northwoodGrades: Grade[] = [
   { studentId: 'S001', subject: 'Mathematics', grade: 'A-', date: new Date(now.getFullYear(), now.getMonth() - 2) },
-  { studentId: 'S001', subject: 'Physics', grade: 'B+', date: new Date(now.getFullYear(), now.getMonth() - 2) },
+  { studentId: 'S001', subject: 'Physics', grade: '16', date: new Date(now.getFullYear(), now.getMonth() - 2) },
   { studentId: 'S001', subject: 'English', grade: 'A', date: new Date(now.getFullYear(), now.getMonth() - 2) },
   { studentId: 'S002', subject: 'Mathematics', grade: 'B', date: new Date(now.getFullYear(), now.getMonth() - 1) },
-  { studentId: 'S002', subject: 'Physics', grade: 'B-', date: new Date(now.getFullYear(), now.getMonth() - 1) },
+  { studentId: 'S002', subject: 'Physics', grade: '14', date: new Date(now.getFullYear(), now.getMonth() - 1) },
   { studentId: 'S003', subject: 'English', grade: 'A+', date: new Date(now.getFullYear(), now.getMonth()) },
-  { studentId: 'S003', subject: 'Physics', grade: 'A', date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S003', subject: 'Physics', grade: '19', date: new Date(now.getFullYear(), now.getMonth()) },
   { studentId: 'S004', subject: 'English', grade: 'B+', date: new Date(now.getFullYear(), now.getMonth()) },
-  { studentId: 'S005', subject: 'Mathematics', grade: 'A+', date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S005', subject: 'Mathematics', grade: '20', date: new Date(now.getFullYear(), now.getMonth()) },
   { studentId: 'S006', subject: 'English', grade: 'C+', date: new Date(now.getFullYear(), now.getMonth()) },
   { studentId: 'S007', subject: 'Physics', grade: 'A-', date: new Date(now.getFullYear(), now.getMonth()) },
-  { studentId: 'S008', subject: 'Mathematics', grade: 'B', date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S008', subject: 'Mathematics', grade: '15', date: new Date(now.getFullYear(), now.getMonth()) },
   { studentId: 'S009', subject: 'English', grade: 'A', date: new Date(now.getFullYear(), now.getMonth()) },
-  { studentId: 'S009', subject: 'Mathematics', grade: 'A-', date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S009', subject: 'Mathematics', grade: '18', date: new Date(now.getFullYear(), now.getMonth()) },
 ];
 
 const northwoodAttendance: Attendance[] = northwoodStudents.flatMap(student => {

@@ -92,12 +92,19 @@ function AIGeneratedAdvice({ child, childGrades, childAttendanceSummary }) {
 }
 
 const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
+const calculateGpaFromGrade = (grade: string): number => {
+    const numericGrade = parseFloat(grade);
+    if (!isNaN(numericGrade) && isFinite(numericGrade)) {
+        return (numericGrade / 5.0);
+    }
+    return gpaMap[grade] || 0;
+}
 
 function GradeDistribution({ grades }) {
   const chartData = useMemo(() => {
     return grades.map(grade => ({
       subject: grade.subject,
-      gpa: gpaMap[grade.grade] || 0
+      gpa: calculateGpaFromGrade(grade.grade)
     }));
   }, [grades]);
 
@@ -273,7 +280,7 @@ export default function ParentDashboard() {
                             {childGrades.length > 0 ? childGrades.slice(0, 3).map((grade, index) => (
                                 <li key={index} className="flex justify-between items-center text-sm">
                                     <span className="font-medium">{grade.subject}</span>
-                                    <Badge variant={grade.grade.includes('A') ? 'secondary' : 'outline'}>{grade.grade}</Badge>
+                                    <Badge variant={grade.grade.startsWith('A') || parseFloat(grade.grade) >= 18 ? 'secondary' : 'outline'}>{grade.grade}</Badge>
                                 </li>
                             )) : <p className="text-muted-foreground text-sm">No recent grades.</p>}
                         </ul>

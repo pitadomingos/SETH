@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -12,7 +13,10 @@ import { useSchoolData } from '@/context/school-data-context';
 import { Loader2, FileCheck, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const gradeOptions = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D', 'F'];
+const gradeOptions = [
+  ...Array.from({ length: 21 }, (_, i) => String(20 - i)),
+  'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D', 'F'
+];
 
 export default function GradingPage() {
   const { role, user, isLoading: authLoading } = useAuth();

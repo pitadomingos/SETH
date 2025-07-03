@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to analyze class performance and recommend interventions.
@@ -34,6 +35,7 @@ const prompt = ai.definePrompt({
   output: {schema: AnalyzeClassPerformanceOutputSchema},
   prompt: `You are an expert AI educational analyst for a school management system called EduManage.
   Your task is to analyze the academic performance of a class based on a set of recent grades.
+  The grading system uses both letter grades (A-F) and a numeric scale from 0 to 20, where 12 is a passing grade.
 
   Class Name: {{{className}}}
   Subject: {{{subject}}}
@@ -43,11 +45,11 @@ const prompt = ai.definePrompt({
   - {{this}}
   {{/each}}
   
-  Analyze this data. Look for trends like a low class average, a high number of failing grades, or a very wide distribution of grades.
+  Analyze this data. Look for trends like a low class average, a high number of failing grades (below 'C' or below 12/20), or a very wide distribution of grades.
   
   Based on your analysis, provide a concise summary and a clear recommendation.
   
-  - If the class performance is poor (e.g., average is below a 'B-', or there are many 'D' or 'F' grades), you MUST recommend an ad-hoc diagnostic test to identify learning gaps. Your recommendation should state that a notification has also been sent to the Head of School for their awareness. Set the 'interventionNeeded' flag to true.
+  - If the class performance is poor (e.g., average is below a 'B-', or there are many 'D', 'F', or sub-12 grades), you MUST recommend an ad-hoc diagnostic test to identify learning gaps. Your recommendation should state that a notification has also been sent to the Head of School for their awareness. Set the 'interventionNeeded' flag to true.
   - If the class performance is satisfactory or excellent, suggest a potential enrichment activity or project to challenge the students further. Set the 'interventionNeeded' flag to false.
   
   Your tone should be professional, data-driven, and supportive.

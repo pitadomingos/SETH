@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -14,10 +15,18 @@ import { schoolData } from '@/lib/mock-data';
 
 const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
 
+const calculateGpaFromGrade = (grade: string): number => {
+    const numericGrade = parseFloat(grade);
+    if (!isNaN(numericGrade) && isFinite(numericGrade)) {
+        return (numericGrade / 5.0);
+    }
+    return gpaMap[grade] || 0;
+}
+
 const calculateAverageGpa = (studentId: string, grades: any[]) => {
     const studentGrades = grades.filter(g => g.studentId === studentId);
     if (studentGrades.length === 0) return 0;
-    const totalPoints = studentGrades.reduce((acc, g) => acc + (gpaMap[g.grade] || 0), 0);
+    const totalPoints = studentGrades.reduce((acc, g) => acc + calculateGpaFromGrade(g.grade), 0);
     return (totalPoints / studentGrades.length).toFixed(2);
 };
 
@@ -95,7 +104,7 @@ const ParentLeaderboardView = () => {
           
           const rankedStudents = studentIdsInSubject.map(sId => {
               const studentGradesForSubject = subjectGradesForSchool.filter(g => g.studentId === sId);
-              const totalPoints = studentGradesForSubject.reduce((acc, g) => acc + (gpaMap[g.grade] || 0), 0);
+              const totalPoints = studentGradesForSubject.reduce((acc, g) => acc + calculateGpaFromGrade(g.grade), 0);
               return { id: sId, gpa: totalPoints / studentGradesForSubject.length };
           }).sort((a, b) => b.gpa - a.gpa);
 
@@ -197,7 +206,7 @@ export default function LeaderboardsPage() {
                 if (!acc[grade.studentId]) {
                     acc[grade.studentId] = { totalPoints: 0, count: 0 };
                 }
-                acc[grade.studentId].totalPoints += gpaMap[grade.grade] || 0;
+                acc[grade.studentId].totalPoints += calculateGpaFromGrade(grade.grade);
                 acc[grade.studentId].count++;
                 return acc;
             }, {});

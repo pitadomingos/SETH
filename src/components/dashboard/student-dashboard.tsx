@@ -1,3 +1,4 @@
+
 'use client';
 import { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
@@ -20,10 +21,18 @@ import { format } from "date-fns";
 
 const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
 
+const calculateGpaFromGrade = (grade: string): number => {
+    const numericGrade = parseFloat(grade);
+    if (!isNaN(numericGrade) && isFinite(numericGrade)) {
+        return (numericGrade / 5.0);
+    }
+    return gpaMap[grade] || 0;
+}
+
 const calculateAverageGpa = (studentId: string, grades) => {
     const studentGrades = grades.filter(g => g.studentId === studentId);
     if (studentGrades.length === 0) return 0;
-    const totalPoints = studentGrades.reduce((acc, g) => acc + (gpaMap[g.grade] || 0), 0);
+    const totalPoints = studentGrades.reduce((acc, g) => acc + calculateGpaFromGrade(g.grade), 0);
     return (totalPoints / studentGrades.length);
 };
 
@@ -174,7 +183,7 @@ export default function StudentDashboard() {
                 {recentGrades.map((grade, index) => (
                     <li key={index} className="flex justify-between items-center text-sm p-2 bg-muted rounded-md">
                     <p className="font-medium">{grade.subject}</p>
-                    <Badge variant={grade.grade.includes('A') ? 'secondary' : 'outline'}>{grade.grade}</Badge>
+                    <Badge variant={grade.grade.startsWith('A') || parseFloat(grade.grade) >= 18 ? 'secondary' : 'outline'}>{grade.grade}</Badge>
                     </li>
                 ))}
                 </ul>

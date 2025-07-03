@@ -79,12 +79,20 @@ function AcademicPerformanceChart() {
     const { grades } = useSchoolData();
     const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
     
+    const calculateGpaFromGrade = (grade: string): number => {
+        const numericGrade = parseFloat(grade);
+        if (!isNaN(numericGrade) && isFinite(numericGrade)) {
+            return (numericGrade / 5.0);
+        }
+        return gpaMap[grade] || 0;
+    }
+
     const monthlyGpa = grades.reduce((acc, grade) => {
         const month = format(new Date(grade.date), 'MMM yyyy');
         if (!acc[month]) {
             acc[month] = { totalPoints: 0, count: 0 };
         }
-        acc[month].totalPoints += gpaMap[grade.grade] || 0;
+        acc[month].totalPoints += calculateGpaFromGrade(grade.grade);
         acc[month].count++;
         return acc;
     }, {});
