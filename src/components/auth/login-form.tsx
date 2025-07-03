@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 const formSchema = z.object({
   username: z.string().min(1, { message: 'Username is required.' }),
   password: z.string().min(1, { message: 'Password is required.' }),
-  role: z.enum(['GlobalAdmin', 'Admin', 'Teacher', 'Student'], { required_error: 'You must select a role.' }),
+  role: z.enum(['GlobalAdmin', 'Admin', 'Teacher', 'Student', 'Parent'], { required_error: 'You must select a role.' }),
 });
 
 type LoginFormValues = z.infer<typeof formSchema>;
@@ -114,6 +114,7 @@ export function LoginForm() {
                       <SelectItem value="Admin">School Administrator</SelectItem>
                       <SelectItem value="Teacher">Teacher</SelectItem>
                       <SelectItem value="Student">Student</SelectItem>
+                      <SelectItem value="Parent">Parent</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -129,11 +130,11 @@ export function LoginForm() {
             <div className="text-center text-sm text-muted-foreground">
               <p className="font-bold">Demo Credentials</p>
               <p className="mt-2"><span className="font-semibold">Global Admin:</span> `developer` (pass: `dev123`)</p>
-              <p className="mt-2"><span className="font-semibold">Northwood High:</span> Use `admin1`, `teacher1`, or `student1`</p>
+              <p className="mt-2"><span className="font-semibold">Northwood High:</span> Use `admin1`, `teacher1`, `student1`, or `parent1`</p>
               <p><span className="font-semibold">Oakridge Academy:</span> Use `admin2`, `teacher2`, or `student2`</p>
               <p><span className="font-semibold">Maplewood Int'l:</span> Use `admin3`, `teacher3`, or `student3`</p>
               <p className="mt-2">Passwords are based on role:</p>
-              <p>Admin: `admin123`, Teacher: `teacher123`, Student: `student123`</p>
+              <p>Admin: `admin123`, Teacher: `teacher123`, Student: `student123`, Parent: `parent123`</p>
             </div>
           </CardFooter>
         </form>

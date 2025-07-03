@@ -2,7 +2,7 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, PenSquare, GraduationCap } from 'lucide-react';
+import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake } from 'lucide-react';
 
 export default function UserManualPage() {
   return (
@@ -65,6 +65,25 @@ export default function UserManualPage() {
                   <li><strong>Schedules:</strong> Check your course schedule, see your teachers, and track your progress in each class.</li>
                   <li><strong>Leaderboards:</strong> See where you rank among your peers in overall, class, and subject-specific leaderboards.</li>
                   <li><strong>Events:</strong> Stay up-to-date with important school events and holidays.</li>
+                  <li><strong>Profile:</strong> View your personal details.</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="parent">
+              <AccordionTrigger>
+                <div className="flex items-center gap-3">
+                  <HeartHandshake className="h-5 w-5 text-primary" />
+                  <span className="text-lg font-semibold">Parent Guide</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 text-muted-foreground">
+                 <ul className="list-disc space-y-2 pl-6">
+                  <li><strong>Dashboard:</strong> Get a complete overview of your child's school life in one place.</li>
+                  <li><strong>AI-Powered Insights:</strong> Receive AI-generated advice on how to support your child's learning, including their strengths and areas for improvement.</li>
+                  <li><strong>Fee Status:</strong> Check the status of school fee payments.</li>
+                  <li><strong>Recent Grades:</strong> Stay updated with your child's latest academic performance.</li>
+                  <li><strong>Events:</strong> Keep track of important school events and holidays.</li>
                   <li><strong>Profile:</strong> View your personal details.</li>
                 </ul>
               </AccordionContent>

@@ -3,6 +3,7 @@ import { useAuth } from '@/context/auth-context';
 import AdminDashboard from '@/components/dashboard/admin-dashboard';
 import TeacherDashboard from '@/components/dashboard/teacher-dashboard';
 import StudentDashboard from '@/components/dashboard/student-dashboard';
+import ParentDashboard from '@/components/dashboard/parent-dashboard';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -26,6 +27,7 @@ export default function DashboardPage() {
       {role === 'Admin' && <AdminDashboard />}
       {role === 'Teacher' && <TeacherDashboard />}
       {role === 'Student' && <StudentDashboard />}
+      {role === 'Parent' && <ParentDashboard />}
     </div>
   );
 }

@@ -1,4 +1,3 @@
-
 'use client';
 import {
   SidebarHeader,
@@ -35,6 +34,7 @@ import {
     Building,
     Award,
     Globe,
+    HeartHandshake,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -48,10 +48,13 @@ interface NavLink {
 
 const commonLinks: NavLink[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/schedule', label: 'Schedules', icon: BookMarked },
-  { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Award },
   { href: '/dashboard/events', label: 'Events', icon: CalendarDays },
   { href: '/dashboard/profile', label: 'Profile', icon: User },
+];
+
+const studentAndTeacherLinks: NavLink[] = [
+  { href: '/dashboard/schedule', label: 'Schedules', icon: BookMarked },
+  { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Award },
 ];
 
 const documentationLinks: NavLink[] = [
@@ -65,6 +68,7 @@ const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/todo-list', label: 'To-Do List', icon: ListTodo },
   ],
   Admin: [
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/school-profile', label: 'School Profile', icon: Building },
     { href: '/dashboard/students', label: 'Students', icon: GraduationCap },
     { href: '/dashboard/teachers', label: 'Teachers', icon: Presentation },
@@ -77,13 +81,25 @@ const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
     { href: '/dashboard/assets', label: 'Assets', icon: Package },
     { href: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
+    { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Award },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
     { href: '/dashboard/admin', label: 'Admin Panel', icon: ShieldCheck },
+    { href: '/dashboard/profile', label: 'Profile', icon: User },
+    { href: '/dashboard/events', label: 'Events', icon: CalendarDays },
   ],
   Teacher: [
+    ...commonLinks,
+    ...studentAndTeacherLinks,
     { href: '/dashboard/lesson-planner', label: 'Lesson Planner', icon: PenSquare },
   ],
-  Student: [],
+  Student: [
+    ...commonLinks,
+    ...studentAndTeacherLinks,
+  ],
+  Parent: [
+      ...commonLinks,
+      { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
+  ],
 };
 
 export function AppSidebar() {
@@ -92,10 +108,7 @@ export function AppSidebar() {
   
   const getLinksForRole = () => {
     if (!role) return [];
-    if (role === 'GlobalAdmin') {
-      return roleLinks.GlobalAdmin;
-    }
-    return [...commonLinks, ...roleLinks[role]];
+    return roleLinks[role] || [];
   }
 
   const allLinks = getLinksForRole();
