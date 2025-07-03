@@ -159,6 +159,13 @@ export default function StudentDashboard() {
     });
   };
 
+  const handleDownloadTranscript = () => {
+    toast({
+      title: "Transcript Download Started",
+      description: "Your official transcript is being prepared. (This is a demo feature)",
+    });
+  };
+
   return (
     <div className="space-y-6">
        <header>
@@ -211,30 +218,36 @@ export default function StudentDashboard() {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     {areAllFeesPaid ? <CheckCircle className="text-green-500"/> : <XCircle className="text-destructive"/>}
-                    Completion Certificate
+                    Completion Documents
                 </CardTitle>
                 <CardDescription>
-                    Your official certificate of completion.
+                    Your official certificate and academic transcript.
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 {areAllFeesPaid ? (
                     <p className="text-sm text-muted-foreground">
-                        Congratulations on your hard work! All your fees are settled. You can now download your certificate.
+                        Congratulations on your hard work! All your fees are settled. You can now download your official documents.
                     </p>
                 ) : (
                     <p className="text-sm text-destructive">
-                        You have an outstanding balance on your account. Please clear all pending fees to enable certificate emission.
+                        You have an outstanding balance on your account. Please clear all pending fees to enable document downloads.
                     </p>
                 )}
             </CardContent>
             <CardFooter className="flex flex-col items-start gap-2">
-                <Button onClick={handleDownloadCertificate} disabled={!areAllFeesPaid} className="w-full">
-                    <Download className="mr-2 h-4 w-4" />
-                    Download Certificate
-                </Button>
+                <div className="flex w-full gap-2">
+                    <Button onClick={handleDownloadCertificate} disabled={!areAllFeesPaid} className="w-full">
+                        <Download className="mr-2 h-4 w-4" />
+                        Download Certificate
+                    </Button>
+                     <Button onClick={handleDownloadTranscript} disabled={!areAllFeesPaid} variant="secondary" className="w-full">
+                        <Download className="mr-2 h-4 w-4" />
+                        Download Transcript
+                    </Button>
+                </div>
                 <p className="text-xs text-muted-foreground self-center">
-                    Certificate created by EduManage System {new Date().getFullYear()}
+                    Documents created by EduManage System {new Date().getFullYear()}
                 </p>
             </CardFooter>
         </Card>

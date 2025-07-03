@@ -49,6 +49,7 @@ const userGuides = {
       'Schedules: Check your course schedule, see your teachers, and track your progress in each class.',
       'Leaderboards: See where you rank among your peers in overall, class, and subject-specific leaderboards.',
       'Events: Stay up-to-date with important school events and holidays.',
+      'Completion Documents: Download your official certificate and academic transcript once all school fees have been paid.',
       'Profile: View your personal details.',
     ]
   },

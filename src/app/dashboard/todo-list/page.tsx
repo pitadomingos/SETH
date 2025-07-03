@@ -23,6 +23,7 @@ const completedTasks = [
   'Upgraded Finance module with partial payments and ad-hoc transaction creation',
   'Added Asset Management, Sports, and Reports pages',
   'Added a "School Profile" page for admins',
+  'Implemented fee-gated student certificate and transcript downloads on the Student Dashboard.',
   'Personalized login loading screen with school and user details',
   'Defined a tiered, per-student pricing strategy for future monetization',
 ];
@@ -71,7 +72,7 @@ export default function TodoListPage() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-3">
-              {completedTasks.map((task, index) => (
+              {completedTasks.sort().map((task, index) => (
                 <li key={index} className="flex items-start gap-3">
                   <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
                   <span className="text-sm text-muted-foreground">{task}</span>
