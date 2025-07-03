@@ -37,16 +37,6 @@ const mockUsers: Record<string, { user: User, role: Role }> = {
   student2: { user: { username: 'student2', name: 'Benjamin Carter', email: 'b.carter@oakridge.edu', schoolId: 'oakridge' }, role: 'Student' },
 };
 
-const credentials: Record<string, string> = {
-    admin1: 'admin123',
-    teacher1: 'teacher123',
-    student1: 'student123',
-    admin2: 'admin123',
-    teacher2: 'teacher123',
-    student2: 'student123',
-};
-
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<Role | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -73,7 +63,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       (record) => record.user.username.toLowerCase() === creds.username.toLowerCase() && record.role === creds.role
     );
     
-    if (userRecord && credentials[creds.username.toLowerCase()] === creds.password) {
+    if (!userRecord) return false;
+
+    let correctPassword = '';
+    switch (creds.role) {
+      case 'Admin': correctPassword = 'admin123'; break;
+      case 'Teacher': correctPassword = 'teacher123'; break;
+      case 'Student': correctPassword = 'student123'; break;
+    }
+
+    if (creds.password === correctPassword) {
       const { user, role } = userRecord;
       setUser(user);
       setRole(role);

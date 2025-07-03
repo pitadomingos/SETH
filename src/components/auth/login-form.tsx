@@ -126,11 +126,11 @@ export function LoginForm() {
               Sign In
             </Button>
             <div className="text-center text-sm text-muted-foreground">
-              <p className="font-bold">Northwood High:</p>
-              <p>Admin: `admin1`, Teacher: `teacher1`, Student: `student1`</p>
-              <p className="font-bold mt-2">Oakridge Academy:</p>
-               <p>Admin: `admin2`, Teacher: `teacher2`, Student: `student2`</p>
-              <p className="mt-2">Password for all is `admin123` or `teacher123` or `student123` respectively.</p>
+              <p className="font-bold">Demo Credentials</p>
+              <p className="mt-2"><span className="font-semibold">Northwood High:</span> Use `admin1`, `teacher1`, or `student1`</p>
+              <p><span className="font-semibold">Oakridge Academy:</span> Use `admin2`, `teacher2`, or `student2`</p>
+              <p className="mt-2">Passwords are based on role:</p>
+              <p>Admin: `admin123`, Teacher: `teacher123`, Student: `student123`</p>
             </div>
           </CardFooter>
         </form>
