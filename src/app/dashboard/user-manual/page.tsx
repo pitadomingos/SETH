@@ -33,6 +33,7 @@ const userGuides = {
     points: [
       'Dashboard: Quickly access common actions, view your courses, see upcoming deadlines, and analyze grade distributions.',
       'AI Lesson Planner: Use the AI-powered tool to automatically generate detailed lesson plans.',
+      'AI Test Generator: Create ad-hoc multiple-choice tests on any topic for your classes. The AI generates questions and answers for your review before deployment.',
       'Schedules: View your teaching schedule and assigned courses.',
       'Leaderboards: Check academic rankings to see how students are performing overall, within classes, and by subject.',
       'Profile: View your personal information.',
