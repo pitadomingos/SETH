@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { schoolData, FinanceRecord as InitialFinanceRecord, Grade as InitialGrade, Student, Teacher, Class, Admission, Asset, SchoolProfile as InitialSchoolProfile } from '@/lib/mock-data';
+import { schoolData, FinanceRecord as InitialFinanceRecord, Grade as InitialGrade, Student, Teacher, Class, Admission, Asset, SchoolProfile as InitialSchoolProfile, Expense } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 import { format } from 'date-fns';
 
@@ -21,6 +22,14 @@ interface NewGradeData {
     studentId: string;
     subject: string;
     grade: string;
+}
+
+interface NewExpenseData {
+    description: string;
+    category: string;
+    amount: number;
+    date: string;
+    proofUrl: string;
 }
 
 interface SchoolDataContextType {
@@ -53,6 +62,9 @@ interface SchoolDataContextType {
   addExamBoard: (board: string) => void;
   feeDescriptions: string[];
   addFeeDescription: (description: string) => void;
+  expenseCategories: string[];
+  expensesData: Expense[];
+  addExpense: (data: NewExpenseData) => void;
   isLoading: boolean;
 }
 
@@ -76,6 +88,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [classesData, setClassesData] = useState<Class[]>([]);
   const [admissionsData, setAdmissionsData] = useState<Admission[]>([]);
   const [assetsData, setAssetsData] = useState<Asset[]>([]);
+  const [expensesData, setExpensesData] = useState<Expense[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -131,7 +145,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       const parentViewData = {
           profile: null, students: allStudents, attendance: allAttendance, events: allEvents,
           teachers: [], classes: [], admissions: [], exams: [], assets: [], assignments: [],
-          courses: { teacher: [], student: [] }
+          courses: { teacher: [], student: [] }, expenses: [],
       };
       setCurrentSchoolData(parentViewData);
       setSchoolProfile(null);
@@ -151,6 +165,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setAssetsData(data.assets || []);
       setFinanceData(data.finance || []);
       setGrades(data.grades || []);
+      setExpensesData(data.expenses || []);
+      setExpenseCategories(data.expenseCategories || []);
       if(data.teachers) {
           const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
           setSubjects(initialSubjects);
@@ -208,6 +224,14 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setAssetsData(prev => [newAsset, ...prev]);
   }
 
+  const addExpense = (data: NewExpenseData) => {
+    const newExpense: Expense = {
+        id: `EXP${Date.now()}`,
+        ...data,
+    };
+    setExpensesData(prev => [newExpense, ...prev]);
+  }
+
   const updateApplicationStatus = (id: string, status: Admission['status']) => {
     setAdmissionsData(prev => prev.map(app => app.id === id ? { ...app, status } : app));
   };
@@ -231,6 +255,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     subjects, addSubject,
     examBoards, addExamBoard,
     feeDescriptions, addFeeDescription,
+    expenseCategories,
+    expensesData,
+    addExpense,
     isLoading,
   };
 

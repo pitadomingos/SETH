@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,8 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData, FinanceRecord } from '@/context/school-data-context';
-import { DollarSign, TrendingDown, Hourglass, PlusCircle, Loader2, CreditCard, Receipt, Calendar as CalendarIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { DollarSign, TrendingDown, Hourglass, PlusCircle, Loader2, CreditCard, Receipt, Calendar as CalendarIcon, Eye, BarChart2 } from 'lucide-react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,12 +21,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 
-
+// --- Fee Management ---
 const paymentSchema = z.object({
   amount: z.coerce.number().positive("Payment amount must be a positive number."),
 });
-
 type PaymentFormValues = z.infer<typeof paymentSchema>;
 
 const newTransactionSchema = z.object({
@@ -34,8 +37,20 @@ const newTransactionSchema = z.object({
     totalAmount: z.coerce.number().positive("Amount must be a positive number."),
     dueDate: z.date({ required_error: "A due date is required."}),
 });
-
 type NewTransactionFormValues = z.infer<typeof newTransactionSchema>;
+
+// --- Expense Management ---
+const newExpenseSchema = z.object({
+    description: z.string().min(3, "Description is required."),
+    category: z.string({ required_error: "Please select a category."}),
+    amount: z.coerce.number().positive("Amount must be positive."),
+    date: z.date({ required_error: "An expense date is required."}),
+    proofUrl: z.string().optional(),
+});
+type NewExpenseFormValues = z.infer<typeof newExpenseSchema>;
+
+
+// --- Dialog Components ---
 
 function NewTransactionDialog() {
   const { studentsData, feeDescriptions, addFee } = useSchoolData();
@@ -57,7 +72,7 @@ function NewTransactionDialog() {
   return (
      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button><PlusCircle className="mr-2 h-4 w-4" />New Transaction</Button>
+        <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" />New Fee</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
@@ -177,6 +192,65 @@ function NewTransactionDialog() {
   )
 }
 
+function NewExpenseDialog() {
+  const { expenseCategories, addExpense } = useSchoolData();
+  const [isOpen, setIsOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const form = useForm<NewExpenseFormValues>({
+    resolver: zodResolver(newExpenseSchema),
+    defaultValues: {
+      description: '',
+      amount: 0,
+    }
+  });
+
+  const onSubmit = (values: NewExpenseFormValues) => {
+    addExpense({
+      ...values,
+      date: format(values.date, 'yyyy-MM-dd'),
+    });
+    form.reset();
+    setIsOpen(false);
+  }
+
+  const onOpenChange = (open) => {
+    if (!open) form.reset();
+    setIsOpen(open);
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        <Button><PlusCircle className="mr-2 h-4 w-4" /> Add Expense</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Record New Expense</DialogTitle>
+          <DialogDescription>Enter details for a school expense.</DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder="e.g., Teacher Salaries - August" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField control={form.control} name="amount" render={({ field }) => ( <FormItem><FormLabel>Amount</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="category" render={({ field }) => ( <FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl><SelectContent>{expenseCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+            </div>
+            <FormField control={form.control} name="date" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )} />
+            <div>
+              <FormLabel>Proof of Payment</FormLabel>
+              <Input type="file" ref={fileInputRef} className="mt-2" onChange={() => form.setValue('proofUrl', `https://placehold.co/400x200.png?v=${Date.now()}`)}/>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+              <Button type="submit">Save Expense</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 function RecordPaymentDialog({ fee, onRecordPayment }: { fee: FinanceRecord, onRecordPayment: (feeId: string, amount: number) => void }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -237,6 +311,66 @@ function RecordPaymentDialog({ fee, onRecordPayment }: { fee: FinanceRecord, onR
   );
 }
 
+function ViewProofDialog({ proofUrl, description }: { proofUrl: string, description: string}) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Proof of Payment</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <Image src={proofUrl} alt={`Proof for ${description}`} width={400} height={200} className="rounded-md mx-auto" data-ai-hint="receipt invoice" />
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// --- Charting ---
+function ExpenseAllocationChart({ expenses }) {
+  const chartData = useMemo(() => {
+    if (!expenses) return [];
+    const totalsByCategory = expenses.reduce((acc, expense) => {
+      acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+      return acc;
+    }, {});
+    return Object.entries(totalsByCategory).map(([category, total]) => ({ category, total }));
+  }, [expenses]);
+
+  const chartConfig = {
+    total: {
+      label: "Total Expenses",
+      color: "hsl(var(--chart-1))",
+    },
+  } satisfies ChartConfig;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Expense Allocations</CardTitle>
+        <CardDescription>Total spending by category this year.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <BarChart data={chartData} layout="vertical" margin={{ left: 10 }}>
+            <CartesianGrid horizontal={false} />
+            <YAxis dataKey="category" type="category" tickLine={false} axisLine={false} tickMargin={10} width={80} />
+            <XAxis type="number" hide />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Bar dataKey="total" fill="var(--color-total)" radius={4} />
+          </BarChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  )
+}
+
+// --- Status and Role Views ---
+
 const getStatusInfo = (fee: FinanceRecord) => {
     const balance = fee.totalAmount - fee.amountPaid;
     const isOverdue = new Date(fee.dueDate) < new Date();
@@ -254,7 +388,7 @@ const getStatusInfo = (fee: FinanceRecord) => {
 };
 
 function AdminFinanceView() {
-  const { financeData, recordPayment } = useSchoolData();
+  const { financeData, recordPayment, expensesData } = useSchoolData();
   
   const now = new Date();
   const totalRevenue = financeData.reduce((acc, f) => acc + f.amountPaid, 0);
@@ -267,16 +401,19 @@ function AdminFinanceView() {
     .filter(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < now)
     .reduce((acc, f) => acc + (f.totalAmount - f.amountPaid), 0);
   
-  const totalExpenses = 45200; // Mock data for now
+  const totalExpenses = expensesData.reduce((acc, e) => acc + e.amount, 0);
 
   return (
     <div className="space-y-6">
-      <header className="flex justify-between items-center">
+      <header className="flex flex-wrap gap-2 justify-between items-center">
         <div>
             <h2 className="text-3xl font-bold tracking-tight">Finance</h2>
             <p className="text-muted-foreground">Manage school finances, fees, and expenses.</p>
         </div>
-        <NewTransactionDialog />
+        <div className="flex gap-2">
+            <NewTransactionDialog />
+            <NewExpenseDialog />
+        </div>
       </header>
 
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -313,7 +450,7 @@ function AdminFinanceView() {
          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <BarChart2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${totalExpenses.toLocaleString()}</div>
@@ -321,48 +458,82 @@ function AdminFinanceView() {
           </CardContent>
         </Card>
       </div>
+      
+      <div className="grid gap-6 lg:grid-cols-5">
+        <div className="lg:col-span-3">
+          <Card>
+            <CardHeader>
+                <CardTitle>Fee Collection Status</CardTitle>
+                <CardDescription>An overview of student fee payments.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Student</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead className="text-right">Balance</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {financeData.map(item => {
+                            const balance = item.totalAmount - item.amountPaid;
+                            const status = getStatusInfo(item);
+                            return (
+                              <TableRow key={item.id}>
+                                  <TableCell className="font-medium">{item.studentName}</TableCell>
+                                  <TableCell>{item.description}</TableCell>
+                                  <TableCell className="text-right font-medium">${balance.toLocaleString()}</TableCell>
+                                  <TableCell><Badge variant={status.variant}>{status.text}</Badge></TableCell>
+                                  <TableCell className="text-right">
+                                      <RecordPaymentDialog fee={item} onRecordPayment={recordPayment} />
+                                  </TableCell>
+                              </TableRow>
+                            );
+                        })}
+                    </TableBody>
+                </Table>
+            </CardContent>
+          </Card>
+        </div>
+        <div className="lg:col-span-2">
+            <ExpenseAllocationChart expenses={expensesData} />
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader>
-            <CardTitle>Fee Collection Status</CardTitle>
-            <CardDescription>An overview of student fee payments.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Student</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                        <TableHead className="text-right">Paid</TableHead>
-                        <TableHead className="text-right">Balance</TableHead>
-                        <TableHead>Due Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {financeData.map(item => {
-                        const balance = item.totalAmount - item.amountPaid;
-                        const status = getStatusInfo(item);
-                        return (
-                          <TableRow key={item.id}>
-                              <TableCell className="font-medium">{item.studentName}</TableCell>
-                              <TableCell>{item.description}</TableCell>
-                              <TableCell className="text-right">${item.totalAmount.toLocaleString()}</TableCell>
-                              <TableCell className="text-right">${item.amountPaid.toLocaleString()}</TableCell>
-                              <TableCell className="text-right font-medium">${balance.toLocaleString()}</TableCell>
-                              <TableCell>{item.dueDate}</TableCell>
-                              <TableCell><Badge variant={status.variant}>{status.text}</Badge></TableCell>
-                              <TableCell className="text-right">
-                                  <RecordPaymentDialog fee={item} onRecordPayment={recordPayment} />
+       <Card>
+            <CardHeader>
+                <CardTitle>Expense Records</CardTitle>
+                <CardDescription>A log of all recorded school expenses.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead className="text-center">Proof</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {expensesData.map(expense => (
+                          <TableRow key={expense.id}>
+                              <TableCell>{expense.date}</TableCell>
+                              <TableCell className="font-medium">{expense.description}</TableCell>
+                              <TableCell><Badge variant="outline">{expense.category}</Badge></TableCell>
+                              <TableCell className="text-right">${expense.amount.toLocaleString()}</TableCell>
+                              <TableCell className="text-center">
+                                 <ViewProofDialog proofUrl={expense.proofUrl} description={expense.description} />
                               </TableCell>
                           </TableRow>
-                        );
-                    })}
-                </TableBody>
-            </Table>
-        </CardContent>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
       </Card>
     </div>
   );

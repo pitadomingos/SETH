@@ -1,4 +1,5 @@
 
+
 export interface FinanceRecord {
   id: string;
   studentId: string;
@@ -7,6 +8,15 @@ export interface FinanceRecord {
   totalAmount: number;
   amountPaid: number;
   dueDate: string;
+}
+
+export interface Expense {
+  id: string;
+  description: string;
+  category: string;
+  amount: number;
+  date: string;
+  proofUrl: string;
 }
 
 interface SchoolData {
@@ -27,6 +37,8 @@ interface SchoolData {
         student: Course[];
     };
     feeDescriptions: string[];
+    expenseCategories: string[];
+    expenses: Expense[];
 }
 
 export interface SchoolProfile {
@@ -140,6 +152,12 @@ const northwoodFinance: FinanceRecord[] = [
   { id: 'FEE006', studentId: 'S010', studentName: 'William Miller', description: 'Term 1 Tuition', totalAmount: 1200, amountPaid: 1200, dueDate: '2024-08-31' },
 ];
 
+const northwoodExpenses: Expense[] = [
+    { id: 'EXP001', description: 'Teacher Salaries - August', category: 'Salaries', amount: 25000, date: '2024-08-31', proofUrl: 'https://placehold.co/400x200.png' },
+    { id: 'EXP002', description: 'Electricity Bill', category: 'Utilities', amount: 1500, date: '2024-08-25', proofUrl: 'https://placehold.co/400x200.png' },
+    { id: 'EXP003', description: 'New Textbooks', category: 'Supplies', amount: 3200, date: '2024-08-15', proofUrl: 'https://placehold.co/400x200.png' },
+    { id: 'EXP004', description: 'Internet Service', category: 'Utilities', amount: 500, date: '2024-08-30', proofUrl: 'https://placehold.co/400x200.png' },
+];
 
 // --- Data for School 2: Oakridge Academy ---
 const oakridgeProfile: SchoolProfile = {
@@ -197,6 +215,10 @@ const oakridgeFinance: FinanceRecord[] = [
   { id: 'FEE103', studentId: 'S104', studentName: 'Miguel Rodriguez', description: 'Annual Tuition', totalAmount: 2200, amountPaid: 2200, dueDate: '2024-08-31' },
 ];
 
+const oakridgeExpenses: Expense[] = [
+    { id: 'EXP101', description: 'Staff Salaries - August', category: 'Salaries', amount: 35000, date: '2024-08-31', proofUrl: 'https://placehold.co/400x200.png' },
+    { id: 'EXP102', description: 'Building Maintenance', category: 'Maintenance', amount: 2500, date: '2024-08-20', proofUrl: 'https://placehold.co/400x200.png' },
+];
 
 // --- Data for School 3: Maplewood International School ---
 const maplewoodProfile: SchoolProfile = {
@@ -249,6 +271,10 @@ const maplewoodFinance: FinanceRecord[] = [
   { id: 'FEE202', studentId: 'S204', studentName: 'Lucas Martinez', description: 'Semester 1 Fees', totalAmount: 3500, amountPaid: 3500, dueDate: '2024-07-01' },
 ];
 
+const maplewoodExpenses: Expense[] = [
+    { id: 'EXP201', description: 'IB Program Fees', category: 'Academics', amount: 12000, date: '2024-08-10', proofUrl: 'https://placehold.co/400x200.png' },
+    { id: 'EXP202', description: 'Staff Salaries - August', category: 'Salaries', amount: 45000, date: '2024-08-31', proofUrl: 'https://placehold.co/400x200.png' },
+];
 
 export const schoolData: Record<string, SchoolData> = {
   northwood: {
@@ -260,6 +286,8 @@ export const schoolData: Record<string, SchoolData> = {
     attendance: northwoodAttendance,
     finance: northwoodFinance,
     feeDescriptions: ['Term 1 Tuition', 'Lab Fees', 'Sports Uniform', 'Library Fine', 'Exam Fee'],
+    expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
+    expenses: northwoodExpenses,
     // Using shared data for simplicity in this simulation
     admissions: [
         { id: 'ADM001', name: 'John Smith', appliedFor: 'Grade 9', date: '2024-05-10', status: 'Pending', formerSchool: 'Eastwood Elementary', grades: 'A average in all subjects.', parentName: 'Mary Smith', parentEmail: 'm.smith@family.com' },
@@ -302,6 +330,8 @@ export const schoolData: Record<string, SchoolData> = {
     attendance: oakridgeAttendance,
     finance: oakridgeFinance,
     feeDescriptions: ['Annual Tuition', 'Activity Fee', 'Technology Fee'],
+    expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
+    expenses: oakridgeExpenses,
     // Using shared/generic data for simplicity
     admissions: [
         { id: 'OAK-ADM001', name: 'Alice Wonder', appliedFor: 'Grade 9', date: '2024-05-15', status: 'Approved', formerSchool: 'Wonderland Middle', grades: 'Top of class.', parentName: 'Charles Wonder', parentEmail: 'c.wonder@family.com' },
@@ -337,6 +367,8 @@ export const schoolData: Record<string, SchoolData> = {
     attendance: maplewoodAttendance,
     finance: maplewoodFinance,
     feeDescriptions: ['Semester 1 Fees', 'Capital Levy', 'IB Exam Fee', 'Technology Fee'],
+    expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
+    expenses: maplewoodExpenses,
     admissions: [
         { id: 'MAP-ADM001', name: 'Leo Tolstoy', appliedFor: 'Grade 9', date: '2024-06-01', status: 'Pending', formerSchool: 'Literary Prep', grades: 'Strong in humanities.', parentName: 'Sophia Tolstoy', parentEmail: 's.tolstoy@family.com' },
     ],
