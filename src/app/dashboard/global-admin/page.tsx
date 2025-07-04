@@ -8,7 +8,7 @@ import { useSchoolData } from '@/context/school-data-context';
 import { useEffect } from 'react';
 
 export default function GlobalAdminDashboard() {
-  const { role, isLoading: authLoading } = useAuth();
+  const { role, isLoading: authLoading, switchSchoolContext } = useAuth();
   const { allSchoolData, isLoading: schoolLoading } = useSchoolData();
   const router = useRouter();
 
@@ -23,6 +23,10 @@ export default function GlobalAdminDashboard() {
   if (isLoading || role !== 'GlobalAdmin') {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
+
+  const handleManageSchool = (schoolId: string) => {
+    switchSchoolContext(schoolId);
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
@@ -56,7 +60,7 @@ export default function GlobalAdminDashboard() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full" onClick={() => handleManageSchool(school.profile.id)}>
                         <Settings className="mr-2 h-4 w-4" />
                         Manage School
                     </Button>

@@ -25,6 +25,7 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
+  switchSchoolContext: (schoolId: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,6 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<Role | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     try {
@@ -109,8 +111,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const switchSchoolContext = (schoolId: string) => {
+    const adminUserRecord = Object.values(mockUsers).find(
+        (record) => record.user.schoolId === schoolId && record.role === 'Admin'
+    );
+
+    if (adminUserRecord) {
+        const { user: adminUser, role: adminRole } = adminUserRecord;
+        setUser(adminUser);
+        setRole(adminRole);
+        try {
+            localStorage.setItem('user', JSON.stringify(adminUser));
+            localStorage.setItem('userRole', adminRole);
+            router.push('/dashboard'); 
+        } catch (e) {
+            console.error("Local storage is not available.");
+        }
+    } else {
+        console.error(`No admin user found for schoolId: ${schoolId}`);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ role, user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ role, user, login, logout, isLoading, switchSchoolContext }}>
       {children}
     </AuthContext.Provider>
   );
