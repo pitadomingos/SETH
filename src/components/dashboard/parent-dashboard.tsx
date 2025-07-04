@@ -92,6 +92,28 @@ function AIGeneratedAdvice({ child, childGrades, childAttendanceSummary }) {
 }
 
 const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
+const getLetterGrade = (numericGrade: number): string => {
+  if (numericGrade >= 19) return 'A+';
+  if (numericGrade >= 17) return 'A';
+  if (numericGrade >= 16) return 'A-';
+  if (numericGrade >= 15) return 'B+';
+  if (numericGrade >= 14) return 'B';
+  if (numericGrade >= 13) return 'B-';
+  if (numericGrade >= 12) return 'C+';
+  if (numericGrade >= 11) return 'C';
+  if (numericGrade >= 10) return 'C-';
+  if (numericGrade >= 8) return 'D';
+  return 'F';
+};
+
+const formatGrade = (grade: string): string => {
+  const numericGrade = parseFloat(grade);
+  if (!isNaN(numericGrade) && isFinite(numericGrade)) {
+    return `${numericGrade} (${getLetterGrade(numericGrade)})`;
+  }
+  return grade;
+};
+
 const calculateGpaFromGrade = (grade: string): number => {
     const numericGrade = parseFloat(grade);
     if (!isNaN(numericGrade) && isFinite(numericGrade)) {
@@ -277,12 +299,15 @@ export default function ParentDashboard() {
                     </CardHeader>
                     <CardContent>
                         <ul className="space-y-2">
-                            {childGrades.length > 0 ? childGrades.slice(0, 3).map((grade, index) => (
+                            {childGrades.length > 0 ? childGrades.slice(0, 3).map((grade, index) => {
+                              const gpa = calculateGpaFromGrade(grade.grade);
+                              return (
                                 <li key={index} className="flex justify-between items-center text-sm">
                                     <span className="font-medium">{grade.subject}</span>
-                                    <Badge variant={grade.grade.startsWith('A') || parseFloat(grade.grade) >= 18 ? 'secondary' : 'outline'}>{grade.grade}</Badge>
+                                    <Badge variant={gpa >= 3.7 ? 'secondary' : 'outline'}>{formatGrade(grade.grade)}</Badge>
                                 </li>
-                            )) : <p className="text-muted-foreground text-sm">No recent grades.</p>}
+                              )
+                            }) : <p className="text-muted-foreground text-sm">No recent grades.</p>}
                         </ul>
                     </CardContent>
                 </Card>
