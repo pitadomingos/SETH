@@ -4,67 +4,217 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { BarChart3, GraduationCap, Users, DollarSign, Download, Loader2 } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { Loader2, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSchoolData } from '@/context/school-data-context';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { analyzeClassPerformance, AnalyzeClassPerformanceOutput } from '@/ai/flows/analyze-class-performance';
+import { identifyStrugglingStudents, IdentifyStrugglingStudentsOutput } from '@/ai/flows/identify-struggling-students';
+import { analyzeTeacherPerformance, AnalyzeTeacherPerformanceOutput } from '@/ai/flows/analyze-teacher-performance';
+
+// Class Analysis Component
+function ClassAnalysis() {
+  const { classesData, subjects, studentsData, grades } = useSchoolData();
+  const { toast } = useToast();
+  const [selectedClassId, setSelectedClassId] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<AnalyzeClassPerformanceOutput | null>(null);
+
+  const handleAnalysis = async () => {
+    if (!selectedClassId || !selectedSubject) {
+      toast({ variant: 'destructive', title: 'Please select a class and a subject.' });
+      return;
+    }
+    setIsLoading(true);
+    setResult(null);
+    try {
+      const selectedClass = classesData.find(c => c.id === selectedClassId);
+      if (!selectedClass) throw new Error('Class not found');
+      
+      const studentsInClass = studentsData.filter(s => s.grade === selectedClass.grade && s.class === selectedClass.name.split('-')[1].trim()).map(s => s.id);
+      const relevantGrades = grades.filter(g => studentsInClass.includes(g.studentId) && g.subject === selectedSubject).map(g => g.grade);
+
+      const analysisResult = await analyzeClassPerformance({
+        className: selectedClass.name,
+        subject: selectedSubject,
+        grades: relevantGrades,
+      });
+      setResult(analysisResult);
+    } catch (error) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Analysis Failed' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Class Performance Analysis</CardTitle>
+        <CardDescription>Select a class and subject to get an AI-powered performance analysis.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap gap-4">
+          <Select value={selectedClassId} onValueChange={setSelectedClassId}><SelectTrigger className="w-full md:w-[200px]"><SelectValue placeholder="Select Class" /></SelectTrigger><SelectContent>{classesData.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select>
+          <Select value={selectedSubject} onValueChange={setSelectedSubject}><SelectTrigger className="w-full md:w-[200px]"><SelectValue placeholder="Select Subject" /></SelectTrigger><SelectContent>{subjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+          <Button onClick={handleAnalysis} disabled={isLoading || !selectedClassId || !selectedSubject}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Analyze'}</Button>
+        </div>
+        {isLoading && <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>}
+        {result && (
+          <div className="space-y-4 pt-4 text-sm animate-in fade-in-50">
+             <div className={`p-4 rounded-md ${result.interventionNeeded ? 'bg-destructive/10 border border-destructive/20' : 'bg-muted'}`}><h4 className="font-semibold mb-1">Analysis:</h4><p className="text-muted-foreground">{result.analysis}</p></div>
+             <div className={`p-4 rounded-md ${result.interventionNeeded ? 'bg-destructive/10 border border-destructive/20' : 'bg-muted'}`}><h4 className="font-semibold mb-1">Recommendation:</h4><p className="text-muted-foreground">{result.recommendation}</p></div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Struggling Students Component
+function StrugglingStudents() {
+  const { studentsData, grades } = useSchoolData();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<IdentifyStrugglingStudentsOutput | null>(null);
+
+  const handleAnalysis = async () => {
+    setIsLoading(true);
+    setResult(null);
+    try {
+      const studentGradeInfo = studentsData.map(student => ({
+        studentId: student.id,
+        studentName: student.name,
+        grades: grades.filter(g => g.studentId === student.id).map(g => ({ subject: g.subject, grade: g.grade })),
+      }));
+      const analysisResult = await identifyStrugglingStudents({ students: studentGradeInfo });
+      setResult(analysisResult);
+    } catch (error) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Analysis Failed' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Identify Struggling Students</CardTitle>
+        <CardDescription>Run an analysis across the entire school to identify students who may need academic intervention.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Button onClick={handleAnalysis} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Identify Students'}</Button>
+        {isLoading && <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>}
+        {result && (
+          <div className="pt-4 animate-in fade-in-50">
+            {result.strugglingStudents.length > 0 ? (
+              <ul className="space-y-3">
+                {result.strugglingStudents.map(student => (
+                  <li key={student.studentId} className="flex flex-col md:flex-row items-start gap-4 p-4 border rounded-lg">
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="bg-destructive/10 p-2 rounded-full"><User className="h-5 w-5 text-destructive" /></div>
+                      <span className="font-semibold">{student.studentName}</span>
+                    </div>
+                    <div className="flex-grow">
+                      <p className="text-sm"><span className="font-semibold">Reason:</span> {student.reason}</p>
+                      <p className="text-sm text-muted-foreground"><span className="font-semibold">Suggestion:</span> {student.suggestedAction}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">Great news! No students were identified as struggling based on the criteria.</p>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Teacher Performance Component
+function TeacherPerformance() {
+  const { teachersData, coursesData, classesData, grades, studentsData } = useSchoolData();
+  const { toast } = useToast();
+  const [selectedTeacherId, setSelectedTeacherId] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<AnalyzeTeacherPerformanceOutput | null>(null);
+
+  const handleAnalysis = async () => {
+    if (!selectedTeacherId) {
+      toast({ variant: 'destructive', title: 'Please select a teacher.' });
+      return;
+    }
+    setIsLoading(true);
+    setResult(null);
+    try {
+      const teacher = teachersData.find(t => t.id === selectedTeacherId);
+      if (!teacher) throw new Error('Teacher not found');
+      
+      const teacherCourses = coursesData.filter(c => c.teacherId === teacher.id);
+      const classPerformances = teacherCourses.map(course => {
+        const classInfo = classesData.find(c => c.id === course.classId);
+        if (!classInfo) return null;
+        
+        const studentsInClass = studentsData.filter(s => s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim()).map(s => s.id);
+        const classGrades = grades.filter(g => studentsInClass.includes(g.studentId) && g.subject === course.subject).map(g => parseFloat(g.grade));
+        
+        if (classGrades.length === 0) return { className: classInfo.name, averageGrade: 0, passingRate: 0 };
+        
+        const averageGrade = classGrades.reduce((sum, g) => sum + g, 0) / classGrades.length;
+        const passingRate = (classGrades.filter(g => g >= 10).length / classGrades.length) * 100;
+
+        return { className: classInfo.name, averageGrade: parseFloat(averageGrade.toFixed(2)), passingRate: parseFloat(passingRate.toFixed(2)) };
+      }).filter(Boolean) as any[];
+
+      const analysisResult = await analyzeTeacherPerformance({ teacherName: teacher.name, subject: teacher.subject, classPerformances });
+      setResult(analysisResult);
+    } catch (error) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Analysis Failed' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Teacher Performance Analysis</CardTitle>
+        <CardDescription>Select a teacher to analyze their students' performance across their classes.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap gap-4">
+          <Select value={selectedTeacherId} onValueChange={setSelectedTeacherId}><SelectTrigger className="w-full md:w-[200px]"><SelectValue placeholder="Select Teacher" /></SelectTrigger><SelectContent>{teachersData.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent></Select>
+          <Button onClick={handleAnalysis} disabled={isLoading || !selectedTeacherId}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Analyze'}</Button>
+        </div>
+        {isLoading && <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>}
+        {result && (
+          <div className="space-y-4 pt-4 text-sm animate-in fade-in-50">
+            <div className="p-4 rounded-md bg-muted"><h4 className="font-semibold mb-1">Overall Assessment:</h4><p className="text-muted-foreground">{result.overallAssessment}</p></div>
+            <div className="p-4 rounded-md bg-muted"><h4 className="font-semibold mb-1">Strengths:</h4><p className="text-muted-foreground whitespace-pre-wrap">{result.strengths}</p></div>
+            <div className="p-4 rounded-md bg-muted"><h4 className="font-semibold mb-1">Areas for Improvement:</h4><p className="text-muted-foreground whitespace-pre-wrap">{result.areasForImprovement}</p></div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function ReportsPage() {
   const { role, isLoading } = useAuth();
   const router = useRouter();
-  const { toast } = useToast();
-  const { attendance, grades, events } = useSchoolData();
 
   useEffect(() => {
     if (!isLoading && role !== 'Admin') {
       router.push('/dashboard');
     }
   }, [role, isLoading, router]);
-
-  const quickStats = useMemo(() => {
-    // Calc 1: Average Attendance
-    const totalAttendance = attendance.length;
-    const attendedRecords = attendance.filter(r => r.status === 'present' || r.status === 'late').length;
-    const averageAttendance = totalAttendance > 0 ? Math.round((attendedRecords / totalAttendance) * 100) : 0;
-
-    // Calc 2: Average GPA
-    const studentIdsWithGrades = [...new Set(grades.map(g => g.studentId))];
-    let averageGpa = 0;
-    if (studentIdsWithGrades.length > 0) {
-        const totalGpaPoints = studentIdsWithGrades.reduce((acc, studentId) => {
-            const studentGrades = grades.filter(g => g.studentId === studentId);
-            if (studentGrades.length === 0) return acc;
-            const totalPoints = studentGrades.reduce((sum, g) => sum + parseFloat(g.grade), 0);
-            const avgNumericForStudent = totalPoints / studentGrades.length;
-            const studentGpa = avgNumericForStudent / 5.0; // Convert 20-point to 4.0 GPA scale
-            return acc + studentGpa;
-        }, 0);
-        averageGpa = totalGpaPoints / studentIdsWithGrades.length;
-    }
-
-    // Calc 3: Pass Rate
-    const totalGrades = grades.length;
-    const passingGrades = grades.filter(g => parseFloat(g.grade) >= 10).length; // 10/20 is passing
-    const passRate = totalGrades > 0 ? Math.round((passingGrades / totalGrades) * 100) : 0;
-    
-    // Calc 4: Active Events
-    const activeEvents = events.filter(e => e.date >= new Date()).length;
-
-    return {
-      averageAttendance: `${averageAttendance}%`,
-      averageGpa: averageGpa.toFixed(1),
-      passRate: `${passRate}%`,
-      activeEvents: activeEvents.toString(),
-    };
-  }, [attendance, grades, events]);
-
-
-  const handleGenerateReport = (reportName: string) => {
-    toast({
-        title: "Report Generation Started",
-        description: `Your ${reportName} is being generated and will be downloaded shortly.`
-    })
-  };
 
   if (isLoading || role !== 'Admin') {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -73,68 +223,26 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>
-        <h2 className="text-3xl font-bold tracking-tight">Reports</h2>
-        <p className="text-muted-foreground">Generate and view school performance reports.</p>
+        <h2 className="text-3xl font-bold tracking-tight">AI Academic Reports</h2>
+        <p className="text-muted-foreground">Generate on-demand academic analysis for your classes, students, and teachers.</p>
       </header>
-
-      <Card>
-        <CardHeader>
-            <CardTitle>Generate Reports</CardTitle>
-            <CardDescription>Select a report type to download. (This is a demo feature)</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <div className="flex flex-col items-center justify-center p-6 bg-muted rounded-lg text-center space-y-3">
-                <GraduationCap className="h-10 w-10 text-primary" />
-                <h3 className="font-semibold">Student Performance</h3>
-                <p className="text-sm text-muted-foreground">Academic results and progress reports.</p>
-                <Button onClick={() => handleGenerateReport('Student Performance Report')}><Download className="mr-2 h-4 w-4" />Generate</Button>
-            </div>
-             <div className="flex flex-col items-center justify-center p-6 bg-muted rounded-lg text-center space-y-3">
-                <BarChart3 className="h-10 w-10 text-primary" />
-                <h3 className="font-semibold">Attendance Summary</h3>
-                <p className="text-sm text-muted-foreground">Overall attendance rates and records.</p>
-                <Button onClick={() => handleGenerateReport('Attendance Summary Report')}><Download className="mr-2 h-4 w-4" />Generate</Button>
-            </div>
-             <div className="flex flex-col items-center justify-center p-6 bg-muted rounded-lg text-center space-y-3">
-                <Users className="h-10 w-10 text-primary" />
-                <h3 className="font-semibold">Enrollment Statistics</h3>
-                <p className="text-sm text-muted-foreground">Student enrollment and demographics.</p>
-                <Button onClick={() => handleGenerateReport('Enrollment Statistics Report')}><Download className="mr-2 h-4 w-4" />Generate</Button>
-            </div>
-             <div className="flex flex-col items-center justify-center p-6 bg-muted rounded-lg text-center space-y-3">
-                <DollarSign className="h-10 w-10 text-primary" />
-                <h3 className="font-semibold">Financial Report</h3>
-                <p className="text-sm text-muted-foreground">Revenue, expenses, and fee collection.</p>
-                <Button onClick={() => handleGenerateReport('Financial Report')}><Download className="mr-2 h-4 w-4" />Generate</Button>
-            </div>
-        </CardContent>
-      </Card>
       
-      <Card>
-        <CardHeader>
-            <CardTitle>Quick Stats</CardTitle>
-            <CardDescription>A real-time snapshot of key school metrics.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-                <p className="text-3xl font-bold text-primary">{quickStats.averageAttendance}</p>
-                <p className="text-sm text-muted-foreground">Average Attendance</p>
-            </div>
-            <div>
-                <p className="text-3xl font-bold text-primary">{quickStats.averageGpa}</p>
-                <p className="text-sm text-muted-foreground">Average GPA</p>
-            </div>
-            <div>
-                <p className="text-3xl font-bold text-primary">{quickStats.passRate}</p>
-                <p className="text-sm text-muted-foreground">Pass Rate</p>
-            </div>
-            <div>
-                <p className="text-3xl font-bold text-primary">{quickStats.activeEvents}</p>
-                <p className="text-sm text-muted-foreground">Active Events</p>
-            </div>
-        </CardContent>
-      </Card>
-
+      <Tabs defaultValue="class-analysis" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="class-analysis">Class Analysis</TabsTrigger>
+          <TabsTrigger value="struggling-students">Struggling Students</TabsTrigger>
+          <TabsTrigger value="teacher-performance">Teacher Performance</TabsTrigger>
+        </TabsList>
+        <TabsContent value="class-analysis">
+          <ClassAnalysis />
+        </TabsContent>
+        <TabsContent value="struggling-students">
+          <StrugglingStudents />
+        </TabsContent>
+        <TabsContent value="teacher-performance">
+          <TeacherPerformance />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
