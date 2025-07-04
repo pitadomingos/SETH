@@ -1,4 +1,3 @@
-
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,13 +20,15 @@ const userGuides = {
     title: 'School Administrator Guide',
     points: [
         'Dashboard: Get a high-level overview of your school\'s statistics, including student counts, financial summaries, and performance charts.',
-        'School Profile: View your school\'s core information like name, address, and contact details.',
-        'User Management: View student and teacher profiles via the Students and Teachers pages.',
-        'Finance: Track school-wide revenue and expenses. Record partial or full payments for student fees and create new ad-hoc fee transactions (e.g., for lab fees or field trips).',
-        'Admissions, Academics, etc: Manage all core school functions from their respective pages in the sidebar.',
+        'School Profile: View and edit your school\'s core information like name, address, and contact details. Upload a school logo.',
+        'User Management: View student and teacher profiles via the Students and Teachers pages. Add new students and teachers to the system.',
+        'Finance: Track school-wide revenue and expenses. Record partial or full payments for student fees and create new ad-hoc fee transactions. Add and categorize expenses with proof of payment.',
+        'Admissions, Academics, etc: Manage all core school functions from their respective pages in the sidebar. Add new classes, subjects, and assets.',
+        'Sports Management: Create sports teams, assign coaches, and manage player rosters. Schedule new competitions and view upcoming matches.',
         'Event Management: Create and schedule new school events from the Events page, including details like location, organizer, and target audience.',
         'Leaderboards: View top student rankings across the school by overall GPA, class, and subject.',
-        'Admin Panel: Manage system-wide data, such as adding new Examination Boards.',
+        'Admin Panel: Manage system-wide data, such as adding new Examination Boards, Fee Descriptions, or Event Audiences.',
+        'Settings: Configure application-wide behavior, such as the grading display format (e.g., 20-Point Scale, Letter Grades, GPA).',
     ]
   },
   Teacher: {

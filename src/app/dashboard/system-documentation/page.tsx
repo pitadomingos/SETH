@@ -1,4 +1,3 @@
-
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -90,7 +89,7 @@ export default function SystemDocumentationPage() {
             </div>
             <div>
               <h3 className="font-semibold">Stateful Context for Interactivity</h3>
-              <p className="text-sm text-muted-foreground">React Context (<code>SchoolDataProvider</code>) now manages dynamic, in-memory state changes. This simulates a real backend by allowing actions like recording payments or adding new fee transactions to persist and be reflected across the app for the duration of the user's session.</p>
+              <p className="text-sm text-muted-foreground">React Context (<code>SchoolDataProvider</code>) now manages dynamic, in-memory state changes. This simulates a real backend by allowing actions like recording payments, adding expenses, managing sports teams, or creating events to persist and be reflected across the app for the duration of the user's session.</p>
             </div>
           </CardContent>
         </Card>
@@ -154,5 +153,3 @@ export default function SystemDocumentationPage() {
     </div>
   );
 }
-
-    
