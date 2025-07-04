@@ -22,10 +22,12 @@ interface LoginCredentials {
 interface AuthContextType {
   role: Role | null;
   user: User | null;
+  originalUser: User | null;
   login: (credentials: LoginCredentials) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
   switchSchoolContext: (schoolId: string) => void;
+  revertToGlobalAdmin: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,6 +50,8 @@ const mockUsers: Record<string, { user: User, role: Role }> = {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<Role | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [originalUser, setOriginalUser] = useState<User | null>(null);
+  const [originalRole, setOriginalRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
@@ -55,10 +59,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const savedUser = localStorage.getItem('user');
       const savedRole = localStorage.getItem('userRole') as Role;
+      const savedOriginalUser = localStorage.getItem('originalUser');
+      const savedOriginalRole = localStorage.getItem('originalRole') as Role;
+
       if (savedUser && savedRole) {
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
         setRole(savedRole);
+      }
+       if (savedOriginalUser && savedOriginalRole) {
+        setOriginalUser(JSON.parse(savedOriginalUser));
+        setOriginalRole(savedOriginalRole);
       }
     } catch (e) {
       console.error("Local storage is not available or data is corrupted.");
@@ -102,9 +113,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setRole(null);
     setUser(null);
+    setOriginalUser(null);
+    setOriginalRole(null);
     try {
       localStorage.removeItem('userRole');
       localStorage.removeItem('user');
+      localStorage.removeItem('originalUser');
+      localStorage.removeItem('originalRole');
       window.location.href = '/';
     } catch (e) {
       console.error("Local storage is not available.");
@@ -112,6 +127,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const switchSchoolContext = (schoolId: string) => {
+     if (role === 'GlobalAdmin' && user) {
+        setOriginalUser(user);
+        setOriginalRole(role);
+        try {
+            localStorage.setItem('originalUser', JSON.stringify(user));
+            localStorage.setItem('originalRole', role);
+        } catch (e) {
+            console.error("Local storage is not available.");
+        }
+    }
+
     const adminUserRecord = Object.values(mockUsers).find(
         (record) => record.user.schoolId === schoolId && record.role === 'Admin'
     );
@@ -132,8 +158,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const revertToGlobalAdmin = () => {
+    if (originalUser && originalRole) {
+      setUser(originalUser);
+      setRole(originalRole);
+      try {
+        localStorage.setItem('user', JSON.stringify(originalUser));
+        localStorage.setItem('userRole', originalRole);
+        localStorage.removeItem('originalUser');
+        localStorage.removeItem('originalRole');
+      } catch (e) {
+        console.error("Local storage is not available.");
+      }
+
+      setOriginalUser(null);
+      setOriginalRole(null);
+      router.push('/dashboard/global-admin');
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ role, user, login, logout, isLoading, switchSchoolContext }}>
+    <AuthContext.Provider value={{ role, user, originalUser, login, logout, isLoading, switchSchoolContext, revertToGlobalAdmin }}>
       {children}
     </AuthContext.Provider>
   );
