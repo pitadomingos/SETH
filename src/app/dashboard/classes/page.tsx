@@ -105,7 +105,7 @@ export default function ClassesPage() {
                         <CardContent className="space-y-3 flex-grow">
                             <div className="flex items-center text-muted-foreground">
                                 <Presentation className="mr-3 h-4 w-4" />
-                                <span>Homeroom: {classItem.teacher}</span>
+                                <span>Homeroom Teacher: {classItem.teacher}</span>
                             </div>
                              <div className="flex items-center text-muted-foreground">
                                 <Users className="mr-3 h-4 w-4" />
@@ -113,7 +113,7 @@ export default function ClassesPage() {
                             </div>
                              <div className="flex items-center text-muted-foreground">
                                 <MapPin className="mr-3 h-4 w-4" />
-                                <span>Homeroom: {classItem.room}</span>
+                                <span>Default Homeroom: {classItem.room}</span>
                             </div>
                         </CardContent>
                     </Card>

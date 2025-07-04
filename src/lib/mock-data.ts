@@ -6,12 +6,20 @@ export interface Team { id: string; name: string; coach: string; playerIds: stri
 export interface Competition { id: string; title: string; ourTeamId: string; opponent: string; date: Date; time: string; location: string; }
 export interface AcademicTerm { id: string; name: string; startDate: Date; endDate: Date; }
 export interface Holiday { id: string; name: string; date: Date; }
+export interface Course {
+  id: string;
+  subject: string;
+  teacherId: string;
+  classId: string;
+  schedule: Array<{ day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday'; startTime: string; endTime: string; room: string; }>;
+}
 
 interface SchoolData {
     profile: SchoolProfile;
     students: Student[];
     teachers: Teacher[];
     classes: Class[];
+    courses: Course[];
     admissions: Admission[];
     exams: Exam[];
     finance: FinanceRecord[];
@@ -59,13 +67,21 @@ const northwoodExpenses: Expense[] = [ { id: 'EXP001', description: 'Teacher Sal
 const northwoodEvents: SchoolEvent[] = [ { id: 'EVT001', date: new Date(new Date().setDate(new Date().getDate() + 3)), title: 'Science Fair', type: 'Academic', location: 'Main Hall', organizer: 'Science Dept.', audience: 'All Students & Parents' }, { id: 'EVT002', date: new Date(new Date().setDate(new Date().getDate() + 10)), title: 'Mid-term Exams Start', type: 'Academic', location: 'Various Classrooms', organizer: 'Examinations Office', audience: 'Grades 9-12' }, ];
 const northwoodTerms: AcademicTerm[] = [ { id: 'TERM01', name: 'Term 1', startDate: new Date(currentYear, 8, 1), endDate: new Date(currentYear, 11, 20) }, { id: 'TERM02', name: 'Term 2', startDate: new Date(currentYear + 1, 0, 10), endDate: new Date(currentYear + 1, 5, 30) }, ];
 const northwoodHolidays: Holiday[] = [ { id: 'HOL01', name: 'Winter Break', date: new Date(currentYear, 11, 21) }, { id: 'HOL02', name: 'Spring Break', date: new Date(currentYear + 1, 2, 25) }, ];
-
+const northwoodCourses: Course[] = [
+    { id: 'CRS001', subject: 'Mathematics', teacherId: 'T001', classId: 'C003', schedule: [{ day: 'Monday', startTime: '09:00', endTime: '10:00', room: '201' }, { day: 'Wednesday', startTime: '09:00', endTime: '10:00', room: '201' }, { day: 'Friday', startTime: '09:00', endTime: '10:00', room: '201' }] },
+    { id: 'CRS002', subject: 'English', teacherId: 'T003', classId: 'C001', schedule: [{ day: 'Tuesday', startTime: '10:00', endTime: '11:00', room: '101' }, { day: 'Thursday', startTime: '10:00', endTime: '11:00', room: '101' }] },
+    { id: 'CRS003', subject: 'Physics', teacherId: 'T002', classId: 'C004', schedule: [{ day: 'Monday', startTime: '11:00', endTime: '12:00', room: '301' }, { day: 'Wednesday', startTime: '11:00', endTime: '12:00', room: '301' }] },
+];
 
 // --- Data for School 2: Oakridge Academy ---
 const oakridgeProfile: SchoolProfile = { id: 'oakridge', name: 'Oakridge Academy', head: 'Mr. James Maxwell', address: '456 Knowledge Ave, Learnington, USA 54321', phone: '+1 (555) 987-6543', email: 'admin@oakridgeacademy.edu', motto: 'Wisdom and Integrity', logoUrl: 'https://placehold.co/100x100.png', tier: 'Pro', gradingSystem: 'GPA', };
 const oakridgeStudents: Student[] = [ { id: 'S101', name: 'Benjamin Carter', grade: '10', class: 'A', email: 'b.carter@oakridge.com', phone: '+1 (555) 101-1010', address: '1 Apple St', parentName: 'Susan Carter', parentEmail: 's.carter@family.com', status: 'Active' }, { id: 'S102', name: 'Charlotte Lee', grade: '11', class: 'A', email: 'c.lee@oakridge.com', phone: '+1 (555) 102-1020', address: '2 Pear Ave', parentName: 'John Lee', parentEmail: 'j.lee@family.com', status: 'Active' }, { id: 'S103', name: 'Daniel Park', grade: '9', class: 'B', email: 'd.park@oakridge.com', phone: '+1 (555) 103-1030', address: '3 Cherry Ln', parentName: 'Grace Park', parentEmail: 'g.park@family.com', status: 'Transferred' }, { id: 'S104', name: 'Miguel Rodriguez', grade: '9', class: 'B', email: 'm.rodriguez.jr@oakridge.com', phone: '+1 (555) 104-1040', address: '123 Main St, Anytown', parentName: 'Maria Rodriguez', parentEmail: 'm.rodriguez@family.com', status: 'Active' }, ];
 const oakridgeTeachers: Teacher[] = [ { id: 'T101', name: 'Ms. Rachel Adams', subject: 'Biology', email: 'r.adams@oakridge.com', phone: '+1 (555) 201-2010', address: '10 Biology Rd', experience: '10 years', qualifications: 'Ph.D. in Biology', status: 'Active' }, { id: 'T102', name: 'Mr. Steven Shaw', subject: 'Geography', email: 's.shaw@oakridge.com', phone: '+1 (555) 202-2020', address: '20 Map Way', experience: '5 years', qualifications: 'M.A. in Geography', status: 'Active' }, ];
 const oakridgeClasses: Class[] = [ { id: 'C101', name: 'Class 9-B', grade: '9', teacher: 'Mr. Steven Shaw', students: 25, room: 'G1' }, { id: 'C102', name: 'Class 10-A', grade: '10', teacher: 'Ms. Rachel Adams', students: 30, room: 'L1' }, ];
+const oakridgeCourses: Course[] = [
+    { id: 'CRS101', subject: 'Biology', teacherId: 'T101', classId: 'C102', schedule: [{ day: 'Tuesday', startTime: '09:00', endTime: '11:00', room: 'L1' }] },
+    { id: 'CRS102', subject: 'Geography', teacherId: 'T102', classId: 'C101', schedule: [{ day: 'Monday', startTime: '13:00', endTime: '14:30', room: 'G1' }] },
+];
 const oakridgeGrades: Grade[] = [ { studentId: 'S101', subject: 'Biology', grade: '18', date: new Date(now.getFullYear(), now.getMonth() - 1) }, { studentId: 'S102', subject: 'Geography', grade: '15', date: new Date(now.getFullYear(), now.getMonth() - 1) }, { studentId: 'S104', subject: 'Geography', grade: '14', date: new Date(now.getFullYear(), now.getMonth()) }, { studentId: 'S104', subject: 'Biology', grade: '12', date: new Date(now.getFullYear(), now.getMonth()) }, ];
 const oakridgeAttendance: Attendance[] = oakridgeStudents.flatMap(student => { return Array.from({length: 30}).map((_, i) => { const date = new Date(); date.setDate(date.getDate() - i); const rand = Math.random(); let status = 'present'; if (rand > 0.92) status = 'absent'; else if (rand > 0.88) status = 'late'; return { studentId: student.id, date: date.toISOString().split('T')[0], status }; }); });
 const oakridgeFinance: FinanceRecord[] = [ { id: 'FEE101', studentId: 'S101', studentName: 'Benjamin Carter', description: 'Annual Tuition', totalAmount: 2200, amountPaid: 2200, dueDate: '2024-08-31' }, { id: 'FEE102', studentId: 'S102', studentName: 'Charlotte Lee', description: 'Annual Tuition', totalAmount: 2200, amountPaid: 0, dueDate: '2024-08-31' }, { id: 'FEE103', studentId: 'S104', studentName: 'Miguel Rodriguez', description: 'Annual Tuition', totalAmount: 2200, amountPaid: 2200, dueDate: '2024-08-31' }, ];
@@ -80,6 +96,7 @@ const maplewoodProfile: SchoolProfile = { id: 'maplewood', name: 'Maplewood Inte
 const maplewoodStudents: Student[] = [ { id: 'S201', name: 'Chloe Dubois', grade: '10', class: 'A', email: 'c.dubois@maplewood.com', phone: '+1 (555) 201-2010', address: '1 Eiffel Tower Rd', parentName: 'Amelie Dubois', parentEmail: 'a.dubois@family.com', status: 'Active' }, { id: 'S202', name: 'Kenji Tanaka', grade: '11', class: 'B', email: 'k.tanaka@maplewood.com', phone: '+1 (555) 202-2020', address: '2 Tokyo Skytree Ave', parentName: 'Haruto Tanaka', parentEmail: 'h.tanaka@family.com', status: 'Active' }, { id: 'S203', name: 'Priya Singh', grade: '9', class: 'C', email: 'p.singh@maplewood.com', phone: '+1 (555) 203-2030', address: '3 Taj Mahal Blvd', parentName: 'Aarav Singh', parentEmail: 'a.singh@family.com', status: 'Active' }, { id: 'S204', name: 'Lucas Martinez', grade: '10', class: 'B', email: 'l.martinez@maplewood.com', phone: '+1 (555) 204-2040', address: '4 Berlin Gate', parentName: 'Sofia Martinez', parentEmail: 's.martinez@family.com', status: 'Active' }, ];
 const maplewoodTeachers: Teacher[] = [ { id: 'T201', name: 'Mr. David Lee', subject: 'History', email: 'd.lee@maplewood.com', phone: '+1 (555) 301-3010', address: '10 History Lane', experience: '15 years', qualifications: 'M.Ed. in History', status: 'Active' }, ];
 const maplewoodClasses: Class[] = [ { id: 'C201', name: 'Class 9-C', grade: '9', teacher: 'Mr. David Lee', students: 22, room: 'H1' }, ];
+const maplewoodCourses: Course[] = [];
 const maplewoodGrades: Grade[] = [ { studentId: 'S201', subject: 'History', grade: '18', date: new Date(now.getFullYear(), now.getMonth() - 1) }, { studentId: 'S204', subject: 'History', grade: '15', date: new Date(now.getFullYear(), now.getMonth()) }, ];
 const maplewoodAttendance: Attendance[] = maplewoodStudents.flatMap(student => { return Array.from({length: 30}).map((_, i) => { const date = new Date(); date.setDate(date.getDate() - i); const rand = Math.random(); let status = 'present'; if (rand > 0.98) status = 'absent'; else if (rand > 0.95) status = 'late'; return { studentId: student.id, date: date.toISOString().split('T')[0], status }; }); });
 const maplewoodFinance: FinanceRecord[] = [ { id: 'FEE201', studentId: 'S201', studentName: 'Chloe Dubois', description: 'Semester 1 Fees', totalAmount: 3500, amountPaid: 1000, dueDate: '2024-09-01' }, { id: 'FEE202', studentId: 'S204', studentName: 'Lucas Martinez', description: 'Semester 1 Fees', totalAmount: 3500, amountPaid: 3500, dueDate: '2024-07-01' }, ];
@@ -95,6 +112,7 @@ export const schoolData: Record<string, SchoolData> = {
     students: northwoodStudents,
     teachers: northwoodTeachers,
     classes: northwoodClasses,
+    courses: northwoodCourses,
     teams: northwoodTeams,
     grades: northwoodGrades,
     attendance: northwoodAttendance,
@@ -117,6 +135,7 @@ export const schoolData: Record<string, SchoolData> = {
     students: oakridgeStudents,
     teachers: oakridgeTeachers,
     classes: oakridgeClasses,
+    courses: oakridgeCourses,
     teams: [],
     grades: oakridgeGrades,
     attendance: oakridgeAttendance,
@@ -139,6 +158,7 @@ export const schoolData: Record<string, SchoolData> = {
     students: maplewoodStudents,
     teachers: maplewoodTeachers,
     classes: maplewoodClasses,
+    courses: maplewoodCourses,
     teams: [],
     grades: maplewoodGrades,
     attendance: maplewoodAttendance,
