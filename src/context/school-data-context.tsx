@@ -2,21 +2,13 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { schoolData, FinanceRecord as InitialFinanceRecord, Grade as InitialGrade, Student, Teacher, Class, Admission, Asset } from '@/lib/mock-data';
+import { schoolData, FinanceRecord as InitialFinanceRecord, Grade as InitialGrade, Student, Teacher, Class, Admission, Asset, SchoolProfile as InitialSchoolProfile } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 import { format } from 'date-fns';
 
 export type FinanceRecord = InitialFinanceRecord;
 export type Grade = InitialGrade;
-
-interface SchoolProfile {
-  name: string;
-  head: string;
-  address: string;
-  phone: string;
-  email: string;
-  motto: string;
-}
+export type SchoolProfile = InitialSchoolProfile;
 
 interface NewFeeData {
     studentId: string;
@@ -33,6 +25,7 @@ interface NewGradeData {
 
 interface SchoolDataContextType {
   schoolProfile: SchoolProfile | null;
+  updateSchoolProfile: (data: Partial<SchoolProfile>) => void;
   allSchoolData: typeof schoolData | null;
   studentsData: Student[];
   addStudent: (student: Omit<Student, 'id' | 'gpa'>) => void;
@@ -72,6 +65,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [currentSchoolData, setCurrentSchoolData] = useState<any>(null);
 
   // Make data that can be modified stateful
+  const [schoolProfile, setSchoolProfile] = useState<SchoolProfile | null>(null);
   const [financeData, setFinanceData] = useState<FinanceRecord[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [subjects, setSubjects] = useState<string[]>([]);
@@ -91,6 +85,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
     if (role === 'GlobalAdmin') {
       setCurrentSchoolData(null);
+      setSchoolProfile(null);
       setIsLoading(false);
       return;
     }
@@ -139,6 +134,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           courses: { teacher: [], student: [] }
       };
       setCurrentSchoolData(parentViewData);
+      setSchoolProfile(null);
       setStudentsData(allStudents);
       setFinanceData(allFinance);
       setGrades(allGrades);
@@ -147,6 +143,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       schoolId = user.schoolId;
       const data = schoolData[schoolId];
       setCurrentSchoolData(data);
+      setSchoolProfile(data.profile);
       setStudentsData(data.students || []);
       setTeachersData(data.teachers || []);
       setClassesData(data.classes || []);
@@ -162,10 +159,15 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
     } else {
         setCurrentSchoolData(null);
+        setSchoolProfile(null);
         setIsLoading(false);
     }
   }, [user, role]);
 
+  const updateSchoolProfile = (data: Partial<SchoolProfile>) => {
+    setSchoolProfile(prev => prev ? { ...prev, ...data } : null);
+  };
+  
   const addSubject = (subject: string) => !subjects.includes(subject) && setSubjects(prev => [...prev, subject].sort());
   const addExamBoard = (board: string) => !examBoards.includes(board) && setExamBoards(prev => [...prev, board].sort());
   const addFeeDescription = (desc: string) => !feeDescriptions.includes(desc) && setFeeDescriptions(prev => [...prev, desc].sort());
@@ -211,7 +213,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const value = {
-    schoolProfile: currentSchoolData?.profile || null,
+    schoolProfile,
+    updateSchoolProfile,
     allSchoolData: role === 'GlobalAdmin' ? schoolData : null,
     studentsData, addStudent,
     teachersData, addTeacher,

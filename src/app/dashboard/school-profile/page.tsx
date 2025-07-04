@@ -1,17 +1,24 @@
+
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Building, User, Mail, Phone, MapPin, Edit, Star, ShieldCheck, Gem, CreditCard } from 'lucide-react';
+import { Loader2, Building, User, Mail, Phone, MapPin, Edit, Star, ShieldCheck, Gem, CreditCard, Save } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 
-// New Component for the Upgrade Dialog
+
+// --- New Component for the Upgrade Dialog ---
 function UpgradePlanDialog() {
   const { schoolProfile } = useSchoolData();
   const { toast } = useToast();
@@ -114,6 +121,85 @@ function UpgradePlanDialog() {
   );
 }
 
+const profileSchema = z.object({
+  name: z.string().min(3, "School name is required."),
+  head: z.string().min(3, "Head of school is required."),
+  address: z.string().min(10, "Address is required."),
+  phone: z.string().min(10, "A valid phone number is required."),
+  email: z.string().email("A valid email is required."),
+  motto: z.string().optional(),
+});
+type ProfileFormValues = z.infer<typeof profileSchema>;
+
+function EditProfileDialog() {
+  const { schoolProfile, updateSchoolProfile } = useSchoolData();
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: schoolProfile?.name || '',
+      head: schoolProfile?.head || '',
+      address: schoolProfile?.address || '',
+      phone: schoolProfile?.phone || '',
+      email: schoolProfile?.email || '',
+      motto: schoolProfile?.motto || '',
+    }
+  });
+
+  useEffect(() => {
+    if (schoolProfile) {
+      form.reset(schoolProfile);
+    }
+  }, [schoolProfile, form]);
+
+
+  function onSubmit(values: ProfileFormValues) {
+    updateSchoolProfile(values);
+    toast({
+      title: 'Profile Updated',
+      description: 'The school profile has been successfully updated.',
+    });
+    setIsOpen(false);
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit Details</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit School Profile</DialogTitle>
+          <DialogDescription>
+            Update the core details for {schoolProfile?.name}. Click save when you're done.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>School Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="head" render={({ field }) => ( <FormItem><FormLabel>Head of School</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Contact Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Contact Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="motto" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>School Motto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+            </div>
+            <DialogFooter>
+              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  Save Changes
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 // Main Page Component
 export default function SchoolProfilePage() {
@@ -210,7 +296,7 @@ export default function SchoolProfilePage() {
             </div>
         </CardContent>
         <CardFooter className="border-t pt-6 flex justify-between">
-            <Button variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit Details</Button>
+            <EditProfileDialog />
             {schoolProfile.tier !== 'Premium' && <UpgradePlanDialog />}
         </CardFooter>
       </Card>
