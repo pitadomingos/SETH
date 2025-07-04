@@ -116,7 +116,7 @@ export default function AdmissionsPage() {
                       <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <ViewApplicationDialog application={application} />
-                        <DropdownMenuItem onClick={() => handleStatusChange(application, 'Approved')} disabled={application.status === 'Approved'}>Approve & Enroll</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleStatusChange(application, 'Approved')} disabled={application.status !== 'Pending'}>Approve & Enroll</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleStatusChange(application, 'Rejected')} className="text-destructive" disabled={application.status !== 'Pending'}>Reject</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
