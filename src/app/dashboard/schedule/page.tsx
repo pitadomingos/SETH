@@ -1,11 +1,18 @@
 
 'use client';
 import { useAuth } from '@/context/auth-context';
-import { useSchoolData, Class } from '@/context/school-data-context';
+import { useSchoolData, Class as ClassType } from '@/context/school-data-context';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+
+function formatSchedule(schedule: ClassType['schedule']) {
+    if (!schedule || schedule.length === 0) return "Not scheduled";
+    return schedule
+        .map(s => `${s.day} ${s.startTime}-${s.endTime}`)
+        .join(', ');
+}
 
 export default function SchedulePage() {
   const { role } = useAuth();
@@ -14,7 +21,7 @@ export default function SchedulePage() {
     <div className="space-y-6 animate-in fade-in-50">
       <header>
         <h2 className="text-3xl font-bold tracking-tight">Course Schedules</h2>
-        <p className="text-muted-foreground">View your current course information.</p>
+        <p className="text-muted-foreground">View your recurring weekly course information.</p>
       </header>
       {role === 'Teacher' && <TeacherSchedule />}
       {role === 'Student' && <StudentSchedule />}
@@ -24,7 +31,7 @@ export default function SchedulePage() {
             <CardTitle>Administrator View</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>Admins can create classes and assign schedules via the "Classes" page. Those changes are then reflected here for teachers and students.</p>
+            <p>Admins can create classes and assign recurring weekly schedules via the "Classes" page. Those changes are then reflected here for teachers and students.</p>
           </CardContent>
         </Card>
       }
@@ -55,7 +62,7 @@ function TeacherSchedule() {
             {teacherCourses.map((course) => (
               <TableRow key={course.id}>
                 <TableCell className="font-medium">{course.name}</TableCell>
-                <TableCell>{course.schedule}</TableCell>
+                <TableCell>{formatSchedule(course.schedule)}</TableCell>
                 <TableCell className="text-right">{course.students}</TableCell>
               </TableRow>
             ))}
@@ -89,6 +96,7 @@ function StudentSchedule() {
             <TableRow>
               <TableHead className="w-[300px]">Course Name</TableHead>
               <TableHead>Teacher</TableHead>
+              <TableHead>Schedule</TableHead>
               <TableHead>Grade</TableHead>
               <TableHead>Progress</TableHead>
             </TableRow>
@@ -98,6 +106,7 @@ function StudentSchedule() {
               <TableRow key={course.id}>
                 <TableCell className="font-medium">{course.name}</TableCell>
                 <TableCell>{course.teacher}</TableCell>
+                <TableCell>{formatSchedule(course.schedule)}</TableCell>
                 <TableCell><Badge variant="secondary">Grade {course.grade}</Badge></TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
@@ -109,7 +118,7 @@ function StudentSchedule() {
             ))}
              {studentCourses.length === 0 && (
                 <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center text-muted-foreground">
                         You are not currently enrolled in any classes.
                     </TableCell>
                 </TableRow>

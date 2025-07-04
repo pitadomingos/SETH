@@ -9,7 +9,7 @@ import {
     Grade as InitialGrade, 
     Student, 
     Teacher, 
-    Class, 
+    Class as InitialClass, 
     Admission, 
     Asset, 
     SchoolProfile as InitialSchoolProfile, 
@@ -18,15 +18,18 @@ import {
     Competition, 
     SchoolEvent,
     AcademicTerm,
-    Holiday
+    Holiday,
+    ScheduleSlot
 } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 
 export type FinanceRecord = InitialFinanceRecord;
 export type Grade = InitialGrade;
 export type SchoolProfile = InitialSchoolProfile;
-export type { Team, Competition, Class };
+export type Class = InitialClass;
+export type { Team, Competition };
 
+interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; schedule: ScheduleSlot[]; }
 interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }
 interface NewGradeData { studentId: string; subject: string; grade: string; }
 interface NewExpenseData { description: string; category: string; amount: number; date: string; proofUrl: string; }
@@ -45,7 +48,7 @@ interface SchoolDataContextType {
   teachersData: Teacher[];
   addTeacher: (teacher: Omit<Teacher, 'id' | 'status'>) => void;
   classesData: Class[];
-  addClass: (classData: Omit<Class, 'id'>) => void;
+  addClass: (classData: NewClassData) => void;
   admissionsData: Admission[];
   updateApplicationStatus: (id: string, status: Admission['status']) => void;
   examsData: any[];
@@ -239,7 +242,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setTeachersData(prev => [newTeacher, ...prev]);
   };
 
-  const addClass = (classData: Omit<Class, 'id'>) => {
+  const addClass = (classData: NewClassData) => {
     const newClass: Class = { id: `C${Date.now()}`, ...classData };
     setClassesData(prev => [newClass, ...prev]);
   }
