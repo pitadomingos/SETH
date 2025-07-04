@@ -58,7 +58,7 @@ function AISystemAnalysis() {
         };
         const result = await analyzeSchoolSystem(analysisInput);
         setAnalysis(result);
-      } catch (error) => {
+      } catch (error) {
         console.error("Failed to fetch system analysis:", error);
       } finally {
         setIsLoading(false);
@@ -170,5 +170,3 @@ export default function GlobalAdminDashboard() {
     </div>
   );
 }
-
-    
