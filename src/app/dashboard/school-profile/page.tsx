@@ -137,6 +137,7 @@ function EditProfileDialog() {
   const { schoolProfile, updateSchoolProfile } = useSchoolData();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
+  const [logoPreview, setLogoPreview] = useState(schoolProfile?.logoUrl || '');
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -151,11 +152,10 @@ function EditProfileDialog() {
     }
   });
 
-  const logoUrlValue = form.watch('logoUrl');
-
   useEffect(() => {
     if (schoolProfile && isOpen) {
       form.reset(schoolProfile);
+      setLogoPreview(schoolProfile.logoUrl);
     }
   }, [schoolProfile, form, isOpen]);
 
@@ -194,12 +194,13 @@ function EditProfileDialog() {
               <div className="col-span-2 space-y-2">
                 <FormLabel>School Logo</FormLabel>
                 <div className="flex items-center gap-4">
-                  <Image src={logoUrlValue || 'https://placehold.co/100x100.png'} alt="logo preview" width={48} height={48} className="rounded-md bg-muted object-cover" data-ai-hint="school logo"/>
+                  <Image src={logoPreview || 'https://placehold.co/100x100.png'} alt="logo preview" width={48} height={48} className="rounded-md bg-muted object-cover" data-ai-hint="school logo"/>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => {
                       const newLogoUrl = `https://placehold.co/100x100.png?v=${Date.now()}`;
+                      setLogoPreview(newLogoUrl);
                       form.setValue('logoUrl', newLogoUrl, { shouldValidate: true, shouldDirty: true });
                     }}
                   >
