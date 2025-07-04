@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData, Team, Competition } from '@/context/school-data-context';
-import { Trophy, Users, PlusCircle, Loader2, User as UserIcon, X, Calendar as CalendarIcon, Clock, MapPin, Versus } from 'lucide-react';
+import { Trophy, Users, PlusCircle, Loader2, User as UserIcon, X, Calendar as CalendarIcon, Clock, MapPin, Swords } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -328,7 +328,7 @@ export default function SportsPage() {
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                                         {team && <span className="text-2xl">{team.icon}</span>}
                                         <span>{team?.name || 'School Team'}</span>
-                                        <Versus className="h-4 w-4 text-primary" />
+                                        <Swords className="h-4 w-4 text-primary" />
                                         <span>{comp.opponent}</span>
                                     </div>
                                 </div>
