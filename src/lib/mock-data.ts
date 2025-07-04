@@ -1,5 +1,7 @@
 
 
+import { type CreateLessonPlanOutput } from "@/ai/flows/create-lesson-plan";
+
 export interface FinanceRecord { id: string; studentId: string; studentName: string; description: string; totalAmount: number; amountPaid: number; dueDate: string; }
 export interface Expense { id: string; description: string; category: string; amount: number; date: string; proofUrl: string; }
 export interface Team { id: string; name: string; coach: string; playerIds: string[]; icon: string; }
@@ -13,6 +15,13 @@ export interface Course {
   classId: string;
   schedule: Array<{ day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday'; startTime: string; endTime: string; room: string; }>;
 }
+export interface LessonPlan extends CreateLessonPlanOutput {
+  id: string;
+  className: string;
+  subject: string;
+  createdAt: Date;
+  weeklySyllabus: string;
+}
 
 interface SchoolData {
     profile: SchoolProfile;
@@ -20,6 +29,7 @@ interface SchoolData {
     teachers: Teacher[];
     classes: Class[];
     courses: Course[];
+    lessonPlans: LessonPlan[];
     admissions: Admission[];
     exams: Exam[];
     finance: FinanceRecord[];
@@ -113,6 +123,7 @@ export const schoolData: Record<string, SchoolData> = {
     teachers: northwoodTeachers,
     classes: northwoodClasses,
     courses: northwoodCourses,
+    lessonPlans: [],
     teams: northwoodTeams,
     grades: northwoodGrades,
     attendance: northwoodAttendance,
@@ -136,6 +147,7 @@ export const schoolData: Record<string, SchoolData> = {
     teachers: oakridgeTeachers,
     classes: oakridgeClasses,
     courses: oakridgeCourses,
+    lessonPlans: [],
     teams: [],
     grades: oakridgeGrades,
     attendance: oakridgeAttendance,
@@ -159,6 +171,7 @@ export const schoolData: Record<string, SchoolData> = {
     teachers: maplewoodTeachers,
     classes: maplewoodClasses,
     courses: maplewoodCourses,
+    lessonPlans: [],
     teams: [],
     grades: maplewoodGrades,
     attendance: maplewoodAttendance,

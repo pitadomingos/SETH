@@ -20,8 +20,10 @@ import {
     AcademicTerm,
     Holiday,
     Course as InitialCourse,
+    LessonPlan,
 } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
+import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
 
 export type FinanceRecord = InitialFinanceRecord;
 export type Grade = InitialGrade;
@@ -40,6 +42,7 @@ interface NewEventData { title: string; date: Date; location: string; organizer:
 interface NewTermData { name: string; startDate: Date; endDate: Date; }
 interface NewHolidayData { name: string; date: Date; }
 export interface NewCourseData { subject: string; teacherId: string; classId: string; schedule: Array<{ day: string; startTime: string; endTime: string; room: string; }>; }
+export interface NewLessonPlanData { className: string; subject: string; weeklySyllabus: string; weeklyPlan: CreateLessonPlanOutput['weeklyPlan']; }
 
 
 interface SchoolDataContextType {
@@ -89,6 +92,8 @@ interface SchoolDataContextType {
   addTerm: (data: NewTermData) => void;
   holidays: Holiday[];
   addHoliday: (data: NewHolidayData) => void;
+  lessonPlans: LessonPlan[];
+  addLessonPlan: (data: NewLessonPlanData) => void;
   isLoading: boolean;
 }
 
@@ -120,6 +125,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [terms, setTerms] = useState<AcademicTerm[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [coursesData, setCoursesData] = useState<Course[]>([]);
+  const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -196,6 +202,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setTerms(data.terms || []);
       setHolidays(data.holidays || []);
       setCoursesData(data.courses || []);
+      setLessonPlans(data.lessonPlans || []);
       if(data.teachers) {
           const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
           setSubjects(initialSubjects);
@@ -283,6 +290,15 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setCoursesData(prev => [newCourse, ...prev]);
   };
 
+  const addLessonPlan = (data: NewLessonPlanData) => {
+    const newPlan: LessonPlan = {
+        id: `LP${Date.now()}`,
+        createdAt: new Date(),
+        ...data,
+    };
+    setLessonPlans(prev => [newPlan, ...prev]);
+  };
+
   const addPlayerToTeam = (teamId: string, studentId: string) => { setTeamsData(prev => prev.map(team => team.id === teamId ? { ...team, playerIds: [...team.playerIds, studentId] } : team)); };
   const removePlayerFromTeam = (teamId: string, studentId: string) => { setTeamsData(prev => prev.map(team => team.id === teamId ? { ...team, playerIds: team.playerIds.filter(id => id !== studentId) } : team)); };
   const updateApplicationStatus = (id: string, status: Admission['status']) => { setAdmissionsData(prev => prev.map(app => app.id === id ? { ...app, status } : app)); };
@@ -312,6 +328,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     competitionsData, addCompetition,
     terms, addTerm,
     holidays, addHoliday,
+    lessonPlans, addLessonPlan,
     isLoading,
   };
 

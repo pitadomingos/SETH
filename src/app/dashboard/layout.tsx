@@ -13,11 +13,11 @@ export default function DashboardLayout({
     <ProtectedRoute>
       <SidebarProvider>
         <div className="flex min-h-screen w-full">
-            <Sidebar>
+            <Sidebar className="print:hidden">
             <AppSidebar />
             </Sidebar>
             <SidebarInset>
-                <AppHeader />
+                <AppHeader className="print:hidden"/>
                 <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
                     {children}
                 </main>
