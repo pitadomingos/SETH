@@ -3,7 +3,23 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
-import { schoolData, FinanceRecord as InitialFinanceRecord, Grade as InitialGrade, Student, Teacher, Class, Admission, Asset, SchoolProfile as InitialSchoolProfile, Expense, Team, Competition, SchoolEvent } from '@/lib/mock-data';
+import { 
+    schoolData, 
+    FinanceRecord as InitialFinanceRecord, 
+    Grade as InitialGrade, 
+    Student, 
+    Teacher, 
+    Class, 
+    Admission, 
+    Asset, 
+    SchoolProfile as InitialSchoolProfile, 
+    Expense, 
+    Team, 
+    Competition, 
+    SchoolEvent,
+    AcademicTerm,
+    Holiday
+} from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 
 export type FinanceRecord = InitialFinanceRecord;
@@ -11,50 +27,14 @@ export type Grade = InitialGrade;
 export type SchoolProfile = InitialSchoolProfile;
 export type { Team, Competition, Class };
 
-interface NewFeeData {
-    studentId: string;
-    description: string;
-    totalAmount: number;
-    dueDate: string;
-}
-
-interface NewGradeData {
-    studentId: string;
-    subject: string;
-    grade: string;
-}
-
-interface NewExpenseData {
-    description: string;
-    category: string;
-    amount: number;
-    date: string;
-    proofUrl: string;
-}
-
-interface NewTeamData {
-    name: string;
-    coach: string;
-    icon: string;
-}
-
-interface NewCompetitionData {
-    title: string;
-    ourTeamId: string;
-    opponent: string;
-    date: Date;
-    time: string;
-    location: string;
-}
-
-interface NewEventData {
-  title: string;
-  date: Date;
-  location: string;
-  organizer: string;
-  audience: string;
-  type: string;
-}
+interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }
+interface NewGradeData { studentId: string; subject: string; grade: string; }
+interface NewExpenseData { description: string; category: string; amount: number; date: string; proofUrl: string; }
+interface NewTeamData { name: string; coach: string; icon: string; }
+interface NewCompetitionData { title: string; ourTeamId: string; opponent: string; date: Date; time: string; location: string; }
+interface NewEventData { title: string; date: Date; location: string; organizer: string; audience: string; type: string; }
+interface NewTermData { name: string; startDate: Date; endDate: Date; }
+interface NewHolidayData { name: string; date: Date; }
 
 interface SchoolDataContextType {
   schoolProfile: SchoolProfile | null;
@@ -68,7 +48,7 @@ interface SchoolDataContextType {
   addClass: (classData: Omit<Class, 'id'>) => void;
   admissionsData: Admission[];
   updateApplicationStatus: (id: string, status: Admission['status']) => void;
-  examsData: Exam[];
+  examsData: any[];
   financeData: FinanceRecord[];
   recordPayment: (feeId: string, amount: number) => void;
   addFee: (data: NewFeeData) => void;
@@ -98,6 +78,10 @@ interface SchoolDataContextType {
   removePlayerFromTeam: (teamId: string, studentId: string) => void;
   competitionsData: Competition[];
   addCompetition: (data: NewCompetitionData) => void;
+  terms: AcademicTerm[];
+  addTerm: (data: NewTermData) => void;
+  holidays: Holiday[];
+  addHoliday: (data: NewHolidayData) => void;
   isLoading: boolean;
 }
 
@@ -127,6 +111,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [teamsData, setTeamsData] = useState<Team[]>([]);
   const [competitionsData, setCompetitionsData] = useState<Competition[]>([]);
   const [events, setEvents] = useState<SchoolEvent[]>([]);
+  const [terms, setTerms] = useState<AcademicTerm[]>([]);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -182,7 +168,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       const parentViewData = {
           profile: null, students: allStudents, attendance: allAttendance, events: allEvents,
           teachers: [], classes: [], admissions: [], exams: [], assets: [], assignments: [],
-          expenses: [], teams: [], competitions: [],
+          expenses: [], teams: [], competitions: [], terms: [], holidays: [],
       };
       setCurrentSchoolData(parentViewData);
       setSchoolProfile(null);
@@ -208,6 +194,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setTeamsData(data.teams || []);
       setCompetitionsData(data.competitions || []);
       setEvents(data.events || []);
+      setTerms(data.terms || []);
+      setHolidays(data.holidays || []);
       if(data.teachers) {
           const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
           setSubjects(initialSubjects);
@@ -222,18 +210,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, role]);
 
-  const updateSchoolProfile = (data: Partial<SchoolProfile>) => {
-    setSchoolProfile(prev => prev ? { ...prev, ...data } : null);
-  };
-  
+  const updateSchoolProfile = (data: Partial<SchoolProfile>) => { setSchoolProfile(prev => prev ? { ...prev, ...data } : null); };
   const addSubject = (subject: string) => !subjects.includes(subject) && setSubjects(prev => [...prev, subject].sort());
   const addExamBoard = (board: string) => !examBoards.includes(board) && setExamBoards(prev => [...prev, board].sort());
   const addFeeDescription = (desc: string) => !feeDescriptions.includes(desc) && setFeeDescriptions(prev => [...prev, desc].sort());
   const addAudience = (audience: string) => !audiences.includes(audience) && setAudiences(prev => [...prev, audience].sort());
-  
-  const recordPayment = (feeId: string, amount: number) => {
-    setFinanceData(prev => prev.map(fee => fee.id === feeId ? { ...fee, amountPaid: Math.min(fee.totalAmount, fee.amountPaid + amount) } : fee));
-  };
+  const recordPayment = (feeId: string, amount: number) => { setFinanceData(prev => prev.map(fee => fee.id === feeId ? { ...fee, amountPaid: Math.min(fee.totalAmount, fee.amountPaid + amount) } : fee)); };
   
   const addFee = (data: NewFeeData) => {
     const student = studentsData.find(s => s.id === data.studentId);
@@ -268,61 +250,40 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const addExpense = (data: NewExpenseData) => {
-    const newExpense: Expense = {
-        id: `EXP${Date.now()}`,
-        ...data,
-    };
+    const newExpense: Expense = { id: `EXP${Date.now()}`, ...data, };
     setExpensesData(prev => [newExpense, ...prev]);
   }
 
   const addTeam = (data: NewTeamData) => {
-    const newTeam: Team = {
-      id: `TEAM${Date.now()}`,
-      playerIds: [],
-      ...data,
-    };
+    const newTeam: Team = { id: `TEAM${Date.now()}`, playerIds: [], ...data, };
     setTeamsData(prev => [newTeam, ...prev]);
   };
 
   const addCompetition = (data: NewCompetitionData) => {
-    const newCompetition: Competition = {
-        id: `COMP${Date.now()}`,
-        ...data,
-    };
+    const newCompetition: Competition = { id: `COMP${Date.now()}`, ...data, };
     setCompetitionsData(prev => [...prev, newCompetition].sort((a,b) => a.date.getTime() - b.date.getTime()));
   };
 
   const addEvent = (data: NewEventData) => {
-    const newEvent: SchoolEvent = {
-        id: `EVT${Date.now()}`,
-        ...data,
-    };
+    const newEvent: SchoolEvent = { id: `EVT${Date.now()}`, ...data, };
     setEvents(prev => [...prev, newEvent].sort((a,b) => a.date.getTime() - b.date.getTime()));
   };
 
-  const addPlayerToTeam = (teamId: string, studentId: string) => {
-    setTeamsData(prev => prev.map(team => 
-      team.id === teamId 
-        ? { ...team, playerIds: [...team.playerIds, studentId] } 
-        : team
-    ));
-  };
+  const addTerm = (data: NewTermData) => {
+    const newTerm: AcademicTerm = { id: `TERM${Date.now()}`, ...data };
+    setTerms(prev => [...prev, newTerm].sort((a,b) => a.startDate.getTime() - b.startDate.getTime()));
+  }
 
-  const removePlayerFromTeam = (teamId: string, studentId: string) => {
-    setTeamsData(prev => prev.map(team => 
-      team.id === teamId 
-        ? { ...team, playerIds: team.playerIds.filter(id => id !== studentId) } 
-        : team
-    ));
-  };
+  const addHoliday = (data: NewHolidayData) => {
+    const newHoliday: Holiday = { id: `HOL${Date.now()}`, ...data };
+    setHolidays(prev => [...prev, newHoliday].sort((a,b) => a.date.getTime() - b.date.getTime()));
+  }
 
-  const updateApplicationStatus = (id: string, status: Admission['status']) => {
-    setAdmissionsData(prev => prev.map(app => app.id === id ? { ...app, status } : app));
-  };
+  const addPlayerToTeam = (teamId: string, studentId: string) => { setTeamsData(prev => prev.map(team => team.id === teamId ? { ...team, playerIds: [...team.playerIds, studentId] } : team)); };
+  const removePlayerFromTeam = (teamId: string, studentId: string) => { setTeamsData(prev => prev.map(team => team.id === teamId ? { ...team, playerIds: team.playerIds.filter(id => id !== studentId) } : team)); };
+  const updateApplicationStatus = (id: string, status: Admission['status']) => { setAdmissionsData(prev => prev.map(app => app.id === id ? { ...app, status } : app)); };
 
-  const studentIdMap = {
-    student1: 'S001', student2: 'S101', student3: 'S201', student4: 'S010',
-  };
+  const studentIdMap = { student1: 'S001', student2: 'S101', student3: 'S201', student4: 'S010', };
 
   const courses = useMemo(() => {
     const emptyCourses = { teacher: [], student: [] };
@@ -336,15 +297,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if (role === 'Student' && user.username) {
         const studentId = studentIdMap[user.username];
         if (!studentId) return emptyCourses;
-
         const studentInfo = studentsData.find(s => s.id === studentId);
         if (!studentInfo) return emptyCourses;
-        
-        const studentCourses = classesData.filter(c => 
-            c.grade === studentInfo.grade && 
-            c.name.split('-')[1].trim() === studentInfo.class
-        );
-        
+        const studentCourses = classesData.filter(c => c.grade === studentInfo.grade && c.name.split('-')[1].trim() === studentInfo.class);
         const studentCoursesWithProgress = studentCourses.map(c => ({...c, progress: Math.floor(Math.random() * 40) + 50}));
         return { ...emptyCourses, student: studentCoursesWithProgress };
     }
@@ -354,8 +309,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
 
   const value = {
-    schoolProfile,
-    updateSchoolProfile,
+    schoolProfile, updateSchoolProfile,
     allSchoolData: role === 'GlobalAdmin' ? schoolData : null,
     studentsData, addStudent,
     teachersData, addTeacher,
@@ -367,22 +321,18 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     assignments: currentSchoolData?.assignments || [],
     grades, addGrade,
     attendance: currentSchoolData?.attendance || [],
-    events,
-    addEvent,
+    events, addEvent,
     courses,
     subjects, addSubject,
     examBoards, addExamBoard,
     feeDescriptions, addFeeDescription,
     audiences, addAudience,
     expenseCategories,
-    expensesData,
-    addExpense,
-    teamsData,
-    addTeam,
-    addPlayerToTeam,
-    removePlayerFromTeam,
-    competitionsData,
-    addCompetition,
+    expensesData, addExpense,
+    teamsData, addTeam, addPlayerToTeam, removePlayerFromTeam,
+    competitionsData, addCompetition,
+    terms, addTerm,
+    holidays, addHoliday,
     isLoading,
   };
 
