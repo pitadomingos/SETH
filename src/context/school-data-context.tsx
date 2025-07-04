@@ -3,13 +3,14 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { schoolData, FinanceRecord as InitialFinanceRecord, Grade as InitialGrade, Student, Teacher, Class, Admission, Asset, SchoolProfile as InitialSchoolProfile, Expense } from '@/lib/mock-data';
+import { schoolData, FinanceRecord as InitialFinanceRecord, Grade as InitialGrade, Student, Teacher, Class, Admission, Asset, SchoolProfile as InitialSchoolProfile, Expense, Team } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 import { format } from 'date-fns';
 
 export type FinanceRecord = InitialFinanceRecord;
 export type Grade = InitialGrade;
 export type SchoolProfile = InitialSchoolProfile;
+export type { Team };
 
 interface NewFeeData {
     studentId: string;
@@ -30,6 +31,12 @@ interface NewExpenseData {
     amount: number;
     date: string;
     proofUrl: string;
+}
+
+interface NewTeamData {
+    name: string;
+    coach: string;
+    icon: string;
 }
 
 interface SchoolDataContextType {
@@ -65,6 +72,8 @@ interface SchoolDataContextType {
   expenseCategories: string[];
   expensesData: Expense[];
   addExpense: (data: NewExpenseData) => void;
+  teamsData: Team[];
+  addTeam: (data: NewTeamData) => void;
   isLoading: boolean;
 }
 
@@ -90,6 +99,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [assetsData, setAssetsData] = useState<Asset[]>([]);
   const [expensesData, setExpensesData] = useState<Expense[]>([]);
   const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
+  const [teamsData, setTeamsData] = useState<Team[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -145,7 +155,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       const parentViewData = {
           profile: null, students: allStudents, attendance: allAttendance, events: allEvents,
           teachers: [], classes: [], admissions: [], exams: [], assets: [], assignments: [],
-          courses: { teacher: [], student: [] }, expenses: [],
+          courses: { teacher: [], student: [] }, expenses: [], teams: [],
       };
       setCurrentSchoolData(parentViewData);
       setSchoolProfile(null);
@@ -167,6 +177,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setGrades(data.grades || []);
       setExpensesData(data.expenses || []);
       setExpenseCategories(data.expenseCategories || []);
+      setTeamsData(data.teams || []);
       if(data.teachers) {
           const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
           setSubjects(initialSubjects);
@@ -232,6 +243,15 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setExpensesData(prev => [newExpense, ...prev]);
   }
 
+  const addTeam = (data: NewTeamData) => {
+    const newTeam: Team = {
+      id: `TEAM${Date.now()}`,
+      players: 0, // New teams start with 0 players
+      ...data,
+    };
+    setTeamsData(prev => [newTeam, ...prev]);
+  };
+
   const updateApplicationStatus = (id: string, status: Admission['status']) => {
     setAdmissionsData(prev => prev.map(app => app.id === id ? { ...app, status } : app));
   };
@@ -258,6 +278,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     expenseCategories,
     expensesData,
     addExpense,
+    teamsData,
+    addTeam,
     isLoading,
   };
 

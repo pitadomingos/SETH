@@ -19,6 +19,14 @@ export interface Expense {
   proofUrl: string;
 }
 
+export interface Team {
+  id: string;
+  name: string;
+  coach: string;
+  players: number;
+  icon: string;
+}
+
 interface SchoolData {
     profile: SchoolProfile;
     students: Student[];
@@ -39,6 +47,7 @@ interface SchoolData {
     feeDescriptions: string[];
     expenseCategories: string[];
     expenses: Expense[];
+    teams: Team[];
 }
 
 export interface SchoolProfile {
@@ -104,6 +113,12 @@ const northwoodClasses: Class[] = [
   { id: 'C002', name: 'Class 9-C', grade: '9', teacher: 'Prof. Michael Chen', students: 22, room: '103' },
   { id: 'C003', name: 'Class 10-A', grade: '10', teacher: 'Prof. Michael Chen', students: 30, room: '201' },
   { id: 'C004', name: 'Class 11-B', grade: '11', teacher: 'Dr. Lisa Anderson', students: 25, room: '301' },
+];
+
+const northwoodTeams: Team[] = [
+    { id: 'TEAM01', name: 'Basketball Varsity', coach: 'Prof. Michael Chen', players: 15, icon: '🏀' },
+    { id: 'TEAM02', name: 'Football Eagles', coach: 'Ms. Jennifer Davis', players: 22, icon: '🏈' },
+    { id: 'TEAM03', name: 'Swim Team Sharks', coach: 'Dr. Lisa Anderson', players: 18, icon: '🏊' },
 ];
 
 const now = new Date();
@@ -282,6 +297,7 @@ export const schoolData: Record<string, SchoolData> = {
     students: northwoodStudents,
     teachers: northwoodTeachers,
     classes: northwoodClasses,
+    teams: northwoodTeams,
     grades: northwoodGrades,
     attendance: northwoodAttendance,
     finance: northwoodFinance,
@@ -326,6 +342,7 @@ export const schoolData: Record<string, SchoolData> = {
     students: oakridgeStudents,
     teachers: oakridgeTeachers,
     classes: oakridgeClasses,
+    teams: [],
     grades: oakridgeGrades,
     attendance: oakridgeAttendance,
     finance: oakridgeFinance,
@@ -363,6 +380,7 @@ export const schoolData: Record<string, SchoolData> = {
     students: maplewoodStudents,
     teachers: maplewoodTeachers,
     classes: maplewoodClasses,
+    teams: [],
     grades: maplewoodGrades,
     attendance: maplewoodAttendance,
     finance: maplewoodFinance,
