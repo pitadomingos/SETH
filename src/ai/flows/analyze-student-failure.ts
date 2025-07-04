@@ -12,6 +12,7 @@ import {z} from 'genkit';
 
 const AnalyzeStudentFailureInputSchema = z.object({
   studentName: z.string().describe('The name of the student.'),
+  age: z.number().describe('The age of the student.'),
   grades: z.array(z.object({
     subject: z.string(),
     grade: z.string(),
@@ -44,6 +45,7 @@ Your goal is to provide a clear, supportive analysis of why they failed and give
 
 **Student Data:**
 Student Name: {{{studentName}}}
+Age: {{{age}}}
 
 **Grades:**
 {{#each grades}}
@@ -56,7 +58,7 @@ Student Name: {{{studentName}}}
 - Absent: {{attendanceSummary.absent}} days
 
 **Analysis Task:**
-1.  **Analyze Failure:** Examine the grades and attendance. Identify the key contributing factors. Is it poor performance in one specific, critical subject? Is it a general trend of low grades across the board? Does high absenteeism correlate with poor grades?
+1.  **Analyze Failure:** Examine the grades and attendance. Consider the student's age as context but do not focus on it unless it's highly relevant (e.g., significantly older or younger than typical for their grade). Identify the key contributing factors. Is it poor performance in one specific, critical subject? Is it a general trend of low grades across the board? Does high absenteeism correlate with poor grades?
 2.  **Provide Suggestions:** Based on your analysis, provide a bulleted list of actionable suggestions. These should be practical and encouraging. For example, suggest focusing on specific subjects, seeking tutoring, improving study habits, or creating a study schedule.
 
 **Output Tone:**

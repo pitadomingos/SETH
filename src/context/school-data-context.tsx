@@ -30,7 +30,7 @@ export type Grade = InitialGrade;
 export type SchoolProfile = InitialSchoolProfile;
 export type Class = InitialClass;
 export type Course = InitialCourse;
-export type { Team, Competition };
+export type { Team, Competition, Admission };
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
 interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }
@@ -43,6 +43,7 @@ interface NewTermData { name: string; startDate: Date; endDate: Date; }
 interface NewHolidayData { name: string; date: Date; }
 export interface NewCourseData { subject: string; teacherId: string; classId: string; schedule: Array<{ day: string; startTime: string; endTime: string; room: string; }>; }
 export interface NewLessonPlanData { className: string; subject: string; weeklySyllabus: string; weeklyPlan: CreateLessonPlanOutput['weeklyPlan']; }
+export interface NewAdmissionData { name: string; dateOfBirth: string; appliedFor: string; }
 
 
 interface SchoolDataContextType {
@@ -51,12 +52,13 @@ interface SchoolDataContextType {
   allSchoolData: typeof initialSchoolData | null;
   updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
   studentsData: Student[];
-  addStudent: (student: Omit<Student, 'id' | 'status'>) => void;
+  addStudentFromAdmission: (admission: Admission) => void;
   teachersData: Teacher[];
   addTeacher: (teacher: Omit<Teacher, 'id' | 'status'>) => void;
   classesData: Class[];
   addClass: (classData: NewClassData) => void;
   admissionsData: Admission[];
+  addAdmission: (data: NewAdmissionData) => void;
   updateApplicationStatus: (id: string, status: Admission['status']) => void;
   examsData: any[];
   financeData: FinanceRecord[];
@@ -178,7 +180,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           allEvents.push(...schoolEventsWithSchoolName);
       });
       
-      setSchoolProfile(null);
+      setSchoolProfile(allSchoolData['northwood'].profile); // Parents need a default context for some actions
       setStudentsData(allStudents);
       setFinanceData(allFinance);
       setGrades(allGrades);
@@ -252,9 +254,28 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setGrades(prev => [newGrade, ...prev]);
   };
 
-  const addStudent = (studentData: Omit<Student, 'id'| 'gpa' | 'status'>) => {
-    const newStudent: Student = { id: `S${Date.now()}`, ...studentData, status: 'Active' };
-    setStudentsData(prev => [newStudent, ...prev]);
+  const addStudentFromAdmission = (admission: Admission) => {
+    if (!user?.schoolId) return; // Ensure we are in a school context
+
+    const newStudent: Student = {
+        id: `S${Date.now()}`,
+        name: admission.name,
+        grade: admission.appliedFor.replace('Grade ', ''),
+        class: 'Unassigned',
+        email: `${admission.name.split(' ').join('.').toLowerCase()}@edumanage.com`,
+        phone: 'N/A',
+        address: 'N/A',
+        parentName: admission.parentName,
+        parentEmail: admission.parentEmail,
+        dateOfBirth: admission.dateOfBirth,
+        status: 'Active',
+    };
+    
+    setAllSchoolData(prevAllData => {
+        const newAllData = { ...prevAllData };
+        newAllData[user.schoolId!].students.push(newStudent);
+        return newAllData;
+    });
   };
   
   const addTeacher = (teacherData: Omit<Teacher, 'id' | 'status'>) => {
@@ -315,6 +336,27 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     };
     setLessonPlans(prev => [newPlan, ...prev]);
   };
+  
+  const addAdmission = (data: NewAdmissionData) => {
+    if (!user || !user.schoolId) return;
+
+    const newAdmission: Admission = {
+        id: `ADM${Date.now()}`,
+        ...data,
+        date: new Date().toISOString().split('T')[0],
+        status: 'Pending',
+        formerSchool: 'N/A',
+        grades: 'N/A',
+        parentName: user.name,
+        parentEmail: user.email,
+    };
+
+    setAllSchoolData(prevAllData => {
+        const newAllData = { ...prevAllData };
+        newAllData[user.schoolId!].admissions.push(newAdmission);
+        return newAllData;
+    });
+  };
 
   const addPlayerToTeam = (teamId: string, studentId: string) => { setTeamsData(prev => prev.map(team => team.id === teamId ? { ...team, playerIds: [...team.playerIds, studentId] } : team)); };
   const removePlayerFromTeam = (teamId: string, studentId: string) => { setTeamsData(prev => prev.map(team => team.id === teamId ? { ...team, playerIds: team.playerIds.filter(id => id !== studentId) } : team)); };
@@ -323,11 +365,11 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const value = {
     schoolProfile, updateSchoolProfile,
     allSchoolData, updateSchoolStatus,
-    studentsData, addStudent,
+    studentsData, addStudentFromAdmission,
     teachersData, addTeacher,
     classesData, addClass,
     coursesData, addCourse,
-    admissionsData, updateApplicationStatus,
+    admissionsData, addAdmission, updateApplicationStatus,
     examsData: [],
     financeData, recordPayment, addFee,
     assetsData, addAsset,

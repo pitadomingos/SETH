@@ -22,7 +22,7 @@ import { format } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { analyzeStudentFailure, AnalyzeStudentFailureOutput } from '@/ai/flows/analyze-student-failure';
-import { formatGradeDisplay } from '@/lib/utils';
+import { formatGradeDisplay, calculateAge } from '@/lib/utils';
 
 const calculateAverageNumericGrade = (studentId: string, grades: any[]) => {
     if (!studentId || !grades) return 0;
@@ -42,8 +42,10 @@ function AIFailureAnalysis({ student, grades, attendanceSummary }) {
       setIsLoading(true);
       try {
         const gradesForAnalysis = grades.map(g => ({ subject: g.subject, grade: g.grade }));
+        const age = calculateAge(student.dateOfBirth);
         const result = await analyzeStudentFailure({
           studentName: student.name,
+          age,
           grades: gradesForAnalysis,
           attendanceSummary,
         });

@@ -58,3 +58,14 @@ export const formatCurrency = (amount: number, currency?: SchoolProfile['currenc
       return `$${formattedAmount}`;
   }
 };
+
+export const calculateAge = (dateOfBirth: string): number => {
+  const birthDate = new Date(dateOfBirth);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
