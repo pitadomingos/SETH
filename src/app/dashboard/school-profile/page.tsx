@@ -154,7 +154,7 @@ function EditProfileDialog() {
   const logoUrlValue = form.watch('logoUrl');
 
   useEffect(() => {
-    if (schoolProfile) {
+    if (schoolProfile && isOpen) {
       form.reset(schoolProfile);
     }
   }, [schoolProfile, form, isOpen]);
