@@ -4,10 +4,119 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Building, User, Mail, Phone, MapPin, Edit, Star } from 'lucide-react';
+import { Loader2, Building, User, Mail, Phone, MapPin, Edit, Star, ShieldCheck, Gem, CreditCard } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 
+// New Component for the Upgrade Dialog
+function UpgradePlanDialog() {
+  const { schoolProfile } = useSchoolData();
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleUpgrade = (tierName: string) => {
+    toast({
+      title: 'Upgrade Successful!',
+      description: `Your school has been upgraded to the ${tierName} plan. Features are now available. (This is a demo feature)`,
+    });
+    setIsOpen(false);
+  };
+
+  if (!schoolProfile || schoolProfile.tier === 'Premium') {
+    return null; // Don't show upgrade if already on the highest tier
+  }
+
+  const defaultTab = schoolProfile.tier === 'Starter' ? 'pro' : 'premium';
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Gem className="mr-2 h-4 w-4" />
+          Upgrade Plan
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Upgrade Your EduManage Plan</DialogTitle>
+          <DialogDescription>
+            Unlock more features and enhance your school's management capabilities.
+          </DialogDescription>
+        </DialogHeader>
+        <Tabs defaultValue={defaultTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="pro" disabled={schoolProfile.tier === 'Pro'}>Pro Tier</TabsTrigger>
+            <TabsTrigger value="premium">Premium Tier</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="pro">
+            <Card className="border-0 shadow-none">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><ShieldCheck /> Pro Tier</CardTitle>
+                <CardDescription>Ideal for growing schools needing advanced tools.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-3xl font-bold">$25 <span className="text-sm font-normal text-muted-foreground">/ student / year</span></p>
+                <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
+                    <li>All features from the Starter Tier.</li>
+                    <li><span className="font-semibold text-primary">AI Lesson Planner & Test Generator.</span></li>
+                    <li><span className="font-semibold text-primary">Advanced AI Performance Analytics.</span></li>
+                    <li>Full Admissions & Enrollment Management.</li>
+                    <li>Advanced Reporting Tools.</li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                 <Button className="w-full" onClick={() => handleUpgrade('Pro')}>
+                    <CreditCard className="mr-2 h-4 w-4"/>
+                    Upgrade to Pro
+                 </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="premium">
+             <Card className="border-0 shadow-none">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Gem /> Premium Tier</CardTitle>
+                <CardDescription>The ultimate solution for large districts and institutions.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-3xl font-bold">Custom Pricing</p>
+                <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
+                    <li>All features from the Pro Tier.</li>
+                    <li><span className="font-semibold text-primary">Global Admin Role for Multi-School Management.</span></li>
+                    <li><span className="font-semibold text-primary">Consolidated Billing & System-wide AI Analysis.</span></li>
+                    <li>Dedicated Support & Onboarding.</li>
+                    <li>Custom Integrations & Branding.</li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                 <Button className="w-full" onClick={() => handleUpgrade('Premium')}>
+                    <CreditCard className="mr-2 h-4 w-4"/>
+                    Contact Us to Upgrade
+                 </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+        </Tabs>
+        <DialogFooter>
+            <DialogClose asChild>
+                <Button type="button" variant="outline" className="mt-4 w-full">
+                    Cancel
+                </Button>
+            </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+// Main Page Component
 export default function SchoolProfilePage() {
   const { role, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -28,23 +137,37 @@ export default function SchoolProfilePage() {
     return <div className="flex h-full items-center justify-center">School data not found.</div>
   }
 
+  const getTierIcon = () => {
+    switch (schoolProfile.tier) {
+        case 'Pro': return <ShieldCheck className="h-4 w-4 text-primary" />;
+        case 'Premium': return <Gem className="h-4 w-4 text-primary" />;
+        default: return <Star className="h-4 w-4 text-primary" />;
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>
         <h2 className="text-3xl font-bold tracking-tight">School Profile</h2>
-        <p className="text-muted-foreground">Manage your school's official information.</p>
+        <p className="text-muted-foreground">Manage your school's official information and subscription plan.</p>
       </header>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-4">
-             <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted">
-                <Building className="h-8 w-8 text-primary" />
-             </div>
-             <div>
-                <CardTitle className="text-3xl">{schoolProfile.name}</CardTitle>
-                <CardDescription className="flex items-center gap-2 pt-1"><Star className="h-4 w-4"/> "{schoolProfile.motto}"</CardDescription>
-             </div>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex items-center gap-4">
+                 <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted shrink-0">
+                    <Building className="h-8 w-8 text-primary" />
+                 </div>
+                 <div>
+                    <CardTitle className="text-3xl">{schoolProfile.name}</CardTitle>
+                    <CardDescription className="flex items-center gap-2 pt-1">"{schoolProfile.motto}"</CardDescription>
+                 </div>
+              </div>
+              <Badge variant="outline" className="text-base py-2 px-4">
+                {getTierIcon()}
+                <span className="ml-2">{schoolProfile.tier} Plan</span>
+              </Badge>
           </div>
         </CardHeader>
         <CardContent>
@@ -87,8 +210,9 @@ export default function SchoolProfilePage() {
                 </div>
             </div>
         </CardContent>
-        <CardFooter className="border-t pt-6">
-            <Button><Edit className="mr-2 h-4 w-4" /> Edit Details</Button>
+        <CardFooter className="border-t pt-6 flex justify-between">
+            <Button variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit Details</Button>
+            {schoolProfile.tier !== 'Premium' && <UpgradePlanDialog />}
         </CardFooter>
       </Card>
     </div>
