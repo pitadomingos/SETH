@@ -1,4 +1,3 @@
-
 'use client';
 import {
   SidebarHeader,
@@ -67,6 +66,7 @@ const documentationLinks: NavLink[] = [
 const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
   GlobalAdmin: [
     { href: '/dashboard/global-admin', label: 'All Schools', icon: Globe },
+    { href: '/dashboard/finance-proposal', label: 'Finance Proposal', icon: DollarSign },
     { href: '/dashboard/system-documentation', label: 'System Docs', icon: FileText },
     { href: '/dashboard/todo-list', label: 'To-Do List', icon: ListTodo },
   ],
