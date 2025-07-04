@@ -27,6 +27,16 @@ export interface Team {
   icon: string;
 }
 
+export interface Competition {
+  id: string;
+  title: string;
+  ourTeamId: string;
+  opponent: string;
+  date: Date;
+  time: string;
+  location: string;
+}
+
 interface SchoolData {
     profile: SchoolProfile;
     students: Student[];
@@ -48,6 +58,7 @@ interface SchoolData {
     expenseCategories: string[];
     expenses: Expense[];
     teams: Team[];
+    competitions: Competition[];
 }
 
 export interface SchoolProfile {
@@ -62,7 +73,7 @@ export interface SchoolProfile {
   tier?: 'Premium' | 'Pro' | 'Starter';
   gradingSystem: '20-Point' | 'GPA' | 'Letter';
 }
-interface Student { id: string; name: string; grade: string; class: string; email: string; phone: string; address: string; schoolId?: string; schoolName?: string; parentName: string; parentEmail: string; status: 'Active' | 'Inactive' | 'Transferred'; }
+export interface Student { id: string; name: string; grade: string; class: string; email: string; phone: string; address: string; schoolId?: string; schoolName?: string; parentName: string; parentEmail: string; status: 'Active' | 'Inactive' | 'Transferred'; }
 interface Teacher { id: string; name: string; subject: string; email: string; phone: string; address: string; experience: string; qualifications: string; status: 'Active' | 'Inactive' | 'Transferred'; }
 interface Class { id: string; name: string; grade: string; teacher: string; students: number; room: string; }
 interface Admission { id: string; name: string; appliedFor: string; date: string; status: 'Pending' | 'Approved' | 'Rejected'; formerSchool: string; grades: string; parentName: string; parentEmail: string; }
@@ -119,6 +130,11 @@ const northwoodTeams: Team[] = [
     { id: 'TEAM01', name: 'Basketball Varsity', coach: 'Prof. Michael Chen', playerIds: ['S002', 'S005', 'S008'], icon: '🏀' },
     { id: 'TEAM02', name: 'Football Eagles', coach: 'Ms. Jennifer Davis', playerIds: ['S001', 'S004', 'S006', 'S007'], icon: '🏈' },
     { id: 'TEAM03', name: 'Swim Team Sharks', coach: 'Dr. Lisa Anderson', playerIds: ['S003'], icon: '🏊' },
+];
+
+const northwoodCompetitions: Competition[] = [
+    { id: 'COMP01', title: 'Championship Game', ourTeamId: 'TEAM01', opponent: 'Southside Serpents', date: new Date(new Date().setDate(new Date().getDate() + 12)), time: '18:00', location: 'Home Gymnasium' },
+    { id: 'COMP02', title: 'Away Match', ourTeamId: 'TEAM02', opponent: 'Oakridge Oaks', date: new Date(new Date().setDate(new Date().getDate() + 25)), time: '15:30', location: 'Oakridge Academy Field' },
 ];
 
 const now = new Date();
@@ -304,6 +320,7 @@ export const schoolData: Record<string, SchoolData> = {
     feeDescriptions: ['Term 1 Tuition', 'Lab Fees', 'Sports Uniform', 'Library Fine', 'Exam Fee'],
     expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
     expenses: northwoodExpenses,
+    competitions: northwoodCompetitions,
     // Using shared data for simplicity in this simulation
     admissions: [
         { id: 'ADM001', name: 'John Smith', appliedFor: 'Grade 9', date: '2024-05-10', status: 'Pending', formerSchool: 'Eastwood Elementary', grades: 'A average in all subjects.', parentName: 'Mary Smith', parentEmail: 'm.smith@family.com' },
@@ -324,7 +341,6 @@ export const schoolData: Record<string, SchoolData> = {
     events: [
         { date: new Date(new Date().setDate(new Date().getDate() + 3)), title: 'Science Fair', type: 'Academic' },
         { date: new Date(new Date().setDate(new Date().getDate() + 10)), title: 'Mid-term Exams Start', type: 'Academic' },
-        { date: new Date(new Date().setDate(new Date().getDate() + 12)), title: 'Basketball Match vs. Southside', type: 'Sports' },
     ],
     courses: {
         teacher: [
@@ -349,6 +365,7 @@ export const schoolData: Record<string, SchoolData> = {
     feeDescriptions: ['Annual Tuition', 'Activity Fee', 'Technology Fee'],
     expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
     expenses: oakridgeExpenses,
+    competitions: [],
     // Using shared/generic data for simplicity
     admissions: [
         { id: 'OAK-ADM001', name: 'Alice Wonder', appliedFor: 'Grade 9', date: '2024-05-15', status: 'Approved', formerSchool: 'Wonderland Middle', grades: 'Top of class.', parentName: 'Charles Wonder', parentEmail: 'c.wonder@family.com' },
@@ -387,6 +404,7 @@ export const schoolData: Record<string, SchoolData> = {
     feeDescriptions: ['Semester 1 Fees', 'Capital Levy', 'IB Exam Fee', 'Technology Fee'],
     expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
     expenses: maplewoodExpenses,
+    competitions: [],
     admissions: [
         { id: 'MAP-ADM001', name: 'Leo Tolstoy', appliedFor: 'Grade 9', date: '2024-06-01', status: 'Pending', formerSchool: 'Literary Prep', grades: 'Strong in humanities.', parentName: 'Sophia Tolstoy', parentEmail: 's.tolstoy@family.com' },
     ],

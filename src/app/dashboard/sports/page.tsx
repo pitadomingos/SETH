@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useSchoolData, Team } from '@/context/school-data-context';
-import { Trophy, Users, PlusCircle, Loader2, User as UserIcon, X } from 'lucide-react';
+import { useSchoolData, Team, Competition } from '@/context/school-data-context';
+import { Trophy, Users, PlusCircle, Loader2, User as UserIcon, X, Calendar as CalendarIcon, Clock, MapPin, Versus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,6 +14,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 const teamSchema = z.object({
   name: z.string().min(3, "Team name must be at least 3 characters."),
@@ -21,6 +25,16 @@ const teamSchema = z.object({
   coach: z.string({ required_error: "Please select a coach for the team." }),
 });
 type TeamFormValues = z.infer<typeof teamSchema>;
+
+const competitionSchema = z.object({
+  title: z.string().min(3, "Title is required."),
+  ourTeamId: z.string({ required_error: "Please select a team." }),
+  opponent: z.string().min(2, "Opponent name is required."),
+  date: z.date({ required_error: "A date is required." }),
+  time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format (HH:MM)."),
+  location: z.string().min(3, "Location is required."),
+});
+type CompetitionFormValues = z.infer<typeof competitionSchema>;
 
 function NewTeamDialog() {
     const { addTeam, teachersData } = useSchoolData();
@@ -71,6 +85,98 @@ function NewTeamDialog() {
         </Dialog>
     )
 }
+
+function NewCompetitionDialog() {
+    const { addCompetition, teamsData } = useSchoolData();
+    const [isOpen, setIsOpen] = useState(false);
+
+    const form = useForm<CompetitionFormValues>({
+        resolver: zodResolver(competitionSchema),
+        defaultValues: { time: '14:00' },
+    });
+
+    function onSubmit(values: CompetitionFormValues) {
+        addCompetition(values);
+        form.reset();
+        setIsOpen(false);
+    }
+    
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Schedule Competition</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>Schedule New Competition</DialogTitle>
+                    <DialogDescription>Enter the details for the upcoming sports event.</DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name="title" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Event Title</FormLabel><FormControl><Input placeholder="e.g., Regional Finals" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="ourTeamId" render={({ field }) => ( <FormItem><FormLabel>Our Team</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select Team" /></SelectTrigger></FormControl><SelectContent>{teamsData.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="opponent" render={({ field }) => ( <FormItem><FormLabel>Opponent</FormLabel><FormControl><Input placeholder="e.g., Rival High" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                             <FormField control={form.control} name="date" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="time" render={({ field }) => ( <FormItem><FormLabel>Time</FormLabel><FormControl><Input placeholder="HH:MM" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        </div>
+                        <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g., Central Stadium" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <DialogFooter className="mt-4">
+                            <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+                            <Button type="submit" disabled={form.formState.isSubmitting}> {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Schedule</Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function ViewCompetitionDetailsDialog({ competition, team }: { competition: Competition, team?: Team }) {
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button>View Details</Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{competition.title}</DialogTitle>
+                    <DialogDescription>
+                        Match details for {team?.name || 'our team'} vs {competition.opponent}.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4 text-sm">
+                    <div className="flex items-center">
+                        <Trophy className="mr-3 h-4 w-4 text-muted-foreground" />
+                        <span><span className="font-semibold">Team:</span> {team?.name} ({team?.coach})</span>
+                    </div>
+                    <div className="flex items-center">
+                        <Users className="mr-3 h-4 w-4 text-muted-foreground" />
+                        <span><span className="font-semibold">Opponent:</span> {competition.opponent}</span>
+                    </div>
+                    <div className="flex items-center">
+                        <CalendarIcon className="mr-3 h-4 w-4 text-muted-foreground" />
+                        <span><span className="font-semibold">Date:</span> {format(competition.date, "EEEE, MMMM d, yyyy")}</span>
+                    </div>
+                    <div className="flex items-center">
+                        <Clock className="mr-3 h-4 w-4 text-muted-foreground" />
+                        <span><span className="font-semibold">Time:</span> {competition.time}</span>
+                    </div>
+                    <div className="flex items-center">
+                        <MapPin className="mr-3 h-4 w-4 text-muted-foreground" />
+                        <span><span className="font-semibold">Location:</span> {competition.location}</span>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button>Close</Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 
 function ManageTeamDialog({ team, students, allTeams, addPlayerToTeam, removePlayerFromTeam }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -136,7 +242,7 @@ function ManageTeamDialog({ team, students, allTeams, addPlayerToTeam, removePla
 
 export default function SportsPage() {
   const { role, isLoading } = useAuth();
-  const { events, teamsData, studentsData, addPlayerToTeam, removePlayerFromTeam } = useSchoolData();
+  const { teamsData, studentsData, addPlayerToTeam, removePlayerFromTeam, competitionsData } = useSchoolData();
   const router = useRouter();
 
   useEffect(() => {
@@ -149,16 +255,19 @@ export default function SportsPage() {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
   
-  const sportsEvents = events.filter(e => e.type === 'Sports');
+  const upcomingCompetitions = competitionsData.filter(c => c.date >= new Date()).sort((a, b) => a.date.getTime() - b.date.getTime());
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
-      <header className="flex justify-between items-center">
+      <header className="flex flex-wrap gap-2 justify-between items-center">
         <div>
             <h2 className="text-3xl font-bold tracking-tight">Sports</h2>
             <p className="text-muted-foreground">Manage sports activities, teams, and competitions.</p>
         </div>
-        <NewTeamDialog />
+        <div className="flex gap-2">
+            <NewTeamDialog />
+            <NewCompetitionDialog />
+        </div>
       </header>
 
         <Card>
@@ -208,21 +317,31 @@ export default function SportsPage() {
             <CardDescription>A list of scheduled sports events and competitions.</CardDescription>
         </CardHeader>
         <CardContent>
-            {sportsEvents.length > 0 ? (
+            {upcomingCompetitions.length > 0 ? (
                 <ul className="space-y-4">
-                    {sportsEvents.map(event => (
-                        <li key={event.title} className="flex flex-wrap items-center justify-between p-4 border rounded-lg">
-                            <div className="flex-1">
-                                <h3 className="font-semibold">{event.title}</h3>
-                                <p className="text-sm text-muted-foreground">
-                                    {event.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-4 mt-2 sm:mt-0">
-                                <Button>View Details</Button>
-                            </div>
-                        </li>
-                    ))}
+                    {upcomingCompetitions.map(comp => {
+                        const team = teamsData.find(t => t.id === comp.ourTeamId);
+                        return (
+                             <li key={comp.id} className="flex flex-wrap items-center justify-between gap-4 p-4 border rounded-lg">
+                                <div className="flex-1">
+                                    <h3 className="font-semibold text-lg">{comp.title}</h3>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                                        {team && <span className="text-2xl">{team.icon}</span>}
+                                        <span>{team?.name || 'School Team'}</span>
+                                        <Versus className="h-4 w-4 text-primary" />
+                                        <span>{comp.opponent}</span>
+                                    </div>
+                                </div>
+                                <div className="w-full sm:w-auto flex items-center gap-4 mt-3 sm:mt-0">
+                                    <div className="text-sm text-right flex-1">
+                                        <p>{format(comp.date, 'EEEE, MMM d')}</p>
+                                        <p className="text-muted-foreground">{comp.time} at {comp.location}</p>
+                                    </div>
+                                    <ViewCompetitionDetailsDialog competition={comp} team={team} />
+                                </div>
+                            </li>
+                        );
+                    })}
                 </ul>
             ) : (
                 <p className="text-muted-foreground text-center py-8">No upcoming sports events scheduled.</p>
