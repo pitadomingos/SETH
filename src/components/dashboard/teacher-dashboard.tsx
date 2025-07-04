@@ -255,8 +255,26 @@ function AIClassPerformanceAnalyzer() {
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
-  const { courses, events } = useSchoolData();
-  const teacherCourses = courses.teacher;
+  const { coursesData, events, teachersData, classesData } = useSchoolData();
+
+  const teacherInfo = useMemo(() => {
+    return teachersData.find(t => t.name === user?.name);
+  }, [teachersData, user]);
+  
+  const teacherCourses = useMemo(() => {
+    if (!teacherInfo) return [];
+    return coursesData.filter(c => c.teacherId === teacherInfo.id);
+  }, [coursesData, teacherInfo]);
+  
+  const totalStudentsTaught = useMemo(() => {
+    if (!teacherCourses.length) return 0;
+    const uniqueClassIds = [...new Set(teacherCourses.map(c => c.classId))];
+    return uniqueClassIds.reduce((acc, classId) => {
+        const classInfo = classesData.find(c => c.id === classId);
+        return acc + (classInfo?.students || 0);
+    }, 0);
+  }, [teacherCourses, classesData]);
+
   const nextEvent = events.filter(e => e.date >= new Date()).sort((a,b) => a.date.getTime() - b.date.getTime())[0];
 
   return (
@@ -283,7 +301,7 @@ export default function TeacherDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="text-3xl font-bold">{teacherCourses.length} Courses</div>
-            <p className="text-sm text-muted-foreground">You are currently teaching {teacherCourses.reduce((acc, c) => acc + c.students, 0)} students this semester.</p>
+            <p className="text-sm text-muted-foreground">You are currently teaching {totalStudentsTaught} students this semester.</p>
             <div className="flex gap-2 pt-2">
                  <Link href="/dashboard/schedule" passHref className="flex-1">
                   <Button variant="secondary" className="w-full">View Schedule</Button>
