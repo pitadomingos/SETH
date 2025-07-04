@@ -3,9 +3,97 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Building, Users, Presentation, Settings } from 'lucide-react';
+import { Loader2, Building, Users, Presentation, Settings, BrainCircuit } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { analyzeSchoolSystem, AnalyzeSchoolSystemOutput } from '@/ai/flows/analyze-school-system';
+
+// --- Helper functions for calculations ---
+const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
+const calculateGpaFromGrade = (grade: string): number => {
+    const numericGrade = parseFloat(grade);
+    if (!isNaN(numericGrade) && isFinite(numericGrade)) {
+        return (numericGrade / 5.0);
+    }
+    return gpaMap[grade] || 0;
+}
+const calculateAverageGpaForSchool = (grades) => {
+    if (grades.length === 0) return 0;
+    const totalPoints = grades.reduce((acc, g) => acc + calculateGpaFromGrade(g.grade), 0);
+    return parseFloat((totalPoints / grades.length).toFixed(2));
+};
+
+function AISystemAnalysis() {
+  const { allSchoolData } = useSchoolData();
+  const [analysis, setAnalysis] = useState<AnalyzeSchoolSystemOutput | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnalysis = async () => {
+      if (!allSchoolData) {
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const analysisInput = {
+          schools: Object.values(allSchoolData).map(school => {
+            const totalRevenue = school.finance.reduce((acc, f) => acc + f.amountPaid, 0);
+            const overdueFees = school.finance
+              .filter(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < new Date())
+              .reduce((acc, f) => acc + (f.totalAmount - f.amountPaid), 0);
+
+            return {
+              name: school.profile.name,
+              studentCount: school.students.length,
+              teacherCount: school.teachers.length,
+              averageGpa: calculateAverageGpaForSchool(school.grades),
+              totalRevenue,
+              overdueFees,
+            };
+          }),
+        };
+        const result = await analyzeSchoolSystem(analysisInput);
+        setAnalysis(result);
+      } catch (error) {
+        console.error("Failed to fetch system analysis:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAnalysis();
+  }, [allSchoolData]);
+
+  return (
+    <Card className="md:col-span-2 lg:col-span-3">
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2"><BrainCircuit /> AI System-Wide Analysis</CardTitle>
+            <CardDescription>A high-level analysis of the entire school network.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            {isLoading ? (
+                <div className="flex items-center justify-center p-8 text-muted-foreground">
+                    <Loader2 className="h-6 w-6 animate-spin mr-2"/>
+                    <p>AI is analyzing data from all schools...</p>
+                </div>
+            ) : analysis ? (
+                <div className="space-y-4 text-sm">
+                    <div>
+                        <h4 className="font-semibold mb-1">Overall Analysis:</h4>
+                        <p className="text-muted-foreground">{analysis.overallAnalysis}</p>
+                    </div>
+                    <div>
+                        <h4 className="font-semibold mb-1">Recommendations:</h4>
+                        <p className="whitespace-pre-wrap text-muted-foreground">{analysis.recommendations}</p>
+                    </div>
+                </div>
+            ) : (
+                <p className="text-muted-foreground text-center">Could not load AI analysis.</p>
+            )}
+        </CardContent>
+    </Card>
+  )
+}
 
 export default function GlobalAdminDashboard() {
   const { role, isLoading: authLoading, switchSchoolContext } = useAuth();
@@ -36,7 +124,8 @@ export default function GlobalAdminDashboard() {
       </header>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {Object.values(allSchoolData).map(school => (
+        <AISystemAnalysis />
+        {allSchoolData && Object.values(allSchoolData).map(school => (
             <Card key={school.profile.id}>
                 <CardHeader>
                     <div className="flex items-center gap-4">

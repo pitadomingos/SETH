@@ -6,3 +6,4 @@ import '@/ai/flows/generate-parent-advice.ts';
 import '@/ai/flows/generate-test.ts';
 import '@/ai/flows/analyze-class-performance.ts';
 import '@/ai/flows/analyze-student-failure.ts';
+import '@/ai/flows/analyze-school-system.ts';
