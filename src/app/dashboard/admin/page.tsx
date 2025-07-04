@@ -52,7 +52,7 @@ export default function AdminPanelPage() {
             name: s.name,
             email: s.email,
             role: 'Student' as const,
-            status: 'Active' as const
+            status: s.status,
         }));
 
         const teacherUsers = teachersData.map(t => ({
@@ -60,7 +60,7 @@ export default function AdminPanelPage() {
             name: t.name,
             email: t.email,
             role: 'Teacher' as const,
-            status: 'Active' as const
+            status: t.status,
         }));
         
         return [...teacherUsers, ...studentUsers];
@@ -97,6 +97,19 @@ export default function AdminPanelPage() {
             });
         }
     }
+
+    const getStatusVariant = (status: 'Active' | 'Inactive' | 'Transferred') => {
+        switch (status) {
+        case 'Active':
+            return 'secondary';
+        case 'Inactive':
+            return 'destructive';
+        case 'Transferred':
+            return 'outline';
+        default:
+            return 'default';
+        }
+    };
 
     if (authLoading || role !== 'Admin') {
         return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -141,7 +154,7 @@ export default function AdminPanelPage() {
                                         <TableCell>{user.email}</TableCell>
                                         <TableCell><Badge variant="outline">{user.role}</Badge></TableCell>
                                         <TableCell>
-                                            <Badge variant={user.status === 'Active' ? 'secondary' : 'destructive'}>
+                                            <Badge variant={getStatusVariant(user.status)}>
                                                 {user.status}
                                             </Badge>
                                         </TableCell>

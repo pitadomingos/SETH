@@ -41,8 +41,8 @@ export interface SchoolProfile {
   tier?: 'Premium' | 'Pro' | 'Starter';
   gradingSystem: '20-Point' | 'GPA' | 'Letter';
 }
-interface Student { id: string; name: string; grade: string; class: string; email: string; phone: string; address: string; schoolId?: string; schoolName?: string; parentName: string; parentEmail: string; }
-interface Teacher { id: string; name: string; subject: string; email: string; phone: string; address: string; experience: string; qualifications: string; }
+interface Student { id: string; name: string; grade: string; class: string; email: string; phone: string; address: string; schoolId?: string; schoolName?: string; parentName: string; parentEmail: string; status: 'Active' | 'Inactive' | 'Transferred'; }
+interface Teacher { id: string; name: string; subject: string; email: string; phone: string; address: string; experience: string; qualifications: string; status: 'Active' | 'Inactive' | 'Transferred'; }
 interface Class { id: string; name: string; grade: string; teacher: string; students: number; room: string; }
 interface Admission { id: string; name: string; appliedFor: string; date: string; status: 'Pending' | 'Approved' | 'Rejected'; formerSchool: string; grades: string; parentName: string; parentEmail: string; }
 interface Exam { id: string; title: string; subject: string; grade: string; date: Date; time: string; duration: string; room: string; board: string; }
@@ -69,22 +69,22 @@ const northwoodProfile: SchoolProfile = {
 };
 
 const northwoodStudents: Student[] = [
-  { id: 'S001', name: 'Emma Rodriguez', grade: '10', class: 'A', email: 'e.rodriguez@edumanage.com', phone: '+1 (555) 555-1234', address: '123 Main St, Anytown', parentName: 'Maria Rodriguez', parentEmail: 'm.rodriguez@family.com' },
-  { id: 'S002', name: 'James Wilson', grade: '10', class: 'A', email: 'j.wilson@edumanage.com', phone: '+1 (555) 555-5678', address: '456 Oak Ave, Anytown', parentName: 'Robert Wilson', parentEmail: 'r.wilson@family.com' },
-  { id: 'S003', name: 'Sofia Kim', grade: '11', class: 'B', email: 's.kim@edumanage.com', phone: '+1 (555) 555-9012', address: '789 Pine Rd, Anytown', parentName: 'Daniel Kim', parentEmail: 'd.kim@family.com' },
-  { id: 'S004', name: 'Alex Johnson', grade: '9', class: 'C', email: 'a.johnson@edumanage.com', phone: '+1 (555) 555-3456', address: '321 Elm St, Anytown', parentName: 'Jessica Johnson', parentEmail: 'j.johnson@family.com' },
-  { id: 'S005', name: 'Olivia Chen', grade: '12', class: 'A', email: 'o.chen@edumanage.com', phone: '+1 (555) 555-7890', address: '159 Maple Dr, Anytown', parentName: 'Wei Chen', parentEmail: 'w.chen@family.com' },
-  { id: 'S006', name: 'Liam Garcia', grade: '9', class: 'A', email: 'l.garcia@edumanage.com', phone: '+1 (555) 555-1122', address: '753 Birch Ln, Anytown', parentName: 'Isabella Garcia', parentEmail: 'i.garcia@family.com' },
-  { id: 'S007', name: 'Ava Martinez', grade: '11', class: 'A', email: 'a.martinez@edumanage.com', phone: '+1 (555) 555-3344', address: '951 Cedar Ct, Anytown', parentName: 'David Martinez', parentEmail: 'd.martinez@family.com' },
-  { id: 'S008', name: 'Noah Brown', grade: '10', class: 'B', email: 'n.brown@edumanage.com', phone: '+1 (555) 555-5566', address: '852 Spruce Ave, Anytown', parentName: 'Linda Brown', parentEmail: 'l.brown@family.com' },
-  { id: 'S009', name: 'Sophia Davis', grade: '9', class: 'B', email: 's.davis@edumanage.com', phone: '+1 (555) 555-7788', address: '147 Walnut St, Anytown', parentName: 'Paul Davis', parentEmail: 'p.davis@family.com' },
-  { id: 'S010', name: 'William Miller', grade: '12', class: 'C', email: 'w.miller@edumanage.com', phone: '+1 (555) 555-9999', address: '456 Failure Ave, Anytown', parentName: 'George Miller', parentEmail: 'g.miller@family.com' },
+  { id: 'S001', name: 'Emma Rodriguez', grade: '10', class: 'A', email: 'e.rodriguez@edumanage.com', phone: '+1 (555) 555-1234', address: '123 Main St, Anytown', parentName: 'Maria Rodriguez', parentEmail: 'm.rodriguez@family.com', status: 'Active' },
+  { id: 'S002', name: 'James Wilson', grade: '10', class: 'A', email: 'j.wilson@edumanage.com', phone: '+1 (555) 555-5678', address: '456 Oak Ave, Anytown', parentName: 'Robert Wilson', parentEmail: 'r.wilson@family.com', status: 'Active' },
+  { id: 'S003', name: 'Sofia Kim', grade: '11', class: 'B', email: 's.kim@edumanage.com', phone: '+1 (555) 555-9012', address: '789 Pine Rd, Anytown', parentName: 'Daniel Kim', parentEmail: 'd.kim@family.com', status: 'Active' },
+  { id: 'S004', name: 'Alex Johnson', grade: '9', class: 'C', email: 'a.johnson@edumanage.com', phone: '+1 (555) 555-3456', address: '321 Elm St, Anytown', parentName: 'Jessica Johnson', parentEmail: 'j.johnson@family.com', status: 'Active' },
+  { id: 'S005', name: 'Olivia Chen', grade: '12', class: 'A', email: 'o.chen@edumanage.com', phone: '+1 (555) 555-7890', address: '159 Maple Dr, Anytown', parentName: 'Wei Chen', parentEmail: 'w.chen@family.com', status: 'Active' },
+  { id: 'S006', name: 'Liam Garcia', grade: '9', class: 'A', email: 'l.garcia@edumanage.com', phone: '+1 (555) 555-1122', address: '753 Birch Ln, Anytown', parentName: 'Isabella Garcia', parentEmail: 'i.garcia@family.com', status: 'Active' },
+  { id: 'S007', name: 'Ava Martinez', grade: '11', class: 'A', email: 'a.martinez@edumanage.com', phone: '+1 (555) 555-3344', address: '951 Cedar Ct, Anytown', parentName: 'David Martinez', parentEmail: 'd.martinez@family.com', status: 'Active' },
+  { id: 'S008', name: 'Noah Brown', grade: '10', class: 'B', email: 'n.brown@edumanage.com', phone: '+1 (555) 555-5566', address: '852 Spruce Ave, Anytown', parentName: 'Linda Brown', parentEmail: 'l.brown@family.com', status: 'Active' },
+  { id: 'S009', name: 'Sophia Davis', grade: '9', class: 'B', email: 's.davis@edumanage.com', phone: '+1 (555) 555-7788', address: '147 Walnut St, Anytown', parentName: 'Paul Davis', parentEmail: 'p.davis@family.com', status: 'Active' },
+  { id: 'S010', name: 'William Miller', grade: '12', class: 'C', email: 'w.miller@edumanage.com', phone: '+1 (555) 555-9999', address: '456 Failure Ave, Anytown', parentName: 'George Miller', parentEmail: 'g.miller@family.com', status: 'Active' },
 ];
 
 const northwoodTeachers: Teacher[] = [
-  { id: 'T001', name: 'Prof. Michael Chen', subject: 'Mathematics', email: 'm.chen@edumanage.com', phone: '+1 (555) 111-2222', address: '123 Calculus Rd, Mathville', experience: '8 years', qualifications: 'Ph.D. in Mathematics' },
-  { id: 'T002', name: 'Dr. Lisa Anderson', subject: 'Physics', email: 'l.anderson@edumanage.com', phone: '+1 (555) 222-3333', address: '456 Quantum Way, Physburg', experience: '12 years', qualifications: 'Ph.D. in Physics' },
-  { id: 'T003', name: 'Ms. Jennifer Davis', subject: 'English', email: 'j.davis@northwood.edu', phone: '+1 (555) 111-3333', address: '101 Literature Lane', experience: '5 years', qualifications: 'M.A. in English' },
+  { id: 'T001', name: 'Prof. Michael Chen', subject: 'Mathematics', email: 'm.chen@edumanage.com', phone: '+1 (555) 111-2222', address: '123 Calculus Rd, Mathville', experience: '8 years', qualifications: 'Ph.D. in Mathematics', status: 'Active' },
+  { id: 'T002', name: 'Dr. Lisa Anderson', subject: 'Physics', email: 'l.anderson@edumanage.com', phone: '+1 (555) 222-3333', address: '456 Quantum Way, Physburg', experience: '12 years', qualifications: 'Ph.D. in Physics', status: 'Inactive' },
+  { id: 'T003', name: 'Ms. Jennifer Davis', subject: 'English', email: 'j.davis@northwood.edu', phone: '+1 (555) 111-3333', address: '101 Literature Lane', experience: '5 years', qualifications: 'M.A. in English', status: 'Active' },
 ];
 
 const northwoodClasses: Class[] = [
@@ -156,15 +156,15 @@ const oakridgeProfile: SchoolProfile = {
 };
 
 const oakridgeStudents: Student[] = [
-  { id: 'S101', name: 'Benjamin Carter', grade: '10', class: 'A', email: 'b.carter@oakridge.com', phone: '+1 (555) 101-1010', address: '1 Apple St', parentName: 'Susan Carter', parentEmail: 's.carter@family.com' },
-  { id: 'S102', name: 'Charlotte Lee', grade: '11', class: 'A', email: 'c.lee@oakridge.com', phone: '+1 (555) 102-1020', address: '2 Pear Ave', parentName: 'John Lee', parentEmail: 'j.lee@family.com' },
-  { id: 'S103', name: 'Daniel Park', grade: '9', class: 'B', email: 'd.park@oakridge.com', phone: '+1 (555) 103-1030', address: '3 Cherry Ln', parentName: 'Grace Park', parentEmail: 'g.park@family.com' },
-  { id: 'S104', name: 'Miguel Rodriguez', grade: '9', class: 'B', email: 'm.rodriguez.jr@oakridge.com', phone: '+1 (555) 104-1040', address: '123 Main St, Anytown', parentName: 'Maria Rodriguez', parentEmail: 'm.rodriguez@family.com' },
+  { id: 'S101', name: 'Benjamin Carter', grade: '10', class: 'A', email: 'b.carter@oakridge.com', phone: '+1 (555) 101-1010', address: '1 Apple St', parentName: 'Susan Carter', parentEmail: 's.carter@family.com', status: 'Active' },
+  { id: 'S102', name: 'Charlotte Lee', grade: '11', class: 'A', email: 'c.lee@oakridge.com', phone: '+1 (555) 102-1020', address: '2 Pear Ave', parentName: 'John Lee', parentEmail: 'j.lee@family.com', status: 'Active' },
+  { id: 'S103', name: 'Daniel Park', grade: '9', class: 'B', email: 'd.park@oakridge.com', phone: '+1 (555) 103-1030', address: '3 Cherry Ln', parentName: 'Grace Park', parentEmail: 'g.park@family.com', status: 'Transferred' },
+  { id: 'S104', name: 'Miguel Rodriguez', grade: '9', class: 'B', email: 'm.rodriguez.jr@oakridge.com', phone: '+1 (555) 104-1040', address: '123 Main St, Anytown', parentName: 'Maria Rodriguez', parentEmail: 'm.rodriguez@family.com', status: 'Active' },
 ];
 
 const oakridgeTeachers: Teacher[] = [
-  { id: 'T101', name: 'Ms. Rachel Adams', subject: 'Biology', email: 'r.adams@oakridge.com', phone: '+1 (555) 201-2010', address: '10 Biology Rd', experience: '10 years', qualifications: 'Ph.D. in Biology' },
-  { id: 'T102', name: 'Mr. Steven Shaw', subject: 'Geography', email: 's.shaw@oakridge.com', phone: '+1 (555) 202-2020', address: '20 Map Way', experience: '5 years', qualifications: 'M.A. in Geography' },
+  { id: 'T101', name: 'Ms. Rachel Adams', subject: 'Biology', email: 'r.adams@oakridge.com', phone: '+1 (555) 201-2010', address: '10 Biology Rd', experience: '10 years', qualifications: 'Ph.D. in Biology', status: 'Active' },
+  { id: 'T102', name: 'Mr. Steven Shaw', subject: 'Geography', email: 's.shaw@oakridge.com', phone: '+1 (555) 202-2020', address: '20 Map Way', experience: '5 years', qualifications: 'M.A. in Geography', status: 'Active' },
 ];
 
 const oakridgeClasses: Class[] = [
@@ -213,14 +213,14 @@ const maplewoodProfile: SchoolProfile = {
 };
 
 const maplewoodStudents: Student[] = [
-  { id: 'S201', name: 'Chloe Dubois', grade: '10', class: 'A', email: 'c.dubois@maplewood.com', phone: '+1 (555) 201-2010', address: '1 Eiffel Tower Rd', parentName: 'Amelie Dubois', parentEmail: 'a.dubois@family.com' },
-  { id: 'S202', name: 'Kenji Tanaka', grade: '11', class: 'B', email: 'k.tanaka@maplewood.com', phone: '+1 (555) 202-2020', address: '2 Tokyo Skytree Ave', parentName: 'Haruto Tanaka', parentEmail: 'h.tanaka@family.com' },
-  { id: 'S203', name: 'Priya Singh', grade: '9', class: 'C', email: 'p.singh@maplewood.com', phone: '+1 (555) 203-2030', address: '3 Taj Mahal Blvd', parentName: 'Aarav Singh', parentEmail: 'a.singh@family.com' },
-  { id: 'S204', name: 'Lucas Martinez', grade: '10', class: 'B', email: 'l.martinez@maplewood.com', phone: '+1 (555) 204-2040', address: '4 Berlin Gate', parentName: 'Sofia Martinez', parentEmail: 's.martinez@family.com' },
+  { id: 'S201', name: 'Chloe Dubois', grade: '10', class: 'A', email: 'c.dubois@maplewood.com', phone: '+1 (555) 201-2010', address: '1 Eiffel Tower Rd', parentName: 'Amelie Dubois', parentEmail: 'a.dubois@family.com', status: 'Active' },
+  { id: 'S202', name: 'Kenji Tanaka', grade: '11', class: 'B', email: 'k.tanaka@maplewood.com', phone: '+1 (555) 202-2020', address: '2 Tokyo Skytree Ave', parentName: 'Haruto Tanaka', parentEmail: 'h.tanaka@family.com', status: 'Active' },
+  { id: 'S203', name: 'Priya Singh', grade: '9', class: 'C', email: 'p.singh@maplewood.com', phone: '+1 (555) 203-2030', address: '3 Taj Mahal Blvd', parentName: 'Aarav Singh', parentEmail: 'a.singh@family.com', status: 'Active' },
+  { id: 'S204', name: 'Lucas Martinez', grade: '10', class: 'B', email: 'l.martinez@maplewood.com', phone: '+1 (555) 204-2040', address: '4 Berlin Gate', parentName: 'Sofia Martinez', parentEmail: 's.martinez@family.com', status: 'Active' },
 ];
 
 const maplewoodTeachers: Teacher[] = [
-  { id: 'T201', name: 'Mr. David Lee', subject: 'History', email: 'd.lee@maplewood.com', phone: '+1 (555) 301-3010', address: '10 History Lane', experience: '15 years', qualifications: 'M.Ed. in History' },
+  { id: 'T201', name: 'Mr. David Lee', subject: 'History', email: 'd.lee@maplewood.com', phone: '+1 (555) 301-3010', address: '10 History Lane', experience: '15 years', qualifications: 'M.Ed. in History', status: 'Active' },
 ];
 
 const maplewoodClasses: Class[] = [
