@@ -19,6 +19,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
 
 const boardSchema = z.object({
   name: z.string().min(2, "Board name must be at least 2 characters."),
@@ -188,10 +189,10 @@ export default function AdminPanelPage() {
                     <CardContent className="space-y-6">
                         <div>
                             <h4 className="font-semibold text-lg mb-4">Grading System</h4>
-                             <FormItem className="flex flex-col md:flex-row md:items-center md:justify-between p-4 border rounded-lg">
+                             <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4 border rounded-lg">
                                 <div>
-                                    <FormLabel>Grade Display Format</FormLabel>
-                                    <FormMessage className="text-xs text-muted-foreground">Choose how grades are displayed across the app.</FormMessage>
+                                    <Label>Grade Display Format</Label>
+                                    <p className="text-xs text-muted-foreground">Choose how grades are displayed across the app.</p>
                                 </div>
                                 <Select
                                     value={schoolProfile?.gradingSystem}
@@ -206,7 +207,7 @@ export default function AdminPanelPage() {
                                         <SelectItem value="GPA">GPA Scale (0.0-4.0)</SelectItem>
                                     </SelectContent>
                                 </Select>
-                            </FormItem>
+                            </div>
                         </div>
                         
                         <div>
