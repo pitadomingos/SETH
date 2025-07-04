@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSchoolData } from '@/context/school-data-context';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { analyzeSchoolPerformance, AnalyzeSchoolPerformanceOutput } from '@/ai/flows/analyze-school-performance';
 import { analyzeClassPerformance, AnalyzeClassPerformanceOutput } from '@/ai/flows/analyze-class-performance';
 import { identifyStrugglingStudents, IdentifyStrugglingStudentsOutput } from '@/ai/flows/identify-struggling-students';
 import { analyzeTeacherPerformance, AnalyzeTeacherPerformanceOutput } from '@/ai/flows/analyze-teacher-performance';
@@ -17,6 +18,138 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Legend } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 import { getLetterGrade } from '@/lib/utils';
 
+
+// School-Wide Analysis Component
+function SchoolWideAnalysis() {
+    const { 
+        schoolProfile, 
+        teachersData, 
+        studentsData, 
+        grades, 
+        financeData, 
+        coursesData, 
+        subjects,
+        classesData
+    } = useSchoolData();
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+    const [result, setResult] = useState<AnalyzeSchoolPerformanceOutput | null>(null);
+
+    const chartConfig = {
+      value: { label: 'Value', color: 'hsl(var(--chart-1))' },
+    } satisfies ChartConfig;
+
+    const handleAnalysis = async () => {
+        setIsLoading(true);
+        setResult(null);
+        try {
+            if (!schoolProfile || !teachersData.length || !studentsData.length || !grades.length) {
+                throw new Error("Insufficient data for analysis.");
+            }
+
+            // Financials
+            const totalFees = financeData.reduce((sum, f) => sum + f.totalAmount, 0);
+            const totalRevenue = financeData.reduce((sum, f) => sum + f.amountPaid, 0);
+            const collectionRate = totalFees > 0 ? (totalRevenue / totalFees) * 100 : 100;
+            const overdueAmount = financeData
+                .filter(f => new Date(f.dueDate) < new Date() && f.totalAmount > f.amountPaid)
+                .reduce((sum, f) => sum + (f.totalAmount - f.amountPaid), 0);
+            const financials = { totalFees, totalRevenue, collectionRate: parseFloat(collectionRate.toFixed(2)), overdueAmount };
+
+            // Subjects
+            const subjectMetrics = subjects.map(subject => {
+                const subjectGrades = grades.filter(g => g.subject === subject).map(g => parseFloat(g.grade));
+                if (subjectGrades.length === 0) return { name: subject, averageGrade: 0, failureRate: 0 };
+                const averageGrade = subjectGrades.reduce((sum, g) => sum + g, 0) / subjectGrades.length;
+                const failureRate = (subjectGrades.filter(g => g < 10).length / subjectGrades.length) * 100;
+                return { name: subject, averageGrade: parseFloat(averageGrade.toFixed(2)), failureRate: parseFloat(failureRate.toFixed(2)) };
+            });
+
+            // Teachers
+            const teacherMetrics = teachersData.map(teacher => {
+                const teacherCourses = coursesData.filter(c => c.teacherId === teacher.id);
+                const studentIds = new Set<string>();
+                teacherCourses.forEach(course => {
+                    const classInfo = classesData.find(c => c.id === course.classId);
+                    if(classInfo) {
+                        studentsData
+                            .filter(s => s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim())
+                            .forEach(s => studentIds.add(s.id));
+                    }
+                });
+                const teacherGrades = grades
+                    .filter(g => studentIds.has(g.studentId) && g.subject === teacher.subject)
+                    .map(g => parseFloat(g.grade));
+                
+                const averageGrade = teacherGrades.length > 0
+                    ? teacherGrades.reduce((sum, g) => sum + g, 0) / teacherGrades.length
+                    : 0;
+                
+                return { name: teacher.name, subject: teacher.subject, studentCount: studentIds.size, averageGrade: parseFloat(averageGrade.toFixed(2)) };
+            });
+
+            // Overall
+            const allNumericGrades = grades.map(g => parseFloat(g.grade));
+            const overallAverageGrade = allNumericGrades.length > 0
+                ? allNumericGrades.reduce((sum, g) => sum + g, 0) / allNumericGrades.length
+                : 0;
+
+            const analysisInput = {
+                schoolName: schoolProfile.name,
+                teachers: teacherMetrics,
+                subjects: subjectMetrics,
+                financials,
+                overallStudentCount: studentsData.length,
+                overallAverageGrade: parseFloat(overallAverageGrade.toFixed(2)),
+            };
+
+            const res = await analyzeSchoolPerformance(analysisInput);
+            setResult(res);
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: 'Analysis Failed', description: error instanceof Error ? error.message : "An unknown error occurred." });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>School-Wide Holistic Analysis</CardTitle>
+                <CardDescription>Generate a comprehensive AI-powered report on the school's overall academic and financial health.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <Button onClick={handleAnalysis} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Analyze School Performance'}</Button>
+                {isLoading && <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>}
+                {result && (
+                  <div className="pt-4 animate-in fade-in-50 grid gap-6 md:grid-cols-2">
+                      <div className="space-y-4 text-sm">
+                          <div className="p-4 rounded-md bg-muted max-h-96 overflow-y-auto">
+                              <h4 className="font-semibold mb-1">Holistic AI Analysis:</h4>
+                              <p className="text-muted-foreground whitespace-pre-wrap">{result.holisticAnalysis}</p>
+                          </div>
+                      </div>
+                      {result.keyMetrics.length > 0 && (
+                          <div>
+                              <h4 className="font-semibold mb-2 text-sm">Key Performance Indicators</h4>
+                              <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                                  <BarChart data={result.keyMetrics} layout="vertical" margin={{ left: 10, right: 20 }}>
+                                      <CartesianGrid horizontal={false} />
+                                      <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={100} />
+                                      <XAxis type="number" hide />
+                                      <ChartTooltip cursor={false} content={<ChartTooltipContent formatter={(value, name, item) => `${value.toFixed(1)}${item.payload.unit || ''}`} />} />
+                                      <Bar dataKey="value" fill="var(--color-value)" radius={4} />
+                                  </BarChart>
+                              </ChartContainer>
+                          </div>
+                      )}
+                  </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
 
 // Class Analysis Component
 function ClassAnalysis() {
@@ -338,12 +471,16 @@ export default function ReportsPage() {
         <p className="text-muted-foreground">Generate on-demand academic analysis for your classes, students, and teachers.</p>
       </header>
       
-      <Tabs defaultValue="class-analysis" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="school-wide-analysis" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="school-wide-analysis">School-Wide</TabsTrigger>
           <TabsTrigger value="class-analysis">Class Analysis</TabsTrigger>
           <TabsTrigger value="struggling-students">Struggling Students</TabsTrigger>
           <TabsTrigger value="teacher-performance">Teacher Performance</TabsTrigger>
         </TabsList>
+        <TabsContent value="school-wide-analysis">
+          <SchoolWideAnalysis />
+        </TabsContent>
         <TabsContent value="class-analysis">
           <ClassAnalysis />
         </TabsContent>

@@ -9,3 +9,4 @@ import '@/ai/flows/analyze-student-failure.ts';
 import '@/ai/flows/analyze-school-system.ts';
 import '@/ai/flows/identify-struggling-students.ts';
 import '@/ai/flows/analyze-teacher-performance.ts';
+import '@/ai/flows/analyze-school-performance.ts';
