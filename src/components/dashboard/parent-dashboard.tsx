@@ -255,7 +255,7 @@ export default function ParentDashboard() {
                         <div className="flex justify-between items-center">
                             <div>
                                 <p className="font-semibold">Balance: <span className="font-bold text-lg">${(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid).toLocaleString()}</span></p>
-                                <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
+                                <p className="text-xs text-muted-foreground">Due: new Date(childFinanceSummary.dueDate).toLocaleDateString()</p>
                             </div>
                             <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>
                         </div>

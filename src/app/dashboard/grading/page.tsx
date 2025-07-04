@@ -12,30 +12,14 @@ import { useRouter } from 'next/navigation';
 import { useSchoolData } from '@/context/school-data-context';
 import { Loader2, FileCheck, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getLetterGrade } from '@/lib/utils';
 
-// A helper function to map numeric grades to letters for display
-const getLetterGrade = (numericGrade: number): string => {
-  if (numericGrade >= 19) return 'A+';
-  if (numericGrade >= 17) return 'A';
-  if (numericGrade >= 16) return 'A-';
-  if (numericGrade >= 15) return 'B+';
-  if (numericGrade >= 14) return 'B';
-  if (numericGrade >= 13) return 'B-';
-  if (numericGrade >= 12) return 'C+';
-  if (numericGrade >= 11) return 'C';
-  if (numericGrade >= 10) return 'C-';
-  if (numericGrade >= 8) return 'D';
-  return 'F';
-};
 
 // Generate options from 20 down to 0 with letter equivalents
-const numericGradeOptions = Array.from({ length: 21 }, (_, i) => {
+const gradeOptions = Array.from({ length: 21 }, (_, i) => {
   const value = 20 - i;
   return { value: String(value), label: `${value} (${getLetterGrade(value)})` };
 });
-
-// Use only numeric-based options for standardized input
-const gradeOptions = numericGradeOptions;
 
 export default function GradingPage() {
   const { role, user, isLoading: authLoading } = useAuth();

@@ -18,20 +18,12 @@ import {
   ChartConfig
 } from '@/components/ui/chart';
 import Image from 'next/image';
+import { getGpaFromNumeric } from '@/lib/utils';
 
 
-// --- Helper functions for calculations ---
-const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
-const calculateGpaFromGrade = (grade: string): number => {
-    const numericGrade = parseFloat(grade);
-    if (!isNaN(numericGrade) && isFinite(numericGrade)) {
-        return (numericGrade / 5.0);
-    }
-    return gpaMap[grade] || 0;
-}
 const calculateAverageGpaForSchool = (grades) => {
-    if (grades.length === 0) return 0;
-    const totalPoints = grades.reduce((acc, g) => acc + calculateGpaFromGrade(g.grade), 0);
+    if (!grades || grades.length === 0) return 0;
+    const totalPoints = grades.reduce((acc, g) => acc + getGpaFromNumeric(parseFloat(g.grade)), 0);
     return parseFloat((totalPoints / grades.length).toFixed(2));
 };
 

@@ -201,14 +201,12 @@ export default function StudentDashboard() {
   const { toast } = useToast();
   const { assignments, grades, financeData, studentsData, attendance, schoolProfile } = useSchoolData();
   
-  const studentIdMap = {
-        student1: 'S001',
-        student2: 'S101',
-        student3: 'S201',
-        student4: 'S010',
-    };
-  const studentId = user?.username ? studentIdMap[user.username] : null;
-  const student = useMemo(() => studentsData.find(s => s.id === studentId), [studentsData, studentId]);
+  const student = useMemo(() => {
+    if (!user?.email) return null;
+    return studentsData.find(s => s.email === user.email);
+  }, [studentsData, user]);
+
+  const studentId = student?.id;
 
   const pendingAssignments = assignments.filter(a => a.status === 'pending' || a.status === 'overdue').sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   
@@ -256,6 +254,10 @@ export default function StudentDashboard() {
       description: "Your official transcript is being prepared. (This is a demo feature)",
     });
   };
+
+  if (!student) {
+     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
 
   return (
     <div className="space-y-6">

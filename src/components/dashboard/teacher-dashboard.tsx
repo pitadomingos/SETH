@@ -16,16 +16,14 @@ import { useMemo, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { analyzeClassPerformance, AnalyzeClassPerformanceOutput } from "@/ai/flows/analyze-class-performance";
 import { useToast } from "@/hooks/use-toast";
+import { getLetterGrade } from "@/lib/utils";
+
 
 // Helper to standardize grades for the chart
 const getStandardLetterGrade = (grade: string): string => {
   const numericGrade = parseFloat(grade);
   if (!isNaN(numericGrade) && isFinite(numericGrade)) {
-    if (numericGrade >= 16) return 'A';
-    if (numericGrade >= 14) return 'B';
-    if (numericGrade >= 10) return 'C';
-    if (numericGrade >= 8) return 'D';
-    return 'F';
+    return getLetterGrade(numericGrade).replace(/[+-]/, '');
   }
   const letter = grade.charAt(0).toUpperCase();
   if (['A', 'B', 'C', 'D', 'F'].includes(letter)) {

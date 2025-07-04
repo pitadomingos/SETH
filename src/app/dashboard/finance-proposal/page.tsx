@@ -82,7 +82,7 @@ export default function ProjectProposalPage() {
                 <ul className="list-disc pl-5 mt-2 text-sm text-muted-foreground">
                     <li><span className="font-semibold">Starter:</span> Core management features for small schools.</li>
                     <li><span className="font-semibold text-primary">Pro:</span> Adds advanced AI tools and integrations for growing institutions.</li>
-                    <li><span className="font-semibold text-premium">Premium:</span> Multi-school management, custom branding, and dedicated support for districts.</li>
+                    <li><span className="font-semibold text-teal-600 dark:text-teal-400">Premium:</span> Multi-school management, custom branding, and dedicated support for districts.</li>
                 </ul>
              </div>
           </CardContent>
