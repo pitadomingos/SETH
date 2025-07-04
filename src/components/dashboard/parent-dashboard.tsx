@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, User, GraduationCap, DollarSign, ListChecks, BarChart2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import {
   ChartContainer,
   ChartTooltip,
@@ -254,8 +254,8 @@ export default function ParentDashboard() {
                     {childFinanceSummary ? (
                         <div className="flex justify-between items-center">
                             <div>
-                                <p className="font-semibold">Balance: <span className="font-bold text-lg">${(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid).toLocaleString()}</span></p>
-                                <p className="text-xs text-muted-foreground">Due: new Date(childFinanceSummary.dueDate).toLocaleDateString()</p>
+                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid, schoolProfile?.currency)}</span></p>
+                                <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
                             </div>
                             <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>
                         </div>

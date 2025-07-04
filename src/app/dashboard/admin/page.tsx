@@ -8,12 +8,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, UserPlus, Loader2, PlusCircle, Settings, BookCopy, Users, CalendarDays, Calendar as CalendarIcon } from 'lucide-react';
+import { MoreHorizontal, UserPlus, Loader2, PlusCircle, Settings, BookCopy, Users, CalendarDays, Calendar as CalendarIcon, DollarSign } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useSchoolData } from '@/context/school-data-context';
+import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 
 const boardSchema = z.object({
@@ -54,8 +56,10 @@ type HolidayFormValues = z.infer<typeof holidaySchema>;
 export default function AdminPanelPage() {
     const { role, isLoading: authLoading } = useAuth();
     const router = useRouter();
+    const { toast } = useToast();
 
     const { 
+        schoolProfile, updateSchoolProfile,
         examBoards, addExamBoard, 
         studentsData, teachersData, 
         feeDescriptions, addFeeDescription, 
@@ -102,6 +106,16 @@ export default function AdminPanelPage() {
         default: return 'default';
         }
     };
+
+    function handleCurrencyChange(value: SchoolProfile['currency']) {
+        if (schoolProfile) {
+            updateSchoolProfile({ ...schoolProfile, currency: value });
+            toast({
+                title: "Currency Updated",
+                description: `The school currency has been set to ${value}.`,
+            });
+        }
+    }
 
     if (authLoading || role !== 'Admin') {
         return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -194,6 +208,23 @@ export default function AdminPanelPage() {
                         <CardDescription>Manage system-wide data definitions.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
+                        <div>
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-semibold">School Currency</h4>
+                            </div>
+                            <div className="mt-3">
+                                <Select value={schoolProfile?.currency} onValueChange={handleCurrencyChange} >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select currency" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="USD">USD ($)</SelectItem>
+                                        <SelectItem value="ZAR">ZAR (R)</SelectItem>
+                                        <SelectItem value="MZN">MZN (MT)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
                         <div>
                             <div className="flex items-center justify-between">
                                 <h4 className="font-semibold">Examination Boards</h4>

@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import Image from 'next/image';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
@@ -255,6 +255,7 @@ function NewExpenseDialog() {
 function RecordPaymentDialog({ fee, onRecordPayment }: { fee: FinanceRecord, onRecordPayment: (feeId: string, amount: number) => void }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const balanceDue = fee.totalAmount - fee.amountPaid;
+  const { schoolProfile } = useSchoolData();
 
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
@@ -280,7 +281,7 @@ function RecordPaymentDialog({ fee, onRecordPayment }: { fee: FinanceRecord, onR
         <DialogHeader>
           <DialogTitle>Record Payment for {fee.studentName}</DialogTitle>
           <DialogDescription>
-            Fee for "{fee.description}". Balance due: ${balanceDue.toLocaleString()}
+            Fee for "{fee.description}". Balance due: {formatCurrency(balanceDue, schoolProfile?.currency)}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -388,7 +389,7 @@ const getStatusInfo = (fee: FinanceRecord) => {
 };
 
 function AdminFinanceView() {
-  const { financeData, recordPayment, expensesData } = useSchoolData();
+  const { financeData, recordPayment, expensesData, schoolProfile } = useSchoolData();
   
   const now = new Date();
   const totalRevenue = financeData.reduce((acc, f) => acc + f.amountPaid, 0);
@@ -423,7 +424,7 @@ function AdminFinanceView() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-500">${totalRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-green-500">{formatCurrency(totalRevenue, schoolProfile?.currency)}</div>
             <p className="text-xs text-muted-foreground">Total amount paid this year</p>
           </CardContent>
         </Card>
@@ -433,7 +434,7 @@ function AdminFinanceView() {
             <Hourglass className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-500">${pendingFees.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-orange-500">{formatCurrency(pendingFees, schoolProfile?.currency)}</div>
             <p className="text-xs text-muted-foreground">Outstanding balance, not overdue</p>
           </CardContent>
         </Card>
@@ -443,7 +444,7 @@ function AdminFinanceView() {
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-500">${overdueFees.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-red-500">{formatCurrency(overdueFees, schoolProfile?.currency)}</div>
             <p className="text-xs text-muted-foreground">Outstanding balance, past due date</p>
           </CardContent>
         </Card>
@@ -453,7 +454,7 @@ function AdminFinanceView() {
             <BarChart2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalExpenses.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalExpenses, schoolProfile?.currency)}</div>
             <p className="text-xs text-muted-foreground">This academic year</p>
           </CardContent>
         </Card>
@@ -485,7 +486,7 @@ function AdminFinanceView() {
                               <TableRow key={item.id}>
                                   <TableCell className="font-medium">{item.studentName}</TableCell>
                                   <TableCell>{item.description}</TableCell>
-                                  <TableCell className="text-right font-medium">${balance.toLocaleString()}</TableCell>
+                                  <TableCell className="text-right font-medium">{formatCurrency(balance, schoolProfile?.currency)}</TableCell>
                                   <TableCell><Badge variant={status.variant}>{status.text}</Badge></TableCell>
                                   <TableCell className="text-right">
                                       <RecordPaymentDialog fee={item} onRecordPayment={recordPayment} />
@@ -525,7 +526,7 @@ function AdminFinanceView() {
                               <TableCell>{expense.date}</TableCell>
                               <TableCell className="font-medium">{expense.description}</TableCell>
                               <TableCell><Badge variant="outline">{expense.category}</Badge></TableCell>
-                              <TableCell className="text-right">${expense.amount.toLocaleString()}</TableCell>
+                              <TableCell className="text-right">{formatCurrency(expense.amount, schoolProfile?.currency)}</TableCell>
                               <TableCell className="text-center">
                                  <ViewProofDialog proofUrl={expense.proofUrl} description={expense.description} />
                               </TableCell>
@@ -540,7 +541,7 @@ function AdminFinanceView() {
 }
 
 function ParentFinanceView() {
-    const { studentsData, financeData } = useSchoolData();
+    const { studentsData, financeData, schoolProfile } = useSchoolData();
 
     return (
         <div className="space-y-6">
@@ -584,9 +585,9 @@ function ParentFinanceView() {
                                       <TableRow key={feeInfo.id}>
                                           <TableCell className="font-medium">{child.name}</TableCell>
                                           <TableCell>{feeInfo.description}</TableCell>
-                                          <TableCell className="text-right">${feeInfo.totalAmount.toLocaleString()}</TableCell>
-                                          <TableCell className="text-right">${feeInfo.amountPaid.toLocaleString()}</TableCell>
-                                          <TableCell className="text-right font-medium">${balance.toLocaleString()}</TableCell>
+                                          <TableCell className="text-right">{formatCurrency(feeInfo.totalAmount, schoolProfile?.currency)}</TableCell>
+                                          <TableCell className="text-right">{formatCurrency(feeInfo.amountPaid, schoolProfile?.currency)}</TableCell>
+                                          <TableCell className="text-right font-medium">{formatCurrency(balance, schoolProfile?.currency)}</TableCell>
                                           <TableCell>{feeInfo.dueDate}</TableCell>
                                           <TableCell><Badge variant={status.variant}>{status.text}</Badge></TableCell>
                                       </TableRow>

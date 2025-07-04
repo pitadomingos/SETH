@@ -39,3 +39,22 @@ export const formatGradeDisplay = (grade: string | number, system?: SchoolProfil
             return `${numericGrade.toFixed(1)}/20`;
     }
 };
+
+export const formatCurrency = (amount: number, currency?: SchoolProfile['currency']) => {
+  const formattedAmount = amount.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  switch (currency) {
+    case 'USD':
+      return `$${formattedAmount}`;
+    case 'ZAR':
+      return `R ${formattedAmount}`;
+    case 'MZN':
+      return `${formattedAmount} MT`;
+    default:
+      // Fallback to USD if currency is not set
+      return `$${formattedAmount}`;
+  }
+};

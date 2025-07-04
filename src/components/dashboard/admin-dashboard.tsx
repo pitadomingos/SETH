@@ -1,8 +1,8 @@
 
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
-import { Users, BookOpen, School, CalendarDays, TrendingUp, DollarSign, Hourglass, TrendingDown } from "lucide-react";
-import { Line, LineChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Users, BookOpen, School, CalendarDays, TrendingUp, DollarSign, Hourglass, TrendingDown, BarChart2 } from "lucide-react";
+import { Line, LineChart, Bar, BarChart as RechartsBarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/chart';
 import { useSchoolData } from "@/context/school-data-context";
 import { format, subDays } from "date-fns";
-import { getLetterGrade, getGpaFromNumeric } from "@/lib/utils";
+import { getLetterGrade, getGpaFromNumeric, formatCurrency } from "@/lib/utils";
 
 function AttendanceTrendChart() {
   const { attendance } = useSchoolData();
@@ -140,7 +140,7 @@ function AcademicPerformanceChart() {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[250px] w-full">
-            <BarChart data={chartData} margin={{ left: -20, right: 10 }}>
+            <RechartsBarChart data={chartData} margin={{ left: -20, right: 10 }}>
                 <CartesianGrid vertical={false} />
                  <XAxis
                     dataKey="month"
@@ -160,7 +160,7 @@ function AcademicPerformanceChart() {
                     content={<ChartTooltipContent formatter={(value) => tooltipFormatter(value as number)} />}
                 />
                 <Bar dataKey={dataKey} fill={`var(--color-${dataKey})`} radius={8} />
-            </BarChart>
+            </RechartsBarChart>
         </ChartContainer>
       </CardContent>
     </Card>
@@ -169,10 +169,11 @@ function AcademicPerformanceChart() {
 
 
 export default function AdminDashboard() {
-  const { studentsData, teachersData, classesData, financeData, events } = useSchoolData();
+  const { studentsData, teachersData, classesData, financeData, events, schoolProfile, expensesData } = useSchoolData();
   const now = new Date();
 
   const totalRevenue = financeData.reduce((acc, f) => acc + f.amountPaid, 0);
+  const totalExpenses = expensesData.reduce((acc, e) => acc + e.amount, 0);
   
   const pendingFees = financeData
     .filter(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) >= now)
@@ -238,7 +239,7 @@ export default function AdminDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-500">${totalRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-green-500">{formatCurrency(totalRevenue, schoolProfile?.currency)}</div>
             <p className="text-xs text-muted-foreground">This academic year</p>
           </CardContent>
         </Card>
@@ -248,7 +249,7 @@ export default function AdminDashboard() {
             <Hourglass className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-500">${pendingFees.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-orange-500">{formatCurrency(pendingFees, schoolProfile?.currency)}</div>
             <p className="text-xs text-muted-foreground">Awaiting payment</p>
           </CardContent>
         </Card>
@@ -258,17 +259,17 @@ export default function AdminDashboard() {
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-500">${overdueFees.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-red-500">{formatCurrency(overdueFees, schoolProfile?.currency)}</div>
             <p className="text-xs text-muted-foreground">Action required</p>
           </CardContent>
         </Card>
          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <BarChart2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$45,200</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalExpenses, schoolProfile?.currency)}</div>
             <p className="text-xs text-muted-foreground">This academic year</p>
           </CardContent>
         </Card>
