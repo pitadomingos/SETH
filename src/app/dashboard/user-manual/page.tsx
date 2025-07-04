@@ -1,3 +1,4 @@
+
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +10,7 @@ const userGuides = {
     title: 'Developer / System Owner Guide',
     points: [
       'Developer Dashboard: Get a high-level overview of all schools in the system from a single dashboard.',
+      'School Status Management: Change a school\'s status (Active, Suspended, Inactive) directly from its card on the dashboard.',
       'School Management Simulation: View key statistics for each school and access their individual management dashboards by clicking "Manage School".',
       'System Documentation: Access technical documentation about the application\'s architecture and technology stack.',
       'Project Proposal: Review the high-level business and development proposal for EduManage.',
@@ -20,16 +22,16 @@ const userGuides = {
     icon: ShieldCheck,
     title: 'School Administrator Guide',
     points: [
-        'Dashboard: Get a high-level overview of your school\'s statistics, including student counts, financial summaries, and performance charts.',
+        'Dashboard: Get a high-level overview of your school\'s statistics. If your school\'s account is suspended, you will see a restricted view.',
         'School Profile: View and edit your school\'s core information like name, address, and contact details. Upload a school logo and manage your subscription plan.',
-        'User Management: Add and view student and teacher profiles.',
+        'User Management: View student and teacher profiles. New students are enrolled automatically through the Admissions module.',
+        'Admissions: Review and process new student applications submitted by parents.',
         'Course Management (Academics): Define courses by assigning a subject, teacher, and a recurring weekly schedule to a class section.',
         'Class Management (Classes): Define and manage student groups (e.g., "Class 9-A").',
-        'Finance: Track school-wide revenue and expenses. Record partial or full payments for student fees and create new ad-hoc fee transactions. Add and categorize expenses with proof of payment.',
-        'Admissions, Examinations, etc: Manage all core school functions from their respective pages in the sidebar.',
+        'Finance: Track school-wide revenue and expenses. Record partial or full payments for student fees and create new ad-hoc fee transactions.',
         'Sports Management: Create sports teams, assign coaches, and manage player rosters. Schedule new competitions and view upcoming matches.',
         'Event Management: Create and schedule new school events from the Events page, including details like location, organizer, and target audience.',
-        'Admin Panel: Configure system-wide data, including the Academic Calendar (Terms & Holidays), Examination Boards, Fee Descriptions, and Event Audiences.',
+        'Admin Panel: Configure system-wide data, including the school currency, Academic Calendar (Terms & Holidays), Examination Boards, and more.',
         'Settings: Configure application-wide behavior, such as the grading display format (e.g., 20-Point Scale, Letter Grades, GPA).',
     ]
   },
@@ -64,6 +66,7 @@ const userGuides = {
     title: 'Parent Guide',
     points: [
       'Dashboard: Get a complete overview of your children\'s school life. Click on a child\'s card to update the dashboard with their specific information.',
+      'New Child Applications: Submit new admission applications for your other children directly from your dashboard.',
       'AI-Powered Insights: Receive AI-generated advice on how to support your selected child\'s learning, including their strengths and areas for improvement.',
       'Finance Portal: View detailed fee information for each child, including total amount, amount paid, and outstanding balance.',
       'Leaderboards: View a personalized report of your children\'s academic rankings in their school, class, and subjects.',
