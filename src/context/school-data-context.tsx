@@ -74,6 +74,8 @@ interface SchoolDataContextType {
   addExpense: (data: NewExpenseData) => void;
   teamsData: Team[];
   addTeam: (data: NewTeamData) => void;
+  addPlayerToTeam: (teamId: string, studentId: string) => void;
+  removePlayerFromTeam: (teamId: string, studentId: string) => void;
   isLoading: boolean;
 }
 
@@ -215,13 +217,13 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setGrades(prev => [newGrade, ...prev]);
   };
 
-  const addStudent = (studentData: Omit<Student, 'id'| 'gpa'>) => {
-    const newStudent: Student = { id: `S${Date.now()}`, ...studentData, gpa: 0 };
+  const addStudent = (studentData: Omit<Student, 'id'| 'gpa' | 'status'>) => {
+    const newStudent: Student = { id: `S${Date.now()}`, ...studentData, gpa: 0, status: 'Active' };
     setStudentsData(prev => [newStudent, ...prev]);
   };
   
-  const addTeacher = (teacherData: Omit<Teacher, 'id'>) => {
-    const newTeacher: Teacher = { id: `T${Date.now()}`, ...teacherData };
+  const addTeacher = (teacherData: Omit<Teacher, 'id' | 'status'>) => {
+    const newTeacher: Teacher = { id: `T${Date.now()}`, ...teacherData, status: 'Active' };
     setTeachersData(prev => [newTeacher, ...prev]);
   };
 
@@ -246,10 +248,26 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addTeam = (data: NewTeamData) => {
     const newTeam: Team = {
       id: `TEAM${Date.now()}`,
-      players: 0, // New teams start with 0 players
+      playerIds: [],
       ...data,
     };
     setTeamsData(prev => [newTeam, ...prev]);
+  };
+
+  const addPlayerToTeam = (teamId: string, studentId: string) => {
+    setTeamsData(prev => prev.map(team => 
+      team.id === teamId 
+        ? { ...team, playerIds: [...team.playerIds, studentId] } 
+        : team
+    ));
+  };
+
+  const removePlayerFromTeam = (teamId: string, studentId: string) => {
+    setTeamsData(prev => prev.map(team => 
+      team.id === teamId 
+        ? { ...team, playerIds: team.playerIds.filter(id => id !== studentId) } 
+        : team
+    ));
   };
 
   const updateApplicationStatus = (id: string, status: Admission['status']) => {
@@ -280,6 +298,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     addExpense,
     teamsData,
     addTeam,
+    addPlayerToTeam,
+    removePlayerFromTeam,
     isLoading,
   };
 

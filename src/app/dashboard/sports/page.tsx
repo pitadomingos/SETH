@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData, Team } from '@/context/school-data-context';
-import { Trophy, Users, CalendarPlus, PlusCircle, Loader2, User as UserIcon } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Trophy, Users, PlusCircle, Loader2, User as UserIcon, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -73,9 +72,71 @@ function NewTeamDialog() {
     )
 }
 
+function ManageTeamDialog({ team, students, allTeams, addPlayerToTeam, removePlayerFromTeam }) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [studentToAdd, setStudentToAdd] = useState('');
+
+  const teamPlayers = students.filter(s => team.playerIds.includes(s.id));
+  
+  const allPlayerIds = allTeams.flatMap(t => t.playerIds);
+  const availableStudents = students.filter(s => !allPlayerIds.includes(s.id));
+
+  const handleAddPlayer = () => {
+    if (studentToAdd) {
+      addPlayerToTeam(team.id, studentToAdd);
+      setStudentToAdd('');
+    }
+  };
+
+  return (
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full">Manage Team</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Manage {team.name}</DialogTitle>
+          <DialogDescription>Add or remove players from the team roster.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+            <div>
+              <h4 className="font-semibold mb-2 text-sm">Current Players ({teamPlayers.length})</h4>
+              <ul className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                {teamPlayers.map(player => (
+                  <li key={player.id} className="flex justify-between items-center bg-muted p-2 rounded-md">
+                    <span>{player.name}</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removePlayerFromTeam(team.id, player.id)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </li>
+                ))}
+                {teamPlayers.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No players on this team yet.</p>}
+              </ul>
+            </div>
+            <div className="mt-4">
+               <h4 className="font-semibold mb-2 text-sm">Add New Player</h4>
+               <div className="flex gap-2">
+                <Select onValueChange={setStudentToAdd} value={studentToAdd}>
+                  <SelectTrigger><SelectValue placeholder="Select a student..." /></SelectTrigger>
+                  <SelectContent>
+                    {availableStudents.map(s => <SelectItem key={s.id} value={s.id}>{s.name} (Grade {s.grade})</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleAddPlayer} disabled={!studentToAdd}>Add</Button>
+               </div>
+            </div>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild><Button>Done</Button></DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default function SportsPage() {
   const { role, isLoading } = useAuth();
-  const { events, teamsData } = useSchoolData();
+  const { events, teamsData, studentsData, addPlayerToTeam, removePlayerFromTeam } = useSchoolData();
   const router = useRouter();
 
   useEffect(() => {
@@ -117,7 +178,7 @@ export default function SportsPage() {
                         <CardContent className="space-y-3 flex-grow">
                             <div className="flex items-center text-sm text-muted-foreground">
                                 <Users className="mr-3 h-4 w-4" />
-                                <span>{team.players} Players</span>
+                                <span>{team.playerIds.length} Players</span>
                             </div>
                             <div className="flex items-center text-sm text-muted-foreground">
                                 <UserIcon className="mr-3 h-4 w-4" />
@@ -125,7 +186,13 @@ export default function SportsPage() {
                             </div>
                         </CardContent>
                         <CardFooter>
-                            <Button variant="outline" className="w-full">Manage Team</Button>
+                           <ManageTeamDialog
+                                team={team}
+                                students={studentsData}
+                                allTeams={teamsData}
+                                addPlayerToTeam={addPlayerToTeam}
+                                removePlayerFromTeam={removePlayerFromTeam}
+                            />
                         </CardFooter>
                     </Card>
                 ))}
@@ -152,7 +219,6 @@ export default function SportsPage() {
                                 </p>
                             </div>
                             <div className="flex items-center gap-4 mt-2 sm:mt-0">
-                                <Badge variant="outline">Inter-school</Badge>
                                 <Button>View Details</Button>
                             </div>
                         </li>

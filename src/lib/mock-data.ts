@@ -23,7 +23,7 @@ export interface Team {
   id: string;
   name: string;
   coach: string;
-  players: number;
+  playerIds: string[];
   icon: string;
 }
 
@@ -116,9 +116,9 @@ const northwoodClasses: Class[] = [
 ];
 
 const northwoodTeams: Team[] = [
-    { id: 'TEAM01', name: 'Basketball Varsity', coach: 'Prof. Michael Chen', players: 15, icon: '🏀' },
-    { id: 'TEAM02', name: 'Football Eagles', coach: 'Ms. Jennifer Davis', players: 22, icon: '🏈' },
-    { id: 'TEAM03', name: 'Swim Team Sharks', coach: 'Dr. Lisa Anderson', players: 18, icon: '🏊' },
+    { id: 'TEAM01', name: 'Basketball Varsity', coach: 'Prof. Michael Chen', playerIds: ['S002', 'S005', 'S008'], icon: '🏀' },
+    { id: 'TEAM02', name: 'Football Eagles', coach: 'Ms. Jennifer Davis', playerIds: ['S001', 'S004', 'S006', 'S007'], icon: '🏈' },
+    { id: 'TEAM03', name: 'Swim Team Sharks', coach: 'Dr. Lisa Anderson', playerIds: ['S003'], icon: '🏊' },
 ];
 
 const now = new Date();
