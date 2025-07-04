@@ -8,15 +8,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, UserPlus, Loader2, PlusCircle, Settings } from 'lucide-react';
+import { MoreHorizontal, UserPlus, Loader2, PlusCircle, Settings, BookCopy } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useSchoolData } from '@/context/school-data-context';
+import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 const boardSchema = z.object({
   name: z.string().min(2, "Board name must be at least 2 characters."),
@@ -32,8 +34,9 @@ type DescriptionFormValues = z.infer<typeof descriptionSchema>;
 export default function AdminPanelPage() {
     const { role, isLoading: authLoading } = useAuth();
     const router = useRouter();
+    const { toast } = useToast();
 
-    const { examBoards, addExamBoard, studentsData, teachersData, feeDescriptions, addFeeDescription } = useSchoolData();
+    const { schoolProfile, updateSchoolProfile, examBoards, addExamBoard, studentsData, teachersData, feeDescriptions, addFeeDescription } = useSchoolData();
     const [isBoardDialogOpen, setIsBoardDialogOpen] = useState(false);
     const [isDescriptionDialogOpen, setIsDescriptionDialogOpen] = useState(false);
 
@@ -83,6 +86,16 @@ export default function AdminPanelPage() {
         addFeeDescription(values.name);
         descriptionForm.reset();
         setIsDescriptionDialogOpen(false);
+    }
+
+    function handleGradingSystemChange(value: SchoolProfile['gradingSystem']) {
+        if (schoolProfile) {
+            updateSchoolProfile({ ...schoolProfile, gradingSystem: value });
+            toast({
+                title: "Grading System Updated",
+                description: `The school now uses the ${value} system for displaying grades.`,
+            });
+        }
     }
 
     if (authLoading || role !== 'Admin') {
@@ -156,10 +169,33 @@ export default function AdminPanelPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Settings /> System Data</CardTitle>
-                        <CardDescription>Manage system-wide data like subjects and exam boards.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Settings /> System Settings</CardTitle>
+                        <CardDescription>Manage system-wide data and configurations.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
+                        <div>
+                            <h4 className="font-semibold text-lg mb-4">Grading System</h4>
+                             <FormItem className="flex flex-col md:flex-row md:items-center md:justify-between p-4 border rounded-lg">
+                                <div>
+                                    <FormLabel>Grade Display Format</FormLabel>
+                                    <FormMessage className="text-xs text-muted-foreground">Choose how grades are displayed across the app.</FormMessage>
+                                </div>
+                                <Select
+                                    value={schoolProfile?.gradingSystem}
+                                    onValueChange={handleGradingSystemChange}
+                                >
+                                    <SelectTrigger className="w-full md:w-[180px] mt-2 md:mt-0">
+                                        <SelectValue placeholder="Select a system" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="20-Point">20-Point Scale</SelectItem>
+                                        <SelectItem value="Letter">Letter Grades (A-F)</SelectItem>
+                                        <SelectItem value="GPA">GPA Scale (0.0-4.0)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </FormItem>
+                        </div>
+                        
                         <div>
                             <div className="flex items-center justify-between">
                                 <h4 className="font-semibold">Examination Boards</h4>

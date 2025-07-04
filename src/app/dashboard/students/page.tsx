@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { UserPlus, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatGradeDisplay } from '@/lib/utils';
 
 const studentSchema = z.object({
   name: z.string().min(2, "Name is required."),
@@ -94,21 +95,24 @@ function NewStudentDialog() {
 
 export default function StudentsPage() {
     const { role, isLoading } = useAuth();
-    const { studentsData } = useSchoolData();
+    const { studentsData, grades, schoolProfile } = useSchoolData();
     const router = useRouter();
+    
+    const studentsWithAverageGrade = useMemo(() => {
+        return studentsData.map(student => {
+            const studentGrades = grades.filter(g => g.studentId === student.id);
+            if (studentGrades.length === 0) {
+                return { ...student, averageGrade: 'N/A' };
+            }
+            const totalPoints = studentGrades.reduce((acc, g) => acc + parseFloat(g.grade), 0);
+            const averageNumericGrade = totalPoints / studentGrades.length;
+            return {
+                ...student,
+                averageGrade: formatGradeDisplay(averageNumericGrade, schoolProfile?.gradingSystem)
+            };
+        });
+    }, [studentsData, grades, schoolProfile]);
 
-    const getGpaLetterGrade = (gpa: number): string => {
-        if (gpa >= 4.0) return 'A+';
-        if (gpa >= 3.7) return 'A';
-        if (gpa >= 3.3) return 'B+';
-        if (gpa >= 3.0) return 'B';
-        if (gpa >= 2.7) return 'B-';
-        if (gpa >= 2.3) return 'C+';
-        if (gpa >= 2.0) return 'C';
-        if (gpa >= 1.7) return 'C-';
-        if (gpa >= 1.0) return 'D';
-        return 'F';
-    };
 
     useEffect(() => {
         if (!isLoading && role !== 'Admin') {
@@ -142,11 +146,11 @@ export default function StudentsPage() {
                                 <TableHead>Name</TableHead>
                                 <TableHead>Class</TableHead>
                                 <TableHead>Contact</TableHead>
-                                <TableHead>GPA</TableHead>
+                                <TableHead>Average Grade</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {studentsData.map((student) => (
+                            {studentsWithAverageGrade.map((student) => (
                                 <TableRow key={student.id}>
                                     <TableCell className="font-medium">{student.name}</TableCell>
                                     <TableCell>Grade {student.grade} - {student.class}</TableCell>
@@ -155,8 +159,8 @@ export default function StudentsPage() {
                                         <div className="text-muted-foreground">{student.phone}</div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={student.gpa >= 3.5 ? 'secondary' : 'outline'}>
-                                            {student.gpa.toFixed(1)} ({getGpaLetterGrade(student.gpa)})
+                                        <Badge variant={student.averageGrade.includes('A') || student.averageGrade.startsWith('4.0') || student.averageGrade.startsWith('20') ? 'secondary' : 'outline'}>
+                                            {student.averageGrade}
                                         </Badge>
                                     </TableCell>
                                 </TableRow>

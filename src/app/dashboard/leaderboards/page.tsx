@@ -12,43 +12,20 @@ import { useSchoolData } from '@/context/school-data-context';
 import { Award, Trophy, BookOpen } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { schoolData } from '@/lib/mock-data';
+import { formatGradeDisplay } from '@/lib/utils';
 
 // --- Grade Calculation Helpers ---
-
-const getLetterGrade = (numericGrade: number): string => {
-  if (numericGrade >= 19) return 'A+';
-  if (numericGrade >= 17) return 'A';
-  if (numericGrade >= 16) return 'A-';
-  if (numericGrade >= 15) return 'B+';
-  if (numericGrade >= 14) return 'B';
-  if (numericGrade >= 13) return 'B-';
-  if (numericGrade >= 12) return 'C+';
-  if (numericGrade >= 11) return 'C';
-  if (numericGrade >= 10) return 'C-';
-  if (numericGrade >= 8) return 'D';
-  return 'F';
-};
-
-const letterToNumericMap: { [key: string]: number } = { 'A+': 20, 'A': 18, 'A-': 17, 'B+': 15, 'B': 14, 'B-': 13, 'C+': 12, 'C': 11, 'C-': 10, 'D': 8, 'F': 5 };
-const getNumericScore = (grade: string): number => {
-    const numericGrade = parseFloat(grade);
-    if (!isNaN(numericGrade) && isFinite(numericGrade)) {
-        return numericGrade;
-    }
-    return letterToNumericMap[grade] || 0;
-};
-
 const calculateAverageScore = (studentId: string, grades: any[]) => {
     const studentGrades = grades.filter(g => g.studentId === studentId);
     if (studentGrades.length === 0) return 0;
-    const totalPoints = studentGrades.reduce((acc, g) => acc + getNumericScore(g.grade), 0);
+    const totalPoints = studentGrades.reduce((acc, g) => acc + parseFloat(g.grade), 0);
     return (totalPoints / studentGrades.length);
 };
 
 
 // --- Components ---
 
-const LeaderboardTable = ({ students }) => {
+const LeaderboardTable = ({ students, gradingSystem }) => {
     if (!students || students.length === 0) {
         return <p className="text-center text-muted-foreground py-8">No data available for this selection.</p>;
     }
@@ -60,7 +37,7 @@ const LeaderboardTable = ({ students }) => {
                     <TableHead className="w-[80px]">Rank</TableHead>
                     <TableHead>Student</TableHead>
                     <TableHead>Class</TableHead>
-                    <TableHead className="text-right">Average Score</TableHead>
+                    <TableHead className="text-right">Average Grade</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -79,7 +56,7 @@ const LeaderboardTable = ({ students }) => {
                         <TableCell>Grade {student.grade} - {student.class}</TableCell>
                         <TableCell className="text-right">
                              <Badge variant="secondary" className="text-base">
-                                {student.averageScore.toFixed(1)} ({getLetterGrade(student.averageScore)})
+                                {formatGradeDisplay(student.averageScore, gradingSystem)}
                             </Badge>
                         </TableCell>
                     </TableRow>
@@ -102,6 +79,7 @@ const ParentLeaderboardView = () => {
           ...student,
           averageScore: calculateAverageScore(student.id, school.grades),
         })).sort((a, b) => b.averageScore - a.averageScore),
+        gradingSystem: school.profile.gradingSystem,
       };
     }
     return data;
@@ -188,9 +166,10 @@ const ParentLeaderboardView = () => {
 
 export default function LeaderboardsPage() {
     const { role } = useAuth();
-    const { studentsData, classesData, grades } = useSchoolData();
+    const { studentsData, classesData, grades, schoolProfile } = useSchoolData();
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+    const gradingSystem = schoolProfile?.gradingSystem;
 
     if (role === 'Parent') {
         return <ParentLeaderboardView />;
@@ -255,7 +234,7 @@ export default function LeaderboardsPage() {
                             <CardDescription>Top 10 students across all grades based on calculated average score.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <LeaderboardTable students={allStudentsWithScore} />
+                            <LeaderboardTable students={allStudentsWithScore} gradingSystem={gradingSystem} />
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -277,7 +256,7 @@ export default function LeaderboardsPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <LeaderboardTable students={topStudentsInClass} />
+                            <LeaderboardTable students={topStudentsInClass} gradingSystem={gradingSystem}/>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -299,7 +278,7 @@ export default function LeaderboardsPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                           <LeaderboardTable students={topStudentsBySubject} />
+                           <LeaderboardTable students={topStudentsBySubject} gradingSystem={gradingSystem}/>
                         </CardContent>
                     </Card>
                 </TabsContent>

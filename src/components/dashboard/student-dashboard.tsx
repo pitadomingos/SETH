@@ -22,44 +22,12 @@ import { format } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { analyzeStudentFailure, AnalyzeStudentFailureOutput } from '@/ai/flows/analyze-student-failure';
+import { formatGradeDisplay } from '@/lib/utils';
 
-
-const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
-
-const getLetterGrade = (numericGrade: number): string => {
-  if (numericGrade >= 19) return 'A+';
-  if (numericGrade >= 17) return 'A';
-  if (numericGrade >= 16) return 'A-';
-  if (numericGrade >= 15) return 'B+';
-  if (numericGrade >= 14) return 'B';
-  if (numericGrade >= 13) return 'B-';
-  if (numericGrade >= 12) return 'C+';
-  if (numericGrade >= 11) return 'C';
-  if (numericGrade >= 10) return 'C-';
-  if (numericGrade >= 8) return 'D';
-  return 'F';
-};
-
-const formatGrade = (grade: string): string => {
-  const numericGrade = parseFloat(grade);
-  if (!isNaN(numericGrade) && isFinite(numericGrade)) {
-    return `${numericGrade} (${getLetterGrade(numericGrade)})`;
-  }
-  return grade;
-};
-
-const calculateGpaFromGrade = (grade: string): number => {
-    const numericGrade = parseFloat(grade);
-    if (!isNaN(numericGrade) && isFinite(numericGrade)) {
-        return (numericGrade / 5.0);
-    }
-    return gpaMap[grade] || 0;
-}
-
-const calculateAverageGpa = (studentId: string, grades) => {
+const calculateAverageNumericGrade = (studentId: string, grades) => {
     const studentGrades = grades.filter(g => g.studentId === studentId);
     if (studentGrades.length === 0) return 0;
-    const totalPoints = studentGrades.reduce((acc, g) => acc + calculateGpaFromGrade(g.grade), 0);
+    const totalPoints = studentGrades.reduce((acc, g) => acc + parseFloat(g.grade), 0);
     return (totalPoints / studentGrades.length);
 };
 
@@ -131,8 +99,6 @@ function RankCard() {
     const { user } = useAuth();
     const { studentsData, grades } = useSchoolData();
 
-    // This logic needs to find the student's ID from the user object.
-    // For the demo, we map usernames to student IDs.
     const studentIdMap = {
         student1: 'S001',
         student2: 'S101',
@@ -141,15 +107,15 @@ function RankCard() {
     };
     const studentId = user?.username ? studentIdMap[user.username] : null;
   
-    const allStudentsWithGpa = useMemo(() => studentsData.map(student => ({
+    const allStudentsWithAvg = useMemo(() => studentsData.map(student => ({
         ...student,
-        calculatedGpa: parseFloat(calculateAverageGpa(student.id, grades).toFixed(2)),
-    })).sort((a, b) => b.calculatedGpa - a.calculatedGpa), [studentsData, grades]);
+        avgNumeric: calculateAverageNumericGrade(student.id, grades),
+    })).sort((a, b) => b.avgNumeric - a.avgNumeric), [studentsData, grades]);
 
     const studentRank = useMemo(() => {
         if (!studentId) return -1;
-        return allStudentsWithGpa.findIndex(s => s.id === studentId) + 1;
-    }, [allStudentsWithGpa, studentId]);
+        return allStudentsWithAvg.findIndex(s => s.id === studentId) + 1;
+    }, [allStudentsWithAvg, studentId]);
 
     return (
         <Card>
@@ -159,7 +125,7 @@ function RankCard() {
             </CardHeader>
             <CardContent className="text-center">
                 <p className="text-6xl font-bold text-primary">{studentRank > 0 ? studentRank : 'N/A'}</p>
-                <p className="text-muted-foreground">out of {allStudentsWithGpa.length} students</p>
+                <p className="text-muted-foreground">out of {allStudentsWithAvg.length} students</p>
             </CardContent>
             <CardFooter>
                  <Link href="/dashboard/leaderboards" passHref className="w-full">
@@ -274,12 +240,12 @@ export default function StudentDashboard() {
     }, { present: 0, late: 0, absent: 0 });
   }, [attendance, studentId]);
 
-  const studentGpa = useMemo(() => {
+  const averageNumericGrade = useMemo(() => {
     if (!studentId) return 0;
-    return calculateAverageGpa(studentId, grades);
+    return calculateAverageNumericGrade(studentId, grades);
   }, [studentId, grades]);
 
-  const hasPassed = useMemo(() => studentGpa >= 2.0, [studentGpa]);
+  const hasPassed = useMemo(() => averageNumericGrade >= 10, [averageNumericGrade]); // 10/20 is a pass, equivalent to 2.0 GPA
 
   const areAllFeesPaid = useMemo(() => {
     if (!studentId) return false;
@@ -342,11 +308,11 @@ export default function StudentDashboard() {
             <CardContent>
                 <ul className="space-y-3">
                 {studentGrades.slice(0, 4).map((grade, index) => {
-                  const gpa = calculateGpaFromGrade(grade.grade);
+                  const numericGrade = parseFloat(grade.grade);
                   return (
                     <li key={index} className="flex justify-between items-center text-sm p-2 bg-muted rounded-md">
                       <p className="font-medium">{grade.subject}</p>
-                      <Badge variant={gpa >= 3.7 ? 'secondary' : 'outline'}>{formatGrade(grade.grade)}</Badge>
+                      <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
                     </li>
                   )
                 })}

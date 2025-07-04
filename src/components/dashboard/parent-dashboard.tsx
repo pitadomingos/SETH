@@ -16,6 +16,8 @@ import {
   ChartConfig,
 } from '@/components/ui/chart';
 import { Bar, BarChart } from 'recharts';
+import { getLetterGrade, formatGradeDisplay, getGpaFromNumeric } from '@/lib/utils';
+
 
 function AIGeneratedAdvice({ child, childGrades, childAttendanceSummary }) {
   const { toast } = useToast();
@@ -91,42 +93,11 @@ function AIGeneratedAdvice({ child, childGrades, childAttendanceSummary }) {
   )
 }
 
-const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
-const getLetterGrade = (numericGrade: number): string => {
-  if (numericGrade >= 19) return 'A+';
-  if (numericGrade >= 17) return 'A';
-  if (numericGrade >= 16) return 'A-';
-  if (numericGrade >= 15) return 'B+';
-  if (numericGrade >= 14) return 'B';
-  if (numericGrade >= 13) return 'B-';
-  if (numericGrade >= 12) return 'C+';
-  if (numericGrade >= 11) return 'C';
-  if (numericGrade >= 10) return 'C-';
-  if (numericGrade >= 8) return 'D';
-  return 'F';
-};
-
-const formatGrade = (grade: string): string => {
-  const numericGrade = parseFloat(grade);
-  if (!isNaN(numericGrade) && isFinite(numericGrade)) {
-    return `${numericGrade} (${getLetterGrade(numericGrade)})`;
-  }
-  return grade;
-};
-
-const calculateGpaFromGrade = (grade: string): number => {
-    const numericGrade = parseFloat(grade);
-    if (!isNaN(numericGrade) && isFinite(numericGrade)) {
-        return (numericGrade / 5.0);
-    }
-    return gpaMap[grade] || 0;
-}
-
 function GradeDistribution({ grades }) {
   const chartData = useMemo(() => {
     return grades.map(grade => ({
       subject: grade.subject,
-      gpa: calculateGpaFromGrade(grade.grade)
+      gpa: getGpaFromNumeric(parseFloat(grade.grade))
     }));
   }, [grades]);
 
@@ -179,7 +150,7 @@ const getStatusInfo = (fee: FinanceRecord) => {
 
 export default function ParentDashboard() {
   const { user } = useAuth();
-  const { studentsData, grades, attendance, financeData, isLoading: schoolDataLoading } = useSchoolData();
+  const { studentsData, grades, attendance, financeData, schoolProfile, isLoading: schoolDataLoading } = useSchoolData();
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -300,11 +271,11 @@ export default function ParentDashboard() {
                     <CardContent>
                         <ul className="space-y-2">
                             {childGrades.length > 0 ? childGrades.slice(0, 3).map((grade, index) => {
-                              const gpa = calculateGpaFromGrade(grade.grade);
+                              const numericGrade = parseFloat(grade.grade);
                               return (
                                 <li key={index} className="flex justify-between items-center text-sm">
                                     <span className="font-medium">{grade.subject}</span>
-                                    <Badge variant={gpa >= 3.7 ? 'secondary' : 'outline'}>{formatGrade(grade.grade)}</Badge>
+                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
                                 </li>
                               )
                             }) : <p className="text-muted-foreground text-sm">No recent grades.</p>}
