@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Sparkles, Hammer, FlaskConical, CheckCircle, Info, Save, Printer, History, ChevronDown } from 'lucide-react';
+import { Loader2, Sparkles, Hammer, FlaskConical, CheckCircle, Info, Printer, History, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useSchoolData } from '@/context/school-data-context';
 import { useRouter } from 'next/navigation';
@@ -66,7 +66,6 @@ export default function LessonPlannerPage() {
 
   const [generatedPlan, setGeneratedPlan] = useState<CreateLessonPlanOutput | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPlanSaved, setIsPlanSaved] = useState(false);
 
   const teacherInfo = useMemo(() => {
     return teachersData.find(t => t.name === user?.name);
@@ -100,7 +99,6 @@ export default function LessonPlannerPage() {
 
     setIsSubmitting(true);
     setGeneratedPlan(null);
-    setIsPlanSaved(false);
 
     const selectedClass = classesData.find(c => c.id === values.classId);
     if (!selectedClass) {
@@ -127,9 +125,18 @@ export default function LessonPlannerPage() {
         recentGrades: relevantGrades,
       });
       setGeneratedPlan(result);
+      
+      // Automatically save the plan
+      addLessonPlan({
+        className: selectedClass.name,
+        subject: teacherInfo.subject,
+        weeklySyllabus: values.weeklySyllabus,
+        weeklyPlan: result.weeklyPlan
+      });
+
       toast({
-        title: 'Weekly Plan Generated!',
-        description: 'Your new performance-aware lesson plan is ready for review.',
+        title: 'Plan Generated & Saved!',
+        description: 'Your new lesson plan is ready for review and has been saved to your history.',
       });
     } catch (error) {
       console.error('Failed to create lesson plan:', error);
@@ -141,24 +148,6 @@ export default function LessonPlannerPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }
-
-  function handleSavePlan() {
-    if (!generatedPlan || !teacherInfo) return;
-    const { classId, weeklySyllabus } = form.getValues();
-    const selectedClass = classesData.find(c => c.id === classId);
-    
-    addLessonPlan({
-        className: selectedClass?.name || 'Unknown Class',
-        subject: teacherInfo.subject,
-        weeklySyllabus,
-        weeklyPlan: generatedPlan.weeklyPlan
-    });
-    setIsPlanSaved(true);
-    toast({
-        title: 'Plan Saved!',
-        description: 'The lesson plan has been saved to your history.'
-    });
   }
 
   function handlePrint() {
@@ -257,12 +246,8 @@ export default function LessonPlannerPage() {
               )}
             </CardContent>
             {generatedPlan && (
-                <CardFooter className="flex-col sm:flex-row gap-2 print:hidden">
-                    <Button onClick={handleSavePlan} disabled={isPlanSaved} className="w-full sm:w-auto">
-                        <Save className="mr-2 h-4 w-4" />
-                        {isPlanSaved ? 'Plan Saved' : 'Save Plan'}
-                    </Button>
-                     <Button onClick={handlePrint} variant="outline" className="w-full sm:w-auto">
+                <CardFooter className="flex justify-end print:hidden">
+                     <Button onClick={handlePrint} variant="outline">
                         <Printer className="mr-2 h-4 w-4" />
                         Print Plan
                     </Button>
