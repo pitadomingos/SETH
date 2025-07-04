@@ -1,3 +1,4 @@
+
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -43,12 +44,12 @@ export default function SystemDocumentationPage() {
             </div>
             <div>
               <h3 className="font-semibold">Genkit</h3>
-              <p className="text-sm text-muted-foreground">Powers the AI features, such as the Lesson Planner, by connecting to generative models.</p>
+              <p className="text-sm text-muted-foreground">Powers the AI features, such as the AI Reports and Lesson Planner, by connecting to generative models.</p>
             </div>
              <div>
               <h3 className="font-semibold">Recharts & Zod</h3>
               <p className="text-sm text-muted-foreground">Recharts is used for data visualization and charts. Zod is used for schema validation in forms.</p>
-            </div>
+             </div>
           </CardContent>
         </Card>
 
@@ -68,12 +69,12 @@ export default function SystemDocumentationPage() {
             </div>
              <div>
               <h3 className="font-semibold"><code>/src/ai</code></h3>
-              <p className="text-sm text-muted-foreground">Houses the Genkit flows and AI-related logic for generative features.</p>
+              <p className="text-sm text-muted-foreground">Houses the Genkit flows and AI-related logic, including `analyzeSchoolPerformance`, `analyzeSchoolSystem`, `identifyStrugglingStudents`, and `analyzeTeacherPerformance`.</p>
             </div>
              <div>
               <h3 className="font-semibold"><code>/src/context</code></h3>
               <p className="text-sm text-muted-foreground">Contains React Context providers for managing global state like authentication and shared school data.</p>
-            </div>
+             </div>
           </CardContent>
         </Card>
 
@@ -84,12 +85,12 @@ export default function SystemDocumentationPage() {
           </CardHeader>
           <CardContent className="space-y-4">
              <div>
-              <h3 className="font-semibold">Mock Data Simulation</h3>
-              <p className="text-sm text-muted-foreground">The app currently uses static mock data from <code>src/lib/mock-data.ts</code> for rapid prototyping and to simulate a multi-school environment.</p>
+              <h3 className="font-semibold">In-Memory Mock Database</h3>
+              <p className="text-sm text-muted-foreground">The app currently uses static mock data from <code>src/lib/mock-data.ts</code> for rapid prototyping. To simulate persistence for features like school status changes and new admissions, this mock data object is mutated directly in the data context provider. This allows changes to persist throughout a user's session without a real backend.</p>
             </div>
             <div>
               <h3 className="font-semibold">Stateful Context Providers</h3>
-              <p className="text-sm text-muted-foreground">The <code>AuthProvider</code> and <code>SchoolDataProvider</code> contexts work together to create a dynamic, in-memory state. Based on the logged-in user, the system loads the correct slice of data, simulating a real multi-tenant backend and allowing actions (like adding a student or recording a payment) to persist throughout the session.</p>
+              <p className="text-sm text-muted-foreground">The <code>AuthProvider</code> and <code>SchoolDataProvider</code> contexts work together to create a dynamic, in-memory state. Based on the logged-in user, the system loads the correct slice of data, simulating a real multi-tenant backend and allowing actions (like adding a student or recording a payment) to update the UI instantly.</p>
             </div>
           </CardContent>
         </Card>

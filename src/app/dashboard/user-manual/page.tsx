@@ -25,10 +25,10 @@ const userGuides = {
     title: 'School Administrator Guide',
     points: [
         'Dashboard: Get a high-level overview of your school\'s statistics. If your school\'s account is suspended, you will see a restricted view.',
+        'AI Academic Reports: Access a suite of AI-powered reports, including a School-Wide Analysis, Class Performance breakdowns, a list of Struggling Students, and data-driven Teacher Performance reviews.',
         'School Profile: View and edit your school\'s core information like name, address, and contact details. Upload a school logo and manage your subscription plan.',
-        'Reports: Access a suite of AI-powered academic reports, including Class Performance Analysis, a list of Struggling Students with suggested actions, and data-driven Teacher Performance reviews.',
         'User Management: View student and teacher profiles. New students are enrolled automatically through the Admissions module.',
-        'Admissions: Review and process new student applications submitted by parents.',
+        'Admissions: Review and process new student applications submitted by parents. Approving an application automatically enrolls the student.',
         'Course Management (Academics): Define courses by assigning a subject, teacher, and a recurring weekly schedule to a class section.',
         'Class Management (Classes): Define and manage student groups (e.g., "Class 9-A").',
         'Finance: Track school-wide revenue and expenses. Record partial or full payments for student fees and create new ad-hoc fee transactions.',
