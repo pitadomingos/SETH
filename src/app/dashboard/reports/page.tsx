@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Loader2, User } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSchoolData } from '@/context/school-data-context';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,6 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { analyzeClassPerformance, AnalyzeClassPerformanceOutput } from '@/ai/flows/analyze-class-performance';
 import { identifyStrugglingStudents, IdentifyStrugglingStudentsOutput } from '@/ai/flows/identify-struggling-students';
 import { analyzeTeacherPerformance, AnalyzeTeacherPerformanceOutput } from '@/ai/flows/analyze-teacher-performance';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Legend } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
+import { getLetterGrade } from '@/lib/utils';
+
 
 // Class Analysis Component
 function ClassAnalysis() {
@@ -22,6 +26,11 @@ function ClassAnalysis() {
   const [selectedSubject, setSelectedSubject] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalyzeClassPerformanceOutput | null>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
+
+  const chartConfig = {
+    count: { label: 'Students', color: 'hsl(var(--chart-1))' },
+  } satisfies ChartConfig;
 
   const handleAnalysis = async () => {
     if (!selectedClassId || !selectedSubject) {
@@ -30,6 +39,7 @@ function ClassAnalysis() {
     }
     setIsLoading(true);
     setResult(null);
+    setChartData([]);
     try {
       const selectedClass = classesData.find(c => c.id === selectedClassId);
       if (!selectedClass) throw new Error('Class not found');
@@ -43,6 +53,20 @@ function ClassAnalysis() {
         grades: relevantGrades,
       });
       setResult(analysisResult);
+
+      if (relevantGrades.length > 0) {
+        const gradeCounts = relevantGrades.reduce((acc, grade) => {
+            const letterGrade = getLetterGrade(parseFloat(grade)).charAt(0);
+            acc[letterGrade] = (acc[letterGrade] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+        
+        const preparedChartData = ['A', 'B', 'C', 'D', 'F'].map(letter => ({
+            grade: letter,
+            count: gradeCounts[letter] || 0,
+        }));
+        setChartData(preparedChartData);
+      }
     } catch (error) {
       console.error(error);
       toast({ variant: 'destructive', title: 'Analysis Failed' });
@@ -55,7 +79,7 @@ function ClassAnalysis() {
     <Card>
       <CardHeader>
         <CardTitle>Class Performance Analysis</CardTitle>
-        <CardDescription>Select a class and subject to get an AI-powered performance analysis.</CardDescription>
+        <CardDescription>Select a class and subject to get an AI-powered performance analysis and grade distribution chart.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-4">
@@ -65,9 +89,25 @@ function ClassAnalysis() {
         </div>
         {isLoading && <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>}
         {result && (
-          <div className="space-y-4 pt-4 text-sm animate-in fade-in-50">
-             <div className={`p-4 rounded-md ${result.interventionNeeded ? 'bg-destructive/10 border border-destructive/20' : 'bg-muted'}`}><h4 className="font-semibold mb-1">Analysis:</h4><p className="text-muted-foreground">{result.analysis}</p></div>
-             <div className={`p-4 rounded-md ${result.interventionNeeded ? 'bg-destructive/10 border border-destructive/20' : 'bg-muted'}`}><h4 className="font-semibold mb-1">Recommendation:</h4><p className="text-muted-foreground">{result.recommendation}</p></div>
+          <div className="pt-4 animate-in fade-in-50 grid gap-6 md:grid-cols-2">
+            <div className="space-y-4 text-sm">
+                <div className={`p-4 rounded-md ${result.interventionNeeded ? 'bg-destructive/10 border border-destructive/20' : 'bg-muted'}`}><h4 className="font-semibold mb-1">Analysis:</h4><p className="text-muted-foreground">{result.analysis}</p></div>
+                <div className={`p-4 rounded-md ${result.interventionNeeded ? 'bg-destructive/10 border border-destructive/20' : 'bg-muted'}`}><h4 className="font-semibold mb-1">Recommendation:</h4><p className="text-muted-foreground">{result.recommendation}</p></div>
+            </div>
+            {chartData.length > 0 && (
+                <div>
+                    <h4 className="font-semibold mb-2 text-sm">Grade Distribution</h4>
+                    <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                        <BarChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                            <CartesianGrid vertical={false} />
+                            <XAxis dataKey="grade" tickLine={false} axisLine={false} tickMargin={8} />
+                            <YAxis allowDecimals={false} />
+                            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                            <Bar dataKey="count" fill="var(--color-count)" radius={4} />
+                        </BarChart>
+                    </ChartContainer>
+                </div>
+            )}
           </div>
         )}
       </CardContent>
@@ -81,10 +121,17 @@ function StrugglingStudents() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<IdentifyStrugglingStudentsOutput | null>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
+
+  const chartConfig = {
+    count: { label: 'Struggling Students', color: 'hsl(var(--destructive))' },
+  } satisfies ChartConfig;
+
 
   const handleAnalysis = async () => {
     setIsLoading(true);
     setResult(null);
+    setChartData([]);
     try {
       const studentGradeInfo = studentsData.map(student => ({
         studentId: student.id,
@@ -93,6 +140,21 @@ function StrugglingStudents() {
       }));
       const analysisResult = await identifyStrugglingStudents({ students: studentGradeInfo });
       setResult(analysisResult);
+
+      if (analysisResult.strugglingStudents.length > 0) {
+        const countsByGrade = analysisResult.strugglingStudents.reduce((acc, strugglingStudent) => {
+          const studentInfo = studentsData.find(s => s.id === strugglingStudent.studentId);
+          if (studentInfo) {
+            const gradeKey = `Grade ${studentInfo.grade}`;
+            acc[gradeKey] = (acc[gradeKey] || 0) + 1;
+          }
+          return acc;
+        }, {} as Record<string, number>);
+
+        const preparedChartData = Object.entries(countsByGrade).map(([grade, count]) => ({ grade, count }));
+        setChartData(preparedChartData);
+      }
+
     } catch (error) {
       console.error(error);
       toast({ variant: 'destructive', title: 'Analysis Failed' });
@@ -105,7 +167,7 @@ function StrugglingStudents() {
     <Card>
       <CardHeader>
         <CardTitle>Identify Struggling Students</CardTitle>
-        <CardDescription>Run an analysis across the entire school to identify students who may need academic intervention.</CardDescription>
+        <CardDescription>Run an analysis across the school to identify students who may need academic intervention, with a summary chart.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Button onClick={handleAnalysis} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Identify Students'}</Button>
@@ -113,20 +175,36 @@ function StrugglingStudents() {
         {result && (
           <div className="pt-4 animate-in fade-in-50">
             {result.strugglingStudents.length > 0 ? (
-              <ul className="space-y-3">
-                {result.strugglingStudents.map(student => (
-                  <li key={student.studentId} className="flex flex-col md:flex-row items-start gap-4 p-4 border rounded-lg">
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <div className="bg-destructive/10 p-2 rounded-full"><User className="h-5 w-5 text-destructive" /></div>
-                      <span className="font-semibold">{student.studentName}</span>
-                    </div>
-                    <div className="flex-grow">
-                      <p className="text-sm"><span className="font-semibold">Reason:</span> {student.reason}</p>
-                      <p className="text-sm text-muted-foreground"><span className="font-semibold">Suggestion:</span> {student.suggestedAction}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <div className="grid gap-6 md:grid-cols-2">
+                 <div className="max-h-96 overflow-y-auto pr-2">
+                    <ul className="space-y-3">
+                        {result.strugglingStudents.map(student => (
+                        <li key={student.studentId} className="flex items-start gap-4 p-4 border rounded-lg">
+                            <div className="flex items-center gap-3 flex-shrink-0 pt-1">
+                                <User className="h-5 w-5 text-destructive" />
+                                <span className="font-semibold">{student.studentName}</span>
+                            </div>
+                            <div className="flex-grow">
+                            <p className="text-sm"><span className="font-semibold text-destructive">Reason:</span> {student.reason}</p>
+                            <p className="text-sm text-muted-foreground"><span className="font-semibold">Suggestion:</span> {student.suggestedAction}</p>
+                            </div>
+                        </li>
+                        ))}
+                    </ul>
+                 </div>
+                 <div>
+                    <h4 className="font-semibold mb-2 text-sm">Struggling Students by Grade Level</h4>
+                    <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                        <BarChart data={chartData} layout="vertical" margin={{ left: 10 }}>
+                            <CartesianGrid horizontal={false} />
+                            <YAxis dataKey="grade" type="category" tickLine={false} axisLine={false} tickMargin={8} width={80} />
+                            <XAxis type="number" hide />
+                            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                            <Bar dataKey="count" fill="var(--color-count)" radius={4} />
+                        </BarChart>
+                    </ChartContainer>
+                 </div>
+              </div>
             ) : (
               <p className="text-center text-muted-foreground py-8">Great news! No students were identified as struggling based on the criteria.</p>
             )}
@@ -144,6 +222,12 @@ function TeacherPerformance() {
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalyzeTeacherPerformanceOutput | null>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
+  
+  const chartConfig = {
+    avgGrade: { label: 'Avg Grade', color: 'hsl(var(--chart-1))' },
+    passRate: { label: 'Pass Rate (%)', color: 'hsl(var(--chart-2))' },
+  } satisfies ChartConfig;
 
   const handleAnalysis = async () => {
     if (!selectedTeacherId) {
@@ -152,6 +236,7 @@ function TeacherPerformance() {
     }
     setIsLoading(true);
     setResult(null);
+    setChartData([]);
     try {
       const teacher = teachersData.find(t => t.id === selectedTeacherId);
       if (!teacher) throw new Error('Teacher not found');
@@ -174,6 +259,13 @@ function TeacherPerformance() {
 
       const analysisResult = await analyzeTeacherPerformance({ teacherName: teacher.name, subject: teacher.subject, classPerformances });
       setResult(analysisResult);
+      if (classPerformances.length > 0) {
+        setChartData(classPerformances.map(cp => ({
+            name: cp.className,
+            avgGrade: cp.averageGrade,
+            passRate: cp.passingRate,
+        })));
+      }
     } catch (error) {
       console.error(error);
       toast({ variant: 'destructive', title: 'Analysis Failed' });
@@ -186,7 +278,7 @@ function TeacherPerformance() {
     <Card>
       <CardHeader>
         <CardTitle>Teacher Performance Analysis</CardTitle>
-        <CardDescription>Select a teacher to analyze their students' performance across their classes.</CardDescription>
+        <CardDescription>Select a teacher to analyze their students' performance across classes, supported by visual charts.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-4">
@@ -195,10 +287,29 @@ function TeacherPerformance() {
         </div>
         {isLoading && <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>}
         {result && (
-          <div className="space-y-4 pt-4 text-sm animate-in fade-in-50">
-            <div className="p-4 rounded-md bg-muted"><h4 className="font-semibold mb-1">Overall Assessment:</h4><p className="text-muted-foreground">{result.overallAssessment}</p></div>
-            <div className="p-4 rounded-md bg-muted"><h4 className="font-semibold mb-1">Strengths:</h4><p className="text-muted-foreground whitespace-pre-wrap">{result.strengths}</p></div>
-            <div className="p-4 rounded-md bg-muted"><h4 className="font-semibold mb-1">Areas for Improvement:</h4><p className="text-muted-foreground whitespace-pre-wrap">{result.areasForImprovement}</p></div>
+          <div className="pt-4 animate-in fade-in-50 grid gap-6 md:grid-cols-2">
+            <div className="space-y-4 text-sm">
+                <div className="p-4 rounded-md bg-muted"><h4 className="font-semibold mb-1">Overall Assessment:</h4><p className="text-muted-foreground">{result.overallAssessment}</p></div>
+                <div className="p-4 rounded-md bg-muted"><h4 className="font-semibold mb-1">Strengths:</h4><p className="text-muted-foreground whitespace-pre-wrap">{result.strengths}</p></div>
+                <div className="p-4 rounded-md bg-muted"><h4 className="font-semibold mb-1">Areas for Improvement:</h4><p className="text-muted-foreground whitespace-pre-wrap">{result.areasForImprovement}</p></div>
+            </div>
+            {chartData.length > 0 && (
+                <div>
+                     <h4 className="font-semibold mb-2 text-sm">Class Performance Comparison</h4>
+                    <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                       <BarChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                            <CartesianGrid vertical={false} />
+                            <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
+                            <YAxis yAxisId="left" orientation="left" stroke="hsl(var(--chart-1))" allowDecimals={false} domain={[0, 20]}/>
+                            <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--chart-2))" allowDecimals={false} domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Legend />
+                            <Bar yAxisId="left" dataKey="avgGrade" fill="var(--color-avgGrade)" radius={4} />
+                            <Bar yAxisId="right" dataKey="passRate" fill="var(--color-passRate)" radius={4} />
+                        </BarChart>
+                    </ChartContainer>
+                </div>
+            )}
           </div>
         )}
       </CardContent>
