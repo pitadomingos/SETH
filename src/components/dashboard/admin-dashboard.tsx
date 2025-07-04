@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/chart';
 import { useSchoolData } from "@/context/school-data-context";
 import { format, subDays } from "date-fns";
+import { getLetterGrade, getGpaFromNumeric } from "@/lib/utils";
 
 function AttendanceTrendChart() {
   const { attendance } = useSchoolData();
@@ -32,7 +33,7 @@ function AttendanceTrendChart() {
   const chartData = Object.keys(dailyData).map(date => ({
     date,
     percentage: dailyData[date].total > 0 ? Math.round((dailyData[date].present / dailyData[date].total) * 100) : 0
-  })).sort((a, b) => new Date(a.date) - new Date(b.date));
+  })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
 
   const chartConfig = {
@@ -76,35 +77,57 @@ function AttendanceTrendChart() {
 }
 
 function AcademicPerformanceChart() {
-    const { grades } = useSchoolData();
-    const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
-    
-    const calculateGpaFromGrade = (grade: string): number => {
-        const numericGrade = parseFloat(grade);
-        if (!isNaN(numericGrade) && isFinite(numericGrade)) {
-            return (numericGrade / 5.0);
-        }
-        return gpaMap[grade] || 0;
-    }
+    const { grades, schoolProfile } = useSchoolData();
+    const gradingSystem = schoolProfile?.gradingSystem || '20-Point';
 
-    const monthlyGpa = grades.reduce((acc, grade) => {
+    const monthlyAvg = grades.reduce((acc, grade) => {
         const month = format(new Date(grade.date), 'MMM yyyy');
         if (!acc[month]) {
             acc[month] = { totalPoints: 0, count: 0 };
         }
-        acc[month].totalPoints += calculateGpaFromGrade(grade.grade);
+        acc[month].totalPoints += parseFloat(grade.grade);
         acc[month].count++;
         return acc;
-    }, {});
+    }, {} as Record<string, { totalPoints: number, count: number }>);
 
-    const chartData = Object.keys(monthlyGpa).map(month => ({
+    const chartData = Object.keys(monthlyAvg).map(month => ({
         month,
-        avgGpa: (monthlyGpa[month].totalPoints / monthlyGpa[month].count).toFixed(2),
-    })).sort((a,b) => new Date(a.month) - new Date(b.month));
+        avgNumeric: (monthlyAvg[month].totalPoints / monthlyAvg[month].count),
+    })).sort((a,b) => new Date(a.month).getTime() - new Date(b.month).getTime());
 
+    let yAxisDomain: [number, number];
+    let yAxisTickFormatter: (value: number) => string;
+    let chartDescription: string;
+    let tooltipFormatter: (value: number) => string;
+    let dataKey: 'avgNumeric' | 'avgGpa' = 'avgNumeric';
+
+    switch (gradingSystem) {
+        case 'GPA':
+            yAxisDomain = [2.5, 4.0];
+            chartData.forEach(d => { d['avgGpa'] = getGpaFromNumeric(d.avgNumeric) });
+            dataKey = 'avgGpa';
+            yAxisTickFormatter = (value) => value.toFixed(1);
+            chartDescription = "Monthly average GPA across all students";
+            tooltipFormatter = (value) => value.toFixed(2);
+            break;
+        case 'Letter':
+             yAxisDomain = [10, 20];
+             yAxisTickFormatter = (value) => getLetterGrade(value);
+             chartDescription = "Monthly average grade (letter equivalent) across all students";
+             tooltipFormatter = (value) => getLetterGrade(value);
+            break;
+        case '20-Point':
+        default:
+            yAxisDomain = [10, 20];
+            yAxisTickFormatter = (value) => `${Math.round(value)}`;
+            chartDescription = "Monthly average grade (20-point scale) across all students";
+            tooltipFormatter = (value) => `${value.toFixed(1)}/20`;
+            break;
+    }
+    
     const chartConfig = {
-      avgGpa: {
-        label: "Average GPA",
+      [dataKey]: {
+        label: "Average",
         color: "hsl(var(--chart-1))",
       },
     } satisfies ChartConfig;
@@ -113,7 +136,7 @@ function AcademicPerformanceChart() {
     <Card>
       <CardHeader>
         <CardTitle>Academic Performance</CardTitle>
-        <CardDescription>Monthly average GPA across all students</CardDescription>
+        <CardDescription>{chartDescription}</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[250px] w-full">
@@ -129,10 +152,14 @@ function AcademicPerformanceChart() {
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
-                    domain={[2.5, 4.0]}
+                    domain={yAxisDomain}
+                    tickFormatter={yAxisTickFormatter}
                  />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="avgGpa" fill="var(--color-avgGpa)" radius={8} />
+                <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent formatter={(value) => tooltipFormatter(value as number)} />}
+                />
+                <Bar dataKey={dataKey} fill={`var(--color-${dataKey})`} radius={8} />
             </BarChart>
         </ChartContainer>
       </CardContent>
