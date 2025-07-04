@@ -25,6 +25,7 @@ const userGuides = {
         'User Management: View student and teacher profiles via the Students and Teachers pages.',
         'Finance: Track school-wide revenue and expenses. Record partial or full payments for student fees and create new ad-hoc fee transactions (e.g., for lab fees or field trips).',
         'Admissions, Academics, etc: Manage all core school functions from their respective pages in the sidebar.',
+        'Event Management: Create and schedule new school events from the Events page, including details like location, organizer, and target audience.',
         'Leaderboards: View top student rankings across the school by overall GPA, class, and subject.',
         'Admin Panel: Manage system-wide data, such as adding new Examination Boards.',
     ]

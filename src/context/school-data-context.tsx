@@ -3,7 +3,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { schoolData, FinanceRecord as InitialFinanceRecord, Grade as InitialGrade, Student, Teacher, Class, Admission, Asset, SchoolProfile as InitialSchoolProfile, Expense, Team, Competition } from '@/lib/mock-data';
+import { schoolData, FinanceRecord as InitialFinanceRecord, Grade as InitialGrade, Student, Teacher, Class, Admission, Asset, SchoolProfile as InitialSchoolProfile, Expense, Team, Competition, SchoolEvent } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 import { format } from 'date-fns';
 
@@ -48,6 +48,15 @@ interface NewCompetitionData {
     location: string;
 }
 
+interface NewEventData {
+  title: string;
+  date: Date;
+  location: string;
+  organizer: string;
+  audience: string;
+  type: string;
+}
+
 interface SchoolDataContextType {
   schoolProfile: SchoolProfile | null;
   updateSchoolProfile: (data: Partial<SchoolProfile>) => void;
@@ -70,7 +79,8 @@ interface SchoolDataContextType {
   grades: Grade[];
   addGrade: (data: NewGradeData) => void;
   attendance: any[];
-  events: any[];
+  events: SchoolEvent[];
+  addEvent: (data: NewEventData) => void;
   courses: { teacher: any[], student: any[] };
   subjects: string[];
   addSubject: (subject: string) => void;
@@ -114,6 +124,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
   const [teamsData, setTeamsData] = useState<Team[]>([]);
   const [competitionsData, setCompetitionsData] = useState<Competition[]>([]);
+  const [events, setEvents] = useState<SchoolEvent[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -135,7 +146,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       const allGrades: Grade[] = [];
       const allAttendance: any[] = [];
       const allFinance: any[] = [];
-      const allEvents: any[] = [];
+      const allEvents: SchoolEvent[] = [];
       const schoolIdsOfChildren = new Set<string>();
       const childrenIds = new Set<string>();
 
@@ -176,6 +187,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setStudentsData(allStudents);
       setFinanceData(allFinance);
       setGrades(allGrades);
+      setEvents(allEvents);
       setIsLoading(false);
     } else if (user?.schoolId && schoolData[user.schoolId]) {
       schoolId = user.schoolId;
@@ -193,6 +205,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setExpenseCategories(data.expenseCategories || []);
       setTeamsData(data.teams || []);
       setCompetitionsData(data.competitions || []);
+      setEvents(data.events || []);
       if(data.teachers) {
           const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
           setSubjects(initialSubjects);
@@ -275,6 +288,14 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setCompetitionsData(prev => [...prev, newCompetition].sort((a,b) => a.date.getTime() - b.date.getTime()));
   };
 
+  const addEvent = (data: NewEventData) => {
+    const newEvent: SchoolEvent = {
+        id: `EVT${Date.now()}`,
+        ...data,
+    };
+    setEvents(prev => [...prev, newEvent].sort((a,b) => a.date.getTime() - b.date.getTime()));
+  };
+
   const addPlayerToTeam = (teamId: string, studentId: string) => {
     setTeamsData(prev => prev.map(team => 
       team.id === teamId 
@@ -309,7 +330,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     assignments: currentSchoolData?.assignments || [],
     grades, addGrade,
     attendance: currentSchoolData?.attendance || [],
-    events: currentSchoolData?.events || [],
+    events,
+    addEvent,
     courses: currentSchoolData?.courses || { teacher: [], student: [] },
     subjects, addSubject,
     examBoards, addExamBoard,

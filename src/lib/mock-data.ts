@@ -82,7 +82,7 @@ interface Asset { id: string; name: string; category: string; status: 'In Use' |
 interface Assignment { id: string; title: string; subject: string; grade: string; dueDate: string; status: 'pending' | 'submitted' | 'overdue'; }
 export interface Grade { studentId: string; subject: string; grade: string; date: Date; }
 interface Attendance { studentId: string; date: string; status: string; }
-interface SchoolEvent { date: Date; title: string; type: string; schoolName?: string; }
+export interface SchoolEvent { id: string; date: Date; title: string; type: string; location: string; organizer: string; audience: string; schoolName?: string; }
 interface Course { id: string; name: string; schedule?: string; students?: number; teacher?: string; grade?: string; progress?: number; }
 
 
@@ -190,6 +190,11 @@ const northwoodExpenses: Expense[] = [
     { id: 'EXP004', description: 'Internet Service', category: 'Utilities', amount: 500, date: '2024-08-30', proofUrl: 'https://placehold.co/400x200.png' },
 ];
 
+const northwoodEvents: SchoolEvent[] = [
+    { id: 'EVT001', date: new Date(new Date().setDate(new Date().getDate() + 3)), title: 'Science Fair', type: 'Academic', location: 'Main Hall', organizer: 'Science Dept.', audience: 'All Students & Parents' },
+    { id: 'EVT002', date: new Date(new Date().setDate(new Date().getDate() + 10)), title: 'Mid-term Exams Start', type: 'Academic', location: 'Various Classrooms', organizer: 'Examinations Office', audience: 'Grades 9-12' },
+];
+
 // --- Data for School 2: Oakridge Academy ---
 const oakridgeProfile: SchoolProfile = {
   id: 'oakridge',
@@ -251,6 +256,11 @@ const oakridgeExpenses: Expense[] = [
     { id: 'EXP102', description: 'Building Maintenance', category: 'Maintenance', amount: 2500, date: '2024-08-20', proofUrl: 'https://placehold.co/400x200.png' },
 ];
 
+const oakridgeEvents: SchoolEvent[] = [
+    { id: 'EVT101', date: new Date(new Date().setDate(new Date().getDate() + 5)), title: 'Welcome Orientation', type: 'Meeting', location: 'Auditorium', organizer: 'Admin Office', audience: 'New Students & Parents' },
+    { id: 'EVT102', date: new Date(new Date().setDate(new Date().getDate() + 18)), title: 'Annual Sports Day', type: 'Sports', location: 'Sports Field', organizer: 'Sports Dept.', audience: 'Whole School' },
+];
+
 // --- Data for School 3: Maplewood International School ---
 const maplewoodProfile: SchoolProfile = {
   id: 'maplewood',
@@ -307,6 +317,10 @@ const maplewoodExpenses: Expense[] = [
     { id: 'EXP202', description: 'Staff Salaries - August', category: 'Salaries', amount: 45000, date: '2024-08-31', proofUrl: 'https://placehold.co/400x200.png' },
 ];
 
+const maplewoodEvents: SchoolEvent[] = [
+    { id: 'EVT201', date: new Date(new Date().setDate(new Date().getDate() + 20)), title: 'International Day', type: 'Cultural', location: 'School Grounds', organizer: 'Cultural Committee', audience: 'Whole School Community' },
+];
+
 export const schoolData: Record<string, SchoolData> = {
   northwood: {
     profile: northwoodProfile,
@@ -321,6 +335,7 @@ export const schoolData: Record<string, SchoolData> = {
     expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
     expenses: northwoodExpenses,
     competitions: northwoodCompetitions,
+    events: northwoodEvents,
     // Using shared data for simplicity in this simulation
     admissions: [
         { id: 'ADM001', name: 'John Smith', appliedFor: 'Grade 9', date: '2024-05-10', status: 'Pending', formerSchool: 'Eastwood Elementary', grades: 'A average in all subjects.', parentName: 'Mary Smith', parentEmail: 'm.smith@family.com' },
@@ -337,10 +352,6 @@ export const schoolData: Record<string, SchoolData> = {
     assignments: [
         { id: 'A001', title: 'Math Problem Set 5', subject: 'Mathematics', grade: '10', dueDate: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString(), status: 'pending' },
         { id: 'A002', title: 'Physics Lab Report', subject: 'Physics', grade: '11', dueDate: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(), status: 'submitted' },
-    ],
-    events: [
-        { date: new Date(new Date().setDate(new Date().getDate() + 3)), title: 'Science Fair', type: 'Academic' },
-        { date: new Date(new Date().setDate(new Date().getDate() + 10)), title: 'Mid-term Exams Start', type: 'Academic' },
     ],
     courses: {
         teacher: [
@@ -366,6 +377,7 @@ export const schoolData: Record<string, SchoolData> = {
     expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
     expenses: oakridgeExpenses,
     competitions: [],
+    events: oakridgeEvents,
     // Using shared/generic data for simplicity
     admissions: [
         { id: 'OAK-ADM001', name: 'Alice Wonder', appliedFor: 'Grade 9', date: '2024-05-15', status: 'Approved', formerSchool: 'Wonderland Middle', grades: 'Top of class.', parentName: 'Charles Wonder', parentEmail: 'c.wonder@family.com' },
@@ -378,10 +390,6 @@ export const schoolData: Record<string, SchoolData> = {
     ],
     assignments: [
         { id: 'OAK-A001', title: 'Geographic Survey Project', subject: 'Geography', grade: '9', dueDate: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(), status: 'pending' },
-    ],
-    events: [
-        { date: new Date(new Date().setDate(new Date().getDate() + 5)), title: 'Welcome Orientation', type: 'Meeting' },
-        { date: new Date(new Date().setDate(new Date().getDate() + 18)), title: 'Annual Sports Day', type: 'Sports' },
     ],
     courses: {
         teacher: [
@@ -405,6 +413,7 @@ export const schoolData: Record<string, SchoolData> = {
     expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
     expenses: maplewoodExpenses,
     competitions: [],
+    events: maplewoodEvents,
     admissions: [
         { id: 'MAP-ADM001', name: 'Leo Tolstoy', appliedFor: 'Grade 9', date: '2024-06-01', status: 'Pending', formerSchool: 'Literary Prep', grades: 'Strong in humanities.', parentName: 'Sophia Tolstoy', parentEmail: 's.tolstoy@family.com' },
     ],
@@ -416,9 +425,6 @@ export const schoolData: Record<string, SchoolData> = {
     ],
     assignments: [
         { id: 'MAP-A001', title: 'Essay on Renaissance Art', subject: 'History', grade: '9', dueDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(), status: 'pending' },
-    ],
-    events: [
-        { date: new Date(new Date().setDate(new Date().getDate() + 20)), title: 'International Day', type: 'Cultural' },
     ],
     courses: {
         teacher: [
