@@ -19,7 +19,6 @@ import {
     SchoolEvent,
     AcademicTerm,
     Holiday,
-    ScheduleSlot
 } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 
@@ -29,7 +28,7 @@ export type SchoolProfile = InitialSchoolProfile;
 export type Class = InitialClass;
 export type { Team, Competition };
 
-interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; schedule: ScheduleSlot[]; }
+interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
 interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }
 interface NewGradeData { studentId: string; subject: string; grade: string; }
 interface NewExpenseData { description: string; category: string; amount: number; date: string; proofUrl: string; }
