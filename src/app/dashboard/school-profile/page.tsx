@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Loader2, Building, User, Mail, Phone, MapPin, Edit, Star, ShieldCheck, Gem, CreditCard, Save } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -138,6 +138,7 @@ function EditProfileDialog() {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [logoPreview, setLogoPreview] = useState(schoolProfile?.logoUrl || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -195,20 +196,27 @@ function EditProfileDialog() {
                 <FormLabel>School Logo</FormLabel>
                 <div className="flex items-center gap-4">
                   <Image src={logoPreview || 'https://placehold.co/100x100.png'} alt="logo preview" width={48} height={48} className="rounded-md bg-muted object-cover" data-ai-hint="school logo"/>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={() => {
                       const newLogoUrl = `https://placehold.co/100x100.png?v=${Date.now()}`;
                       setLogoPreview(newLogoUrl);
                       form.setValue('logoUrl', newLogoUrl, { shouldValidate: true, shouldDirty: true });
                     }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
                   >
                     Upload New Logo
                   </Button>
                 </div>
                 <FormDescription>
-                  Click to simulate uploading a new logo. A placeholder will be generated.
+                  Click to open the file explorer. A new placeholder logo will be generated on selection.
                 </FormDescription>
                 <FormField control={form.control} name="logoUrl" render={({ field }) => ( <FormItem><FormControl><Input type="hidden" {...field} /></FormControl><FormMessage /></FormItem> )} />
               </div>
