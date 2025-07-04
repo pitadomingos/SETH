@@ -20,22 +20,27 @@ function ViewApplicationDialog({ application }: { application: Admission }) {
             <DialogTrigger asChild>
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>View Application</DropdownMenuItem>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Application Details</DialogTitle>
                     <DialogDescription>
                         Full details for applicant: {application.name}
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4 text-sm">
+                <div className="space-y-4 py-4 text-sm max-h-[60vh] overflow-y-auto pr-4">
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                         <p className="font-semibold">Applicant Name:</p><p>{application.name}</p>
-                        <p className="font-semibold">Date of Birth:</p><p>{application.dateOfBirth}</p>
                         <p className="font-semibold">Applying For:</p><p>{application.appliedFor}</p>
+                        <p className="font-semibold">Date of Birth:</p><p>{application.dateOfBirth}</p>
                         <p className="font-semibold">Application Date:</p><p>{application.date}</p>
                         <p className="font-semibold">Status:</p><p><Badge variant={application.status === 'Approved' ? 'secondary' : application.status === 'Rejected' ? 'destructive' : 'outline'}>{application.status}</Badge></p>
                         <p className="font-semibold">Parent Name:</p><p>{application.parentName}</p>
-                        <p className="font-semibold">Parent Email:</p><p>{application.parentEmail}</p>
+                        <p className="font-semibold col-span-2">Parent Email:</p><p className="col-span-2 break-all">{application.parentEmail}</p>
+                        <p className="font-semibold col-span-2">Previous School:</p><p className="col-span-2">{application.formerSchool}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-semibold">Academic Summary:</p>
+                      <p className="text-muted-foreground whitespace-pre-wrap p-3 bg-muted rounded-md">{application.grades}</p>
                     </div>
                 </div>
                 <DialogFooter>

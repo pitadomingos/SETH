@@ -43,7 +43,14 @@ interface NewTermData { name: string; startDate: Date; endDate: Date; }
 interface NewHolidayData { name: string; date: Date; }
 export interface NewCourseData { subject: string; teacherId: string; classId: string; schedule: Array<{ day: string; startTime: string; endTime: string; room: string; }>; }
 export interface NewLessonPlanData { className: string; subject: string; weeklySyllabus: string; weeklyPlan: CreateLessonPlanOutput['weeklyPlan']; }
-export interface NewAdmissionData { name: string; dateOfBirth: string; appliedFor: string; }
+export interface NewAdmissionData {
+  schoolId: string;
+  name: string;
+  dateOfBirth: string;
+  appliedFor: string;
+  formerSchool: string;
+  gradesSummary: string;
+}
 
 
 interface SchoolDataContextType {
@@ -338,22 +345,28 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const addAdmission = (data: NewAdmissionData) => {
-    if (!user || !user.schoolId) return;
+    if (!user) return;
 
     const newAdmission: Admission = {
         id: `ADM${Date.now()}`,
-        ...data,
+        name: data.name,
+        dateOfBirth: data.dateOfBirth,
+        appliedFor: data.appliedFor,
         date: new Date().toISOString().split('T')[0],
         status: 'Pending',
-        formerSchool: 'N/A',
-        grades: 'N/A',
+        formerSchool: data.formerSchool,
+        grades: data.gradesSummary,
         parentName: user.name,
         parentEmail: user.email,
     };
 
     setAllSchoolData(prevAllData => {
         const newAllData = { ...prevAllData };
-        newAllData[user.schoolId!].admissions.push(newAdmission);
+        if (newAllData[data.schoolId]) {
+          newAllData[data.schoolId].admissions.unshift(newAdmission);
+        } else {
+          console.error(`School with id ${data.schoolId} not found`);
+        }
         return newAllData;
     });
   };
