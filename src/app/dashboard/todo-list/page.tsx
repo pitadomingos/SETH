@@ -24,6 +24,7 @@ const completedTasks = [
   'Global Admin dashboard for viewing all schools and managing their status.',
   'Implemented Academics, Examinations, and Attendance pages.',
   'Implemented academically and financially-gated student certificate and transcript downloads on the Student Dashboard.',
+  'Implemented grade-level capacity management and vacancy display on application forms.',
   'Multi-school simulation with dynamic data loading based on user role.',
   'Personalized leaderboards view for parents and school-wide view for staff',
   'Personalized login loading screen with school and user details',

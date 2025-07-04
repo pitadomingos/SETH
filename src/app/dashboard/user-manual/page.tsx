@@ -34,7 +34,7 @@ const userGuides = {
         'Finance: Track school-wide revenue and expenses. Record partial or full payments for student fees and create new ad-hoc fee transactions.',
         'Sports Management: Create sports teams, assign coaches, and manage player rosters. Schedule new competitions and view upcoming matches.',
         'Event Management: Create and schedule new school events from the Events page, including details like location, organizer, and target audience.',
-        'Admin Panel: Configure system-wide data, including the school currency, Academic Calendar (Terms & Holidays), Examination Boards, and more.',
+        'Admin Panel: Configure system-wide data, including school currency, Grade-level Capacity, the Academic Calendar (Terms & Holidays), Examination Boards, and more.',
         'Settings: Configure application-wide behavior, such as the grading display format (e.g., 20-Point Scale, Letter Grades, GPA).',
     ]
   },
@@ -69,7 +69,7 @@ const userGuides = {
     title: 'Parent Guide',
     points: [
       'Dashboard: Get a complete overview of your children\'s school life. Click on a child\'s card to update the dashboard with their specific information.',
-      'New Child Applications: Submit new admission applications for your other children directly from your dashboard.',
+      'New Child Applications: Submit new admission applications for your other children. The form will show you available vacancies for the selected grade.',
       'AI-Powered Insights: Receive AI-generated advice on how to support your selected child\'s learning, including their strengths and areas for improvement.',
       'Finance Portal: View detailed fee information for each child, including total amount, amount paid, and outstanding balance.',
       'Leaderboards: View a personalized report of your children\'s academic rankings in their school, class, and subjects.',

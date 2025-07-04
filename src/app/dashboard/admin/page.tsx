@@ -3,12 +3,12 @@
 
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, UserPlus, Loader2, PlusCircle, Settings, BookCopy, Users, CalendarDays, Calendar as CalendarIcon, DollarSign } from 'lucide-react';
+import { MoreHorizontal, UserPlus, Loader2, PlusCircle, Settings, BookCopy, Users, CalendarDays, Calendar as CalendarIcon, DollarSign, Save } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -73,6 +73,13 @@ export default function AdminPanelPage() {
     const [isAudienceDialogOpen, setIsAudienceDialogOpen] = useState(false);
     const [isTermDialogOpen, setIsTermDialogOpen] = useState(false);
     const [isHolidayDialogOpen, setIsHolidayDialogOpen] = useState(false);
+    const [gradeCapacities, setGradeCapacities] = useState<Record<string, number>>(schoolProfile?.gradeCapacity || {});
+
+    useEffect(() => {
+        if (schoolProfile) {
+            setGradeCapacities(schoolProfile.gradeCapacity || {});
+        }
+    }, [schoolProfile]);
 
     useEffect(() => {
         if (!authLoading && role !== 'Admin') {
@@ -117,6 +124,20 @@ export default function AdminPanelPage() {
         }
     }
 
+    const handleCapacityChange = (grade: string, value: string) => {
+        setGradeCapacities(prev => ({ ...prev, [grade]: Number(value) >= 0 ? Number(value) : 0 }));
+    };
+
+    const handleSaveCapacities = () => {
+        if (schoolProfile) {
+            updateSchoolProfile({ ...schoolProfile, gradeCapacity: gradeCapacities });
+            toast({
+                title: "Capacities Updated",
+                description: "Grade level capacities have been saved.",
+            });
+        }
+    };
+
     if (authLoading || role !== 'Admin') {
         return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
@@ -128,20 +149,19 @@ export default function AdminPanelPage() {
                 <p className="text-muted-foreground">Manage users, system data, and academic calendar.</p>
             </header>
             
-            <div className="grid gap-6 lg:grid-cols-2">
-                <Card>
+            <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                <Card className="xl:col-span-1">
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>User Management</CardTitle>
                             <CardDescription>View and manage all users in the system.</CardDescription>
                         </div>
-                        <Button size="sm"><UserPlus className="mr-2 h-4 w-4" />Add User</Button>
                     </CardHeader>
                     <CardContent>
                         <Table>
                             <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Role</TableHead><TableHead>Status</TableHead><TableHead><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {users.map((user) => (
+                                {users.slice(0, 5).map((user) => (
                                     <TableRow key={user.id}>
                                         <TableCell className="font-medium">{user.name}</TableCell>
                                         <TableCell>{user.email}</TableCell>
@@ -160,7 +180,7 @@ export default function AdminPanelPage() {
                     </CardContent>
                 </Card>
 
-                 <Card>
+                 <Card className="xl:col-span-1">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><CalendarDays /> Academic Year</CardTitle>
                         <CardDescription>Configure terms and holidays for the school year.</CardDescription>
@@ -202,7 +222,7 @@ export default function AdminPanelPage() {
                     </CardContent>
                 </Card>
 
-                 <Card>
+                 <Card className="xl:col-span-1">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Settings /> System Data</CardTitle>
                         <CardDescription>Manage system-wide data definitions.</CardDescription>
@@ -271,6 +291,33 @@ export default function AdminPanelPage() {
                             <ul className="mt-3 space-y-2">{audiences.map(aud => ( <li key={aud} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"><span>{aud}</span></li> ))}</ul>
                         </div>
                     </CardContent>
+                </Card>
+
+                 <Card className="lg:col-span-2 xl:col-span-3">
+                    <CardHeader>
+                        <CardTitle>Grade Capacity Management</CardTitle>
+                        <CardDescription>Set the maximum number of students for each grade level to manage admissions.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            {Array.from({ length: 12 }, (_, i) => String(i + 1)).map(grade => (
+                                <FormItem key={grade}>
+                                    <FormLabel>Grade {grade}</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="number"
+                                            value={gradeCapacities[grade] || ''}
+                                            onChange={(e) => handleCapacityChange(grade, e.target.value)}
+                                            placeholder="0"
+                                        />
+                                    </FormControl>
+                                </FormItem>
+                            ))}
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={handleSaveCapacities}><Save className="mr-2 h-4 w-4" /> Save Capacities</Button>
+                    </CardFooter>
                 </Card>
             </div>
         </div>
