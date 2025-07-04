@@ -1,4 +1,3 @@
-
 'use client';
 import { useSchoolData } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -98,6 +97,19 @@ export default function StudentsPage() {
     const { studentsData } = useSchoolData();
     const router = useRouter();
 
+    const getGpaLetterGrade = (gpa: number): string => {
+        if (gpa >= 4.0) return 'A+';
+        if (gpa >= 3.7) return 'A';
+        if (gpa >= 3.3) return 'B+';
+        if (gpa >= 3.0) return 'B';
+        if (gpa >= 2.7) return 'B-';
+        if (gpa >= 2.3) return 'C+';
+        if (gpa >= 2.0) return 'C';
+        if (gpa >= 1.7) return 'C-';
+        if (gpa >= 1.0) return 'D';
+        return 'F';
+    };
+
     useEffect(() => {
         if (!isLoading && role !== 'Admin') {
             router.push('/dashboard');
@@ -144,7 +156,7 @@ export default function StudentsPage() {
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={student.gpa >= 3.5 ? 'secondary' : 'outline'}>
-                                            {student.gpa}
+                                            {student.gpa.toFixed(1)} ({getGpaLetterGrade(student.gpa)})
                                         </Badge>
                                     </TableCell>
                                 </TableRow>
