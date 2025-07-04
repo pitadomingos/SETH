@@ -1,3 +1,4 @@
+
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,13 +7,13 @@ import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2 }
 const userGuides = {
   GlobalAdmin: {
     icon: Globe,
-    title: 'Global Administrator Guide',
+    title: 'Developer / System Owner Guide',
     points: [
-      'Global Dashboard: Get a high-level overview of all schools in the system.',
-      'School Management: View key statistics for each school and access their individual management dashboards (simulation).',
+      'Developer Dashboard: Get a high-level overview of all schools in the system from a single dashboard.',
+      'School Management Simulation: View key statistics for each school and access their individual management dashboards by clicking "Manage School".',
       'System Documentation: Access technical documentation about the application\'s architecture and technology stack.',
       'To-Do List: View the project\'s development progress and upcoming features.',
-      'Subscription & Billing: This role is designed to manage Enterprise Tier subscriptions for multi-school organizations, overseeing all associated schools from a single point of administration.',
+      'Role Distinction: This "Developer" role is distinct from the "Global Admin" role, which is part of the Enterprise tier for customers managing multiple schools.',
     ],
   },
   Admin: {

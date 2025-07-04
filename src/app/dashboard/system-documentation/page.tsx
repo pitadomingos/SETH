@@ -1,8 +1,9 @@
+
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Code, GitBranch, LayoutTemplate, Palette, Rocket, Loader2, Database, Share2, Smartphone, Briefcase } from 'lucide-react';
+import { Code, GitBranch, LayoutTemplate, Palette, Rocket, Loader2, Database, Share2, Smartphone, Briefcase, Users } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function SystemDocumentationPage() {
@@ -104,29 +105,39 @@ export default function SystemDocumentationPage() {
             <p className="text-sm">Dark mode is supported out-of-the-box and can be toggled using the theme switcher in the header. The <code>next-themes</code> package manages the theme state and applies the `.dark` class to the HTML element.</p>
           </CardContent>
         </Card>
-
-         <Card>
+        
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Smartphone /> Responsiveness & Mobile</CardTitle>
-            <CardDescription>How the app adapts to different devices.</CardDescription>
+            <CardTitle className="flex items-center gap-2"><Users /> Role Definitions</CardTitle>
+            <CardDescription>Understanding the different user roles in the system.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm">The app is built with a responsive-first approach using Tailwind CSS, ensuring it is usable across devices, from desktops to mobile phones.</p>
-            <p className="text-sm">Future development plans include further optimizing the mobile experience and building dedicated native applications for iOS and Android to provide the best possible performance and accessibility for all users.</p>
+            <div>
+              <h3 className="font-semibold">Developer (System Owner)</h3>
+              <p className="text-sm text-muted-foreground">Has complete oversight of the entire system. This role is for application developers and maintainers, with access to all schools, system documentation, and the project to-do list.</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Global Admin (Enterprise)</h3>
+              <p className="text-sm text-muted-foreground">A customer-facing role for the Enterprise tier. Manages a specific group of schools (e.g., a school district). Has a similar dashboard to the Developer but is focused on school management, not technical system details.</p>
+            </div>
+             <div>
+              <h3 className="font-semibold">School Admin, Teacher, Student, Parent</h3>
+              <p className="text-sm text-muted-foreground">Standard roles with access scoped to a single school or family context, each with their own tailored dashboard and features.</p>
+            </div>
           </CardContent>
         </Card>
-
+        
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Briefcase /> Business Model (Proposed)</CardTitle>
             <CardDescription>A suggested SaaS pricing strategy for monetization.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm">The proposed business model is a tiered, "per student, per year" subscription. This scales fairly with school size and the value provided.</p>
+            <p className="text-sm">The proposed business model is a tiered, "per student, per year" subscription that scales with school size.</p>
             <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                <li><strong>Starter Tier:</strong> For small schools, providing core management features with limited AI usage.</li>
-                <li><strong>Professional Tier:</strong> For most schools, including the full suite of AI tools and advanced reporting.</li>
-                <li><strong>Enterprise Tier:</strong> Custom pricing for large institutions or school districts. This tier is ideal for multi-school organizations, providing centralized management via the Global Admin role, consolidated billing, and premium support.</li>
+                <li><strong>Starter Tier:</strong> For small schools, providing core management features.</li>
+                <li><strong>Professional Tier:</strong> The standard offering for most schools, including the full suite of AI tools and advanced reporting.</li>
+                <li><strong>Enterprise Tier:</strong> Custom pricing for large school districts. This tier includes the **Global Admin** role for centralized, multi-school management and consolidated billing.</li>
             </ul>
           </CardContent>
         </Card>

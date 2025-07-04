@@ -111,7 +111,7 @@ export function LoginForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="GlobalAdmin">Global Administrator</SelectItem>
+                      <SelectItem value="GlobalAdmin">Developer / Global Admin</SelectItem>
                       <SelectItem value="Admin">School Administrator</SelectItem>
                       <SelectItem value="Teacher">Teacher</SelectItem>
                       <SelectItem value="Student">Student</SelectItem>
@@ -130,7 +130,7 @@ export function LoginForm() {
             </Button>
             <div className="text-center text-sm text-muted-foreground">
               <p className="font-bold">Demo Credentials</p>
-              <p className="mt-2"><span className="font-semibold">Global Admin:</span> `developer` (pass: `dev123`)</p>
+              <p className="mt-2"><span className="font-semibold">Developer (Global Access):</span> `developer` (pass: `dev123`)</p>
               <p className="mt-2"><span className="font-semibold">Northwood High:</span> Use `admin1`, `teacher1`, `student1`, or `parent1`</p>
               <p><span className="font-semibold">Oakridge Academy:</span> Use `admin2`, `teacher2`, or `student2`</p>
               <p><span className="font-semibold">Maplewood Int'l:</span> Use `admin3`, `teacher3`, or `student3`</p>

@@ -1,3 +1,4 @@
+
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -119,8 +120,8 @@ export default function GlobalAdminDashboard() {
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>
-        <h2 className="text-3xl font-bold tracking-tight">Global Administration</h2>
-        <p className="text-muted-foreground">Manage all schools in the EduManage system.</p>
+        <h2 className="text-3xl font-bold tracking-tight">Developer Dashboard</h2>
+        <p className="text-muted-foreground">Oversee all schools, analyze system-wide performance, and manage deployments.</p>
       </header>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
