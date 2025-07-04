@@ -16,6 +16,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { ThemeToggle } from './theme-toggle';
 import { useSchoolData } from '@/context/school-data-context';
+import Image from 'next/image';
 
 export function AppHeader() {
   const { user, logout, originalUser, revertToGlobalAdmin } = useAuth();
@@ -27,7 +28,11 @@ export function AppHeader() {
       <div className="flex items-center gap-2">
         <SidebarTrigger className="md:hidden" />
          <div className="hidden items-center gap-2 md:flex">
-            <GraduationCap className="h-6 w-6 text-primary" />
+            {schoolProfile?.logoUrl ? (
+                <Image src={schoolProfile.logoUrl} alt={`${schoolProfile.name} Logo`} width={24} height={24} className="rounded-sm" data-ai-hint="school logo" />
+            ) : (
+                <GraduationCap className="h-6 w-6 text-primary" />
+            )}
             <h1 className="text-xl font-semibold font-headline">{schoolProfile?.name || 'EduManage'}</h1>
         </div>
       </div>

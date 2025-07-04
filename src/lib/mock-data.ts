@@ -29,7 +29,7 @@ interface SchoolData {
     feeDescriptions: string[];
 }
 
-interface SchoolProfile {
+export interface SchoolProfile {
   id: string;
   name: string;
   head: string;
@@ -37,6 +37,7 @@ interface SchoolProfile {
   phone: string;
   email: string;
   motto: string;
+  logoUrl: string;
   tier?: 'Premium' | 'Pro' | 'Starter';
 }
 interface Student { id: string; name: string; grade: string; class: string; email: string; phone: string; address: string; gpa: number; schoolId?: string; schoolName?: string; parentName: string; parentEmail: string; }
@@ -61,6 +62,7 @@ const northwoodProfile: SchoolProfile = {
   phone: '+1 (555) 123-4567',
   email: 'contact@northwoodhigh.edu',
   motto: 'Excellence in Education',
+  logoUrl: 'https://placehold.co/100x100.png',
   tier: 'Starter',
 };
 
@@ -146,6 +148,7 @@ const oakridgeProfile: SchoolProfile = {
   phone: '+1 (555) 987-6543',
   email: 'admin@oakridgeacademy.edu',
   motto: 'Wisdom and Integrity',
+  logoUrl: 'https://placehold.co/100x100.png',
   tier: 'Pro',
 };
 
@@ -201,6 +204,7 @@ const maplewoodProfile: SchoolProfile = {
   phone: '+1 (555) 456-7890',
   email: 'info@maplewood.edu',
   motto: 'Globally Minded, Locally Rooted',
+  logoUrl: 'https://placehold.co/100x100.png',
   tier: 'Premium',
 };
 
@@ -354,5 +358,3 @@ export const schoolData: Record<string, SchoolData> = {
     },
   },
 };
-
-    

@@ -1,3 +1,4 @@
+
 'use client';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -6,6 +7,7 @@ import { LoginForm } from '@/components/auth/login-form';
 import { Loader2, Phone, Building } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const { user, role, isLoading: authIsLoading } = useAuth();
@@ -30,7 +32,11 @@ export default function LoginPage() {
           <Card className="w-full max-w-md animate-in fade-in-50">
             <CardHeader className="items-center text-center">
               <div className="flex items-center gap-2">
-                <Building className="h-6 w-6 text-primary" />
+                {schoolProfile.logoUrl ? (
+                  <Image src={schoolProfile.logoUrl} alt={`${schoolProfile.name} Logo`} width={24} height={24} className="rounded-sm" data-ai-hint="school logo" />
+                ) : (
+                  <Building className="h-6 w-6 text-primary" />
+                )}
                 <CardTitle className="text-2xl">{schoolProfile.name}</CardTitle>
               </div>
               <CardDescription>{schoolProfile.address}</CardDescription>

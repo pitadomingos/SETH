@@ -17,6 +17,7 @@ import {
   ChartTooltipContent,
   ChartConfig
 } from '@/components/ui/chart';
+import Image from 'next/image';
 
 
 // --- Helper functions for calculations ---
@@ -313,8 +314,8 @@ export default function GlobalAdminDashboard() {
                 <CardHeader>
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex items-center gap-4">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted shrink-0">
-                                <Building className="h-6 w-6 text-primary" />
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted shrink-0 overflow-hidden">
+                                <Image src={school.profile.logoUrl} alt={`${school.profile.name} Logo`} width={48} height={48} className="object-cover" data-ai-hint="school logo" />
                             </div>
                             <div>
                                 <CardTitle>{school.profile.name}</CardTitle>

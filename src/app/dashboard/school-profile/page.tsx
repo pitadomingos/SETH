@@ -16,6 +16,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import Image from 'next/image';
 
 
 // --- New Component for the Upgrade Dialog ---
@@ -128,6 +129,7 @@ const profileSchema = z.object({
   phone: z.string().min(10, "A valid phone number is required."),
   email: z.string().email("A valid email is required."),
   motto: z.string().optional(),
+  logoUrl: z.string().url("Please enter a valid URL.").optional(),
 });
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
@@ -145,6 +147,7 @@ function EditProfileDialog() {
       phone: schoolProfile?.phone || '',
       email: schoolProfile?.email || '',
       motto: schoolProfile?.motto || '',
+      logoUrl: schoolProfile?.logoUrl || '',
     }
   });
 
@@ -152,7 +155,7 @@ function EditProfileDialog() {
     if (schoolProfile) {
       form.reset(schoolProfile);
     }
-  }, [schoolProfile, form]);
+  }, [schoolProfile, form, isOpen]);
 
 
   function onSubmit(values: ProfileFormValues) {
@@ -185,6 +188,7 @@ function EditProfileDialog() {
               <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Contact Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="motto" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>School Motto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="logoUrl" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Logo URL</FormLabel><FormControl><Input placeholder="https://example.com/logo.png" {...field} /></FormControl><FormMessage /></FormItem> )} />
             </div>
             <DialogFooter>
               <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
@@ -241,8 +245,8 @@ export default function SchoolProfilePage() {
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-center gap-4">
-                 <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted shrink-0">
-                    <Building className="h-8 w-8 text-primary" />
+                 <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted shrink-0 overflow-hidden">
+                    <Image src={schoolProfile.logoUrl} alt={`${schoolProfile.name} Logo`} width={64} height={64} className="object-cover" data-ai-hint="school logo" />
                  </div>
                  <div>
                     <CardTitle className="text-3xl">{schoolProfile.name}</CardTitle>
