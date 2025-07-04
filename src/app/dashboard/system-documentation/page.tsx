@@ -88,8 +88,8 @@ export default function SystemDocumentationPage() {
               <p className="text-sm text-muted-foreground">The app currently uses static mock data from <code>src/lib/mock-data.ts</code> for rapid prototyping and to simulate a multi-school environment.</p>
             </div>
             <div>
-              <h3 className="font-semibold">Stateful Context for Interactivity</h3>
-              <p className="text-sm text-muted-foreground">The `SchoolDataProvider` context manages a dynamic, in-memory state. This simulates a real backend by allowing actions like adding students, recording payments, or creating events to persist and be reflected across the app for the duration of the user's session without a page refresh.</p>
+              <h3 className="font-semibold">Stateful Context Providers</h3>
+              <p className="text-sm text-muted-foreground">The <code>AuthProvider</code> and <code>SchoolDataProvider</code> contexts work together to create a dynamic, in-memory state. Based on the logged-in user, the system loads the correct slice of data, simulating a real multi-tenant backend and allowing actions (like adding a student or recording a payment) to persist throughout the session.</p>
             </div>
           </CardContent>
         </Card>
@@ -111,21 +111,21 @@ export default function SystemDocumentationPage() {
                   <Server className="h-5 w-5 text-amber-500 mt-1 shrink-0" />
                   <div>
                       <h4 className="font-semibold">2. Firestore Database & Data Modeling</h4>
-                      <p className="text-sm text-muted-foreground">Design and create Firestore collections for schools, users, students, grades, etc. Structure the data for efficient queries and scalability, replacing the `mock-data.ts` file.</p>
+                      <p className="text-sm text-muted-foreground">Design and create Firestore collections for schools, users, students, grades, etc. Structure the data for efficient queries and scalability, replacing the <code>mock-data.ts</code> file.</p>
                   </div>
               </div>
-              <div className="flex items-start gap-3">
+               <div className="flex items-start gap-3">
                   <UploadCloud className="h-5 w-5 text-amber-500 mt-1 shrink-0" />
                   <div>
-                      <h4 className="font-semibold">3. API Layer for Data Interaction</h4>
-                      <p className="text-sm text-muted-foreground">Create a set of server-side functions (e.g., Next.js API Routes or Server Actions) to handle all Create, Read, Update, and Delete (CRUD) operations with Firestore, governed by security rules.</p>
+                      <h4 className="font-semibold">3. Cloud Storage & API Layer</h4>
+                      <p className="text-sm text-muted-foreground">Implement Firebase Storage for file uploads (e.g., logos, expense receipts). Create a set of server-side functions (e.g., Server Actions) to handle all Create, Read, Update, and Delete (CRUD) operations with Firestore and Storage, governed by security rules.</p>
                   </div>
               </div>
               <div className="flex items-start gap-3">
                   <Database className="h-5 w-5 text-amber-500 mt-1 shrink-0" />
                   <div>
                       <h4 className="font-semibold">4. Data Fetching & Mutation</h4>
-                      <p className="text-sm text-muted-foreground">Update the `SchoolDataProvider` to fetch data from the new API layer instead of local mock data. Wire up all forms and actions (e.g., adding a student, recording a payment) to call the API for persistent changes.</p>
+                      <p className="text-sm text-muted-foreground">Update the <code>SchoolDataProvider</code> to fetch data from the new API layer instead of local mock data. Wire up all forms and actions (e.g., adding a student, uploading a logo) to call the API for persistent changes.</p>
                   </div>
               </div>
           </CardContent>
