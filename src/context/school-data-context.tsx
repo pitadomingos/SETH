@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { 
-    schoolData, 
+    schoolData as initialSchoolData, 
     FinanceRecord as InitialFinanceRecord, 
     Grade as InitialGrade, 
     Student, 
@@ -48,7 +48,8 @@ export interface NewLessonPlanData { className: string; subject: string; weeklyS
 interface SchoolDataContextType {
   schoolProfile: SchoolProfile | null;
   updateSchoolProfile: (data: Partial<SchoolProfile>) => void;
-  allSchoolData: typeof schoolData | null;
+  allSchoolData: typeof initialSchoolData | null;
+  updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
   studentsData: Student[];
   addStudent: (student: Omit<Student, 'id' | 'status'>) => void;
   teachersData: Teacher[];
@@ -104,7 +105,7 @@ const initialExamBoards = ['Internal', 'Cambridge', 'IB', 'State Board', 'Advanc
 export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { user, role } = useAuth();
 
-  // Make data that can be modified stateful
+  const [allSchoolData, setAllSchoolData] = useState(initialSchoolData);
   const [schoolProfile, setSchoolProfile] = useState<SchoolProfile | null>(null);
   const [financeData, setFinanceData] = useState<FinanceRecord[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
@@ -150,8 +151,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       const schoolIdsOfChildren = new Set<string>();
       const childrenIds = new Set<string>();
 
-      for (const schoolIdKey in schoolData) {
-        const school = schoolData[schoolIdKey];
+      for (const schoolIdKey in allSchoolData) {
+        const school = allSchoolData[schoolIdKey];
         const childrenInSchool = school.students
           .filter(s => s.parentEmail === parentEmail)
           .map(s => ({ ...s, schoolName: school.profile.name, schoolId: school.profile.id }));
@@ -164,15 +165,15 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      for (const schoolIdKey in schoolData) {
-        const school = schoolData[schoolIdKey];
+      for (const schoolIdKey in allSchoolData) {
+        const school = allSchoolData[schoolIdKey];
         allGrades.push(...school.grades.filter(g => childrenIds.has(g.studentId)));
         allAttendance.push(...school.attendance.filter(a => childrenIds.has(a.studentId)));
         allFinance.push(...school.finance.filter(f => childrenIds.has(f.studentId)));
       }
 
       schoolIdsOfChildren.forEach(sId => {
-          const school = schoolData[sId];
+          const school = allSchoolData[sId];
           const schoolEventsWithSchoolName = school.events.map(event => ({ ...event, schoolName: school.profile.name }));
           allEvents.push(...schoolEventsWithSchoolName);
       });
@@ -183,9 +184,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setGrades(allGrades);
       setEvents(allEvents);
       setIsLoading(false);
-    } else if (user?.schoolId && schoolData[user.schoolId]) {
+    } else if (user?.schoolId && allSchoolData[user.schoolId]) {
       schoolId = user.schoolId;
-      const data = schoolData[schoolId];
+      const data = allSchoolData[schoolId];
       setSchoolProfile(data.profile);
       setStudentsData(data.students || []);
       setTeachersData(data.teachers || []);
@@ -214,7 +215,23 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         setSchoolProfile(null);
         setIsLoading(false);
     }
-  }, [user, role]);
+  }, [user, role, allSchoolData]);
+
+  const updateSchoolStatus = (schoolId: string, status: SchoolProfile['status']) => {
+    setAllSchoolData(prevData => {
+        if (!prevData || !prevData[schoolId]) return prevData;
+        
+        const newData = { ...prevData };
+        newData[schoolId] = {
+            ...newData[schoolId],
+            profile: {
+                ...newData[schoolId].profile,
+                status: status,
+            },
+        };
+        return newData;
+    });
+  };
 
   const updateSchoolProfile = (data: Partial<SchoolProfile>) => { setSchoolProfile(prev => prev ? { ...prev, ...data } : null); };
   const addSubject = (subject: string) => !subjects.includes(subject) && setSubjects(prev => [...prev, subject].sort());
@@ -305,7 +322,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const value = {
     schoolProfile, updateSchoolProfile,
-    allSchoolData: role === 'GlobalAdmin' ? schoolData : null,
+    allSchoolData, updateSchoolStatus,
     studentsData, addStudent,
     teachersData, addTeacher,
     classesData, addClass,

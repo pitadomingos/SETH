@@ -1,7 +1,7 @@
 
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
-import { Users, BookOpen, School, CalendarDays, TrendingUp, DollarSign, Hourglass, TrendingDown, BarChart2 } from "lucide-react";
+import { Users, BookOpen, School, CalendarDays, TrendingUp, DollarSign, Hourglass, TrendingDown, BarChart2, AlertTriangle } from "lucide-react";
 import { Line, LineChart, Bar, BarChart as RechartsBarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import {
   ChartContainer,
@@ -12,6 +12,7 @@ import {
 import { useSchoolData } from "@/context/school-data-context";
 import { format, subDays } from "date-fns";
 import { getLetterGrade, getGpaFromNumeric, formatCurrency } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 function AttendanceTrendChart() {
   const { attendance } = useSchoolData();
@@ -185,6 +186,15 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      {schoolProfile && schoolProfile.status !== 'Active' && (
+        <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Account is {schoolProfile.status}</AlertTitle>
+            <AlertDescription>
+                Your school's account is currently {schoolProfile.status}. Most features are disabled. Please check your school profile for details or contact support.
+            </AlertDescription>
+        </Alert>
+      )}
       <header>
         <h2 className="text-3xl font-bold tracking-tight">School Dashboard</h2>
         <p className="text-muted-foreground">Overview of school operations and statistics.</p>

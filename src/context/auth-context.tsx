@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { schoolData } from '@/lib/mock-data';
 
 export type Role = 'GlobalAdmin' | 'Admin' | 'Teacher' | 'Student' | 'Parent';
 
@@ -19,11 +20,16 @@ interface LoginCredentials {
   role: Exclude<Role, null>;
 }
 
+interface LoginResult {
+  success: boolean;
+  message?: string;
+}
+
 interface AuthContextType {
   role: Role | null;
   user: User | null;
   originalUser: User | null;
-  login: (credentials: LoginCredentials) => Promise<boolean>;
+  login: (credentials: LoginCredentials) => Promise<LoginResult>;
   logout: () => void;
   isLoading: boolean;
   switchSchoolContext: (schoolId: string) => void;
@@ -35,12 +41,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const mockUsers: Record<string, { user: User, role: Role }> = {
   developer: { user: { username: 'developer', name: 'App Developer', email: 'dev@edumanage.app' }, role: 'GlobalAdmin' },
   admin1: { user: { username: 'admin1', name: 'Dr. Sarah Johnson', email: 's.johnson@northwood.edu', schoolId: 'northwood' }, role: 'Admin' },
-  teacher1: { user: { username: 'teacher1', name: 'Prof. Michael Chen', email: 'm.chen@northwood.edu', schoolId: 'northwood' }, role: 'Teacher' },
-  student1: { user: { username: 'student1', name: 'Emma Rodriguez', email: 'e.rodriguez@northwood.edu', schoolId: 'northwood' }, role: 'Student' },
+  teacher1: { user: { username: 'teacher1', name: 'Prof. Michael Chen', email: 'm.chen@edumanage.com', schoolId: 'northwood' }, role: 'Teacher' },
+  student1: { user: { username: 'student1', name: 'Emma Rodriguez', email: 'e.rodriguez@edumanage.com', schoolId: 'northwood' }, role: 'Student' },
   parent1: { user: { username: 'parent1', name: 'Maria Rodriguez', email: 'm.rodriguez@family.com' }, role: 'Parent' },
   admin2: { user: { username: 'admin2', name: 'Mr. James Maxwell', email: 'j.maxwell@oakridge.edu', schoolId: 'oakridge' }, role: 'Admin' },
   teacher2: { user: { username: 'teacher2', name: 'Ms. Rachel Adams', email: 'r.adams@oakridge.edu', schoolId: 'oakridge' }, role: 'Teacher' },
-  student2: { user: { username: 'student2', name: 'Benjamin Carter', email: 'b.carter@oakridge.edu', schoolId: 'oakridge' }, role: 'Student' },
+  student2: { user: { username: 'student2', name: 'Benjamin Carter', email: 'b.carter@oakridge.com', schoolId: 'oakridge' }, role: 'Student' },
   admin3: { user: { username: 'admin3', name: 'Ms. Eleanor Vance', email: 'e.vance@maplewood.edu', schoolId: 'maplewood' }, role: 'Admin' },
   teacher3: { user: { username: 'teacher3', name: 'Mr. David Lee', email: 'd.lee@maplewood.edu', schoolId: 'maplewood' }, role: 'Teacher' },
   student3: { user: { username: 'student3', name: 'Chloe Dubois', email: 'c.dubois@maplewood.edu', schoolId: 'maplewood' }, role: 'Student' },
@@ -78,12 +84,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const login = async (creds: LoginCredentials): Promise<boolean> => {
+  const login = async (creds: LoginCredentials): Promise<LoginResult> => {
     const userRecord = mockUsers[creds.username.toLowerCase()];
     
     if (!userRecord || userRecord.role !== creds.role) {
-      return false;
+      return { success: false, message: 'Invalid credentials. Please check the demo credentials and try again.' };
     }
+    
+    const schoolId = userRecord.user.schoolId;
+    if (schoolId && schoolData[schoolId]) {
+        const schoolStatus = schoolData[schoolId].profile.status;
+        if ((schoolStatus === 'Suspended' || schoolStatus === 'Inactive') && creds.role !== 'Admin' && creds.role !== 'GlobalAdmin') {
+            return { success: false, message: `Your school's account is ${schoolStatus}. Please contact your school administrator.` };
+        }
+    }
+
 
     let correctPassword = '';
     switch (creds.role) {
@@ -104,10 +119,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (e) {
         console.error("Local storage is not available.");
       }
-      return true;
+      return { success: true };
     }
     
-    return false;
+    return { success: false, message: 'Invalid credentials. Please check the demo credentials and try again.' };
   };
 
   const logout = () => {

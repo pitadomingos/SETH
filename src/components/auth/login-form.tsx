@@ -40,21 +40,21 @@ export function LoginForm() {
 
   async function onSubmit(values: LoginFormValues) {
     setIsLoading(true);
-    const success = await login({
+    const result = await login({
         username: values.username,
         password: values.password,
         role: values.role as Exclude<Role, null>
     });
 
-    if (success) {
+    if (result.success) {
       router.push('/dashboard');
     } else {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: 'Invalid credentials. Please check the demo credentials and try again.',
+        description: result.message || 'An unknown error occurred.',
       });
-      form.setError('root', { message: 'Invalid credentials' });
+      form.setError('root', { message: result.message });
       form.setValue('password', '');
     }
     setIsLoading(false);

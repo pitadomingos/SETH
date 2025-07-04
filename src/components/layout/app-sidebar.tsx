@@ -43,6 +43,7 @@ import {
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { type LucideIcon } from 'lucide-react';
+import { useSchoolData } from '@/context/school-data-context';
 
 interface NavLink {
     href: string;
@@ -112,6 +113,7 @@ const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
 
 export function AppSidebar() {
   const { role } = useAuth();
+  const { schoolProfile } = useSchoolData();
   const pathname = usePathname();
   
   const getLinksForRole = () => {
@@ -127,6 +129,8 @@ export function AppSidebar() {
     ))
   );
 
+  const isSchoolSuspended = schoolProfile?.status && schoolProfile.status !== 'Active';
+
   return (
     <>
       <SidebarHeader>
@@ -139,18 +143,23 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {uniqueLinks.map((link) => (
-            <SidebarMenuItem key={link.href}>
-              <Link href={link.href}>
-                <SidebarMenuButton asChild isActive={pathname.startsWith(link.href) && (link.href !== '/dashboard' || pathname === '/dashboard')} tooltip={link.label}>
-                    <span>
-                      <link.icon className="h-4 w-4" />
-                      <span>{link.label}</span>
-                    </span>
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-          ))}
+          {uniqueLinks.map((link) => {
+            const allowedWhenSuspended = ['/dashboard', '/dashboard/school-profile'];
+            const isLinkDisabled = role === 'Admin' && isSchoolSuspended && !allowedWhenSuspended.includes(link.href);
+
+            return (
+              <SidebarMenuItem key={link.href}>
+                <Link href={isLinkDisabled ? '#' : link.href} passHref style={isLinkDisabled ? { pointerEvents: 'none', cursor: 'not-allowed' } : {}}>
+                  <SidebarMenuButton asChild disabled={isLinkDisabled} isActive={pathname.startsWith(link.href) && (link.href !== '/dashboard' || pathname === '/dashboard')} tooltip={link.label}>
+                      <span>
+                        <link.icon className="h-4 w-4" />
+                        <span>{link.label}</span>
+                      </span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            );
+          })}
           <SidebarSeparator />
            {documentationLinks.map((link) => (
             <SidebarMenuItem key={link.href}>
