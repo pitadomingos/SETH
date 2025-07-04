@@ -227,6 +227,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [user, role, allSchoolData]);
 
   const updateSchoolStatus = (schoolId: string, status: SchoolProfile['status']) => {
+    // Mutate the mock "database" directly so changes persist across logins in the demo
+    if (initialSchoolData[schoolId]) {
+      initialSchoolData[schoolId].profile.status = status;
+    }
+
+    // Update the React state to trigger UI re-renders
     setAllSchoolData(prevData => {
         if (!prevData || !prevData[schoolId]) return prevData;
         
