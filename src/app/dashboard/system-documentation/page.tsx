@@ -133,11 +133,20 @@ export default function SystemDocumentationPage() {
             <CardDescription>A suggested SaaS pricing strategy for monetization.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm">The proposed business model is a tiered, "per student, per year" subscription that scales with school size.</p>
-            <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                <li><strong>Starter Tier:</strong> For small schools, providing core management features.</li>
-                <li><strong>Professional Tier:</strong> The standard offering for most schools, including the full suite of AI tools and advanced reporting.</li>
-                <li><strong>Enterprise Tier:</strong> Custom pricing for large school districts. This tier includes the **Global Admin** role for centralized, multi-school management and consolidated billing.</li>
+            <p className="text-sm">The proposed business model is a tiered, "per student, per year" subscription that scales with school size. Each tier unlocks more advanced functionality.</p>
+            <ul className="space-y-3 text-sm">
+                <li className="p-3 bg-muted/50 rounded-md">
+                    <h4 className="font-semibold">Starter Tier</h4>
+                    <p className="text-muted-foreground">For small schools. Provides core management features like student, teacher, and class management, attendance, and basic finance tracking.</p>
+                </li>
+                <li className="p-3 bg-muted/50 rounded-md">
+                    <h4 className="font-semibold">Pro Tier</h4>
+                    <p className="text-muted-foreground">The standard offering. Includes all Starter features plus the full suite of AI tools (Lesson Planner, Test Generator, Performance Analysis), advanced reporting, and admissions management.</p>
+                </li>
+                <li className="p-3 bg-muted/50 rounded-md">
+                    <h4 className="font-semibold">Premium / Enterprise Tier</h4>
+                    <p className="text-muted-foreground">Custom pricing for large school districts. Includes all Pro features plus the **Global Admin** role for centralized, multi-school management, consolidated billing, and system-wide AI analysis.</p>
+                </li>
             </ul>
           </CardContent>
         </Card>
@@ -145,3 +154,5 @@ export default function SystemDocumentationPage() {
     </div>
   );
 }
+
+    

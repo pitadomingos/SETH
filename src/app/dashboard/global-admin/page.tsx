@@ -8,6 +8,7 @@ import { Loader2, Building, Users, Presentation, Settings, BrainCircuit } from '
 import { useSchoolData } from '@/context/school-data-context';
 import { useEffect, useState, useMemo } from 'react';
 import { analyzeSchoolSystem, AnalyzeSchoolSystemOutput } from '@/ai/flows/analyze-school-system';
+import { Badge } from '@/components/ui/badge';
 
 // --- Helper functions for calculations ---
 const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
@@ -46,6 +47,7 @@ function AISystemAnalysis() {
 
             return {
               name: school.profile.name,
+              tier: school.profile.tier,
               studentCount: school.students.length,
               teacherCount: school.teachers.length,
               averageGpa: calculateAverageGpaForSchool(school.grades),
@@ -56,7 +58,7 @@ function AISystemAnalysis() {
         };
         const result = await analyzeSchoolSystem(analysisInput);
         setAnalysis(result);
-      } catch (error) {
+      } catch (error) => {
         console.error("Failed to fetch system analysis:", error);
       } finally {
         setIsLoading(false);
@@ -129,14 +131,21 @@ export default function GlobalAdminDashboard() {
         {allSchoolData && Object.values(allSchoolData).map(school => (
             <Card key={school.profile.id}>
                 <CardHeader>
-                    <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
-                            <Building className="h-6 w-6 text-primary" />
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted shrink-0">
+                                <Building className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                                <CardTitle>{school.profile.name}</CardTitle>
+                                <CardDescription>{school.profile.address}</CardDescription>
+                            </div>
                         </div>
-                        <div>
-                            <CardTitle>{school.profile.name}</CardTitle>
-                            <CardDescription>{school.profile.address}</CardDescription>
-                        </div>
+                        {school.profile.tier && (
+                            <Badge variant={school.profile.tier === 'Premium' ? 'default' : school.profile.tier === 'Pro' ? 'secondary' : 'outline'}>
+                                {school.profile.tier}
+                            </Badge>
+                        )}
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -161,3 +170,5 @@ export default function GlobalAdminDashboard() {
     </div>
   );
 }
+
+    

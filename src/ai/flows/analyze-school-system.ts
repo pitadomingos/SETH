@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to analyze the performance of the entire school system.
@@ -12,6 +13,7 @@ import {z} from 'genkit';
 
 const SchoolDataSchema = z.object({
     name: z.string().describe('The name of the school.'),
+    tier: z.string().optional().describe('The subscription tier of the school (e.g., Premium, Pro, Starter).'),
     studentCount: z.number().describe('The total number of students in the school.'),
     teacherCount: z.number().describe('The total number of teachers in the school.'),
     averageGpa: z.number().describe('The average GPA of all students in the school.'),
@@ -44,7 +46,7 @@ Analyze the following data from all schools in the system. Your goal is to ident
 
 **School Data:**
 {{#each schools}}
-- **School:** {{{name}}}
+- **School:** {{{name}}} ({{tier}} Tier)
   - Students: {{studentCount}}
   - Teachers: {{teacherCount}}
   - Average GPA: {{averageGpa}}
@@ -53,7 +55,7 @@ Analyze the following data from all schools in the system. Your goal is to ident
 {{/each}}
 
 **Your Tasks:**
-1.  **Overall Analysis:** Provide a concise analysis of the system's health. Identify the top-performing schools based on a mix of academic (GPA) and financial (low overdue fees) health. Point out any schools that might be struggling in certain areas. Are there any interesting correlations, e.g., between teacher-student ratio and GPA?
+1.  **Overall Analysis:** Provide a concise analysis of the system's health. Identify the top-performing schools based on a mix of academic (GPA) and financial (low overdue fees) health. Point out any schools that might be struggling in certain areas. Note the subscription tier in your analysis where relevant (e.g., a Premium school might have access to more resources). Are there any interesting correlations, e.g., between teacher-student ratio and GPA?
 2.  **Recommendations:** Based on your analysis, provide a bulleted list of actionable recommendations. These could be system-wide (e.g., "Implement a professional development program for teachers in schools with lower GPAs") or school-specific (e.g., "Suggest that Northwood High's administration focuses on improving fee collection strategies.").
 `,
 });
@@ -69,3 +71,5 @@ const analyzeSchoolSystemFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    
