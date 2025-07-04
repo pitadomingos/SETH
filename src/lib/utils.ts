@@ -21,6 +21,7 @@ export const getLetterGrade = (numericGrade: number): string => {
 };
 
 export const getGpaFromNumeric = (numericGrade: number): number => {
+    if (numericGrade > 20 || numericGrade < 0) return 0;
     return parseFloat((numericGrade / 5.0).toFixed(1)); // 20-point scale divided by 5 gives 4.0 scale
 };
 
@@ -30,11 +31,11 @@ export const formatGradeDisplay = (grade: string | number, system?: SchoolProfil
 
     switch (system) {
         case 'GPA':
-            return `${getGpaFromNumeric(numericGrade).toFixed(1)} (${getLetterGrade(numericGrade)})`;
+            return getGpaFromNumeric(numericGrade).toFixed(1);
         case 'Letter':
             return getLetterGrade(numericGrade);
         case '20-Point':
         default:
-            return `${numericGrade}/20`;
+            return `${numericGrade.toFixed(1)}/20`;
     }
 };

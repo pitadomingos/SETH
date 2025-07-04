@@ -24,7 +24,8 @@ import Image from 'next/image';
 import { analyzeStudentFailure, AnalyzeStudentFailureOutput } from '@/ai/flows/analyze-student-failure';
 import { formatGradeDisplay } from '@/lib/utils';
 
-const calculateAverageNumericGrade = (studentId: string, grades) => {
+const calculateAverageNumericGrade = (studentId: string, grades: any[]) => {
+    if (!studentId || !grades) return 0;
     const studentGrades = grades.filter(g => g.studentId === studentId);
     if (studentGrades.length === 0) return 0;
     const totalPoints = studentGrades.reduce((acc, g) => acc + parseFloat(g.grade), 0);
@@ -95,17 +96,8 @@ function AIFailureAnalysis({ student, grades, attendanceSummary }) {
 }
 
 
-function RankCard() {
-    const { user } = useAuth();
+function RankCard({ studentId }) {
     const { studentsData, grades } = useSchoolData();
-
-    const studentIdMap = {
-        student1: 'S001',
-        student2: 'S101',
-        student3: 'S201',
-        student4: 'S010',
-    };
-    const studentId = user?.username ? studentIdMap[user.username] : null;
   
     const allStudentsWithAvg = useMemo(() => studentsData.map(student => ({
         ...student,
@@ -136,17 +128,10 @@ function RankCard() {
     );
 }
 
-function AttendanceBreakdownChart() {
-  const { user } = useAuth();
+function AttendanceBreakdownChart({ studentId }) {
   const { attendance } = useSchoolData();
-  const studentIdMap = {
-        student1: 'S001',
-        student2: 'S101',
-        student3: 'S201',
-        student4: 'S010',
-    };
-  const studentId = user?.username ? studentIdMap[user.username] : null;
   const studentAttendance = attendance.filter(a => a.studentId === studentId);
+  
   const breakdown = studentAttendance.reduce((acc, record) => {
     acc[record.status] = (acc[record.status] || 0) + 1;
     return acc;
@@ -215,6 +200,7 @@ export default function StudentDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { assignments, grades, financeData, studentsData, attendance, schoolProfile } = useSchoolData();
+  
   const studentIdMap = {
         student1: 'S001',
         student2: 'S101',
@@ -245,7 +231,8 @@ export default function StudentDashboard() {
     return calculateAverageNumericGrade(studentId, grades);
   }, [studentId, grades]);
 
-  const hasPassed = useMemo(() => averageNumericGrade >= 10, [averageNumericGrade]); // 10/20 is a pass, equivalent to 2.0 GPA
+  // A student passes if their average grade is 10/20 or higher.
+  const hasPassed = useMemo(() => averageNumericGrade >= 10, [averageNumericGrade]);
 
   const areAllFeesPaid = useMemo(() => {
     if (!studentId) return false;
@@ -277,8 +264,8 @@ export default function StudentDashboard() {
         <p className="text-muted-foreground">Welcome back, {user?.name}</p>
       </header>
        <div className="grid gap-6 lg:grid-cols-2">
-          <RankCard />
-          <AttendanceBreakdownChart />
+          <RankCard studentId={studentId} />
+          <AttendanceBreakdownChart studentId={studentId} />
           <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><FileText /> Upcoming Assignments</CardTitle>

@@ -159,7 +159,7 @@ export default function StudentsPage() {
                                         <div className="text-muted-foreground">{student.phone}</div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={student.averageGrade.includes('A') || student.averageGrade.startsWith('4.0') || student.averageGrade.startsWith('20') ? 'secondary' : 'outline'}>
+                                        <Badge variant={student.averageGrade.startsWith('A') || student.averageGrade.startsWith('4.0') || parseFloat(student.averageGrade) >= 17 ? 'secondary' : 'outline'}>
                                             {student.averageGrade}
                                         </Badge>
                                     </TableCell>
