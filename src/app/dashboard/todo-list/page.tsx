@@ -40,6 +40,7 @@ const upcomingFeatures = [
   'Implement full CRUD (Create, Read, Update, Delete) on all management pages',
   'Develop a configurable fee management system for admins (e.g., termly tuition, ad-hoc fees)',
   'Build a subscription and billing management system based on defined pricing tiers',
+  "Develop a dedicated 'Finance Proposal' page detailing payment gateway integration, automated invoicing, and billing cycles.",
   'Connect mock data to a real database (e.g., Firestore) to enable persistence',
   'Implement a site-wide notification and communication hub',
   'Enable profile editing with photo uploads for all users',
@@ -96,7 +97,7 @@ export default function TodoListPage() {
           </CardHeader>
           <CardContent>
              <ul className="space-y-3">
-              {upcomingFeatures.map((task, index) => (
+              {upcomingFeatures.sort().map((task, index) => (
                 <li key={index} className="flex items-start gap-3">
                   <Circle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
                   <span className="text-sm text-muted-foreground">{task}</span>
