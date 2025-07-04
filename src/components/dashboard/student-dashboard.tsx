@@ -201,4 +201,228 @@ function CompletionStatusContent({ student, hasPassed, areAllFeesPaid, grades, a
 export default function StudentDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { assignments, grades, financeData, studentsData, attendance, schoolProfile }
+  const {
+    assignments,
+    grades,
+    financeData,
+    studentsData,
+    attendance,
+    schoolProfile,
+  } = useSchoolData();
+  
+  const studentIdMap = {
+    student1: 'S001',
+    student2: 'S101',
+    student3: 'S201',
+    student4: 'S010',
+  };
+  const studentId = useMemo(() => {
+    if (!user) return null;
+    return studentIdMap[user.username] || null;
+  }, [user]);
+
+  const student = useMemo(() => {
+    if (!studentId) return null;
+    return studentsData.find(s => s.id === studentId);
+  }, [studentsData, studentId]);
+
+  const pendingAssignments = assignments.filter(a => a.status === 'pending' || a.status === 'overdue').sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  
+  const studentGrades = useMemo(() => {
+    if (!studentId) return [];
+    return grades.filter(g => g.studentId === studentId);
+  }, [grades, studentId]);
+
+  const studentAttendanceSummary = useMemo(() => {
+    if (!studentId) return { present: 0, late: 0, absent: 0 };
+    const records = attendance.filter(a => a.studentId === studentId);
+    return records.reduce((acc, record) => {
+      acc[record.status] = (acc[record.status] || 0) + 1;
+      return acc;
+    }, { present: 0, late: 0, absent: 0 });
+  }, [attendance, studentId]);
+
+  const hasPassed = useMemo(() => {
+    if (!studentId) return false;
+    const avg = calculateAverageNumericGrade(studentId, grades);
+    return avg >= 12; // Passing grade is 12/20
+  }, [studentId, grades]);
+
+  const areAllFeesPaid = useMemo(() => {
+    if (!studentId) return false;
+    const studentFees = financeData.filter(f => f.studentId === studentId);
+    if (studentFees.length === 0) return true;
+    return studentFees.every(fee => (fee.totalAmount - fee.amountPaid) <= 0);
+  }, [studentId, financeData]);
+  
+  const isEligibleForCompletion = hasPassed && areAllFeesPaid;
+
+  const handleDownloadCertificate = () => {
+    toast({
+      title: "Certificate Download Started",
+      description: "Your completion certificate is being prepared. (This is a demo feature)",
+    });
+  };
+
+  const handleDownloadTranscript = () => {
+    toast({
+      title: "Transcript Download Started",
+      description: "Your official transcript is being prepared. (This is a demo feature)",
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+       <header>
+        <h2 className="text-3xl font-bold tracking-tight">Student Dashboard</h2>
+        <p className="text-muted-foreground">Welcome back, {user?.name}</p>
+      </header>
+       <div className="grid gap-6 lg:grid-cols-2">
+          <RankCard studentId={studentId} />
+          <AttendanceBreakdownChart studentId={studentId} />
+          <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><FileText /> Upcoming Assignments</CardTitle>
+                <CardDescription>You have {pendingAssignments.length} assignments due.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ul className="space-y-3">
+                {pendingAssignments.slice(0, 4).map(assignment => (
+                    <li key={assignment.id} className="flex justify-between items-center text-sm p-2 bg-muted rounded-md">
+                    <div>
+                        <p className="font-medium">{assignment.title}</p>
+                        <p className="text-xs text-muted-foreground">{assignment.subject}</p>
+                    </div>
+                    <Badge variant={new Date(assignment.dueDate) < new Date() ? 'destructive' : 'outline'}>
+                        Due {format(new Date(assignment.dueDate), 'MMM d')}
+                    </Badge>
+                    </li>
+                ))}
+                </ul>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Award /> Recent Grades</CardTitle>
+                <CardDescription>Your latest academic results.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ul className="space-y-3">
+                {studentGrades.slice(0, 4).map((grade, index) => (
+                    <li key={index} className="flex justify-between items-center text-sm p-2 bg-muted rounded-md">
+                    <p className="font-medium">{grade.subject}</p>
+                    <Badge variant={grade.grade.startsWith('A') || parseFloat(grade.grade) >= 18 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
+                    </li>
+                ))}
+                </ul>
+            </CardContent>
+        </Card>
+      </div>
+
+       <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    {isEligibleForCompletion ? (
+                        <CheckCircle className="text-green-500"/>
+                    ) : !hasPassed ? (
+                         <XCircle className="text-destructive"/>
+                    ) : (
+                        <AlertTriangle className="text-amber-500" />
+                    )}
+                    Completion Documents
+                </CardTitle>
+                <CardDescription>
+                    Your official certificate and academic transcript.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <CompletionStatusContent 
+                    student={student}
+                    hasPassed={hasPassed}
+                    areAllFeesPaid={areAllFeesPaid} 
+                    grades={studentGrades}
+                    attendanceSummary={studentAttendanceSummary}
+                 />
+            </CardContent>
+            <CardFooter className="flex flex-col items-start gap-2">
+                <div className="flex w-full gap-2">
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button disabled={!isEligibleForCompletion} className="w-full">
+                                <FileText className="mr-2 h-4 w-4" />
+                                Preview Certificate
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl">
+                            <DialogHeader>
+                                <DialogTitle>Official Certificate of Completion</DialogTitle>
+                                <DialogDescription>
+                                    This is a preview of your official certificate from {schoolProfile?.name}.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="p-4 bg-muted rounded-md flex justify-center">
+                                <Image
+                                    src="https://placehold.co/800x600.png"
+                                    alt="Certificate Preview"
+                                    width={800}
+                                    height={600}
+                                    className="rounded-md border shadow-lg"
+                                    data-ai-hint="certificate document"
+                                />
+                            </div>
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button type="button" variant="secondary">Close</Button>
+                                </DialogClose>
+                                <Button onClick={handleDownloadCertificate}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Download PDF
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="secondary" disabled={!isEligibleForCompletion} className="w-full">
+                                <FileText className="mr-2 h-4 w-4" />
+                                Preview Transcript
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                                <DialogTitle>Official Academic Transcript</DialogTitle>
+                                <DialogDescription>
+                                   This is a preview of your official academic transcript from {schoolProfile?.name}.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="p-4 bg-muted rounded-md flex justify-center max-h-[70vh] overflow-y-auto">
+                                <Image
+                                    src="https://placehold.co/600x800.png"
+                                    alt="Transcript Preview"
+                                    width={600}
+                                    height={800}
+                                    className="rounded-md border shadow-lg"
+                                    data-ai-hint="transcript document"
+                                />
+                            </div>
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button type="button" variant="secondary">Close</Button>
+                                </DialogClose>
+                                <Button onClick={handleDownloadTranscript}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Download PDF
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+                <p className="text-xs text-muted-foreground self-center">
+                    Documents created by EduManage System {new Date().getFullYear()}
+                </p>
+            </CardFooter>
+        </Card>
+    </div>
+  );
+}
