@@ -96,21 +96,21 @@ export default function ProjectProposalPage() {
             <div className="flex items-start gap-4">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold shrink-0">1</span>
               <div>
-                <h4 className="font-semibold">Phase 1 (Q3 2024): Production Backend & Core Service</h4>
+                <h4 className="font-semibold">Phase 1 (Q3 2025): Production Backend & Core Service</h4>
                 <p className="text-sm text-muted-foreground">Migrate from mock data to a full Firebase backend (Auth, Firestore, Storage). Refactor all services to be production-ready.</p>
               </div>
             </div>
              <div className="flex items-start gap-4">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold shrink-0">2</span>
               <div>
-                <h4 className="font-semibold">Phase 2 (Q4 2024): Monetization & Automation</h4>
+                <h4 className="font-semibold">Phase 2 (Q4 2025): Monetization & Automation</h4>
                 <p className="text-sm text-muted-foreground">Integrate with Stripe for online payments. Implement automated invoicing, billing cycles, and payment reminders.</p>
               </div>
             </div>
              <div className="flex items-start gap-4">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold shrink-0">3</span>
               <div>
-                <h4 className="font-semibold">Phase 3 (Q1 2025): Market Launch & Customer Acquisition</h4>
+                <h4 className="font-semibold">Phase 3 (Q1 2026): Market Launch & Customer Acquisition</h4>
                 <p className="text-sm text-muted-foreground">Launch targeted digital marketing campaigns. Onboard the first cohort of paying schools and gather feedback for iterative improvement.</p>
               </div>
             </div>
