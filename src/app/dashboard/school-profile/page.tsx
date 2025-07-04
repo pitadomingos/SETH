@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 
@@ -151,6 +151,8 @@ function EditProfileDialog() {
     }
   });
 
+  const logoUrlValue = form.watch('logoUrl');
+
   useEffect(() => {
     if (schoolProfile) {
       form.reset(schoolProfile);
@@ -188,7 +190,28 @@ function EditProfileDialog() {
               <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Contact Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="motto" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>School Motto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="logoUrl" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Logo URL</FormLabel><FormControl><Input placeholder="https://example.com/logo.png" {...field} /></FormControl><FormMessage /></FormItem> )} />
+              
+              <div className="col-span-2 space-y-2">
+                <FormLabel>School Logo</FormLabel>
+                <div className="flex items-center gap-4">
+                  <Image src={logoUrlValue || 'https://placehold.co/100x100.png'} alt="logo preview" width={48} height={48} className="rounded-md bg-muted object-cover" data-ai-hint="school logo"/>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const newLogoUrl = `https://placehold.co/100x100.png?v=${Date.now()}`;
+                      form.setValue('logoUrl', newLogoUrl, { shouldValidate: true, shouldDirty: true });
+                    }}
+                  >
+                    Upload New Logo
+                  </Button>
+                </div>
+                <FormDescription>
+                  Click to simulate uploading a new logo. A placeholder will be generated.
+                </FormDescription>
+                <FormField control={form.control} name="logoUrl" render={({ field }) => ( <FormItem><FormControl><Input type="hidden" {...field} /></FormControl><FormMessage /></FormItem> )} />
+              </div>
+
             </div>
             <DialogFooter>
               <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
