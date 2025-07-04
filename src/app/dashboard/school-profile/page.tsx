@@ -1,4 +1,3 @@
-
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -8,7 +7,7 @@ import { Loader2, Building, User, Mail, Phone, MapPin, Edit, Star, ShieldCheck, 
 import { useSchoolData } from '@/context/school-data-context';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
