@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -133,6 +134,7 @@ export function LoginForm() {
               <p className="mt-2"><span className="font-semibold">Northwood High:</span> Use `admin1`, `teacher1`, `student1`, or `parent1`</p>
               <p><span className="font-semibold">Oakridge Academy:</span> Use `admin2`, `teacher2`, or `student2`</p>
               <p><span className="font-semibold">Maplewood Int'l:</span> Use `admin3`, `teacher3`, or `student3`</p>
+              <p><span className="font-semibold">Failing Student (Northwood):</span> `student4`</p>
               <p className="mt-2">Passwords are based on role:</p>
               <p>Admin: `admin123`, Teacher: `teacher123`, Student: `student123`, Parent: `parent123`</p>
             </div>

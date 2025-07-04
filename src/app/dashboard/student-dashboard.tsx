@@ -115,6 +115,7 @@ function RankCard() {
         student1: 'S001',
         student2: 'S101',
         student3: 'S201',
+        student4: 'S010',
     };
     const studentId = studentIdMap[user?.username] || null;
   
@@ -154,6 +155,7 @@ function AttendanceBreakdownChart() {
         student1: 'S001',
         student2: 'S101',
         student3: 'S201',
+        student4: 'S010',
     };
   const studentId = studentIdMap[user?.username] || null;
   const studentAttendance = attendance.filter(a => a.studentId === studentId);
@@ -229,6 +231,7 @@ export default function StudentDashboard() {
         student1: 'S001',
         student2: 'S101',
         student3: 'S201',
+        student4: 'S010',
     };
   const studentId = studentIdMap[user?.username] || null;
   const student = useMemo(() => studentsData.find(s => s.id === studentId), [studentsData, studentId]);

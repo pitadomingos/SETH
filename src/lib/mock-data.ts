@@ -72,6 +72,7 @@ const northwoodStudents: Student[] = [
   { id: 'S007', name: 'Ava Martinez', grade: '11', class: 'A', email: 'a.martinez@edumanage.com', phone: '+1 (555) 555-3344', address: '951 Cedar Ct, Anytown', gpa: 3.7, parentName: 'David Martinez', parentEmail: 'd.martinez@family.com' },
   { id: 'S008', name: 'Noah Brown', grade: '10', class: 'B', email: 'n.brown@edumanage.com', phone: '+1 (555) 555-5566', address: '852 Spruce Ave, Anytown', gpa: 3.4, parentName: 'Linda Brown', parentEmail: 'l.brown@family.com' },
   { id: 'S009', name: 'Sophia Davis', grade: '9', class: 'B', email: 's.davis@edumanage.com', phone: '+1 (555) 555-7788', address: '147 Walnut St, Anytown', gpa: 3.8, parentName: 'Paul Davis', parentEmail: 'p.davis@family.com' },
+  { id: 'S010', name: 'William Miller', grade: '12', class: 'C', email: 'w.miller@edumanage.com', phone: '+1 (555) 555-9999', address: '456 Failure Ave, Anytown', gpa: 1.5, parentName: 'George Miller', parentEmail: 'g.miller@family.com' },
 ];
 
 const northwoodTeachers: Teacher[] = [
@@ -103,13 +104,20 @@ const northwoodGrades: Grade[] = [
   { studentId: 'S008', subject: 'Mathematics', grade: '15', date: new Date(now.getFullYear(), now.getMonth()) },
   { studentId: 'S009', subject: 'English', grade: 'A', date: new Date(now.getFullYear(), now.getMonth()) },
   { studentId: 'S009', subject: 'Mathematics', grade: '18', date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S010', subject: 'Mathematics', grade: 'F', date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S010', subject: 'Physics', grade: 'D', date: new Date(now.getFullYear(), now.getMonth()) },
+  { studentId: 'S010', subject: 'English', grade: '8', date: new Date(now.getFullYear(), now.getMonth()) },
 ];
 
 const northwoodAttendance: Attendance[] = northwoodStudents.flatMap(student => {
   return Array.from({length: 30}).map((_, i) => {
     const date = new Date();
     date.setDate(date.getDate() - i);
-    const rand = Math.random();
+    let rand = Math.random();
+    // make the failing student more absent
+    if(student.id === 'S010') {
+        rand = Math.random() * 0.5; // Skew random number to be lower
+    }
     let status = 'present';
     if (rand > 0.95) status = 'absent';
     else if (rand > 0.9) status = 'late';
@@ -123,6 +131,7 @@ const northwoodFinance: FinanceRecord[] = [
   { id: 'FEE003', studentId: 'S003', studentName: 'Sofia Kim', description: 'Term 1 Tuition', totalAmount: 1500, amountPaid: 0, dueDate: '2024-07-31' }, // Overdue
   { id: 'FEE004', studentId: 'S009', studentName: 'Sophia Davis', description: 'Term 1 Tuition', totalAmount: 1200, amountPaid: 1200, dueDate: '2024-08-31' },
   { id: 'FEE005', studentId: 'S001', studentName: 'Emma Rodriguez', description: 'Lab Fees', totalAmount: 150, amountPaid: 150, dueDate: '2024-09-15' },
+  { id: 'FEE006', studentId: 'S010', studentName: 'William Miller', description: 'Term 1 Tuition', totalAmount: 1200, amountPaid: 1200, dueDate: '2024-08-31' },
 ];
 
 

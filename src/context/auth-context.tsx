@@ -41,6 +41,7 @@ const mockUsers: Record<string, { user: User, role: Role }> = {
   admin3: { user: { username: 'admin3', name: 'Ms. Eleanor Vance', email: 'e.vance@maplewood.edu', schoolId: 'maplewood' }, role: 'Admin' },
   teacher3: { user: { username: 'teacher3', name: 'Mr. David Lee', email: 'd.lee@maplewood.edu', schoolId: 'maplewood' }, role: 'Teacher' },
   student3: { user: { username: 'student3', name: 'Chloe Dubois', email: 'c.dubois@maplewood.edu', schoolId: 'maplewood' }, role: 'Student' },
+  student4: { user: { username: 'student4', name: 'William Miller', email: 'w.miller@edumanage.com', schoolId: 'northwood' }, role: 'Student' },
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
