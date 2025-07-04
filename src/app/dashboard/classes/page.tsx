@@ -6,7 +6,84 @@ import { Button } from '@/components/ui/button';
 import { Users, Presentation, MapPin, UserPlus, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const classSchema = z.object({
+  name: z.string().min(3, "Class name is required."),
+  grade: z.string().min(1, "Grade is required."),
+  teacher: z.string().min(2, "Teacher is required."),
+  students: z.coerce.number().int().positive("Must be a positive number."),
+  room: z.string().min(1, "Room is required."),
+});
+type ClassFormValues = z.infer<typeof classSchema>;
+
+function NewClassDialog() {
+    const { addClass, teachersData } = useSchoolData();
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    
+    const form = useForm<ClassFormValues>({
+        resolver: zodResolver(classSchema),
+        defaultValues: { name: '', grade: '', teacher: '', students: 0, room: '' }
+    });
+
+    function onSubmit(values: ClassFormValues) {
+        addClass(values);
+        form.reset();
+        setIsDialogOpen(false);
+    }
+    
+    return (
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+                <Button><UserPlus className="mr-2 h-4 w-4" />Create Class</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Create New Class</DialogTitle>
+                    <DialogDescription>Enter the details for the new class.</DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-4 py-4">
+                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Class Name</FormLabel><FormControl><Input placeholder="e.g., Class 9-A" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                         <FormField control={form.control} name="grade" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Grade</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select Grade" /></SelectTrigger></FormControl>
+                                    <SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(g => <SelectItem key={g} value={String(g)}>Grade {g}</SelectItem>)}</SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="teacher" render={({ field }) => (
+                            <FormItem className="col-span-2">
+                                <FormLabel>Teacher</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select Teacher" /></SelectTrigger></FormControl>
+                                    <SelectContent>{teachersData.map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}</SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="students" render={({ field }) => ( <FormItem><FormLabel>No. of Students</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="room" render={({ field }) => ( <FormItem><FormLabel>Room Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <DialogFooter className="col-span-2 mt-4">
+                            <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+                            <Button type="submit" disabled={form.formState.isSubmitting}> {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create Class</Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 export default function ClassesPage() {
     const { role, isLoading } = useAuth();
@@ -30,7 +107,7 @@ export default function ClassesPage() {
                     <h2 className="text-3xl font-bold tracking-tight">Class Management</h2>
                     <p className="text-muted-foreground">Manage classes and class assignments.</p>
                 </div>
-                 <Button><UserPlus className="mr-2 h-4 w-4" />Create Class</Button>
+                 <NewClassDialog />
             </header>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {classesData.map((classItem) => (
@@ -55,9 +132,6 @@ export default function ClassesPage() {
                                 <span>Room {classItem.room}</span>
                             </div>
                         </CardContent>
-                        <CardFooter>
-                            <Button variant="outline" className="w-full">View Details</Button>
-                        </CardFooter>
                     </Card>
                 ))}
             </div>

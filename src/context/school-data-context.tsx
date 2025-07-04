@@ -2,8 +2,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { schoolData, FinanceRecord as InitialFinanceRecord, Grade as InitialGrade } from '@/lib/mock-data';
+import { schoolData, FinanceRecord as InitialFinanceRecord, Grade as InitialGrade, Student, Teacher, Class, Admission, Asset } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
+import { format } from 'date-fns';
 
 export type FinanceRecord = InitialFinanceRecord;
 export type Grade = InitialGrade;
@@ -33,15 +34,20 @@ interface NewGradeData {
 interface SchoolDataContextType {
   schoolProfile: SchoolProfile | null;
   allSchoolData: typeof schoolData | null;
-  studentsData: any[];
-  teachersData: any[];
-  classesData: any[];
-  admissionsData: any[];
-  examsData: any[];
+  studentsData: Student[];
+  addStudent: (student: Omit<Student, 'id' | 'gpa'>) => void;
+  teachersData: Teacher[];
+  addTeacher: (teacher: Omit<Teacher, 'id'>) => void;
+  classesData: Class[];
+  addClass: (classData: Omit<Class, 'id'>) => void;
+  admissionsData: Admission[];
+  updateApplicationStatus: (id: string, status: Admission['status']) => void;
+  examsData: Exam[];
   financeData: FinanceRecord[];
   recordPayment: (feeId: string, amount: number) => void;
   addFee: (data: NewFeeData) => void;
-  assetsData: any[];
+  assetsData: Asset[];
+  addAsset: (asset: Omit<Asset, 'id'>) => void;
   assignments: any[];
   grades: Grade[];
   addGrade: (data: NewGradeData) => void;
@@ -64,11 +70,19 @@ const initialExamBoards = ['Internal', 'Cambridge', 'IB', 'State Board', 'Advanc
 export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { user, role } = useAuth();
   const [currentSchoolData, setCurrentSchoolData] = useState<any>(null);
+
+  // Make data that can be modified stateful
   const [financeData, setFinanceData] = useState<FinanceRecord[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [subjects, setSubjects] = useState<string[]>([]);
   const [examBoards, setExamBoards] = useState<string[]>(initialExamBoards);
   const [feeDescriptions, setFeeDescriptions] = useState<string[]>([]);
+  const [studentsData, setStudentsData] = useState<Student[]>([]);
+  const [teachersData, setTeachersData] = useState<Teacher[]>([]);
+  const [classesData, setClassesData] = useState<Class[]>([]);
+  const [admissionsData, setAdmissionsData] = useState<Admission[]>([]);
+  const [assetsData, setAssetsData] = useState<Asset[]>([]);
+  
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -77,14 +91,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
     if (role === 'GlobalAdmin') {
       setCurrentSchoolData(null);
-      setFinanceData([]);
-      setGrades([]);
       setIsLoading(false);
       return;
     }
     
     if (role === 'Parent' && user?.email) {
-      const parentEmail = user.email;
+       const parentEmail = user.email;
       
       const allStudents: any[] = [];
       const allGrades: Grade[] = [];
@@ -96,11 +108,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
       for (const schoolIdKey in schoolData) {
         const school = schoolData[schoolIdKey];
-
         const childrenInSchool = school.students
           .filter(s => s.parentEmail === parentEmail)
           .map(s => ({ ...s, schoolName: school.profile.name, schoolId: school.profile.id }));
-
         if (childrenInSchool.length > 0) {
             schoolIdsOfChildren.add(schoolIdKey);
             childrenInSchool.forEach(child => {
@@ -119,33 +129,29 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
       schoolIdsOfChildren.forEach(sId => {
           const school = schoolData[sId];
-          const schoolEventsWithSchoolName = school.events.map(event => ({
-              ...event,
-              schoolName: school.profile.name
-          }));
+          const schoolEventsWithSchoolName = school.events.map(event => ({ ...event, schoolName: school.profile.name }));
           allEvents.push(...schoolEventsWithSchoolName);
       });
-
+      
       const parentViewData = {
-          profile: null,
-          students: allStudents,
-          attendance: allAttendance,
-          events: allEvents,
-          teachers: [], classes: [], admissions: [], exams: [],
-          assets: [], assignments: [],
+          profile: null, students: allStudents, attendance: allAttendance, events: allEvents,
+          teachers: [], classes: [], admissions: [], exams: [], assets: [], assignments: [],
           courses: { teacher: [], student: [] }
       };
-      
       setCurrentSchoolData(parentViewData);
+      setStudentsData(allStudents);
       setFinanceData(allFinance);
       setGrades(allGrades);
-      setSubjects([]);
-      setFeeDescriptions([]);
       setIsLoading(false);
     } else if (user?.schoolId && schoolData[user.schoolId]) {
       schoolId = user.schoolId;
       const data = schoolData[schoolId];
       setCurrentSchoolData(data);
+      setStudentsData(data.students || []);
+      setTeachersData(data.teachers || []);
+      setClassesData(data.classes || []);
+      setAdmissionsData(data.admissions || []);
+      setAssetsData(data.assets || []);
       setFinanceData(data.finance || []);
       setGrades(data.grades || []);
       if(data.teachers) {
@@ -156,93 +162,72 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(false);
     } else {
         setCurrentSchoolData(null);
-        setFinanceData([]);
-        setGrades([]);
         setIsLoading(false);
     }
   }, [user, role]);
 
-  const addSubject = (subject: string) => {
-    if (!subjects.includes(subject)) {
-      setSubjects(prev => [...prev, subject].sort());
-    }
-  };
-
-  const addExamBoard = (board: string) => {
-    if (!examBoards.includes(board)) {
-      setExamBoards(prev => [...prev, board].sort());
-    }
+  const addSubject = (subject: string) => !subjects.includes(subject) && setSubjects(prev => [...prev, subject].sort());
+  const addExamBoard = (board: string) => !examBoards.includes(board) && setExamBoards(prev => [...prev, board].sort());
+  const addFeeDescription = (desc: string) => !feeDescriptions.includes(desc) && setFeeDescriptions(prev => [...prev, desc].sort());
+  
+  const recordPayment = (feeId: string, amount: number) => {
+    setFinanceData(prev => prev.map(fee => fee.id === feeId ? { ...fee, amountPaid: Math.min(fee.totalAmount, fee.amountPaid + amount) } : fee));
   };
   
-  const addFeeDescription = (description: string) => {
-    if (!feeDescriptions.includes(description)) {
-      setFeeDescriptions(prev => [...prev, description].sort());
-    }
-  };
-
-  const recordPayment = (feeId: string, amount: number) => {
-    setFinanceData(prevData =>
-      prevData.map(fee => {
-        if (fee.id === feeId) {
-          const newAmountPaid = Math.min(fee.totalAmount, fee.amountPaid + amount);
-          return { ...fee, amountPaid: newAmountPaid };
-        }
-        return fee;
-      })
-    );
-  };
-
   const addFee = (data: NewFeeData) => {
-    const student = currentSchoolData?.students?.find(s => s.id === data.studentId);
+    const student = studentsData.find(s => s.id === data.studentId);
     if (!student) return;
-
-    const newFee: FinanceRecord = {
-        id: `FEE${Date.now()}`,
-        studentId: data.studentId,
-        studentName: student.name,
-        description: data.description,
-        totalAmount: data.totalAmount,
-        amountPaid: 0,
-        dueDate: data.dueDate,
-    };
-
+    const newFee: FinanceRecord = { id: `FEE${Date.now()}`, studentId: data.studentId, studentName: student.name, description: data.description, totalAmount: data.totalAmount, amountPaid: 0, dueDate: data.dueDate };
     setFinanceData(prev => [newFee, ...prev]);
   };
-
+  
   const addGrade = (data: NewGradeData) => {
-    const newGrade: Grade = {
-      studentId: data.studentId,
-      subject: data.subject,
-      grade: data.grade as Grade['grade'],
-      date: new Date(),
-    };
+    const newGrade: Grade = { studentId: data.studentId, subject: data.subject, grade: data.grade as Grade['grade'], date: new Date() };
     setGrades(prev => [newGrade, ...prev]);
   };
+
+  const addStudent = (studentData: Omit<Student, 'id'| 'gpa'>) => {
+    const newStudent: Student = { id: `S${Date.now()}`, ...studentData, gpa: 0 };
+    setStudentsData(prev => [newStudent, ...prev]);
+  };
   
+  const addTeacher = (teacherData: Omit<Teacher, 'id'>) => {
+    const newTeacher: Teacher = { id: `T${Date.now()}`, ...teacherData };
+    setTeachersData(prev => [newTeacher, ...prev]);
+  };
+
+  const addClass = (classData: Omit<Class, 'id'>) => {
+    const newClass: Class = { id: `C${Date.now()}`, ...classData };
+    setClassesData(prev => [newClass, ...prev]);
+  }
+
+  const addAsset = (assetData: Omit<Asset, 'id'>) => {
+    const newAsset: Asset = { id: `ASSET${Date.now()}`, ...assetData };
+    setAssetsData(prev => [newAsset, ...prev]);
+  }
+
+  const updateApplicationStatus = (id: string, status: Admission['status']) => {
+    setAdmissionsData(prev => prev.map(app => app.id === id ? { ...app, status } : app));
+  };
+
   const value = {
     schoolProfile: currentSchoolData?.profile || null,
     allSchoolData: role === 'GlobalAdmin' ? schoolData : null,
-    studentsData: currentSchoolData?.students || [],
-    teachersData: currentSchoolData?.teachers || [],
-    classesData: currentSchoolData?.classes || [],
-    admissionsData: currentSchoolData?.admissions || [],
+    studentsData, addStudent,
+    teachersData, addTeacher,
+    classesData, addClass,
+    admissionsData, updateApplicationStatus,
     examsData: currentSchoolData?.exams || [],
-    financeData,
-    recordPayment,
-    addFee,
-    assetsData: currentSchoolData?.assets || [],
+    financeData, recordPayment, addFee,
+    assetsData, addAsset,
     assignments: currentSchoolData?.assignments || [],
-    grades,
-    addGrade,
+    grades, addGrade,
     attendance: currentSchoolData?.attendance || [],
     events: currentSchoolData?.events || [],
     courses: currentSchoolData?.courses || { teacher: [], student: [] },
-    subjects,
-    addSubject,
-    examBoards,
-    addExamBoard,
-    feeDescriptions,
-    addFeeDescription,
+    subjects, addSubject,
+    examBoards, addExamBoard,
+    feeDescriptions, addFeeDescription,
     isLoading,
   };
 

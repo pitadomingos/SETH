@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useSchoolData } from '@/context/school-data-context';
+import { useSchoolData, Admission } from '@/context/school-data-context';
 import { MoreHorizontal, Check, X, FileText, UserPlus, Loader2 } from 'lucide-react';
 
 const applicationSchema = z.object({
@@ -30,12 +30,54 @@ const applicationSchema = z.object({
 
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
+function ViewApplicationDialog({ application }: { application: Admission }) {
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>View Application</DropdownMenuItem>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Application Details</DialogTitle>
+                    <DialogDescription>
+                        Full details for applicant: {application.name}
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4 text-sm">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        <p className="font-semibold">Applicant Name:</p><p>{application.name}</p>
+                        <p className="font-semibold">Applying For:</p><p>{application.appliedFor}</p>
+                        <p className="font-semibold">Application Date:</p><p>{application.date}</p>
+                        <p className="font-semibold">Status:</p><p><Badge variant={application.status === 'Approved' ? 'secondary' : application.status === 'Rejected' ? 'destructive' : 'outline'}>{application.status}</Badge></p>
+                        <p className="font-semibold">Parent Name:</p><p>{application.parentName}</p>
+                        <p className="font-semibold">Parent Email:</p><p>{application.parentEmail}</p>
+                        <p className="font-semibold">Former School:</p><p>{application.formerSchool}</p>
+                    </div>
+                    <div>
+                         <p className="font-semibold">Grades Summary:</p>
+                         <p className="text-muted-foreground p-2 bg-muted rounded-md mt-1">{application.grades}</p>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button">Close</Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 export default function AdmissionsPage() {
   const { role, isLoading: authLoading } = useAuth();
-  const { admissionsData } = useSchoolData();
+  const { admissionsData, updateApplicationStatus } = useSchoolData();
   const router = useRouter();
   const [applications, setApplications] = useState(admissionsData);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  useEffect(() => {
+    setApplications(admissionsData);
+  }, [admissionsData]);
 
   useEffect(() => {
     if (!authLoading && role !== 'Admin') {
@@ -46,12 +88,7 @@ export default function AdmissionsPage() {
   const form = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema),
     defaultValues: {
-      name: '',
-      appliedFor: '',
-      formerSchool: '',
-      grades: '',
-      parentName: '',
-      parentEmail: '',
+      name: '', appliedFor: '', formerSchool: '', grades: '', parentName: '', parentEmail: '',
     },
   });
 
@@ -75,6 +112,10 @@ export default function AdmissionsPage() {
     form.reset();
     setIsDialogOpen(false);
   }
+
+  const handleStatusChange = (id: string, status: Admission['status']) => {
+    updateApplicationStatus(id, status);
+  };
 
   const stats = applications.reduce((acc, curr) => {
     acc[curr.status] = (acc[curr.status] || 0) + 1;
@@ -102,152 +143,32 @@ export default function AdmissionsPage() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Applicant Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Jane Doe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="appliedFor"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Applying for Grade</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Grade 9" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="parentName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Parent Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., John Doe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="parentEmail"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Parent Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="e.g., j.doe@family.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="formerSchool"
-                    render={({ field }) => (
-                      <FormItem className="col-span-1 md:col-span-2">
-                        <FormLabel>Former School</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Anytown Middle School" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="grades"
-                    render={({ field }) => (
-                      <FormItem className="col-span-1 md:col-span-2">
-                        <FormLabel>Former School Grades</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Summarize previous grades or note that a transcript is attached." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Applicant Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="appliedFor" render={({ field }) => ( <FormItem><FormLabel>Applying for Grade</FormLabel><FormControl><Input placeholder="e.g., Grade 9" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="parentName" render={({ field }) => ( <FormItem><FormLabel>Parent Name</FormLabel><FormControl><Input placeholder="e.g., John Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="parentEmail" render={({ field }) => ( <FormItem><FormLabel>Parent Email</FormLabel><FormControl><Input type="email" placeholder="e.g., j.doe@family.com" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="formerSchool" render={({ field }) => ( <FormItem className="col-span-1 md:col-span-2"><FormLabel>Former School</FormLabel><FormControl><Input placeholder="e.g., Anytown Middle School" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="grades" render={({ field }) => ( <FormItem className="col-span-1 md:col-span-2"><FormLabel>Former School Grades</FormLabel><FormControl><Textarea placeholder="Summarize previous grades or note that a transcript is attached." {...field} /></FormControl><FormMessage /></FormItem> )} />
                 </div>
                 <DialogFooter>
-                  <DialogClose asChild>
-                    <Button type="button" variant="secondary">
-                      Cancel
-                    </Button>
-                  </DialogClose>
-                  <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save Application
-                  </Button>
+                  <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+                  <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Application</Button>
                 </DialogFooter>
               </form>
             </Form>
           </DialogContent>
         </Dialog>
       </header>
-
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Applications</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-500">{stats.Pending || 0}</div>
-            <p className="text-xs text-muted-foreground">Awaiting review</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Approved</CardTitle>
-            <Check className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-500">{stats.Approved || 0}</div>
-            <p className="text-xs text-muted-foreground">Ready for enrollment</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
-            <X className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-500">{stats.Rejected || 0}</div>
-            <p className="text-xs text-muted-foreground">Did not meet criteria</p>
-          </CardContent>
-        </Card>
+        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Pending Applications</CardTitle><FileText className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold text-orange-500">{stats.Pending || 0}</div><p className="text-xs text-muted-foreground">Awaiting review</p></CardContent></Card>
+        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Approved</CardTitle><Check className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold text-green-500">{stats.Approved || 0}</div><p className="text-xs text-muted-foreground">Ready for enrollment</p></CardContent></Card>
+        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Rejected</CardTitle><X className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-500">{stats.Rejected || 0}</div><p className="text-xs text-muted-foreground">Did not meet criteria</p></CardContent></Card>
       </div>
-
       <Card>
-        <CardHeader>
-          <CardTitle>Recent Applications</CardTitle>
-          <CardDescription>A list of the latest admission applications.</CardDescription>
-        </CardHeader>
+        <CardHeader><CardTitle>Recent Applications</CardTitle><CardDescription>A list of the latest admission applications.</CardDescription></CardHeader>
         <CardContent>
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Applicant Name</TableHead>
-                <TableHead>Parent</TableHead>
-                <TableHead>Applied For</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead><span className="sr-only">Actions</span></TableHead>
-              </TableRow>
-            </TableHeader>
+            <TableHeader><TableRow><TableHead>Applicant Name</TableHead><TableHead>Parent</TableHead><TableHead>Applied For</TableHead><TableHead>Date</TableHead><TableHead>Status</TableHead><TableHead><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
             <TableBody>
               {applications.map((application) => (
                 <TableRow key={application.id}>
@@ -255,23 +176,14 @@ export default function AdmissionsPage() {
                   <TableCell>{application.parentName} <span className="text-muted-foreground">({application.parentEmail})</span></TableCell>
                   <TableCell>{application.appliedFor}</TableCell>
                   <TableCell>{application.date}</TableCell>
-                  <TableCell>
-                    <Badge variant={
-                      application.status === 'Approved' ? 'secondary' :
-                        application.status === 'Rejected' ? 'destructive' : 'outline'
-                    }>{application.status}</Badge>
-                  </TableCell>
+                  <TableCell><Badge variant={ application.status === 'Approved' ? 'secondary' : application.status === 'Rejected' ? 'destructive' : 'outline' }>{application.status}</Badge></TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
+                      <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View Application</DropdownMenuItem>
-                        <DropdownMenuItem>Approve</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">Reject</DropdownMenuItem>
+                        <ViewApplicationDialog application={application} />
+                        <DropdownMenuItem onClick={() => handleStatusChange(application.id, 'Approved')}>Approve</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleStatusChange(application.id, 'Rejected')} className="text-destructive">Reject</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
