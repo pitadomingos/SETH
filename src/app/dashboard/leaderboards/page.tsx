@@ -13,22 +13,40 @@ import { Award, Trophy, BookOpen } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { schoolData } from '@/lib/mock-data';
 
-const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
+// --- Grade Calculation Helpers ---
 
-const calculateGpaFromGrade = (grade: string): number => {
+const getLetterGrade = (numericGrade: number): string => {
+  if (numericGrade >= 19) return 'A+';
+  if (numericGrade >= 17) return 'A';
+  if (numericGrade >= 16) return 'A-';
+  if (numericGrade >= 15) return 'B+';
+  if (numericGrade >= 14) return 'B';
+  if (numericGrade >= 13) return 'B-';
+  if (numericGrade >= 12) return 'C+';
+  if (numericGrade >= 11) return 'C';
+  if (numericGrade >= 10) return 'C-';
+  if (numericGrade >= 8) return 'D';
+  return 'F';
+};
+
+const letterToNumericMap: { [key: string]: number } = { 'A+': 20, 'A': 18, 'A-': 17, 'B+': 15, 'B': 14, 'B-': 13, 'C+': 12, 'C': 11, 'C-': 10, 'D': 8, 'F': 5 };
+const getNumericScore = (grade: string): number => {
     const numericGrade = parseFloat(grade);
     if (!isNaN(numericGrade) && isFinite(numericGrade)) {
-        return (numericGrade / 5.0);
+        return numericGrade;
     }
-    return gpaMap[grade] || 0;
-}
+    return letterToNumericMap[grade] || 0;
+};
 
-const calculateAverageGpa = (studentId: string, grades: any[]) => {
+const calculateAverageScore = (studentId: string, grades: any[]) => {
     const studentGrades = grades.filter(g => g.studentId === studentId);
     if (studentGrades.length === 0) return 0;
-    const totalPoints = studentGrades.reduce((acc, g) => acc + calculateGpaFromGrade(g.grade), 0);
-    return (totalPoints / studentGrades.length).toFixed(2);
+    const totalPoints = studentGrades.reduce((acc, g) => acc + getNumericScore(g.grade), 0);
+    return (totalPoints / studentGrades.length);
 };
+
+
+// --- Components ---
 
 const LeaderboardTable = ({ students }) => {
     if (!students || students.length === 0) {
@@ -42,7 +60,7 @@ const LeaderboardTable = ({ students }) => {
                     <TableHead className="w-[80px]">Rank</TableHead>
                     <TableHead>Student</TableHead>
                     <TableHead>Class</TableHead>
-                    <TableHead className="text-right">GPA / Score</TableHead>
+                    <TableHead className="text-right">Average Score</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -61,7 +79,7 @@ const LeaderboardTable = ({ students }) => {
                         <TableCell>Grade {student.grade} - {student.class}</TableCell>
                         <TableCell className="text-right">
                              <Badge variant="secondary" className="text-base">
-                                {student.score || student.calculatedGpa}
+                                {student.averageScore.toFixed(1)} ({getLetterGrade(student.averageScore)})
                             </Badge>
                         </TableCell>
                     </TableRow>
@@ -75,15 +93,15 @@ const LeaderboardTable = ({ students }) => {
 const ParentLeaderboardView = () => {
   const { studentsData: parentChildren } = useSchoolData();
 
-  const allStudentsWithGpaBySchool = useMemo(() => {
+  const allStudentsWithScoreBySchool = useMemo(() => {
     const data = {};
     for (const schoolId in schoolData) {
       const school = schoolData[schoolId];
       data[schoolId] = {
         students: school.students.map(student => ({
           ...student,
-          calculatedGpa: parseFloat(calculateAverageGpa(student.id, school.grades)),
-        })).sort((a, b) => b.calculatedGpa - a.calculatedGpa),
+          averageScore: calculateAverageScore(student.id, school.grades),
+        })).sort((a, b) => b.averageScore - a.averageScore),
       };
     }
     return data;
@@ -103,10 +121,9 @@ const ParentLeaderboardView = () => {
           const studentIdsInSubject = [...new Set(subjectGradesForSchool.map(g => g.studentId))];
           
           const rankedStudents = studentIdsInSubject.map(sId => {
-              const studentGradesForSubject = subjectGradesForSchool.filter(g => g.studentId === sId);
-              const totalPoints = studentGradesForSubject.reduce((acc, g) => acc + calculateGpaFromGrade(g.grade), 0);
-              return { id: sId, gpa: totalPoints / studentGradesForSubject.length };
-          }).sort((a, b) => b.gpa - a.gpa);
+              const avgScore = calculateAverageScore(sId, subjectGradesForSchool);
+              return { id: sId, averageScore: avgScore };
+          }).sort((a, b) => b.averageScore - a.averageScore);
 
           const rankInfo = getRank(student.id, rankedStudents);
           return { subject, ...rankInfo };
@@ -121,7 +138,7 @@ const ParentLeaderboardView = () => {
       </header>
       <div className="space-y-6">
         {parentChildren.map(child => {
-          const schoolRanks = allStudentsWithGpaBySchool[child.schoolId]?.students || [];
+          const schoolRanks = allStudentsWithScoreBySchool[child.schoolId]?.students || [];
           const classRanks = schoolRanks.filter(s => s.grade === child.grade && s.class === child.class);
           
           const overallRank = getRank(child.id, schoolRanks);
@@ -179,10 +196,10 @@ export default function LeaderboardsPage() {
         return <ParentLeaderboardView />;
     }
 
-    const allStudentsWithGpa = useMemo(() => studentsData.map(student => ({
+    const allStudentsWithScore = useMemo(() => studentsData.map(student => ({
         ...student,
-        calculatedGpa: parseFloat(calculateAverageGpa(student.id, grades)),
-    })).sort((a, b) => b.calculatedGpa - a.calculatedGpa), [studentsData, grades]);
+        averageScore: calculateAverageScore(student.id, grades),
+    })).sort((a, b) => b.averageScore - a.averageScore), [studentsData, grades]);
 
 
     const subjects = [...new Set(grades.map(g => g.subject))];
@@ -192,34 +209,26 @@ export default function LeaderboardsPage() {
         const classInfo = classesData.find(c => c.id === selectedClass);
         if (!classInfo) return [];
 
-        const studentsInClass = allStudentsWithGpa.filter(s =>
+        const studentsInClass = allStudentsWithScore.filter(s =>
             s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim()
         );
-        return studentsInClass.sort((a, b) => b.calculatedGpa - a.calculatedGpa);
-    }, [selectedClass, classesData, allStudentsWithGpa]);
+        return studentsInClass.sort((a, b) => b.averageScore - a.averageScore);
+    }, [selectedClass, classesData, allStudentsWithScore]);
 
     const topStudentsBySubject = useMemo(() => {
         if (!selectedSubject) return [];
-        const studentsBySubject = grades
-            .filter(g => g.subject === selectedSubject)
-            .reduce((acc, grade) => {
-                if (!acc[grade.studentId]) {
-                    acc[grade.studentId] = { totalPoints: 0, count: 0 };
-                }
-                acc[grade.studentId].totalPoints += calculateGpaFromGrade(grade.grade);
-                acc[grade.studentId].count++;
-                return acc;
-            }, {});
+        const subjectGrades = grades.filter(g => g.subject === selectedSubject);
+        const studentIdsInSubject = [...new Set(subjectGrades.map(g => g.studentId))];
         
-        const rankedStudents = Object.keys(studentsBySubject).map(studentId => {
+        const rankedStudents = studentIdsInSubject.map(studentId => {
             const studentInfo = studentsData.find(s => s.id === studentId);
-            const avgScore = (studentsBySubject[studentId].totalPoints / studentsBySubject[studentId].count).toFixed(2);
+            const avgScore = calculateAverageScore(studentId, subjectGrades);
             return {
                 ...studentInfo,
                 id: studentId,
-                score: parseFloat(avgScore),
+                averageScore: avgScore,
             };
-        }).sort((a, b) => b.score - a.score);
+        }).sort((a, b) => b.averageScore - a.averageScore);
 
         return rankedStudents;
     }, [selectedSubject, grades, studentsData]);
@@ -243,10 +252,10 @@ export default function LeaderboardsPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2"><Award /> Overall Academic Champions</CardTitle>
-                            <CardDescription>Top 10 students across all grades based on calculated GPA.</CardDescription>
+                            <CardDescription>Top 10 students across all grades based on calculated average score.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <LeaderboardTable students={allStudentsWithGpa} />
+                            <LeaderboardTable students={allStudentsWithScore} />
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -298,3 +307,5 @@ export default function LeaderboardsPage() {
         </div>
     );
 }
+
+    
