@@ -248,7 +248,7 @@ function CompletionStatusContent({ student, hasPassed, areAllFeesPaid, grades, a
 export default function StudentDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { assignments, grades, financeData, studentsData, attendance } = useSchoolData();
+  const { assignments, grades, financeData, studentsData, attendance, schoolProfile } = useSchoolData();
   const studentIdMap = {
         student1: 'S001',
         student2: 'S101',
@@ -392,10 +392,24 @@ export default function StudentDashboard() {
                         </DialogTrigger>
                         <DialogContent className="max-w-4xl">
                             <DialogHeader>
-                                <DialogTitle>Official Certificate of Completion</DialogTitle>
-                                <DialogDescription>
-                                    This is a preview of your official certificate.
-                                </DialogDescription>
+                               <div className="flex items-center gap-4">
+                                    {schoolProfile?.logoUrl && (
+                                        <Image
+                                            src={schoolProfile.logoUrl}
+                                            alt={`${schoolProfile.name} Logo`}
+                                            width={40}
+                                            height={40}
+                                            className="rounded-md"
+                                            data-ai-hint="school logo"
+                                        />
+                                    )}
+                                    <div>
+                                        <DialogTitle>Official Certificate of Completion</DialogTitle>
+                                        <DialogDescription>
+                                            This is a preview of the official certificate from {schoolProfile?.name}.
+                                        </DialogDescription>
+                                    </div>
+                                </div>
                             </DialogHeader>
                             <div className="p-4 bg-muted rounded-md flex justify-center">
                                 <Image
@@ -429,10 +443,24 @@ export default function StudentDashboard() {
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
                             <DialogHeader>
-                                <DialogTitle>Official Academic Transcript</DialogTitle>
-                                <DialogDescription>
-                                    This is a preview of your official academic transcript.
-                                </DialogDescription>
+                                <div className="flex items-center gap-4">
+                                     {schoolProfile?.logoUrl && (
+                                        <Image
+                                            src={schoolProfile.logoUrl}
+                                            alt={`${schoolProfile.name} Logo`}
+                                            width={40}
+                                            height={40}
+                                            className="rounded-md"
+                                            data-ai-hint="school logo"
+                                        />
+                                    )}
+                                    <div>
+                                        <DialogTitle>Official Academic Transcript</DialogTitle>
+                                        <DialogDescription>
+                                            This is a preview of the official transcript from {schoolProfile?.name}.
+                                        </DialogDescription>
+                                    </div>
+                                </div>
                             </DialogHeader>
                             <div className="p-4 bg-muted rounded-md flex justify-center max-h-[70vh] overflow-y-auto">
                                 <Image
