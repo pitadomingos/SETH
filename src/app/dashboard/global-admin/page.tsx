@@ -4,12 +4,20 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Building, Users, Presentation, Settings, BrainCircuit, DollarSign, School } from 'lucide-react';
+import { Loader2, Building, Users, Presentation, Settings, BrainCircuit, DollarSign, School, Gem } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useEffect, useState, useMemo } from 'react';
 import { analyzeSchoolSystem, AnalyzeSchoolSystemOutput } from '@/ai/flows/analyze-school-system';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartConfig
+} from '@/components/ui/chart';
+
 
 // --- Helper functions for calculations ---
 const gpaMap = { 'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D': 1.0, 'F': 0.0 };
@@ -25,6 +33,70 @@ const calculateAverageGpaForSchool = (grades) => {
     const totalPoints = grades.reduce((acc, g) => acc + calculateGpaFromGrade(g.grade), 0);
     return parseFloat((totalPoints / grades.length).toFixed(2));
 };
+
+// --- New Component for Premium Tier Analysis ---
+function TierPerformanceAnalysis({ allSchoolData }) {
+    const schoolsByTier = useMemo(() => {
+        const tiers = { Premium: [], Pro: [], Starter: [] };
+        Object.values(allSchoolData).forEach(school => {
+            if (tiers[school.profile.tier]) {
+                tiers[school.profile.tier].push(school);
+            }
+        });
+        return tiers;
+    }, [allSchoolData]);
+    
+    const calculateTierAverageGpa = (schools) => {
+        if (!schools || schools.length === 0) return 0;
+        const allGrades = schools.flatMap(s => s.grades);
+        if (allGrades.length === 0) return 0;
+        return calculateAverageGpaForSchool(allGrades);
+    };
+
+    const chartData = [
+        { tier: 'Starter', avgGpa: calculateTierAverageGpa(schoolsByTier.Starter) },
+        { tier: 'Pro', avgGpa: calculateTierAverageGpa(schoolsByTier.Pro) },
+        { tier: 'Premium', avgGpa: calculateTierAverageGpa(schoolsByTier.Premium) },
+    ];
+
+    const chartConfig = {
+      avgGpa: {
+        label: "Avg. GPA",
+        color: "hsl(var(--chart-2))",
+      },
+    } satisfies ChartConfig;
+
+    return (
+        <Card className="md:col-span-2 lg:col-span-3">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Gem /> Tier Performance Comparison</CardTitle>
+                <CardDescription>A comparative look at academic performance across subscription tiers.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                    <BarChart data={chartData} margin={{ left: -20, right: 10 }}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                            dataKey="tier"
+                            tickLine={false}
+                            tickMargin={10}
+                            axisLine={false}
+                        />
+                        <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={8}
+                            domain={[3.0, 4.0]}
+                            tickFormatter={(value) => value.toFixed(1)}
+                        />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="avgGpa" fill="var(--color-avgGpa)" radius={8} />
+                    </BarChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+    );
+}
 
 function AISystemAnalysis({ allSchoolData }) {
   const [analysis, setAnalysis] = useState<AnalyzeSchoolSystemOutput | null>(null);
@@ -234,6 +306,7 @@ export default function GlobalAdminDashboard() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {allSchoolData && <TierPerformanceAnalysis allSchoolData={allSchoolData} />}
         {allSchoolData && <AISystemAnalysis allSchoolData={allSchoolData} />}
         {allSchoolData && Object.values(allSchoolData).map(school => (
             <Card key={school.profile.id}>
