@@ -11,6 +11,8 @@ const userGuides = {
     points: [
       'Developer Dashboard: Get a high-level overview of all schools in the system from a single dashboard.',
       'School Status Management: Change a school\'s status (Active, Suspended, Inactive) directly from its card on the dashboard.',
+      'System-Wide AI Analysis: Select multiple schools and generate a comparative AI analysis to identify trends and provide strategic recommendations for the entire network.',
+      'Tier Performance Chart: Visualize and compare academic performance across different subscription tiers (Starter, Pro, Premium).',
       'School Management Simulation: View key statistics for each school and access their individual management dashboards by clicking "Manage School".',
       'System Documentation: Access technical documentation about the application\'s architecture and technology stack.',
       'Project Proposal: Review the high-level business and development proposal for EduManage.',
@@ -24,6 +26,7 @@ const userGuides = {
     points: [
         'Dashboard: Get a high-level overview of your school\'s statistics. If your school\'s account is suspended, you will see a restricted view.',
         'School Profile: View and edit your school\'s core information like name, address, and contact details. Upload a school logo and manage your subscription plan.',
+        'Reports: Access a suite of AI-powered academic reports, including Class Performance Analysis, a list of Struggling Students with suggested actions, and data-driven Teacher Performance reviews.',
         'User Management: View student and teacher profiles. New students are enrolled automatically through the Admissions module.',
         'Admissions: Review and process new student applications submitted by parents.',
         'Course Management (Academics): Define courses by assigning a subject, teacher, and a recurring weekly schedule to a class section.',

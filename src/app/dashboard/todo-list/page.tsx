@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 
 const completedTasks = [
   'Activated the Settings page for school-wide configuration (e.g., grading system).',
+  'Added a comparative performance chart to the developer dashboard to analyze subscription tiers.',
   'Added AI-powered analysis and guidance for students who have not met graduation requirements.',
   'AI-powered, ad-hoc Test Generator for teachers',
   'AI-powered class performance analysis and intervention recommendations on Teacher Dashboard',
@@ -16,7 +17,9 @@ const completedTasks = [
   'Centralized system data management (Fee Descriptions, Event Audiences) in the Admin Panel.',
   'Comprehensive admissions workflow from parent application to admin approval.',
   'Comprehensive, subject-specific Gradebook for teachers with dual (letter & numeric) grading support',
+  'Created a system-wide AI analysis tool for developers to get strategic insights across the school network.',
   'Defined a tiered, per-student pricing strategy for future monetization',
+  'Developed an AI-powered academic reports suite for Admins, including analysis for classes, struggling students, and teacher performance.',
   'Dynamic Parent Portal with multi-child support, AI-powered advice, fee tracking, and new child applications.',
   'Enabled interactive profile and picture updates on the Profile page.',
   'Enhanced the Sports page with dynamic team and competition management.',
