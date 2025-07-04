@@ -55,6 +55,7 @@ interface SchoolData {
         student: Course[];
     };
     feeDescriptions: string[];
+    audiences: string[];
     expenseCategories: string[];
     expenses: Expense[];
     teams: Team[];
@@ -332,6 +333,7 @@ export const schoolData: Record<string, SchoolData> = {
     attendance: northwoodAttendance,
     finance: northwoodFinance,
     feeDescriptions: ['Term 1 Tuition', 'Lab Fees', 'Sports Uniform', 'Library Fine', 'Exam Fee'],
+    audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'],
     expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
     expenses: northwoodExpenses,
     competitions: northwoodCompetitions,
@@ -374,6 +376,7 @@ export const schoolData: Record<string, SchoolData> = {
     attendance: oakridgeAttendance,
     finance: oakridgeFinance,
     feeDescriptions: ['Annual Tuition', 'Activity Fee', 'Technology Fee'],
+    audiences: ['All Students', 'Parents', 'Teachers', 'New Students & Parents'],
     expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
     expenses: oakridgeExpenses,
     competitions: [],
@@ -410,6 +413,7 @@ export const schoolData: Record<string, SchoolData> = {
     attendance: maplewoodAttendance,
     finance: maplewoodFinance,
     feeDescriptions: ['Semester 1 Fees', 'Capital Levy', 'IB Exam Fee', 'Technology Fee'],
+    audiences: ['All Students', 'Parents', 'Teachers', 'Whole School Community'],
     expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
     expenses: maplewoodExpenses,
     competitions: [],

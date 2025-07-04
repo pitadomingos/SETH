@@ -24,13 +24,13 @@ const eventSchema = z.object({
   date: z.date({ required_error: "An event date is required." }),
   location: z.string().min(2, "Location is required."),
   organizer: z.string().min(2, "Organizer is required."),
-  audience: z.string().min(3, "Audience is required."),
+  audience: z.string({ required_error: "Audience is required." }),
   type: z.string({ required_error: "Event type is required." }),
 });
 type EventFormValues = z.infer<typeof eventSchema>;
 
 function NewEventDialog() {
-    const { addEvent } = useSchoolData();
+    const { addEvent, audiences } = useSchoolData();
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const { toast } = useToast();
     
@@ -88,7 +88,18 @@ function NewEventDialog() {
                             <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g., Main Hall" {...field} /></FormControl><FormMessage /></FormItem> )} />
                             <FormField control={form.control} name="organizer" render={({ field }) => ( <FormItem><FormLabel>Organizer</FormLabel><FormControl><Input placeholder="e.g., Science Dept." {...field} /></FormControl><FormMessage /></FormItem> )} />
                         </div>
-                        <FormField control={form.control} name="audience" render={({ field }) => ( <FormItem><FormLabel>Audience</FormLabel><FormControl><Input placeholder="e.g., All Students & Parents" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="audience" render={({ field }) => ( 
+                            <FormItem>
+                                <FormLabel>Audience</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select audience" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        {audiences.map(aud => <SelectItem key={aud} value={aud}>{aud}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem> 
+                        )} />
                         <FormField control={form.control} name="type" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Event Type</FormLabel>

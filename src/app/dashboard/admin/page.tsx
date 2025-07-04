@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, UserPlus, Loader2, PlusCircle, Settings, BookCopy } from 'lucide-react';
+import { MoreHorizontal, UserPlus, Loader2, PlusCircle, Settings, BookCopy, Users } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,14 +29,20 @@ const descriptionSchema = z.object({
 });
 type DescriptionFormValues = z.infer<typeof descriptionSchema>;
 
+const audienceSchema = z.object({
+  name: z.string().min(3, "Audience name must be at least 3 characters."),
+});
+type AudienceFormValues = z.infer<typeof audienceSchema>;
+
 
 export default function AdminPanelPage() {
     const { role, isLoading: authLoading } = useAuth();
     const router = useRouter();
 
-    const { examBoards, addExamBoard, studentsData, teachersData, feeDescriptions, addFeeDescription } = useSchoolData();
+    const { examBoards, addExamBoard, studentsData, teachersData, feeDescriptions, addFeeDescription, audiences, addAudience } = useSchoolData();
     const [isBoardDialogOpen, setIsBoardDialogOpen] = useState(false);
     const [isDescriptionDialogOpen, setIsDescriptionDialogOpen] = useState(false);
+    const [isAudienceDialogOpen, setIsAudienceDialogOpen] = useState(false);
 
     useEffect(() => {
         if (!authLoading && role !== 'Admin') {
@@ -74,6 +80,12 @@ export default function AdminPanelPage() {
         defaultValues: { name: '' },
     });
 
+    const audienceForm = useForm<AudienceFormValues>({
+        resolver: zodResolver(audienceSchema),
+        defaultValues: { name: '' },
+    });
+
+
     function onBoardSubmit(values: BoardFormValues) {
         addExamBoard(values.name);
         boardForm.reset();
@@ -84,6 +96,12 @@ export default function AdminPanelPage() {
         addFeeDescription(values.name);
         descriptionForm.reset();
         setIsDescriptionDialogOpen(false);
+    }
+
+    function onAudienceSubmit(values: AudienceFormValues) {
+        addAudience(values.name);
+        audienceForm.reset();
+        setIsAudienceDialogOpen(false);
     }
 
     const getStatusVariant = (status: 'Active' | 'Inactive' | 'Transferred') => {
@@ -269,6 +287,56 @@ export default function AdminPanelPage() {
                                 {feeDescriptions.map(desc => (
                                     <li key={desc} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm">
                                         <span>{desc}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-semibold">Event Audiences</h4>
+                                 <Dialog open={isAudienceDialogOpen} onOpenChange={setIsAudienceDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4" /> Add Audience</Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[425px]">
+                                        <DialogHeader>
+                                            <DialogTitle>Add New Event Audience</DialogTitle>
+                                            <DialogDescription>Enter a new audience type to be used when creating events.</DialogDescription>
+                                        </DialogHeader>
+                                        <Form {...audienceForm}>
+                                        <form onSubmit={audienceForm.handleSubmit(onAudienceSubmit)} className="space-y-4 py-4">
+                                            <FormField
+                                            control={audienceForm.control}
+                                            name="name"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                <FormLabel>Audience Name</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="e.g., All Staff" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                                </FormItem>
+                                            )}
+                                            />
+                                            <DialogFooter>
+                                                <DialogClose asChild>
+                                                    <Button type="button" variant="secondary">Cancel</Button>
+                                                </DialogClose>
+                                                <Button type="submit" disabled={audienceForm.formState.isSubmitting}>
+                                                    {audienceForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                    Save Audience
+                                                </Button>
+                                            </DialogFooter>
+                                        </form>
+                                        </Form>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                            <ul className="mt-3 space-y-2">
+                                {audiences.map(aud => (
+                                    <li key={aud} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm">
+                                        <span>{aud}</span>
                                     </li>
                                 ))}
                             </ul>

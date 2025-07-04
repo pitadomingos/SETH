@@ -88,6 +88,8 @@ interface SchoolDataContextType {
   addExamBoard: (board: string) => void;
   feeDescriptions: string[];
   addFeeDescription: (description: string) => void;
+  audiences: string[];
+  addAudience: (audience: string) => void;
   expenseCategories: string[];
   expensesData: Expense[];
   addExpense: (data: NewExpenseData) => void;
@@ -115,6 +117,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [subjects, setSubjects] = useState<string[]>([]);
   const [examBoards, setExamBoards] = useState<string[]>(initialExamBoards);
   const [feeDescriptions, setFeeDescriptions] = useState<string[]>([]);
+  const [audiences, setAudiences] = useState<string[]>([]);
   const [studentsData, setStudentsData] = useState<Student[]>([]);
   const [teachersData, setTeachersData] = useState<Teacher[]>([]);
   const [classesData, setClassesData] = useState<Class[]>([]);
@@ -211,6 +214,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           setSubjects(initialSubjects);
       }
       setFeeDescriptions(data.feeDescriptions || []);
+      setAudiences(data.audiences || []);
       setIsLoading(false);
     } else {
         setCurrentSchoolData(null);
@@ -226,6 +230,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addSubject = (subject: string) => !subjects.includes(subject) && setSubjects(prev => [...prev, subject].sort());
   const addExamBoard = (board: string) => !examBoards.includes(board) && setExamBoards(prev => [...prev, board].sort());
   const addFeeDescription = (desc: string) => !feeDescriptions.includes(desc) && setFeeDescriptions(prev => [...prev, desc].sort());
+  const addAudience = (audience: string) => !audiences.includes(audience) && setAudiences(prev => [...prev, audience].sort());
   
   const recordPayment = (feeId: string, amount: number) => {
     setFinanceData(prev => prev.map(fee => fee.id === feeId ? { ...fee, amountPaid: Math.min(fee.totalAmount, fee.amountPaid + amount) } : fee));
@@ -336,6 +341,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     subjects, addSubject,
     examBoards, addExamBoard,
     feeDescriptions, addFeeDescription,
+    audiences, addAudience,
     expenseCategories,
     expensesData,
     addExpense,
