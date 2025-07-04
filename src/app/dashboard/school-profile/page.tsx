@@ -4,6 +4,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Building, User, Mail, Phone, MapPin, Edit, Star, ShieldCheck, Gem, CreditCard, Save } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useEffect, useState, useRef } from 'react';
@@ -24,23 +25,48 @@ function UpgradePlanDialog() {
   const { schoolProfile } = useSchoolData();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
+  const [view, setView] = useState<'selection' | 'confirmation'>('selection');
+  const [selectedTier, setSelectedTier] = useState<'Pro' | 'Premium' | null>(null);
+  const [agreed, setAgreed] = useState(false);
 
-  const handleUpgrade = (tierName: string) => {
-    toast({
-      title: 'Upgrade Successful!',
-      description: `Your school has been upgraded to the ${tierName} plan. Features are now available. (This is a demo feature)`,
-    });
-    setIsOpen(false);
+  const handleSelectTier = (tierName: 'Pro' | 'Premium') => {
+    setSelectedTier(tierName);
+    setView('confirmation');
   };
 
+  const handleConfirmUpgrade = () => {
+    if (!selectedTier) return;
+    toast({
+      title: 'Upgrade Successful!',
+      description: `Your school has been upgraded to the ${selectedTier} plan. Features are now available. (This is a demo feature)`,
+    });
+    // Reset state and close dialog
+    setIsOpen(false);
+    setTimeout(() => {
+        setView('selection');
+        setSelectedTier(null);
+        setAgreed(false);
+    }, 300); // Delay reset to allow dialog to close smoothly
+  };
+
+  // When closing the dialog, reset its internal state
+  const onOpenChange = (open: boolean) => {
+    if (!open) {
+        setView('selection');
+        setSelectedTier(null);
+        setAgreed(false);
+    }
+    setIsOpen(open);
+  }
+
   if (!schoolProfile || schoolProfile.tier === 'Premium') {
-    return null; // Don't show upgrade if already on the highest tier
+    return null; 
   }
 
   const defaultTab = schoolProfile.tier === 'Starter' ? 'pro' : 'premium';
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button>
           <Gem className="mr-2 h-4 w-4" />
@@ -48,75 +74,108 @@ function UpgradePlanDialog() {
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Upgrade Your EduManage Plan</DialogTitle>
-          <DialogDescription>
-            Unlock more features and enhance your school's management capabilities.
-          </DialogDescription>
-        </DialogHeader>
-        <Tabs defaultValue={defaultTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="pro" disabled={schoolProfile.tier === 'Pro'}>Pro Tier</TabsTrigger>
-            <TabsTrigger value="premium">Premium Tier</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="pro">
-            <Card className="border-0 shadow-none">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><ShieldCheck /> Pro Tier</CardTitle>
-                <CardDescription>Ideal for growing schools needing advanced tools.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-3xl font-bold">$25 <span className="text-sm font-normal text-muted-foreground">/ student / year</span></p>
-                <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
-                    <li>All features from the Starter Tier.</li>
-                    <li><span className="font-semibold text-primary">AI Lesson Planner & Test Generator.</span></li>
-                    <li><span className="font-semibold text-primary">Advanced AI Performance Analytics.</span></li>
-                    <li>Full Admissions & Enrollment Management.</li>
-                    <li>Advanced Reporting Tools.</li>
-                </ul>
-              </CardContent>
-              <CardFooter>
-                 <Button className="w-full" onClick={() => handleUpgrade('Pro')}>
-                    <CreditCard className="mr-2 h-4 w-4"/>
-                    Upgrade to Pro
-                 </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
+        {view === 'selection' ? (
+            <>
+                <DialogHeader>
+                  <DialogTitle>Upgrade Your EduManage Plan</DialogTitle>
+                  <DialogDescription>
+                    Unlock more features and enhance your school's management capabilities.
+                  </DialogDescription>
+                </DialogHeader>
+                <Tabs defaultValue={defaultTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="pro" disabled={schoolProfile.tier === 'Pro'}>Pro Tier</TabsTrigger>
+                    <TabsTrigger value="premium">Premium Tier</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="pro">
+                    <Card className="border-0 shadow-none">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><ShieldCheck /> Pro Tier</CardTitle>
+                        <CardDescription>Ideal for growing schools needing advanced tools.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <p className="text-3xl font-bold">$25 <span className="text-sm font-normal text-muted-foreground">/ student / year</span></p>
+                        <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
+                            <li>All features from the Starter Tier.</li>
+                            <li><span className="font-semibold text-primary">AI Lesson Planner & Test Generator.</span></li>
+                            <li><span className="font-semibold text-primary">Advanced AI Performance Analytics.</span></li>
+                            <li>Full Admissions & Enrollment Management.</li>
+                            <li>Advanced Reporting Tools.</li>
+                        </ul>
+                      </CardContent>
+                      <CardFooter>
+                         <Button className="w-full" onClick={() => handleSelectTier('Pro')}>
+                            <CreditCard className="mr-2 h-4 w-4"/>
+                            Upgrade to Pro
+                         </Button>
+                      </CardFooter>
+                    </Card>
+                  </TabsContent>
 
-          <TabsContent value="premium">
-             <Card className="border-0 shadow-none">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Gem /> Premium Tier</CardTitle>
-                <CardDescription>The ultimate solution for large districts and institutions.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-3xl font-bold">Custom Pricing</p>
-                <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
-                    <li>All features from the Pro Tier.</li>
-                    <li><span className="font-semibold text-primary">Global Admin Role for Multi-School Management.</span></li>
-                    <li><span className="font-semibold text-primary">Consolidated Billing & System-wide AI Analysis.</span></li>
-                    <li>Dedicated Support & Onboarding.</li>
-                    <li>Custom Integrations & Branding.</li>
-                </ul>
-              </CardContent>
-              <CardFooter>
-                 <Button className="w-full" onClick={() => handleUpgrade('Premium')}>
-                    <CreditCard className="mr-2 h-4 w-4"/>
-                    Contact Us to Upgrade
-                 </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-        </Tabs>
-        <DialogFooter>
-            <DialogClose asChild>
-                <Button type="button" variant="outline" className="mt-4 w-full">
-                    Cancel
-                </Button>
-            </DialogClose>
-        </DialogFooter>
+                  <TabsContent value="premium">
+                     <Card className="border-0 shadow-none">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Gem /> Premium Tier</CardTitle>
+                        <CardDescription>The ultimate solution for large districts and institutions.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <p className="text-3xl font-bold">Custom Pricing</p>
+                        <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
+                            <li>All features from the Pro Tier.</li>
+                            <li><span className="font-semibold text-primary">Global Admin Role for Multi-School Management.</span></li>
+                            <li><span className="font-semibold text-primary">Consolidated Billing & System-wide AI Analysis.</span></li>
+                            <li>Dedicated Support & Onboarding.</li>
+                            <li>Custom Integrations & Branding.</li>
+                        </ul>
+                      </CardContent>
+                      <CardFooter>
+                         <Button className="w-full" onClick={() => handleSelectTier('Premium')}>
+                            <CreditCard className="mr-2 h-4 w-4"/>
+                            Contact Us to Upgrade
+                         </Button>
+                      </CardFooter>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
+            </>
+        ) : (
+            <>
+                <DialogHeader>
+                    <DialogTitle>Confirm Upgrade to {selectedTier} Tier</DialogTitle>
+                    <DialogDescription>
+                        Please review the terms of service before completing your upgrade.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4 text-sm">
+                    <div className="p-4 h-64 overflow-y-auto rounded-md border text-muted-foreground space-y-4">
+                        <h4 className="font-semibold text-foreground">Payment & Billing</h4>
+                        <p>Your subscription for the {selectedTier} Tier will be billed annually. Payment will be processed using your registered VISA or other card linked to your bank account. The subscription will automatically renew at the end of each term.</p>
+                        <h4 className="font-semibold text-foreground">Cancellation Policy</h4>
+                        <p>You may cancel your subscription at any time from your account settings. However, no refunds will be issued for the current subscription term. Your access to {selectedTier} features will continue until the end of the current billing period.</p>
+                        <h4 className="font-semibold text-foreground">Failed Payments</h4>
+                        <p>If the automatic renewal payment fails due to insufficient funds or other card issues, your account will be temporarily suspended. Access to premium features will be restricted until the outstanding balance is paid. You will be notified via email to update your payment information.</p>
+                    </div>
+                    <div className="flex items-center space-x-2 pt-2">
+                        <Checkbox id="terms" checked={agreed} onCheckedChange={(checked) => setAgreed(checked === true)} />
+                        <label
+                          htmlFor="terms"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          I have read and agree to the terms and conditions.
+                        </label>
+                    </div>
+                </div>
+                <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                    <Button type="button" variant="outline" onClick={() => setView('selection')}>
+                        Back to Plans
+                    </Button>
+                    <Button type="button" onClick={handleConfirmUpgrade} disabled={!agreed}>
+                        Confirm & Pay
+                    </Button>
+                </DialogFooter>
+            </>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -339,3 +398,5 @@ export default function SchoolProfilePage() {
     </div>
   );
 }
+
+    
