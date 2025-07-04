@@ -1,5 +1,4 @@
 'use client';
-import { useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,7 +65,15 @@ function ShareDialog() {
 
 export default function ProfilePage() {
     const { user, role } = useAuth();
+    const { toast } = useToast();
     const initials = user?.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+
+    const handleUpdateProfile = () => {
+        toast({
+            title: "Profile Updated",
+            description: "Your profile information has been saved.",
+        });
+    };
 
     return (
         <div className="space-y-6 animate-in fade-in-50">
@@ -110,7 +117,7 @@ export default function ProfilePage() {
                         </div>
                     </CardContent>
                     <CardFooter className="border-t px-6 py-4">
-                        <Button><Save className="mr-2 h-4 w-4" /> Update Profile</Button>
+                        <Button onClick={handleUpdateProfile}><Save className="mr-2 h-4 w-4" /> Update Profile</Button>
                     </CardFooter>
                 </Card>
 
