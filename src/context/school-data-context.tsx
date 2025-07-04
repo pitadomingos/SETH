@@ -2,15 +2,14 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
 import { schoolData, FinanceRecord as InitialFinanceRecord, Grade as InitialGrade, Student, Teacher, Class, Admission, Asset, SchoolProfile as InitialSchoolProfile, Expense, Team, Competition, SchoolEvent } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
-import { format } from 'date-fns';
 
 export type FinanceRecord = InitialFinanceRecord;
 export type Grade = InitialGrade;
 export type SchoolProfile = InitialSchoolProfile;
-export type { Team, Competition };
+export type { Team, Competition, Class };
 
 interface NewFeeData {
     studentId: string;
@@ -81,7 +80,7 @@ interface SchoolDataContextType {
   attendance: any[];
   events: SchoolEvent[];
   addEvent: (data: NewEventData) => void;
-  courses: { teacher: any[], student: any[] };
+  courses: { teacher: Class[], student: (Class & { progress: number })[] };
   subjects: string[];
   addSubject: (subject: string) => void;
   examBoards: string[];
@@ -183,7 +182,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       const parentViewData = {
           profile: null, students: allStudents, attendance: allAttendance, events: allEvents,
           teachers: [], classes: [], admissions: [], exams: [], assets: [], assignments: [],
-          courses: { teacher: [], student: [] }, expenses: [], teams: [], competitions: [],
+          expenses: [], teams: [], competitions: [],
       };
       setCurrentSchoolData(parentViewData);
       setSchoolProfile(null);
@@ -321,6 +320,39 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setAdmissionsData(prev => prev.map(app => app.id === id ? { ...app, status } : app));
   };
 
+  const studentIdMap = {
+    student1: 'S001', student2: 'S101', student3: 'S201', student4: 'S010',
+  };
+
+  const courses = useMemo(() => {
+    const emptyCourses = { teacher: [], student: [] };
+    if (!user || !currentSchoolData) return emptyCourses;
+
+    if (role === 'Teacher' && user.name) {
+        const teacherCourses = classesData.filter(c => c.teacher === user.name);
+        return { ...emptyCourses, teacher: teacherCourses };
+    }
+
+    if (role === 'Student' && user.username) {
+        const studentId = studentIdMap[user.username];
+        if (!studentId) return emptyCourses;
+
+        const studentInfo = studentsData.find(s => s.id === studentId);
+        if (!studentInfo) return emptyCourses;
+        
+        const studentCourses = classesData.filter(c => 
+            c.grade === studentInfo.grade && 
+            c.name.split('-')[1].trim() === studentInfo.class
+        );
+        
+        const studentCoursesWithProgress = studentCourses.map(c => ({...c, progress: Math.floor(Math.random() * 40) + 50}));
+        return { ...emptyCourses, student: studentCoursesWithProgress };
+    }
+
+    return emptyCourses;
+  }, [user, role, classesData, studentsData, currentSchoolData]);
+
+
   const value = {
     schoolProfile,
     updateSchoolProfile,
@@ -337,7 +369,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     attendance: currentSchoolData?.attendance || [],
     events,
     addEvent,
-    courses: currentSchoolData?.courses || { teacher: [], student: [] },
+    courses,
     subjects, addSubject,
     examBoards, addExamBoard,
     feeDescriptions, addFeeDescription,

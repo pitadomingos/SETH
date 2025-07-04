@@ -50,10 +50,6 @@ interface SchoolData {
     grades: Grade[];
     attendance: Attendance[];
     events: SchoolEvent[];
-    courses: {
-        teacher: Course[];
-        student: Course[];
-    };
     feeDescriptions: string[];
     audiences: string[];
     expenseCategories: string[];
@@ -75,16 +71,15 @@ export interface SchoolProfile {
   gradingSystem: '20-Point' | 'GPA' | 'Letter';
 }
 export interface Student { id: string; name: string; grade: string; class: string; email: string; phone: string; address: string; schoolId?: string; schoolName?: string; parentName: string; parentEmail: string; status: 'Active' | 'Inactive' | 'Transferred'; }
-interface Teacher { id: string; name: string; subject: string; email: string; phone: string; address: string; experience: string; qualifications: string; status: 'Active' | 'Inactive' | 'Transferred'; }
-interface Class { id: string; name: string; grade: string; teacher: string; students: number; room: string; }
-interface Admission { id: string; name: string; appliedFor: string; date: string; status: 'Pending' | 'Approved' | 'Rejected'; formerSchool: string; grades: string; parentName: string; parentEmail: string; }
+export interface Teacher { id: string; name: string; subject: string; email: string; phone: string; address: string; experience: string; qualifications: string; status: 'Active' | 'Inactive' | 'Transferred'; }
+export interface Class { id: string; name: string; grade: string; teacher: string; students: number; room: string; schedule: string; }
+export interface Admission { id: string; name: string; appliedFor: string; date: string; status: 'Pending' | 'Approved' | 'Rejected'; formerSchool: string; grades: string; parentName: string; parentEmail: string; }
 interface Exam { id: string; title: string; subject: string; grade: string; date: Date; time: string; duration: string; room: string; board: string; }
 interface Asset { id: string; name: string; category: string; status: 'In Use' | 'Available' | 'Maintenance'; location: string; assignedTo: string; }
 interface Assignment { id: string; title: string; subject: string; grade: string; dueDate: string; status: 'pending' | 'submitted' | 'overdue'; }
 export interface Grade { studentId: string; subject: string; grade: string; date: Date; }
 interface Attendance { studentId: string; date: string; status: string; }
 export interface SchoolEvent { id: string; date: Date; title: string; type: string; location: string; organizer: string; audience: string; schoolName?: string; }
-interface Course { id: string; name: string; schedule?: string; students?: number; teacher?: string; grade?: string; progress?: number; }
 
 
 // --- Data for School 1: Northwood High ---
@@ -121,10 +116,10 @@ const northwoodTeachers: Teacher[] = [
 ];
 
 const northwoodClasses: Class[] = [
-  { id: 'C001', name: 'Class 9-A', grade: '9', teacher: 'Ms. Jennifer Davis', students: 28, room: '101' },
-  { id: 'C002', name: 'Class 9-C', grade: '9', teacher: 'Prof. Michael Chen', students: 22, room: '103' },
-  { id: 'C003', name: 'Class 10-A', grade: '10', teacher: 'Prof. Michael Chen', students: 30, room: '201' },
-  { id: 'C004', name: 'Class 11-B', grade: '11', teacher: 'Dr. Lisa Anderson', students: 25, room: '301' },
+  { id: 'C001', name: 'Class 9-A', grade: '9', teacher: 'Ms. Jennifer Davis', students: 28, room: '101', schedule: 'Mon, Wed, Fri 9:00-10:00' },
+  { id: 'C002', name: 'Class 9-C', grade: '9', teacher: 'Prof. Michael Chen', students: 22, room: '103', schedule: 'Tue, Thu 10:30-12:00' },
+  { id: 'C003', name: 'Class 10-A', grade: '10', teacher: 'Prof. Michael Chen', students: 30, room: '201', schedule: 'Mon, Wed, Fri 10:00-11:00' },
+  { id: 'C004', name: 'Class 11-B', grade: '11', teacher: 'Dr. Lisa Anderson', students: 25, room: '301', schedule: 'Tue, Thu 13:00-14:30' },
 ];
 
 const northwoodTeams: Team[] = [
@@ -223,8 +218,8 @@ const oakridgeTeachers: Teacher[] = [
 ];
 
 const oakridgeClasses: Class[] = [
-  { id: 'C101', name: 'Class 9-B', grade: '9', teacher: 'Mr. Steven Shaw', students: 25, room: 'G1' },
-  { id: 'C102', name: 'Class 10-A', grade: '10', teacher: 'Ms. Rachel Adams', students: 30, room: 'L1' },
+  { id: 'C101', name: 'Class 9-B', grade: '9', teacher: 'Mr. Steven Shaw', students: 25, room: 'G1', schedule: 'Tue, Thu 8:30-10:00' },
+  { id: 'C102', name: 'Class 10-A', grade: '10', teacher: 'Ms. Rachel Adams', students: 30, room: 'L1', schedule: 'Mon, Wed, Fri 11:00-12:00' },
 ];
 
 const oakridgeGrades: Grade[] = [
@@ -288,7 +283,7 @@ const maplewoodTeachers: Teacher[] = [
 ];
 
 const maplewoodClasses: Class[] = [
-  { id: 'C201', name: 'Class 9-C', grade: '9', teacher: 'Mr. David Lee', students: 22, room: 'H1' },
+  { id: 'C201', name: 'Class 9-C', grade: '9', teacher: 'Mr. David Lee', students: 22, room: 'H1', schedule: 'MWF 13:00-14:30' },
 ];
 
 const maplewoodGrades: Grade[] = [
@@ -338,7 +333,6 @@ export const schoolData: Record<string, SchoolData> = {
     expenses: northwoodExpenses,
     competitions: northwoodCompetitions,
     events: northwoodEvents,
-    // Using shared data for simplicity in this simulation
     admissions: [
         { id: 'ADM001', name: 'John Smith', appliedFor: 'Grade 9', date: '2024-05-10', status: 'Pending', formerSchool: 'Eastwood Elementary', grades: 'A average in all subjects.', parentName: 'Mary Smith', parentEmail: 'm.smith@family.com' },
         { id: 'ADM002', name: 'Emily White', appliedFor: 'Grade 10', date: '2024-05-09', status: 'Approved', formerSchool: 'Westwood Middle', grades: 'Excellent academic record, especially in sciences.', parentName: 'David White', parentEmail: 'd.white@family.com' },
@@ -355,16 +349,6 @@ export const schoolData: Record<string, SchoolData> = {
         { id: 'A001', title: 'Math Problem Set 5', subject: 'Mathematics', grade: '10', dueDate: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString(), status: 'pending' },
         { id: 'A002', title: 'Physics Lab Report', subject: 'Physics', grade: '11', dueDate: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(), status: 'submitted' },
     ],
-    courses: {
-        teacher: [
-            { id: 'PHY101', name: 'Introduction to Physics', schedule: 'Mon, Wed 10:00-11:30', students: 45 },
-            { id: 'MATH301', name: 'Advanced Calculus', schedule: 'Fri 9:00-11:00', students: 25 },
-        ],
-        student: [
-            { id: 'PHY101', name: 'Physics Intro', teacher: 'Dr. Evelyn Reed', grade: 'A-', progress: 85 },
-            { id: 'CS101', name: 'Programming Intro', teacher: 'Mrs. Patricia Wright', grade: 'A', progress: 92 },
-        ],
-    },
   },
   oakridge: {
     profile: oakridgeProfile,
@@ -394,14 +378,6 @@ export const schoolData: Record<string, SchoolData> = {
     assignments: [
         { id: 'OAK-A001', title: 'Geographic Survey Project', subject: 'Geography', grade: '9', dueDate: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(), status: 'pending' },
     ],
-    courses: {
-        teacher: [
-            { id: 'BIO101', name: 'Introductory Biology', schedule: 'Tue, Thu 10:00-11:30', students: 30 },
-        ],
-        student: [
-            { id: 'BIO101', name: 'Biology Basics', teacher: 'Ms. Rachel Adams', grade: 'A', progress: 90 },
-        ],
-    },
   },
   maplewood: {
     profile: maplewoodProfile,
@@ -430,13 +406,5 @@ export const schoolData: Record<string, SchoolData> = {
     assignments: [
         { id: 'MAP-A001', title: 'Essay on Renaissance Art', subject: 'History', grade: '9', dueDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(), status: 'pending' },
     ],
-    courses: {
-        teacher: [
-            { id: 'HIST101', name: 'World History', schedule: 'Mon, Fri 13:00-14:30', students: 22 },
-        ],
-        student: [
-            { id: 'HIST101', name: 'World History', teacher: 'Mr. David Lee', grade: 'A', progress: 95 },
-        ],
-    },
   },
 };

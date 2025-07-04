@@ -3,7 +3,7 @@
 import { useSchoolData } from '@/context/school-data-context';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Presentation, MapPin, UserPlus, Loader2 } from 'lucide-react';
+import { Users, Presentation, MapPin, UserPlus, Loader2, Calendar } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -21,6 +21,7 @@ const classSchema = z.object({
   teacher: z.string().min(2, "Teacher is required."),
   students: z.coerce.number().int().positive("Must be a positive number."),
   room: z.string().min(1, "Room is required."),
+  schedule: z.string().min(3, "Schedule is required."),
 });
 type ClassFormValues = z.infer<typeof classSchema>;
 
@@ -30,7 +31,7 @@ function NewClassDialog() {
     
     const form = useForm<ClassFormValues>({
         resolver: zodResolver(classSchema),
-        defaultValues: { name: '', grade: '', teacher: '', students: 0, room: '' }
+        defaultValues: { name: '', grade: '', teacher: '', students: 0, room: '', schedule: '' }
     });
 
     function onSubmit(values: ClassFormValues) {
@@ -74,6 +75,7 @@ function NewClassDialog() {
                         )} />
                         <FormField control={form.control} name="students" render={({ field }) => ( <FormItem><FormLabel>No. of Students</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="room" render={({ field }) => ( <FormItem><FormLabel>Room Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="schedule" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Schedule</FormLabel><FormControl><Input placeholder="e.g., MWF 9:00-10:00" {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <DialogFooter className="col-span-2 mt-4">
                             <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
                             <Button type="submit" disabled={form.formState.isSubmitting}> {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create Class</Button>
@@ -130,6 +132,10 @@ export default function ClassesPage() {
                              <div className="flex items-center text-muted-foreground">
                                 <MapPin className="mr-3 h-4 w-4" />
                                 <span>Room {classItem.room}</span>
+                            </div>
+                             <div className="flex items-center text-muted-foreground">
+                                <Calendar className="mr-3 h-4 w-4" />
+                                <span>{classItem.schedule}</span>
                             </div>
                         </CardContent>
                     </Card>

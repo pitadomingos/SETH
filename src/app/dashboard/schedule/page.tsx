@@ -1,6 +1,7 @@
+
 'use client';
 import { useAuth } from '@/context/auth-context';
-import { useSchoolData } from '@/context/school-data-context';
+import { useSchoolData, Class } from '@/context/school-data-context';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
@@ -23,7 +24,7 @@ export default function SchedulePage() {
             <CardTitle>Administrator View</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>Admins can view all schedules and student data via reporting tools and student/teacher profile pages.</p>
+            <p>Admins can create classes and assign schedules via the "Classes" page. Those changes are then reflected here for teachers and students.</p>
           </CardContent>
         </Card>
       }
@@ -34,18 +35,18 @@ export default function SchedulePage() {
 function TeacherSchedule() {
   const { courses } = useSchoolData();
   const teacherCourses = courses.teacher;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Your Teaching Schedule</CardTitle>
-        <CardDescription>A list of courses you are currently teaching.</CardDescription>
+        <CardDescription>A list of classes you are currently assigned to teach.</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Course ID</TableHead>
-              <TableHead>Course Name</TableHead>
+              <TableHead>Class Name</TableHead>
               <TableHead>Schedule</TableHead>
               <TableHead className="text-right">Enrolled Students</TableHead>
             </TableRow>
@@ -53,12 +54,18 @@ function TeacherSchedule() {
           <TableBody>
             {teacherCourses.map((course) => (
               <TableRow key={course.id}>
-                <TableCell><Badge variant="outline">{course.id}</Badge></TableCell>
                 <TableCell className="font-medium">{course.name}</TableCell>
                 <TableCell>{course.schedule}</TableCell>
                 <TableCell className="text-right">{course.students}</TableCell>
               </TableRow>
             ))}
+             {teacherCourses.length === 0 && (
+                <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground">
+                        You are not currently assigned to any classes.
+                    </TableCell>
+                </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>
@@ -69,6 +76,7 @@ function TeacherSchedule() {
 function StudentSchedule() {
   const { courses } = useSchoolData();
   const studentCourses = courses.student;
+
   return (
     <Card>
       <CardHeader>
@@ -90,7 +98,7 @@ function StudentSchedule() {
               <TableRow key={course.id}>
                 <TableCell className="font-medium">{course.name}</TableCell>
                 <TableCell>{course.teacher}</TableCell>
-                <TableCell><Badge variant="secondary">{course.grade}</Badge></TableCell>
+                <TableCell><Badge variant="secondary">Grade {course.grade}</Badge></TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Progress value={course.progress} className="w-24" aria-label={`Course progress: ${course.progress}%`} />
@@ -99,6 +107,13 @@ function StudentSchedule() {
                 </TableCell>
               </TableRow>
             ))}
+             {studentCourses.length === 0 && (
+                <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground">
+                        You are not currently enrolled in any classes.
+                    </TableCell>
+                </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>
