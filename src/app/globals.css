@@ -67,3 +67,20 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  [data-radix-accordion-content][data-state='closed'] {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    animation: none !important;
+  }
+
+  [data-radix-accordion-trigger] > svg {
+    display: none !important;
+  }
+  
+  [data-radix-accordion-item] {
+    break-inside: avoid;
+  }
+}
