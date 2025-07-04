@@ -1,3 +1,4 @@
+
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Save, Share2, Copy } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useState, useRef } from 'react';
 
 
 function ShareDialog() {
@@ -67,6 +69,8 @@ export default function ProfilePage() {
     const { user, role } = useAuth();
     const { toast } = useToast();
     const initials = user?.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+    const [avatarUrl, setAvatarUrl] = useState(`https://placehold.co/200x200.png`);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleUpdateProfile = () => {
         toast({
@@ -74,6 +78,15 @@ export default function ProfilePage() {
             description: "Your profile information has been saved.",
         });
     };
+
+    const handlePictureChange = () => {
+        const newAvatarUrl = `https://placehold.co/200x200.png?v=${Date.now()}`;
+        setAvatarUrl(newAvatarUrl);
+        toast({
+            title: "Picture Changed",
+            description: "Your new profile picture has been set (demo).",
+        });
+    }
 
     return (
         <div className="space-y-6 animate-in fade-in-50">
@@ -90,10 +103,17 @@ export default function ProfilePage() {
                     <CardContent className="grid gap-8 md:grid-cols-3">
                         <div className="flex flex-col items-center gap-4 pt-4 md:col-span-1">
                             <Avatar className="h-32 w-32">
-                                <AvatarImage src={`https://placehold.co/200x200.png`} alt={user?.name} data-ai-hint="profile picture" />
+                                <AvatarImage src={avatarUrl} alt={user?.name} data-ai-hint="profile picture" />
                                 <AvatarFallback className="text-4xl">{initials}</AvatarFallback>
                             </Avatar>
-                            <Button variant="outline">Change Picture</Button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handlePictureChange}
+                            />
+                            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>Change Picture</Button>
                         </div>
                         <div className="space-y-4 md:col-span-2">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
