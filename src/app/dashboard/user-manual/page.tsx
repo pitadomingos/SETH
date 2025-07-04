@@ -49,7 +49,8 @@ const userGuides = {
       'Schedules: Check your course schedule, see your teachers, and track your progress in each class.',
       'Leaderboards: See where you rank among your peers in overall, class, and subject-specific leaderboards.',
       'Events: Stay up-to-date with important school events and holidays.',
-      'Completion Documents: Preview and download your official certificate and academic transcript once all school fees have been paid.',
+      'Completion Documents: Preview and download your official certificate and transcript once all academic and financial requirements have been met.',
+      'AI-Powered Guidance: If you do not meet academic requirements, the system provides an AI-generated analysis of your record and offers encouraging suggestions for how to prepare for re-sits.',
       'Profile: View your personal details.',
     ]
   },
