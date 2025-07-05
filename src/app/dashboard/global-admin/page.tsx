@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/chart';
 import Image from 'next/image';
 import { getGpaFromNumeric } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 
 const calculateAverageGpaForSchool = (grades) => {
@@ -234,6 +235,32 @@ export default function GlobalAdminDashboard() {
     }
   }, [allSchoolData]);
 
+  const allUsers = useMemo(() => {
+    if (!allSchoolData) return [];
+    
+    const usersList: any[] = [];
+    const parentMap = new Map();
+
+    Object.values(allSchoolData).forEach(school => {
+        school.teachers.forEach(t => {
+            usersList.push({ id: t.id, name: t.name, role: 'Teacher', status: t.status, schoolName: school.profile.name });
+        });
+        
+        school.students.forEach(s => {
+            usersList.push({ id: s.id, name: s.name, role: 'Student', status: s.status, schoolName: school.profile.name });
+            
+            if (s.parentEmail && !parentMap.has(s.parentEmail)) {
+                 parentMap.set(s.parentEmail, { id: `parent-${s.parentEmail}`, name: s.parentName, role: 'Parent', status: 'Active', schoolName: school.profile.name });
+            }
+        });
+    });
+
+    const parentUsers = Array.from(parentMap.values());
+    
+    return [...usersList, ...parentUsers];
+
+}, [allSchoolData]);
+
   useEffect(() => {
     if (!isLoading && role !== 'GlobalAdmin') {
       router.push('/dashboard');
@@ -314,6 +341,36 @@ export default function GlobalAdminDashboard() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <TierPerformanceAnalysis allSchoolData={allSchoolData} />
         <AISystemAnalysis allSchoolData={allSchoolData} />
+
+        <Card className="md:col-span-2 lg:col-span-3">
+            <CardHeader>
+                <CardTitle>Global User Management</CardTitle>
+                <CardDescription>View all users across the entire school network.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Role</TableHead>
+                            <TableHead>School</TableHead>
+                            <TableHead>Status</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {allUsers.map((user) => (
+                            <TableRow key={user.id}>
+                                <TableCell>{user.name}</TableCell>
+                                <TableCell><Badge variant="outline">{user.role}</Badge></TableCell>
+                                <TableCell>{user.schoolName}</TableCell>
+                                <TableCell><Badge variant={getStatusVariant(user.status)}>{user.status}</Badge></TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+
         {Object.values(allSchoolData).map(school => (
             <Card key={school.profile.id}>
                 <CardHeader>
