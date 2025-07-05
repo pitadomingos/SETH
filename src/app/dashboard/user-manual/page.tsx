@@ -34,7 +34,7 @@ const userGuides = {
         'Course Management (Academics): Define courses by assigning a subject, teacher, and a recurring weekly schedule to a class section.',
         'Class Management (Classes): Define and manage student groups (e.g., "Class 9-A").',
         'Finance: Track school-wide revenue and expenses. Record partial or full payments for student fees and create new ad-hoc fee transactions.',
-        'Sports Management: Create sports teams, assign coaches, and manage player rosters. Schedule new competitions and view upcoming matches.',
+        'Sports Management: Create and delete sports teams, assign coaches, and manage player rosters. Schedule new competitions and view upcoming matches.',
         'Event Management: Create and schedule new school events from the Events page, including details like location, organizer, and target audience.',
         'Admin Panel: Configure system-wide data, including school currency, Grade-level Capacity, the Academic Calendar (Terms & Holidays), Examination Boards, and more.',
         'Activity Logs: Review a log of all recent activities within your school to track user actions and system changes.',

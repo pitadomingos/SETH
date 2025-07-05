@@ -107,6 +107,7 @@ interface SchoolDataContextType {
   addExpense: (data: NewExpenseData) => void;
   teamsData: Team[];
   addTeam: (data: NewTeamData) => void;
+  deleteTeam: (teamId: string) => void;
   addPlayerToTeam: (teamId: string, studentId: string) => void;
   removePlayerFromTeam: (teamId: string, studentId: string) => void;
   competitionsData: Competition[];
@@ -347,7 +348,11 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     
     setAllSchoolData(prevAllData => {
         const newAllData = { ...prevAllData };
-        newAllData[user.schoolId!].students.push(newStudent);
+        if (newAllData[user.schoolId!]) {
+          newAllData[user.schoolId!].students.push(newStudent);
+        } else {
+          console.error(`School with id ${user.schoolId} not found`);
+        }
         return newAllData;
     });
   };
@@ -375,6 +380,15 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addTeam = (data: NewTeamData) => {
     const newTeam: Team = { id: `TEAM${Date.now()}`, playerIds: [], ...data, };
     setTeamsData(prev => [newTeam, ...prev]);
+  };
+
+  const deleteTeam = (teamId: string) => {
+    setTeamsData(prev => prev.filter(t => t.id !== teamId));
+    setCompetitionsData(prev => prev.filter(c => c.ourTeamId !== teamId));
+    toast({
+      title: "Team Deleted",
+      description: "The team and its scheduled competitions have been removed.",
+    });
   };
 
   const addCompetition = (data: NewCompetitionData) => {
@@ -522,7 +536,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     audiences, addAudience, deleteAudience,
     expenseCategories,
     expensesData, addExpense,
-    teamsData, addTeam, addPlayerToTeam, removePlayerFromTeam,
+    teamsData, addTeam, deleteTeam, addPlayerToTeam, removePlayerFromTeam,
     competitionsData, addCompetition,
     terms, addTerm,
     holidays, addHoliday,

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData, Team, Competition } from '@/context/school-data-context';
-import { Trophy, Users, PlusCircle, Loader2, User as UserIcon, X, Calendar as CalendarIcon, Clock, MapPin, Swords } from 'lucide-react';
+import { Trophy, Users, PlusCircle, Loader2, User as UserIcon, X, Calendar as CalendarIcon, Clock, MapPin, Swords, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,6 +18,8 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 
 const teamSchema = z.object({
   name: z.string().min(3, "Team name must be at least 3 characters."),
@@ -177,8 +179,36 @@ function ViewCompetitionDetailsDialog({ competition, team }: { competition: Comp
     );
 }
 
+function DeleteTeamDialog({ team, onDelete }: { team: Team; onDelete: (teamId: string) => void; }) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="destructive" size="sm">
+          <Trash2 className="mr-2 h-4 w-4" /> Delete Team
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will permanently delete the team "{team.name}" and any competitions it is scheduled for. This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => onDelete(team.id)}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Yes, delete team
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
 
-function ManageTeamDialog({ team, students, allTeams, addPlayerToTeam, removePlayerFromTeam }) {
+function ManageTeamDialog({ team, students, allTeams, addPlayerToTeam, removePlayerFromTeam, deleteTeam }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [studentToAdd, setStudentToAdd] = useState('');
 
@@ -232,8 +262,9 @@ function ManageTeamDialog({ team, students, allTeams, addPlayerToTeam, removePla
                </div>
             </div>
         </div>
-        <DialogFooter>
-          <DialogClose asChild><Button>Done</Button></DialogClose>
+        <DialogFooter className="flex-col sm:flex-row sm:justify-between items-center border-t pt-4">
+           <DeleteTeamDialog team={team} onDelete={deleteTeam} />
+           <DialogClose asChild><Button>Done</Button></DialogClose>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -242,7 +273,7 @@ function ManageTeamDialog({ team, students, allTeams, addPlayerToTeam, removePla
 
 export default function SportsPage() {
   const { role, isLoading } = useAuth();
-  const { teamsData, studentsData, addPlayerToTeam, removePlayerFromTeam, competitionsData } = useSchoolData();
+  const { teamsData, studentsData, addPlayerToTeam, removePlayerFromTeam, competitionsData, deleteTeam } = useSchoolData();
   const router = useRouter();
 
   useEffect(() => {
@@ -301,6 +332,7 @@ export default function SportsPage() {
                                 allTeams={teamsData}
                                 addPlayerToTeam={addPlayerToTeam}
                                 removePlayerFromTeam={removePlayerFromTeam}
+                                deleteTeam={deleteTeam}
                             />
                         </CardFooter>
                     </Card>
