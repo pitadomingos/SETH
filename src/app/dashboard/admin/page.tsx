@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, UserPlus, Loader2, PlusCircle, Settings, BookCopy, Users, CalendarDays, Calendar as CalendarIcon, DollarSign, Save } from 'lucide-react';
+import { MoreHorizontal, UserPlus, Loader2, PlusCircle, Settings, BookCopy, Users, CalendarDays, Calendar as CalendarIcon, DollarSign, Save, Trash2 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -61,10 +61,10 @@ export default function AdminPanelPage() {
 
     const { 
         schoolProfile, updateSchoolProfile,
-        examBoards, addExamBoard, 
+        examBoards, addExamBoard, deleteExamBoard,
         studentsData, teachersData, 
-        feeDescriptions, addFeeDescription, 
-        audiences, addAudience,
+        feeDescriptions, addFeeDescription, deleteFeeDescription,
+        audiences, addAudience, deleteAudience,
         terms, addTerm,
         holidays, addHoliday
     } = useSchoolData();
@@ -259,7 +259,18 @@ export default function AdminPanelPage() {
                                     </DialogContent>
                                 </Dialog>
                             </div>
-                            <ul className="mt-3 space-y-2">{examBoards.map(board => ( <li key={board} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"><span>{board}</span></li> ))}</ul>
+                            <ul className="mt-3 space-y-2">
+                                {examBoards.map(board => (
+                                    <li key={board} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm">
+                                        <span>{board}</span>
+                                        {board !== 'Internal' && (
+                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteExamBoard(board)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                          <div>
                             <div className="flex items-center justify-between">
@@ -274,7 +285,16 @@ export default function AdminPanelPage() {
                                     </DialogContent>
                                 </Dialog>
                             </div>
-                            <ul className="mt-3 space-y-2">{feeDescriptions.map(desc => ( <li key={desc} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"><span>{desc}</span></li> ))}</ul>
+                            <ul className="mt-3 space-y-2">
+                                {feeDescriptions.map(desc => (
+                                    <li key={desc} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm">
+                                        <span>{desc}</span>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteFeeDescription(desc)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                         <div>
                             <div className="flex items-center justify-between">
@@ -289,7 +309,16 @@ export default function AdminPanelPage() {
                                     </DialogContent>
                                 </Dialog>
                             </div>
-                            <ul className="mt-3 space-y-2">{audiences.map(aud => ( <li key={aud} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"><span>{aud}</span></li> ))}</ul>
+                            <ul className="mt-3 space-y-2">
+                                {audiences.map(aud => (
+                                    <li key={aud} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm">
+                                        <span>{aud}</span>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteAudience(aud)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     </CardContent>
                 </Card>

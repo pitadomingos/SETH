@@ -95,10 +95,13 @@ interface SchoolDataContextType {
   addSubject: (subject: string) => void;
   examBoards: string[];
   addExamBoard: (board: string) => void;
+  deleteExamBoard: (board: string) => void;
   feeDescriptions: string[];
   addFeeDescription: (description: string) => void;
+  deleteFeeDescription: (description: string) => void;
   audiences: string[];
   addAudience: (audience: string) => void;
+  deleteAudience: (audience: string) => void;
   expenseCategories: string[];
   expensesData: Expense[];
   addExpense: (data: NewExpenseData) => void;
@@ -277,8 +280,40 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const updateSchoolProfile = (data: Partial<SchoolProfile>) => { setSchoolProfile(prev => prev ? { ...prev, ...data } : null); };
   const addSubject = (subject: string) => !subjects.includes(subject) && setSubjects(prev => [...prev, subject].sort());
   const addExamBoard = (board: string) => !examBoards.includes(board) && setExamBoards(prev => [...prev, board].sort());
+  const deleteExamBoard = (board: string) => {
+    if (board === 'Internal') {
+      toast({
+        variant: 'destructive',
+        title: 'Action Denied',
+        description: 'The "Internal" exam board cannot be deleted.',
+      });
+      return;
+    }
+    setExamBoards(prev => prev.filter(b => b !== board));
+    toast({
+      title: 'Exam Board Deleted',
+      description: `"${board}" has been removed.`,
+    });
+  };
+
   const addFeeDescription = (desc: string) => !feeDescriptions.includes(desc) && setFeeDescriptions(prev => [...prev, desc].sort());
+  const deleteFeeDescription = (desc: string) => {
+    setFeeDescriptions(prev => prev.filter(d => d !== desc));
+    toast({
+      title: 'Description Deleted',
+      description: `"${desc}" has been removed.`,
+    });
+  };
+
   const addAudience = (audience: string) => !audiences.includes(audience) && setAudiences(prev => [...prev, audience].sort());
+  const deleteAudience = (audience: string) => {
+    setAudiences(prev => prev.filter(a => a !== audience));
+    toast({
+      title: 'Audience Deleted',
+      description: `"${audience}" has been removed.`,
+    });
+  };
+  
   const recordPayment = (feeId: string, amount: number) => { setFinanceData(prev => prev.map(fee => fee.id === feeId ? { ...fee, amountPaid: Math.min(fee.totalAmount, fee.amountPaid + amount) } : fee)); };
   
   const addFee = (data: NewFeeData) => {
@@ -482,9 +517,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     attendance: [],
     events, addEvent,
     subjects, addSubject,
-    examBoards, addExamBoard,
-    feeDescriptions, addFeeDescription,
-    audiences, addAudience,
+    examBoards, addExamBoard, deleteExamBoard,
+    feeDescriptions, addFeeDescription, deleteFeeDescription,
+    audiences, addAudience, deleteAudience,
     expenseCategories,
     expensesData, addExpense,
     teamsData, addTeam, addPlayerToTeam, removePlayerFromTeam,
