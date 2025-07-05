@@ -14,6 +14,8 @@ const userGuides = {
       'System-Wide AI Analysis: Select multiple schools and generate a comparative AI analysis to identify trends and provide strategic recommendations for the entire network.',
       'Tier Performance Chart: Visualize and compare academic performance across different subscription tiers (Starter, Pro, Premium).',
       'School Management Simulation: View key statistics for each school and access their individual management dashboards by clicking "Manage School".',
+      'Global User Management: Access dedicated pages to view and manage every student and parent account across the entire network, including suspending access.',
+      'Activity Logs: View a global feed of all significant actions taken by users across all schools for complete system oversight.',
       'System Documentation: Access technical documentation about the application\'s architecture and technology stack.',
       'Project Proposal: Review the high-level business and development proposal for EduManage.',
       'To-Do List: View the project\'s development progress and upcoming features.',
@@ -35,6 +37,7 @@ const userGuides = {
         'Sports Management: Create sports teams, assign coaches, and manage player rosters. Schedule new competitions and view upcoming matches.',
         'Event Management: Create and schedule new school events from the Events page, including details like location, organizer, and target audience.',
         'Admin Panel: Configure system-wide data, including school currency, Grade-level Capacity, the Academic Calendar (Terms & Holidays), Examination Boards, and more.',
+        'Activity Logs: Review a log of all recent activities within your school to track user actions and system changes.',
         'Settings: Configure application-wide behavior, such as the grading display format (e.g., 20-Point Scale, Letter Grades, GPA).',
     ]
   },
@@ -44,7 +47,7 @@ const userGuides = {
     points: [
       'Dashboard: Quickly access common actions, view your courses, see upcoming deadlines, and analyze class performance with AI.',
       'AI Lesson Planner: Generate performance-aware weekly lesson plans. Plans are automatically saved and can be printed for classroom use.',
-      'AI Test Generator: Create ad-hoc multiple-choice tests on any topic. Save generated tests to your library for later review and deployment.',
+      'AI Test Generator: Create and manage a library of ad-hoc tests. Deploy saved tests to your classes with specific deadlines.',
       'Grading: Access a dedicated gradebook to enter grades for students in your classes. These grades are instantly reflected throughout the app.',
       'Schedules: View your teaching schedule based on the courses assigned to you.',
       'Leaderboards: Check academic rankings to see how students are performing.',
@@ -56,6 +59,7 @@ const userGuides = {
     title: 'Student Guide',
     points: [
       'Dashboard: See a summary of your academic progress, upcoming assignments, recent grades, and your current school rank.',
+      'Take Assigned Tests: View tests assigned to you on your dashboard, complete them through a dedicated interface, and receive your AI-generated score immediately upon submission.',
       'Schedules: Check your course schedule, see your teachers, and track your progress in each class.',
       'Leaderboards: See where you rank among your peers in overall, class, and subject-specific leaderboards.',
       'Events: Stay up-to-date with important school events and holidays.',

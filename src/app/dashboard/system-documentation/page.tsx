@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Code, GitBranch, LayoutTemplate, Palette, Rocket, Loader2, Database, Share2, Smartphone, Briefcase, Users, Cloud, Server, KeyRound, UploadCloud } from 'lucide-react';
+import { Code, GitBranch, LayoutTemplate, Palette, Rocket, Loader2, Database, Share2, Smartphone, Briefcase, Users, Cloud, Server, KeyRound, UploadCloud, BrainCircuit } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function SystemDocumentationPage() {
@@ -43,12 +43,12 @@ export default function SystemDocumentationPage() {
               <p className="text-sm text-muted-foreground">Used for the component library and styling, providing a consistent and modern look.</p>
             </div>
             <div>
-              <h3 className="font-semibold">Genkit</h3>
-              <p className="text-sm text-muted-foreground">Powers the AI features, such as the AI Reports and Lesson Planner, by connecting to generative models.</p>
+              <h3 className="font-semibold">Genkit & Google AI</h3>
+              <p className="text-sm text-muted-foreground">Powers all AI features, such as the AI Reports, Lesson Planner, and Test Grader by connecting to Google's generative models.</p>
             </div>
              <div>
               <h3 className="font-semibold">Recharts & Zod</h3>
-              <p className="text-sm text-muted-foreground">Recharts is used for data visualization and charts. Zod is used for schema validation in forms.</p>
+              <p className="text-sm text-muted-foreground">Recharts is used for data visualization and charts. Zod is used for schema validation in forms and AI flows.</p>
              </div>
           </CardContent>
         </Card>
@@ -60,20 +60,20 @@ export default function SystemDocumentationPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h3 className="font-semibold"><code>/src/app</code></h3>
-              <p className="text-sm text-muted-foreground">Contains all the application routes, pages, and layouts, following the Next.js App Router convention.</p>
+              <h3 className="font-semibold"><code>/src/app/dashboard</code></h3>
+              <p className="text-sm text-muted-foreground">Contains all application routes, pages, and layouts. Includes dynamic routes like <code>/test/[id]</code> for test-taking.</p>
             </div>
             <div>
               <h3 className="font-semibold"><code>/src/components</code></h3>
-              <p className="text-sm text-muted-foreground">Home to reusable React components, including UI elements from ShadCN and custom-built components.</p>
+              <p className="text-sm text-muted-foreground">Home to reusable React components, including UI elements from ShadCN and custom-built dashboard components.</p>
             </div>
              <div>
-              <h3 className="font-semibold"><code>/src/ai</code></h3>
-              <p className="text-sm text-muted-foreground">Houses the Genkit flows and AI-related logic, including `analyzeSchoolPerformance`, `analyzeSchoolSystem`, `identifyStrugglingStudents`, and `analyzeTeacherPerformance`.</p>
+              <h3 className="font-semibold flex items-center gap-2"><BrainCircuit /> <code>/src/ai/flows</code></h3>
+              <p className="text-sm text-muted-foreground">Houses the Genkit flows and AI-related logic, including: <code>create-lesson-plan</code>, <code>generate-test</code>, <code>grade-student-test</code>, <code>analyze-school-performance</code>, <code>identify-struggling-students</code>, and more.</p>
             </div>
              <div>
               <h3 className="font-semibold"><code>/src/context</code></h3>
-              <p className="text-sm text-muted-foreground">Contains React Context providers for managing global state like authentication and shared school data.</p>
+              <p className="text-sm text-muted-foreground">Contains React Context providers for managing global state like authentication (<code>AuthProvider</code>) and shared school data (<code>SchoolDataProvider</code>).</p>
              </div>
           </CardContent>
         </Card>
