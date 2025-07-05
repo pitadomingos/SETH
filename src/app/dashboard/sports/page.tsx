@@ -44,7 +44,7 @@ function NewTeamDialog() {
     
     const form = useForm<TeamFormValues>({
         resolver: zodResolver(teamSchema),
-        defaultValues: { name: '', icon: '' }
+        defaultValues: { name: '', icon: '', coach: '' }
     });
 
     function onSubmit(values: TeamFormValues) {
@@ -94,7 +94,13 @@ function NewCompetitionDialog() {
 
     const form = useForm<CompetitionFormValues>({
         resolver: zodResolver(competitionSchema),
-        defaultValues: { time: '14:00' },
+        defaultValues: {
+            title: '',
+            ourTeamId: '',
+            opponent: '',
+            time: '14:00',
+            location: '',
+        },
     });
 
     function onSubmit(values: CompetitionFormValues) {
