@@ -22,6 +22,7 @@ import {
     Course as InitialCourse,
     LessonPlan,
     SavedTest,
+    DeployedTest,
 } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
@@ -54,6 +55,7 @@ export interface NewAdmissionData {
   formerSchool: string;
   gradesSummary: string;
 }
+export interface NewDeployedTestData { testId: string; classId: string; deadline: Date; }
 
 
 interface SchoolDataContextType {
@@ -109,6 +111,8 @@ interface SchoolDataContextType {
   addLessonPlan: (data: NewLessonPlanData) => void;
   savedTests: SavedTest[];
   addSavedTest: (data: NewSavedTest) => void;
+  deployedTests: DeployedTest[];
+  addDeployedTest: (data: NewDeployedTestData) => void;
   isLoading: boolean;
 }
 
@@ -142,6 +146,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [coursesData, setCoursesData] = useState<Course[]>([]);
   const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
   const [savedTests, setSavedTests] = useState<SavedTest[]>([]);
+  const [deployedTests, setDeployedTests] = useState<DeployedTest[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -220,6 +225,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setCoursesData(data.courses || []);
       setLessonPlans(data.lessonPlans || []);
       setSavedTests(data.savedTests || []);
+      setDeployedTests(data.deployedTests || []);
       if(data.teachers) {
           const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
           setSubjects(initialSubjects);
@@ -365,6 +371,16 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     };
     setSavedTests(prev => [newTest, ...prev]);
   };
+
+  const addDeployedTest = (data: NewDeployedTestData) => {
+    const newTest: DeployedTest = {
+        id: `DTEST${Date.now()}`,
+        createdAt: new Date(),
+        submissions: [],
+        ...data,
+    };
+    setDeployedTests(prev => [newTest, ...prev]);
+  };
   
   const addAdmission = (data: NewAdmissionData) => {
     if (!user) return;
@@ -424,6 +440,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     holidays, addHoliday,
     lessonPlans, addLessonPlan,
     savedTests, addSavedTest,
+    deployedTests, addDeployedTest,
     isLoading,
   };
 

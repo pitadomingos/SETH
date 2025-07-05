@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { FileText, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { FileText, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData } from "@/context/school-data-context";
 import { useToast } from '@/hooks/use-toast';
@@ -197,6 +197,54 @@ function CompletionStatusContent({ student, hasPassed, areAllFeesPaid, grades, a
   );
 }
 
+function AssignedTests({ student, studentClass }) {
+    const { deployedTests, savedTests } = useSchoolData();
+
+    const assigned = useMemo(() => {
+        if (!student || !studentClass) return [];
+        return deployedTests
+            .filter(dt => dt.classId === studentClass.id && !dt.submissions.some(s => s.studentId === student.id))
+            .map(dt => {
+                const testDetails = savedTests.find(st => st.id === dt.testId);
+                return { ...dt, ...testDetails };
+            })
+            .sort((a,b) => a.deadline.getTime() - b.deadline.getTime());
+    }, [student, studentClass, deployedTests, savedTests]);
+
+    if (assigned.length === 0) {
+        return null;
+    }
+
+    return (
+        <Card className="lg:col-span-2">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><ListChecks /> Assigned Tests</CardTitle>
+                <CardDescription>Tests you need to complete.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ul className="space-y-3">
+                {assigned.slice(0, 4).map(test => (
+                    <li key={test.id} className="flex justify-between items-center text-sm p-3 bg-muted rounded-md">
+                        <div>
+                            <p className="font-semibold">{test.topic}</p>
+                            <p className="text-xs text-muted-foreground">{test.subject}</p>
+                        </div>
+                        <div className="text-right">
+                           <Link href={`/dashboard/test/${test.id}`} passHref>
+                             <Button size="sm">Take Test</Button>
+                           </Link>
+                           <p className="text-xs text-muted-foreground mt-1">
+                                Due {format(new Date(test.deadline), 'MMM d, yyyy')}
+                           </p>
+                        </div>
+                    </li>
+                ))}
+                </ul>
+            </CardContent>
+        </Card>
+    );
+}
+
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -208,6 +256,7 @@ export default function StudentDashboard() {
     studentsData,
     attendance,
     schoolProfile,
+    classesData,
   } = useSchoolData();
   
   const studentIdMap = {
@@ -225,6 +274,11 @@ export default function StudentDashboard() {
     if (!studentId) return null;
     return studentsData.find(s => s.id === studentId);
   }, [studentsData, studentId]);
+
+  const studentClass = useMemo(() => {
+    if (!student) return null;
+    return classesData.find(c => c.grade === student.grade && c.name.split('-')[1].trim() === student.class);
+  }, [student, classesData]);
 
   const pendingAssignments = assignments.filter(a => a.status === 'pending' || a.status === 'overdue').sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   
@@ -280,27 +334,7 @@ export default function StudentDashboard() {
        <div className="grid gap-6 lg:grid-cols-2">
           <RankCard studentId={studentId} />
           <AttendanceBreakdownChart studentId={studentId} />
-          <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><FileText /> Upcoming Assignments</CardTitle>
-                <CardDescription>You have {pendingAssignments.length} assignments due.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ul className="space-y-3">
-                {pendingAssignments.slice(0, 4).map(assignment => (
-                    <li key={assignment.id} className="flex justify-between items-center text-sm p-2 bg-muted rounded-md">
-                    <div>
-                        <p className="font-medium">{assignment.title}</p>
-                        <p className="text-xs text-muted-foreground">{assignment.subject}</p>
-                    </div>
-                    <Badge variant={new Date(assignment.dueDate) < new Date() ? 'destructive' : 'outline'}>
-                        Due {format(new Date(assignment.dueDate), 'MMM d')}
-                    </Badge>
-                    </li>
-                ))}
-                </ul>
-            </CardContent>
-        </Card>
+          <AssignedTests student={student} studentClass={studentClass} />
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Award /> Recent Grades</CardTitle>

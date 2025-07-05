@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,14 +13,18 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Sparkles, FlaskConical, ChevronRight, Save, History, BookOpen, Trash2 } from 'lucide-react';
+import { Loader2, Sparkles, FlaskConical, ChevronRight, Save, History, BookOpen, Trash2, Calendar as CalendarIcon } from 'lucide-react';
 import { generateTest, type GenerateTestOutput } from '@/ai/flows/generate-test';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { useSchoolData, NewSavedTest } from '@/context/school-data-context';
+import { useSchoolData, NewSavedTest, SavedTest, NewDeployedTestData } from '@/context/school-data-context';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 const GenerateTestInputSchema = z.object({
   subject: z.string().min(1, 'Subject is required.'),
@@ -29,6 +33,12 @@ const GenerateTestInputSchema = z.object({
   numQuestions: z.coerce.number().int().min(1).max(10),
 });
 type GenerateTestFormValues = z.infer<typeof GenerateTestInputSchema>;
+
+const deployTestSchema = z.object({
+    classId: z.string({ required_error: "Please select a class." }),
+    deadline: z.date({ required_error: "A deadline is required." }),
+});
+type DeployTestFormValues = z.infer<typeof deployTestSchema>;
 
 
 function GeneratedTestViewer({ test, onSave }: { test: GenerateTestOutput, onSave: () => void }) {
@@ -67,16 +77,86 @@ function GeneratedTestViewer({ test, onSave }: { test: GenerateTestOutput, onSav
   )
 }
 
-function SavedTestsList() {
-    const { savedTests } = useSchoolData();
-    const { toast } = useToast();
 
-    function handleDeployTest(testName: string) {
+function DeployTestDialog({ test }: { test: SavedTest }) {
+    const { toast } = useToast();
+    const { addDeployedTest, classesData } = useSchoolData();
+    const [isOpen, setIsOpen] = useState(false);
+
+    const form = useForm<DeployTestFormValues>({
+        resolver: zodResolver(deployTestSchema),
+    });
+
+    function onSubmit(values: DeployTestFormValues) {
+        const newDeployment: NewDeployedTestData = {
+            testId: test.id,
+            classId: values.classId,
+            deadline: values.deadline,
+        };
+        addDeployedTest(newDeployment);
         toast({
             title: 'Test Deployed!',
-            description: `${testName} is now available to students. (This is a demo feature)`,
+            description: `${test.topic} has been assigned and is now available to students.`,
         });
+        setIsOpen(false);
     }
+    
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button><ChevronRight className="mr-2 h-4 w-4" /> Deploy Test</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Deploy "{test.topic}"</DialogTitle>
+                    <DialogDescription>Assign this test to a class and set a completion deadline.</DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                        <FormField control={form.control} name="classId" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Assign to Class</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a class..." /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        {classesData.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="deadline" render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                                <FormLabel>Deadline</FormLabel>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                {field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}
+                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date()} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <DialogFooter className="pt-4">
+                            <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+                            <Button type="submit">Confirm & Deploy</Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function SavedTestsList() {
+    const { savedTests } = useSchoolData();
 
     if (savedTests.length === 0) {
         return (
@@ -131,9 +211,7 @@ function SavedTestsList() {
                              <Button variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
                                 <Trash2 className="mr-2 h-4 w-4" /> Delete
                              </Button>
-                             <Button onClick={() => handleDeployTest(test.topic)}>
-                                <ChevronRight className="mr-2 h-4 w-4"/> Deploy Test
-                            </Button>
+                             <DeployTestDialog test={test} />
                         </div>
                     </AccordionContent>
                     </AccordionItem>

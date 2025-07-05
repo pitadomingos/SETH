@@ -32,6 +32,20 @@ export interface SavedTest extends GenerateTestOutput {
     createdAt: Date;
 }
 
+export interface DeployedTest {
+  id: string;
+  testId: string; // Corresponds to SavedTest id
+  classId: string;
+  deadline: Date;
+  createdAt: Date;
+  submissions: Array<{
+    studentId: string;
+    answers: Record<number, string>; // question index -> selected option
+    score: number; // Score out of 20
+    submittedAt: Date;
+  }>;
+}
+
 interface SchoolData {
     profile: SchoolProfile;
     students: Student[];
@@ -40,6 +54,7 @@ interface SchoolData {
     courses: Course[];
     lessonPlans: LessonPlan[];
     savedTests: SavedTest[];
+    deployedTests: DeployedTest[];
     admissions: Admission[];
     exams: Exam[];
     finance: FinanceRecord[];
@@ -137,6 +152,7 @@ export const schoolData: Record<string, SchoolData> = {
     courses: northwoodCourses,
     lessonPlans: [],
     savedTests: [],
+    deployedTests: [],
     teams: northwoodTeams,
     grades: northwoodGrades,
     attendance: northwoodAttendance,
@@ -162,6 +178,7 @@ export const schoolData: Record<string, SchoolData> = {
     courses: oakridgeCourses,
     lessonPlans: [],
     savedTests: [],
+    deployedTests: [],
     teams: [],
     grades: oakridgeGrades,
     attendance: oakridgeAttendance,
@@ -187,6 +204,7 @@ export const schoolData: Record<string, SchoolData> = {
     courses: maplewoodCourses,
     lessonPlans: [],
     savedTests: [],
+    deployedTests: [],
     teams: [],
     grades: maplewoodGrades,
     attendance: maplewoodAttendance,
