@@ -25,6 +25,18 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 
 const GenerateTestInputSchema = z.object({
   subject: z.string().min(1, 'Subject is required.'),
@@ -155,8 +167,38 @@ function DeployTestDialog({ test }: { test: SavedTest }) {
     );
 }
 
+function DeleteTestDialog({ test, onDelete }: { test: SavedTest; onDelete: (testId: string) => void }) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+          <Trash2 className="mr-2 h-4 w-4" /> Delete
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will permanently delete the test "{test.topic}" and all of its deployments and submissions. This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => onDelete(test.id)}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Yes, delete test
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+
 function SavedTestsList() {
-    const { savedTests } = useSchoolData();
+    const { savedTests, deleteSavedTest } = useSchoolData();
 
     if (savedTests.length === 0) {
         return (
@@ -208,9 +250,7 @@ function SavedTestsList() {
                         ))}
                         </div>
                         <div className="flex justify-end gap-2 mt-4">
-                             <Button variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                             </Button>
+                             <DeleteTestDialog test={test} onDelete={deleteSavedTest} />
                              <DeployTestDialog test={test} />
                         </div>
                     </AccordionContent>

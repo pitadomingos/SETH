@@ -28,6 +28,7 @@ import {
 import { useAuth } from './auth-context';
 import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
 import { GenerateTestOutput } from '@/ai/flows/generate-test';
+import { useToast } from '@/hooks/use-toast';
 
 export type FinanceRecord = InitialFinanceRecord;
 export type Grade = InitialGrade;
@@ -115,6 +116,7 @@ interface SchoolDataContextType {
   addLessonPlan: (data: NewLessonPlanData) => void;
   savedTests: SavedTest[];
   addSavedTest: (data: NewSavedTest) => void;
+  deleteSavedTest: (testId: string) => void;
   deployedTests: DeployedTest[];
   addDeployedTest: (data: NewDeployedTestData) => void;
   activityLogs: ActivityLog[];
@@ -127,6 +129,7 @@ const initialExamBoards = ['Internal', 'Cambridge', 'IB', 'State Board', 'Advanc
 
 export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { user, role } = useAuth();
+  const { toast } = useToast();
 
   const [allSchoolData, setAllSchoolData] = useState(initialSchoolData);
   const [schoolProfile, setSchoolProfile] = useState<SchoolProfile | null>(null);
@@ -382,6 +385,15 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setSavedTests(prev => [newTest, ...prev]);
   };
 
+  const deleteSavedTest = (testId: string) => {
+    setSavedTests(prev => prev.filter(t => t.id !== testId));
+    setDeployedTests(prev => prev.filter(dt => dt.testId !== testId));
+    toast({
+      title: "Test Deleted",
+      description: "The test and its deployments have been removed.",
+    });
+  };
+
   const addDeployedTest = (data: NewDeployedTestData) => {
     const newTest: DeployedTest = {
         id: `DTEST${Date.now()}`,
@@ -480,7 +492,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     terms, addTerm,
     holidays, addHoliday,
     lessonPlans, addLessonPlan,
-    savedTests, addSavedTest,
+    savedTests, addSavedTest, deleteSavedTest,
     deployedTests, addDeployedTest,
     activityLogs,
     isLoading,
