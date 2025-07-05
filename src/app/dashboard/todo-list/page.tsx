@@ -42,14 +42,19 @@ const completedTasks = [
 ];
 
 const upcomingFeatures = [
-  'Build out analytics for the student test-taking results for teachers.',
+  // Phase 1: Production Readiness
   'Connect mock data to a real database (e.g., Firestore) to enable persistence.',
-  'Develop a dedicated "Finance Proposal" page detailing payment gateway integration, automated invoicing, and billing cycles.',
-  'Develop district, provincial, and national data views for higher-level administration.',
-  'Enhance mobile-first responsive design for a seamless experience on phones and tablets.',
   'Implement full CRUD (Create, Read, Update, Delete) on all management pages.',
+  'Develop a dedicated "Finance Proposal" page detailing payment gateway integration, automated invoicing, and billing cycles.',
+
+  // Phase 2: Core Feature Enhancement
+  'Build out analytics for the student test-taking results for teachers.',
   'Implement a site-wide notification and communication hub.',
+  'Enhance mobile-first responsive design for a seamless experience on phones and tablets.',
+
+  // Phase 3: Future Growth
   'Introduce student-centric features like goal setting and digital portfolios.',
+  'Develop district, provincial, and national data views for higher-level administration.',
   'Plan and scope development for native Android and iOS applications.',
 ];
 
@@ -96,11 +101,11 @@ export default function TodoListPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Clock className="text-amber-500" />Upcoming Features</CardTitle>
-            <CardDescription>The next set of features to be developed.</CardDescription>
+            <CardDescription>The next set of features to be developed, in order of priority.</CardDescription>
           </CardHeader>
           <CardContent>
              <ul className="space-y-3">
-              {upcomingFeatures.sort().map((task, index) => (
+              {upcomingFeatures.map((task, index) => (
                 <li key={index} className="flex items-start gap-3">
                   <Circle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
                   <span className="text-sm text-muted-foreground">{task}</span>
