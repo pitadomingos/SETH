@@ -69,6 +69,8 @@ const documentationLinks: NavLink[] = [
 const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
   GlobalAdmin: [
     { href: '/dashboard/global-admin', label: 'All Schools', icon: Globe },
+    { href: '/dashboard/global-admin/students', label: 'All Students', icon: GraduationCap },
+    { href: '/dashboard/global-admin/parents', label: 'All Parents', icon: HeartHandshake },
     { href: '/dashboard/finance-proposal', label: 'Project Proposal', icon: Briefcase },
     { href: '/dashboard/system-documentation', label: 'System Docs', icon: FileText },
     { href: '/dashboard/todo-list', label: 'To-Do List', icon: ListTodo },

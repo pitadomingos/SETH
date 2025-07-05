@@ -33,7 +33,7 @@ export type Grade = InitialGrade;
 export type SchoolProfile = InitialSchoolProfile;
 export type Class = InitialClass;
 export type Course = InitialCourse;
-export type { Team, Competition, Admission };
+export type { Team, Competition, Admission, Student };
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
 interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }
@@ -65,6 +65,9 @@ interface SchoolDataContextType {
   updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
   studentsData: Student[];
   addStudentFromAdmission: (admission: Admission) => void;
+  updateStudentStatus: (schoolId: string, studentId: string, status: Student['status']) => void;
+  parentStatusOverrides: Record<string, 'Active' | 'Suspended'>;
+  updateParentStatus: (parentEmail: string, status: 'Active' | 'Suspended') => void;
   teachersData: Teacher[];
   addTeacher: (teacher: Omit<Teacher, 'id' | 'status'>) => void;
   classesData: Class[];
@@ -147,6 +150,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
   const [savedTests, setSavedTests] = useState<SavedTest[]>([]);
   const [deployedTests, setDeployedTests] = useState<DeployedTest[]>([]);
+  const [parentStatusOverrides, setParentStatusOverrides] = useState<Record<string, 'Active' | 'Suspended'>>({});
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -412,11 +416,42 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addPlayerToTeam = (teamId: string, studentId: string) => { setTeamsData(prev => prev.map(team => team.id === teamId ? { ...team, playerIds: [...team.playerIds, studentId] } : team)); };
   const removePlayerFromTeam = (teamId: string, studentId: string) => { setTeamsData(prev => prev.map(team => team.id === teamId ? { ...team, playerIds: team.playerIds.filter(id => id !== studentId) } : team)); };
   const updateApplicationStatus = (id: string, status: Admission['status']) => { setAdmissionsData(prev => prev.map(app => app.id === id ? { ...app, status } : app)); };
+  
+  const updateStudentStatus = (schoolId: string, studentId: string, status: Student['status']) => {
+    if (initialSchoolData[schoolId]) {
+      const studentIndex = initialSchoolData[schoolId].students.findIndex(s => s.id === studentId);
+      if (studentIndex !== -1) {
+        initialSchoolData[schoolId].students[studentIndex].status = status;
+      }
+    }
+
+    setAllSchoolData(prevData => {
+        if (!prevData || !prevData[schoolId]) return prevData;
+        
+        const newData = { ...prevData };
+        const schoolStudents = newData[schoolId].students.map(student => 
+            student.id === studentId ? { ...student, status } : student
+        );
+        newData[schoolId] = { ...newData[schoolId], students: schoolStudents };
+        return newData;
+    });
+  };
+  
+  const updateParentStatus = (parentEmail: string, status: 'Active' | 'Suspended') => {
+    setParentStatusOverrides(prev => ({
+      ...prev,
+      [parentEmail]: status,
+    }));
+  };
+
 
   const value = {
     schoolProfile, updateSchoolProfile,
     allSchoolData, updateSchoolStatus,
     studentsData, addStudentFromAdmission,
+    updateStudentStatus,
+    parentStatusOverrides,
+    updateParentStatus,
     teachersData, addTeacher,
     classesData, addClass,
     coursesData, addCourse,
