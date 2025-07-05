@@ -44,7 +44,7 @@ const userGuides = {
     points: [
       'Dashboard: Quickly access common actions, view your courses, see upcoming deadlines, and analyze class performance with AI.',
       'AI Lesson Planner: Generate performance-aware weekly lesson plans. Plans are automatically saved and can be printed for classroom use.',
-      'AI Test Generator: Create ad-hoc multiple-choice tests on any topic. The AI generates questions and answers for your review.',
+      'AI Test Generator: Create ad-hoc multiple-choice tests on any topic. Save generated tests to your library for later review and deployment.',
       'Grading: Access a dedicated gradebook to enter grades for students in your classes. These grades are instantly reflected throughout the app.',
       'Schedules: View your teaching schedule based on the courses assigned to you.',
       'Leaderboards: Check academic rankings to see how students are performing.',

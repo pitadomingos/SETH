@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,11 +13,14 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Sparkles, FlaskConical, ChevronRight } from 'lucide-react';
+import { Loader2, Sparkles, FlaskConical, ChevronRight, Save, History, BookOpen, Trash2 } from 'lucide-react';
 import { generateTest, type GenerateTestOutput } from '@/ai/flows/generate-test';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { useSchoolData, NewSavedTest } from '@/context/school-data-context';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { format } from 'date-fns';
 
 const GenerateTestInputSchema = z.object({
   subject: z.string().min(1, 'Subject is required.'),
@@ -24,13 +28,131 @@ const GenerateTestInputSchema = z.object({
   gradeLevel: z.string().min(1, 'Grade level is required.'),
   numQuestions: z.coerce.number().int().min(1).max(10),
 });
+type GenerateTestFormValues = z.infer<typeof GenerateTestInputSchema>;
+
+
+function GeneratedTestViewer({ test, onSave }: { test: GenerateTestOutput, onSave: () => void }) {
+  return (
+     <Card className="min-h-[500px]">
+      <CardHeader className="flex flex-row justify-between items-start">
+        <div>
+          <CardTitle>Generated Test Preview</CardTitle>
+          <CardDescription>Review the questions below. You must save the test to deploy it later.</CardDescription>
+        </div>
+        <Button onClick={onSave}><Save className="mr-2 h-4 w-4"/> Save for Later</Button>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-8">
+          {test.questions.map((q, index) => (
+            <div key={index} className="space-y-3">
+              <p className="font-semibold">{index + 1}. {q.questionText}</p>
+                <RadioGroup value={q.correctAnswer} disabled>
+                  {q.options.map((option, optionIndex) => (
+                      <div key={optionIndex} className="flex items-center space-x-2">
+                          <RadioGroupItem value={option} id={`q${index}-o${optionIndex}`} />
+                          <Label htmlFor={`q${index}-o${optionIndex}`} className={option === q.correctAnswer ? 'text-primary font-bold' : ''}>
+                              {option}
+                          </Label>
+                          {option === q.correctAnswer && (
+                            <Badge variant="secondary" className="ml-2">Correct Answer</Badge>
+                          )}
+                      </div>
+                  ))}
+                </RadioGroup>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function SavedTestsList() {
+    const { savedTests } = useSchoolData();
+    const { toast } = useToast();
+
+    function handleDeployTest(testName: string) {
+        toast({
+            title: 'Test Deployed!',
+            description: `${testName} is now available to students. (This is a demo feature)`,
+        });
+    }
+
+    if (savedTests.length === 0) {
+        return (
+             <Card className="mt-8">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><History /> Saved Tests</CardTitle>
+                    <CardDescription>Tests you save will appear here for review and deployment.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-center text-muted-foreground py-8">No tests saved yet.</p>
+                </CardContent>
+            </Card>
+        );
+    }
+    
+    return (
+        <Card className="mt-8">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><History /> Saved Tests</CardTitle>
+                <CardDescription>Review your saved tests and deploy them to your classes.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Accordion type="single" collapsible className="w-full">
+                {savedTests.map((test) => (
+                    <AccordionItem value={test.id} key={test.id}>
+                    <AccordionTrigger>
+                        <div>
+                            <p className="font-semibold text-left">{test.topic}</p>
+                            <p className="text-sm text-muted-foreground text-left">{test.subject} - {test.gradeLevel} ({format(test.createdAt, 'PPP')})</p>
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-6 p-4">
+                        <div className="space-y-6">
+                         {test.questions.map((q, index) => (
+                            <div key={index} className="space-y-3 text-sm">
+                                <p className="font-semibold">{index + 1}. {q.questionText}</p>
+                                <RadioGroup value={q.correctAnswer} disabled>
+                                {q.options.map((option, optionIndex) => (
+                                    <div key={optionIndex} className="flex items-center space-x-2">
+                                        <RadioGroupItem value={option} id={`saved-${test.id}-${index}-${optionIndex}`} />
+                                        <Label htmlFor={`saved-${test.id}-${index}-${optionIndex}`} className={option === q.correctAnswer ? 'text-primary font-bold' : ''}>
+                                            {option}
+                                        </Label>
+                                    </div>
+                                ))}
+                                </RadioGroup>
+                                <p className="text-xs text-muted-foreground">Correct Answer: <span className="font-medium">{q.correctAnswer}</span></p>
+                            </div>
+                        ))}
+                        </div>
+                        <div className="flex justify-end gap-2 mt-4">
+                             <Button variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                             </Button>
+                             <Button onClick={() => handleDeployTest(test.topic)}>
+                                <ChevronRight className="mr-2 h-4 w-4"/> Deploy Test
+                            </Button>
+                        </div>
+                    </AccordionContent>
+                    </AccordionItem>
+                ))}
+                </Accordion>
+            </CardContent>
+        </Card>
+    )
+}
+
 
 export default function AiTestingPage() {
   const { role, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const { addSavedTest } = useSchoolData();
   const [generatedTest, setGeneratedTest] = useState<GenerateTestOutput | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastSubmission, setLastSubmission] = useState<GenerateTestFormValues | null>(null);
 
   useEffect(() => {
     if (!authLoading && role !== 'Teacher') {
@@ -38,7 +160,7 @@ export default function AiTestingPage() {
     }
   }, [role, authLoading, router]);
 
-  const form = useForm<z.infer<typeof GenerateTestInputSchema>>({
+  const form = useForm<GenerateTestFormValues>({
     resolver: zodResolver(GenerateTestInputSchema),
     defaultValues: {
       subject: '',
@@ -48,15 +170,16 @@ export default function AiTestingPage() {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof GenerateTestInputSchema>) {
+  async function onSubmit(values: GenerateTestFormValues) {
     setIsSubmitting(true);
     setGeneratedTest(null);
     try {
       const result = await generateTest(values);
       setGeneratedTest(result);
+      setLastSubmission(values); // Store form values on successful generation
       toast({
         title: 'Test Generated!',
-        description: 'Review the generated test below.',
+        description: 'Review the generated test preview.',
       });
     } catch (error) {
       console.error('Failed to generate test:', error);
@@ -70,11 +193,19 @@ export default function AiTestingPage() {
     }
   }
 
-  function handleDeployTest() {
-    toast({
-      title: 'Test Deployed!',
-      description: 'The test is now available to students. (This is a demo feature)',
-    });
+  function handleSaveTest() {
+    if (generatedTest && lastSubmission) {
+      addSavedTest({
+        ...lastSubmission,
+        questions: generatedTest.questions,
+      });
+      toast({
+        title: "Test Saved",
+        description: `"${lastSubmission.topic}" has been added to your library.`,
+      });
+      setGeneratedTest(null);
+      setLastSubmission(null);
+    }
   }
 
   if (authLoading || role !== 'Teacher') {
@@ -86,7 +217,7 @@ export default function AiTestingPage() {
       <header>
         <h2 className="text-3xl font-bold tracking-tight">AI Test Generator</h2>
         <p className="text-muted-foreground">
-          Generate, review, and deploy ad-hoc tests for your classes.
+          Generate, save, and deploy ad-hoc tests for your classes.
         </p>
       </header>
       <div className="grid gap-8 lg:grid-cols-3">
@@ -95,7 +226,7 @@ export default function AiTestingPage() {
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <Card>
                 <CardHeader>
-                  <CardTitle>Test Parameters</CardTitle>
+                  <CardTitle className="flex items-center gap-2"><BookOpen /> Test Parameters</CardTitle>
                   <CardDescription>Define the test you want to create.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -173,58 +304,32 @@ export default function AiTestingPage() {
         </div>
 
         <div className="lg:col-span-2">
-          <Card className="min-h-[500px]">
-            <CardHeader className="flex flex-row justify-between items-start">
-              <div>
-                <CardTitle>Generated Test</CardTitle>
-                <CardDescription>Review the questions before deploying the test.</CardDescription>
-              </div>
-               {generatedTest && (
-                <Button onClick={handleDeployTest}>
-                  Deploy Test <ChevronRight className="ml-2 h-4 w-4"/>
-                </Button>
-               )}
-            </CardHeader>
-            <CardContent>
-              {isSubmitting && (
-                <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-                  <Loader2 className="h-10 w-10 animate-spin mb-4 text-primary" />
-                  <p>Our AI is crafting your test questions...</p>
-                </div>
-              )}
-              {generatedTest ? (
-                <div className="space-y-8">
-                  {generatedTest.questions.map((q, index) => (
-                    <div key={index} className="space-y-3">
-                      <p className="font-semibold">{index + 1}. {q.questionText}</p>
-                       <RadioGroup value={q.correctAnswer} disabled>
-                          {q.options.map((option, optionIndex) => (
-                              <div key={optionIndex} className="flex items-center space-x-2">
-                                  <RadioGroupItem value={option} id={`q${index}-o${optionIndex}`} />
-                                  <Label htmlFor={`q${index}-o${optionIndex}`} className={option === q.correctAnswer ? 'text-primary font-bold' : ''}>
-                                      {option}
-                                  </Label>
-                                  {option === q.correctAnswer && (
-                                    <Badge variant="secondary" className="ml-2">Correct Answer</Badge>
-                                  )}
-                              </div>
-                          ))}
-                       </RadioGroup>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                !isSubmitting && (
+          {generatedTest ? (
+            <GeneratedTestViewer test={generatedTest} onSave={handleSaveTest} />
+          ) : (
+             <Card className="min-h-[500px]">
+              <CardHeader>
+                  <CardTitle>Generated Test Preview</CardTitle>
+                  <CardDescription>Your generated test will appear here after creation.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isSubmitting ? (
+                  <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                    <Loader2 className="h-10 w-10 animate-spin mb-4 text-primary" />
+                    <p>Our AI is crafting your test questions...</p>
+                  </div>
+                ) : (
                   <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground">
                     <FlaskConical className="h-10 w-10 mb-4" />
-                    <p>Your generated test will appear here.</p>
+                    <p>Configure your test parameters and click "Generate Test".</p>
                   </div>
-                )
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
+      <SavedTestsList />
     </div>
   );
 }

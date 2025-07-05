@@ -21,9 +21,11 @@ import {
     Holiday,
     Course as InitialCourse,
     LessonPlan,
+    SavedTest,
 } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
+import { GenerateTestOutput } from '@/ai/flows/generate-test';
 
 export type FinanceRecord = InitialFinanceRecord;
 export type Grade = InitialGrade;
@@ -43,6 +45,7 @@ interface NewTermData { name: string; startDate: Date; endDate: Date; }
 interface NewHolidayData { name: string; date: Date; }
 export interface NewCourseData { subject: string; teacherId: string; classId: string; schedule: Array<{ day: string; startTime: string; endTime: string; room: string; }>; }
 export interface NewLessonPlanData { className: string; subject: string; weeklySyllabus: string; weeklyPlan: CreateLessonPlanOutput['weeklyPlan']; }
+export interface NewSavedTest extends GenerateTestOutput { subject: string; topic: string; gradeLevel: string; }
 export interface NewAdmissionData {
   schoolId: string;
   name: string;
@@ -104,6 +107,8 @@ interface SchoolDataContextType {
   addHoliday: (data: NewHolidayData) => void;
   lessonPlans: LessonPlan[];
   addLessonPlan: (data: NewLessonPlanData) => void;
+  savedTests: SavedTest[];
+  addSavedTest: (data: NewSavedTest) => void;
   isLoading: boolean;
 }
 
@@ -136,6 +141,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [coursesData, setCoursesData] = useState<Course[]>([]);
   const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
+  const [savedTests, setSavedTests] = useState<SavedTest[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -213,6 +219,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setHolidays(data.holidays || []);
       setCoursesData(data.courses || []);
       setLessonPlans(data.lessonPlans || []);
+      setSavedTests(data.savedTests || []);
       if(data.teachers) {
           const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
           setSubjects(initialSubjects);
@@ -349,6 +356,15 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     };
     setLessonPlans(prev => [newPlan, ...prev]);
   };
+
+  const addSavedTest = (data: NewSavedTest) => {
+    const newTest: SavedTest = {
+      id: `TEST${Date.now()}`,
+      createdAt: new Date(),
+      ...data,
+    };
+    setSavedTests(prev => [newTest, ...prev]);
+  };
   
   const addAdmission = (data: NewAdmissionData) => {
     if (!user) return;
@@ -407,6 +423,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     terms, addTerm,
     holidays, addHoliday,
     lessonPlans, addLessonPlan,
+    savedTests, addSavedTest,
     isLoading,
   };
 

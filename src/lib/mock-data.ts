@@ -1,6 +1,7 @@
 
 
 import { type CreateLessonPlanOutput } from "@/ai/flows/create-lesson-plan";
+import { type GenerateTestOutput } from "@/ai/flows/generate-test";
 
 export interface FinanceRecord { id: string; studentId: string; studentName: string; description: string; totalAmount: number; amountPaid: number; dueDate: string; }
 export interface Expense { id: string; description: string; category: string; amount: number; date: string; proofUrl: string; }
@@ -23,6 +24,14 @@ export interface LessonPlan extends CreateLessonPlanOutput {
   weeklySyllabus: string;
 }
 
+export interface SavedTest extends GenerateTestOutput {
+    id: string;
+    subject: string;
+    topic: string;
+    gradeLevel: string;
+    createdAt: Date;
+}
+
 interface SchoolData {
     profile: SchoolProfile;
     students: Student[];
@@ -30,6 +39,7 @@ interface SchoolData {
     classes: Class[];
     courses: Course[];
     lessonPlans: LessonPlan[];
+    savedTests: SavedTest[];
     admissions: Admission[];
     exams: Exam[];
     finance: FinanceRecord[];
@@ -126,6 +136,7 @@ export const schoolData: Record<string, SchoolData> = {
     classes: northwoodClasses,
     courses: northwoodCourses,
     lessonPlans: [],
+    savedTests: [],
     teams: northwoodTeams,
     grades: northwoodGrades,
     attendance: northwoodAttendance,
@@ -150,6 +161,7 @@ export const schoolData: Record<string, SchoolData> = {
     classes: oakridgeClasses,
     courses: oakridgeCourses,
     lessonPlans: [],
+    savedTests: [],
     teams: [],
     grades: oakridgeGrades,
     attendance: oakridgeAttendance,
@@ -174,6 +186,7 @@ export const schoolData: Record<string, SchoolData> = {
     classes: maplewoodClasses,
     courses: maplewoodCourses,
     lessonPlans: [],
+    savedTests: [],
     teams: [],
     grades: maplewoodGrades,
     attendance: maplewoodAttendance,
