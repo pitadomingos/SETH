@@ -17,6 +17,7 @@ import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -301,17 +302,16 @@ export default function AdminPanelPage() {
                     <CardContent>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                             {Array.from({ length: 12 }, (_, i) => String(i + 1)).map(grade => (
-                                <FormItem key={grade}>
-                                    <FormLabel>Grade {grade}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            value={gradeCapacities[grade] || ''}
-                                            onChange={(e) => handleCapacityChange(grade, e.target.value)}
-                                            placeholder="0"
-                                        />
-                                    </FormControl>
-                                </FormItem>
+                                <div key={grade} className="space-y-2">
+                                    <Label htmlFor={`grade-capacity-${grade}`}>Grade {grade}</Label>
+                                    <Input
+                                        id={`grade-capacity-${grade}`}
+                                        type="number"
+                                        value={gradeCapacities[grade] || ''}
+                                        onChange={(e) => handleCapacityChange(grade, e.target.value)}
+                                        placeholder="0"
+                                    />
+                                </div>
                             ))}
                         </div>
                     </CardContent>
