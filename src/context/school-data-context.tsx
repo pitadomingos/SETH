@@ -23,6 +23,7 @@ import {
     LessonPlan,
     SavedTest,
     DeployedTest,
+    ActivityLog,
 } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
@@ -33,7 +34,7 @@ export type Grade = InitialGrade;
 export type SchoolProfile = InitialSchoolProfile;
 export type Class = InitialClass;
 export type Course = InitialCourse;
-export type { Team, Competition, Admission, Student };
+export type { Team, Competition, Admission, Student, ActivityLog };
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
 interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }
@@ -116,6 +117,7 @@ interface SchoolDataContextType {
   addSavedTest: (data: NewSavedTest) => void;
   deployedTests: DeployedTest[];
   addDeployedTest: (data: NewDeployedTestData) => void;
+  activityLogs: ActivityLog[];
   isLoading: boolean;
 }
 
@@ -151,6 +153,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [savedTests, setSavedTests] = useState<SavedTest[]>([]);
   const [deployedTests, setDeployedTests] = useState<DeployedTest[]>([]);
   const [parentStatusOverrides, setParentStatusOverrides] = useState<Record<string, 'Active' | 'Suspended'>>({});
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -160,6 +163,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
     if (role === 'GlobalAdmin') {
       setSchoolProfile(null);
+      const allLogs = Object.values(allSchoolData).flatMap(school => school.activityLogs || []);
+      setActivityLogs(allLogs);
       setIsLoading(false);
       return;
     }
@@ -230,6 +235,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setLessonPlans(data.lessonPlans || []);
       setSavedTests(data.savedTests || []);
       setDeployedTests(data.deployedTests || []);
+      setActivityLogs(data.activityLogs || []);
       if(data.teachers) {
           const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
           setSubjects(initialSubjects);
@@ -476,6 +482,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     lessonPlans, addLessonPlan,
     savedTests, addSavedTest,
     deployedTests, addDeployedTest,
+    activityLogs,
     isLoading,
   };
 

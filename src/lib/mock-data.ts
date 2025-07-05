@@ -46,6 +46,16 @@ export interface DeployedTest {
   }>;
 }
 
+export interface ActivityLog {
+  id: string;
+  timestamp: Date;
+  schoolId: string;
+  user: string;
+  role: string;
+  action: string;
+  details: string;
+}
+
 interface SchoolData {
     profile: SchoolProfile;
     students: Student[];
@@ -71,6 +81,7 @@ interface SchoolData {
     competitions: Competition[];
     terms: AcademicTerm[];
     holidays: Holiday[];
+    activityLogs: ActivityLog[];
 }
 
 export interface SchoolProfile { id: string; name: string; head: string; address: string; phone: string; email: string; motto: string; logoUrl: string; tier?: 'Premium' | 'Pro' | 'Starter'; gradingSystem: '20-Point' | 'GPA' | 'Letter'; currency: 'USD' | 'ZAR' | 'MZN'; status: 'Active' | 'Suspended' | 'Inactive'; gradeCapacity: Record<string, number>; }
@@ -109,6 +120,12 @@ const northwoodCourses: Course[] = [
     { id: 'CRS002', subject: 'English', teacherId: 'T003', classId: 'C001', schedule: [{ day: 'Tuesday', startTime: '10:00', endTime: '11:00', room: '101' }, { day: 'Thursday', startTime: '10:00', endTime: '11:00', room: '101' }] },
     { id: 'CRS003', subject: 'Physics', teacherId: 'T002', classId: 'C004', schedule: [{ day: 'Monday', startTime: '11:00', endTime: '12:00', room: '301' }, { day: 'Wednesday', startTime: '11:00', endTime: '12:00', room: '301' }] },
 ];
+const northwoodActivityLogs: ActivityLog[] = [
+    { id: 'LOGN001', timestamp: new Date(new Date().setHours(new Date().getHours() - 20)), schoolId: 'northwood', user: 'Dr. Sarah Johnson', role: 'Admin', action: 'Login', details: 'User logged in successfully.' },
+    { id: 'LOGN002', timestamp: new Date(new Date().setHours(new Date().getHours() - 5)), schoolId: 'northwood', user: 'Dr. Sarah Johnson', role: 'Admin', action: 'Create', details: 'Created course: Mathematics for Class 10-A.' },
+    { id: 'LOGN003', timestamp: new Date(new Date().setHours(new Date().getHours() - 2)), schoolId: 'northwood', user: 'Prof. Michael Chen', role: 'Teacher', action: 'Update', details: 'Entered 5 new grades for Mathematics.' },
+    { id: 'LOGN004', timestamp: new Date(new Date().setHours(new Date().getHours() - 1)), schoolId: 'northwood', user: 'Dr. Sarah Johnson', role: 'Admin', action: 'Analysis', details: 'Generated a school-wide performance report.' },
+];
 
 // --- Data for School 2: Oakridge Academy ---
 const oakridgeProfile: SchoolProfile = { id: 'oakridge', name: 'Oakridge Academy', head: 'Mr. James Maxwell', address: '456 Knowledge Ave, Learnington, USA 54321', phone: '+1 (555) 987-6543', email: 'admin@oakridgeacademy.edu', motto: 'Wisdom and Integrity', logoUrl: 'https://placehold.co/100x100.png', tier: 'Pro', gradingSystem: 'GPA', currency: 'USD', status: 'Active', gradeCapacity: defaultGradeCapacity };
@@ -126,6 +143,10 @@ const oakridgeExpenses: Expense[] = [ { id: 'EXP101', description: 'Staff Salari
 const oakridgeEvents: SchoolEvent[] = [ { id: 'EVT101', date: new Date(new Date().setDate(new Date().getDate() + 5)), title: 'Welcome Orientation', type: 'Meeting', location: 'Auditorium', organizer: 'Admin Office', audience: 'New Students & Parents' }, { id: 'EVT102', date: new Date(new Date().setDate(new Date().getDate() + 18)), title: 'Annual Sports Day', type: 'Sports', location: 'Sports Field', organizer: 'Sports Dept.', audience: 'Whole School' }, ];
 const oakridgeTerms: AcademicTerm[] = [];
 const oakridgeHolidays: Holiday[] = [];
+const oakridgeActivityLogs: ActivityLog[] = [
+    { id: 'LOGO001', timestamp: new Date(new Date().setDate(new Date().getDate() - 2)), schoolId: 'oakridge', user: 'Mr. James Maxwell', role: 'Admin', action: 'Login', details: 'User logged in successfully.' },
+    { id: 'LOGO002', timestamp: new Date(new Date().setHours(new Date().getHours() - 8)), schoolId: 'oakridge', user: 'Mr. James Maxwell', role: 'Admin', action: 'Create', details: 'Approved application for Alice Wonder.' },
+];
 
 
 // --- Data for School 3: Maplewood International School ---
@@ -141,6 +162,9 @@ const maplewoodExpenses: Expense[] = [ { id: 'EXP201', description: 'IB Program 
 const maplewoodEvents: SchoolEvent[] = [ { id: 'EVT201', date: new Date(new Date().setDate(new Date().getDate() + 20)), title: 'International Day', type: 'Cultural', location: 'School Grounds', organizer: 'Cultural Committee', audience: 'Whole School Community' }, ];
 const maplewoodTerms: AcademicTerm[] = [];
 const maplewoodHolidays: Holiday[] = [];
+const maplewoodActivityLogs: ActivityLog[] = [
+    { id: 'LOGM001', timestamp: new Date(new Date().setDate(new Date().getDate() - 1)), schoolId: 'maplewood', user: 'Ms. Eleanor Vance', role: 'Admin', action: 'Login', details: 'User logged in successfully.' },
+];
 
 
 export const schoolData: Record<string, SchoolData> = {
@@ -165,6 +189,7 @@ export const schoolData: Record<string, SchoolData> = {
     events: northwoodEvents,
     terms: northwoodTerms,
     holidays: northwoodHolidays,
+    activityLogs: northwoodActivityLogs,
     admissions: [ { id: 'ADM001', name: 'John Smith', appliedFor: 'Grade 9', date: '2024-05-10', status: 'Pending', formerSchool: 'Eastwood Elementary', grades: 'A average in all subjects.', parentName: 'Mary Smith', parentEmail: 'm.smith@family.com', dateOfBirth: '2009-03-12' }, { id: 'ADM002', name: 'Emily White', appliedFor: 'Grade 10', date: '2024-05-09', status: 'Approved', formerSchool: 'Westwood Middle', grades: 'Excellent academic record, especially in sciences.', parentName: 'David White', parentEmail: 'd.white@family.com', dateOfBirth: '2008-11-23' }, ],
     exams: [ { id: 'EXM001', title: 'Mid-term Mathematics', subject: 'Mathematics', grade: '10', date: new Date(new Date().setDate(new Date().getDate() + 10)), time: '09:00', duration: '2 hours', room: '201', board: 'Internal' }, { id: 'EXM004', title: 'IGCSE Physics Paper 4', subject: 'Physics', grade: '10', date: new Date(new Date().setDate(new Date().getDate() + 20)), time: '13:00', duration: '75 minutes', room: 'Hall A', board: 'Cambridge' }, ],
     assets: [ { id: 'ASSET001', name: 'Dell Latitude Laptop', category: 'IT Equipment', status: 'In Use', location: 'Room 201', assignedTo: 'Prof. Michael Chen' }, { id: 'ASSET002', name: 'Epson Projector', category: 'AV Equipment', status: 'Available', location: 'Storage', assignedTo: 'N/A' }, ],
@@ -191,6 +216,7 @@ export const schoolData: Record<string, SchoolData> = {
     events: oakridgeEvents,
     terms: oakridgeTerms,
     holidays: oakridgeHolidays,
+    activityLogs: oakridgeActivityLogs,
     admissions: [ { id: 'OAK-ADM001', name: 'Alice Wonder', appliedFor: 'Grade 9', date: '2024-05-15', status: 'Approved', formerSchool: 'Wonderland Middle', grades: 'Top of class.', parentName: 'Charles Wonder', parentEmail: 'c.wonder@family.com', dateOfBirth: '2009-07-07' }, ],
     exams: [ { id: 'OAK-EXM001', title: 'Biology Entrance Exam', subject: 'Biology', grade: '9', date: new Date(new Date().setDate(new Date().getDate() + 10)), time: '09:00', duration: '2 hours', room: 'L1', board: 'Internal' }, ],
     assets: [ { id: 'OAK-ASSET001', name: 'Microscope Array', category: 'Lab Equipment', status: 'In Use', location: 'Lab 1', assignedTo: 'Ms. Rachel Adams' }, ],
@@ -217,6 +243,7 @@ export const schoolData: Record<string, SchoolData> = {
     events: maplewoodEvents,
     terms: maplewoodTerms,
     holidays: maplewoodHolidays,
+    activityLogs: maplewoodActivityLogs,
     admissions: [ { id: 'MAP-ADM001', name: 'Leo Tolstoy', appliedFor: 'Grade 9', date: '2024-06-01', status: 'Pending', formerSchool: 'Literary Prep', grades: 'Strong in humanities.', parentName: 'Sophia Tolstoy', parentEmail: 's.tolstoy@family.com', dateOfBirth: '2009-01-01' }, ],
     exams: [ { id: 'MAP-EXM001', title: 'World History Final', subject: 'History', grade: '9', date: new Date(new Date().setDate(new Date().getDate() + 15)), time: '10:00', duration: '90 minutes', room: 'H1', board: 'IB' }, ],
     assets: [ { id: 'MAP-ASSET001', name: 'Smart Board', category: 'AV Equipment', status: 'In Use', location: 'H1', assignedTo: 'Mr. David Lee' }, ],
