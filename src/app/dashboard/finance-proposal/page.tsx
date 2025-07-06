@@ -95,9 +95,9 @@ export default function ProjectProposalPage() {
                 <h3 className="font-semibold text-card-foreground">Phased Regional Rollout</h3>
                 <p className="text-sm text-muted-foreground">Our initial launch will target independent and semi-private schools in Mozambique. Success here will create a proven case study for expansion into neighboring countries like South Africa, Zimbabwe, and Botswana, adapting to local curricula and needs.</p>
              </div>
-              <div>
+             <div>
                 <h3 className="font-semibold text-card-foreground">Flexible & Accessible Pricing</h3>
-                <p className="text-sm text-muted-foreground">A tiered, annual subscription model (per student, billed in local currency) ensures predictable revenue and accessibility for institutions of all sizes:</p>
+                <p className="text-sm text-muted-foreground">Our business model is a B2B SaaS subscription sold directly to educational institutions. We use a tiered, annual per-student pricing model, billed to the school in their local currency. This ensures predictable revenue for us and makes the platform accessible for institutions of all sizes. Schools have the flexibility to absorb this operational cost or incorporate it into their tuition structures.</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-muted-foreground">
                     <li><span className="font-semibold">Starter:</span> Core management features for emerging schools.</li>
                     <li><span className="font-semibold text-primary">Pro:</span> Adds advanced AI tools for established institutions.</li>
@@ -230,5 +230,7 @@ export default function ProjectProposalPage() {
     </div>
   );
 }
+
+    
 
     
