@@ -1,19 +1,21 @@
+
 'use client';
 import { useSchoolData } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { formatGradeDisplay, calculateAge } from '@/lib/utils';
-
+import { Input } from '@/components/ui/input';
 
 export default function StudentsPage() {
     const { role, isLoading } = useAuth();
     const { studentsData, grades, schoolProfile } = useSchoolData();
     const router = useRouter();
+    const [searchTerm, setSearchTerm] = useState('');
     
     const studentsWithDetails = useMemo(() => {
         return studentsData.map(student => {
@@ -32,8 +34,11 @@ export default function StudentsPage() {
                 averageGrade,
                 age,
             };
-        });
-    }, [studentsData, grades, schoolProfile]);
+        }).filter(student =>
+            student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            student.email.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [studentsData, grades, schoolProfile, searchTerm]);
 
 
     useEffect(() => {
@@ -59,6 +64,16 @@ export default function StudentsPage() {
                 <CardHeader>
                     <CardTitle>All Students</CardTitle>
                     <CardDescription>A list of all currently enrolled students.</CardDescription>
+                    <div className="relative mt-4">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="search"
+                          placeholder="Search students by name or email..."
+                          className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -90,6 +105,9 @@ export default function StudentsPage() {
                             ))}
                         </TableBody>
                     </Table>
+                     {studentsWithDetails.length === 0 && (
+                        <p className="text-muted-foreground text-center py-10">No students found matching your search.</p>
+                    )}
                 </CardContent>
             </Card>
         </div>

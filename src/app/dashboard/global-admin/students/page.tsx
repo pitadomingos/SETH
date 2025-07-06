@@ -5,17 +5,19 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, GraduationCap, MoreHorizontal } from 'lucide-react';
+import { Loader2, GraduationCap, MoreHorizontal, Search } from 'lucide-react';
 import { useSchoolData, Student } from '@/context/school-data-context';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
 
 export default function GlobalStudentsPage() {
   const { role, isLoading: authLoading } = useAuth();
   const { allSchoolData, isLoading: schoolLoading, updateStudentStatus } = useSchoolData();
   const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState('');
 
   const isLoading = authLoading || schoolLoading;
 
@@ -29,6 +31,14 @@ export default function GlobalStudentsPage() {
       }))
     );
   }, [allSchoolData]);
+
+  const filteredStudents = useMemo(() => {
+    return allStudents.filter(student =>
+      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.parentName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [allStudents, searchTerm]);
 
   useEffect(() => {
     if (!isLoading && role !== 'GlobalAdmin') {
@@ -64,6 +74,16 @@ export default function GlobalStudentsPage() {
         <CardHeader>
           <CardTitle>All Students ({allStudents.length})</CardTitle>
           <CardDescription>A complete list of every student enrolled in the system.</CardDescription>
+          <div className="relative mt-4">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search by student, school, or parent..."
+              className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -78,7 +98,7 @@ export default function GlobalStudentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {allStudents.map(student => (
+              {filteredStudents.map(student => (
                 <TableRow key={student.id}>
                   <TableCell className="font-medium">{student.name}</TableCell>
                   <TableCell>{student.schoolName}</TableCell>
@@ -108,6 +128,9 @@ export default function GlobalStudentsPage() {
               ))}
             </TableBody>
           </Table>
+          {filteredStudents.length === 0 && (
+            <p className="text-center text-muted-foreground py-10">No students found matching your search.</p>
+          )}
         </CardContent>
       </Card>
     </div>

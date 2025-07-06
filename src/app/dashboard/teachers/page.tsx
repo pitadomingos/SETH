@@ -3,10 +3,10 @@
 import { useSchoolData, Teacher } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Loader2, MoreHorizontal, Edit } from 'lucide-react';
+import { UserPlus, Loader2, MoreHorizontal, Edit, Search } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -152,6 +152,15 @@ export default function TeachersPage() {
     const { role, isLoading } = useAuth();
     const { teachersData } = useSchoolData();
     const router = useRouter();
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredTeachers = useMemo(() => {
+        return teachersData.filter(teacher =>
+            teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            teacher.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            teacher.subject.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [teachersData, searchTerm]);
 
     useEffect(() => {
         if (!isLoading && role !== 'Admin') {
@@ -177,6 +186,16 @@ export default function TeachersPage() {
                 <CardHeader>
                     <CardTitle>All Teachers</CardTitle>
                     <CardDescription>View and manage all teachers in the system.</CardDescription>
+                    <div className="relative mt-4">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="search"
+                          placeholder="Search teachers by name, email, or subject..."
+                          className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -191,7 +210,7 @@ export default function TeachersPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {teachersData.map((teacher) => (
+                            {filteredTeachers.map((teacher) => (
                                 <TableRow key={teacher.id}>
                                     <TableCell className="font-medium">{teacher.name}</TableCell>
                                     <TableCell>{teacher.subject}</TableCell>
@@ -210,6 +229,9 @@ export default function TeachersPage() {
                             ))}
                         </TableBody>
                     </Table>
+                    {filteredTeachers.length === 0 && (
+                        <p className="text-center text-muted-foreground py-10">No teachers found matching your search.</p>
+                    )}
                 </CardContent>
             </Card>
         </div>

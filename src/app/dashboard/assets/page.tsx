@@ -6,9 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Loader2, Search } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -98,6 +98,16 @@ export default function AssetsPage() {
   const { role, isLoading } = useAuth();
   const { assetsData } = useSchoolData();
   const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredAssets = useMemo(() => {
+    return assetsData.filter(asset =>
+      asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.assignedTo.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [assetsData, searchTerm]);
 
   useEffect(() => {
     if (!isLoading && role !== 'Admin') {
@@ -132,6 +142,16 @@ export default function AssetsPage() {
         <CardHeader>
           <CardTitle>All Assets</CardTitle>
           <CardDescription>A complete inventory of school assets.</CardDescription>
+          <div className="relative mt-4">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search assets..."
+              className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -145,7 +165,7 @@ export default function AssetsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {assetsData.map((asset) => (
+              {filteredAssets.map((asset) => (
                 <TableRow key={asset.id}>
                   <TableCell className="font-medium">{asset.name}</TableCell>
                   <TableCell>{asset.category}</TableCell>
@@ -158,6 +178,9 @@ export default function AssetsPage() {
               ))}
             </TableBody>
           </Table>
+          {filteredAssets.length === 0 && (
+            <p className="text-center text-muted-foreground py-10">No assets found matching your search.</p>
+          )}
         </CardContent>
       </Card>
     </div>

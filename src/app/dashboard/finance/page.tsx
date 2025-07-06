@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData, FinanceRecord } from '@/context/school-data-context';
-import { DollarSign, TrendingDown, Hourglass, PlusCircle, Loader2, CreditCard, Receipt, Calendar as CalendarIcon, Eye, BarChart2 } from 'lucide-react';
+import { DollarSign, TrendingDown, Hourglass, PlusCircle, Loader2, CreditCard, Receipt, Calendar as CalendarIcon, Eye, BarChart2, Search } from 'lucide-react';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { useForm } from 'react-hook-form';
@@ -390,7 +390,14 @@ const getStatusInfo = (fee: FinanceRecord) => {
 
 function AdminFinanceView() {
   const { financeData, recordPayment, expensesData, schoolProfile } = useSchoolData();
+  const [searchTerm, setSearchTerm] = useState('');
   
+  const filteredFinanceData = useMemo(() => {
+    return financeData.filter(item => 
+      item.studentName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [financeData, searchTerm]);
+
   const now = new Date();
   const totalRevenue = financeData.reduce((acc, f) => acc + f.amountPaid, 0);
   
@@ -466,6 +473,16 @@ function AdminFinanceView() {
             <CardHeader>
                 <CardTitle>Fee Collection Status</CardTitle>
                 <CardDescription>An overview of student fee payments.</CardDescription>
+                <div className="relative pt-4">
+                  <Search className="absolute left-2.5 top-6.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Search by student name..."
+                    className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -479,7 +496,7 @@ function AdminFinanceView() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {financeData.map(item => {
+                        {filteredFinanceData.map(item => {
                             const balance = item.totalAmount - item.amountPaid;
                             const status = getStatusInfo(item);
                             return (
@@ -496,6 +513,9 @@ function AdminFinanceView() {
                         })}
                     </TableBody>
                 </Table>
+                {filteredFinanceData.length === 0 && (
+                  <p className="text-center text-muted-foreground py-10">No records found matching your search.</p>
+                )}
             </CardContent>
           </Card>
         </div>

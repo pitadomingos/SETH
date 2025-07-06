@@ -4,12 +4,13 @@
 import { useAuth } from '@/context/auth-context';
 import { useSchoolData } from '@/context/school-data-context';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { History, Loader2, User, Building, Edit, Plus, Trash2, BarChart, LogIn } from 'lucide-react';
+import { History, Loader2, User, Building, Edit, Plus, Trash2, BarChart, LogIn, Search } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { Input } from '@/components/ui/input';
 
 const actionIcons = {
     Login: <LogIn className="h-4 w-4" />,
@@ -28,6 +29,7 @@ export default function ActivityLogsPage() {
   const { role, isLoading: authLoading } = useAuth();
   const { activityLogs, isLoading: dataLoading, allSchoolData } = useSchoolData();
   const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState('');
   
   const isLoading = authLoading || dataLoading;
 
@@ -40,6 +42,14 @@ export default function ActivityLogsPage() {
   const sortedLogs = useMemo(() => {
     return [...activityLogs].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [activityLogs]);
+
+  const filteredLogs = useMemo(() => {
+    return sortedLogs.filter(log =>
+      log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.details.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [sortedLogs, searchTerm]);
 
   const getSchoolName = (schoolId: string) => {
     return allSchoolData?.[schoolId]?.profile.name || schoolId;
@@ -62,6 +72,16 @@ export default function ActivityLogsPage() {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><History /> Recent Activities</CardTitle>
                 <CardDescription>Actions performed by users are recorded here for review.</CardDescription>
+                 <div className="relative mt-4">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        placeholder="Search logs..."
+                        className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -75,7 +95,7 @@ export default function ActivityLogsPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {sortedLogs.map(log => (
+                        {filteredLogs.map(log => (
                             <TableRow key={log.id}>
                                 <TableCell className="text-muted-foreground text-xs">{formatDistanceToNow(log.timestamp, { addSuffix: true })}</TableCell>
                                 {role === 'GlobalAdmin' && <TableCell className="font-medium">{getSchoolName(log.schoolId)}</TableCell>}
@@ -99,6 +119,9 @@ export default function ActivityLogsPage() {
                         ))}
                     </TableBody>
                 </Table>
+                {filteredLogs.length === 0 && (
+                  <p className="text-center text-muted-foreground py-10">No logs found matching your search.</p>
+                )}
             </CardContent>
         </Card>
     </div>
