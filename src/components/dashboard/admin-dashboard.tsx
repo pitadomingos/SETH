@@ -3,7 +3,7 @@
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Users, BookOpen, School, CalendarDays, TrendingUp, DollarSign, Hourglass, TrendingDown, BarChart2, AlertTriangle, Mail } from "lucide-react";
-import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis, LabelList } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -128,12 +128,14 @@ function TeacherPerformanceChart() {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                    <RechartsBarChart data={chartData} layout="vertical" margin={{ left: 10 }}>
+                    <RechartsBarChart data={chartData} layout="vertical" margin={{ left: 10, right: 30 }}>
                         <CartesianGrid horizontal={false} />
                         <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={10} width={80} />
-                        <XAxis type="number" domain={[10, 20]} />
+                        <XAxis type="number" domain={[10, 20]} hide />
                         <ChartTooltip cursor={false} content={<ChartTooltipContent formatter={(value) => (value as number).toFixed(2)}/>} />
-                        <Bar dataKey="avgGrade" fill="var(--color-avgGrade)" radius={4} />
+                        <Bar dataKey="avgGrade" fill="var(--color-avgGrade)" radius={4}>
+                           <LabelList dataKey="avgGrade" position="right" offset={8} className="fill-foreground" fontSize={12} formatter={(value: number) => value.toFixed(2)} />
+                        </Bar>
                     </RechartsBarChart>
                 </ChartContainer>
             </CardContent>
@@ -169,12 +171,14 @@ function SubjectPerformanceChart() {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                    <RechartsBarChart data={chartData} layout="vertical" margin={{ left: 10 }}>
+                    <RechartsBarChart data={chartData} layout="vertical" margin={{ left: 10, right: 30 }}>
                         <CartesianGrid horizontal={false} />
                         <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={10} width={80} />
-                        <XAxis type="number" domain={[10, 20]} />
+                        <XAxis type="number" domain={[10, 20]} hide />
                         <ChartTooltip cursor={false} content={<ChartTooltipContent formatter={(value) => (value as number).toFixed(2)}/>} />
-                        <Bar dataKey="avgGrade" fill="var(--color-avgGrade)" radius={4} />
+                        <Bar dataKey="avgGrade" fill="var(--color-avgGrade)" radius={4}>
+                             <LabelList dataKey="avgGrade" position="right" offset={8} className="fill-foreground" fontSize={12} formatter={(value: number) => value.toFixed(2)} />
+                        </Bar>
                     </RechartsBarChart>
                 </ChartContainer>
             </CardContent>
@@ -227,12 +231,14 @@ function AttendanceTrendChart() {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                     <RechartsBarChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 40 }}>
+                     <RechartsBarChart data={chartData} margin={{ top: 20, right: 10, left: -10, bottom: 40 }}>
                         <CartesianGrid vertical={false} />
                         <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} angle={-45} textAnchor="end" />
-                        <YAxis dataKey="attendanceRate" tickFormatter={(value) => `${value}%`} />
+                        <YAxis dataKey="attendanceRate" tickFormatter={(value) => `${value}%`} hide/>
                         <ChartTooltip content={<ChartTooltipContent formatter={(value) => `${value}%`}/>} />
-                        <Bar dataKey="attendanceRate" fill="var(--color-attendanceRate)" radius={4} />
+                        <Bar dataKey="attendanceRate" fill="var(--color-attendanceRate)" radius={4}>
+                            <LabelList dataKey="attendanceRate" position="top" className="fill-foreground" fontSize={12} formatter={(value: number) => `${value.toFixed(0)}%`} />
+                        </Bar>
                     </RechartsBarChart>
                 </ChartContainer>
             </CardContent>
