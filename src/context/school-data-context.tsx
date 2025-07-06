@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
@@ -573,7 +572,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const targetSchoolName = allSchoolData[targetSchoolId]?.profile.name || 'Unknown School';
 
     const newMessage: Message = {
-      id: `MSG${Date.now()}`,
+      id: `MSG${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       timestamp: new Date(),
       schoolId: targetSchoolId,
       fromUserName: user.name,
