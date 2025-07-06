@@ -102,12 +102,20 @@ export default function SystemDocumentationPage() {
             </CardHeader>
             <CardContent className="space-y-4">
                 <div>
+                    <h3 className="font-semibold">Global Admin Impersonation</h3>
+                    <p className="text-sm text-muted-foreground">The Global Admin can "Log in as" any user in the system. This provides an exact view of what the user sees, enabling efficient troubleshooting and support.</p>
+                </div>
+                <div>
+                    <h3 className="font-semibold">Centralized User Management</h3>
+                    <p className="text-sm text-muted-foreground">Dedicated pages allow the Global Admin to view, search, and manage every student, teacher, and parent across all schools, including updating their account status.</p>
+                </div>
+                <div>
                     <h3 className="font-semibold">Automated Student Enrollment</h3>
                     <p className="text-sm text-muted-foreground">When an Administrator approves an application in the Admissions module, the system automatically creates a new student record and adds them to the school's roster. This streamlines the onboarding process.</p>
                 </div>
                 <div>
-                    <h3 className="font-semibold">In-App Messaging System</h3>
-                    <p className="text-sm text-muted-foreground">A role-based messaging system allows for communication within the app. Teachers can contact their Admins, and Admins can contact the Developer. Messages are routed and stored based on the user's role and school context, with a status tracking system (Pending/Resolved).</p>
+                    <h3 className="font-semibold">Two-Way Messaging System</h3>
+                    <p className="text-sm text-muted-foreground">A role-based messaging system with Inbox/Sent views allows for communication between Admins and the Developer. The system supports attachments, and all messages are tracked in the global activity log.</p>
                 </div>
             </CardContent>
         </Card>
