@@ -1,9 +1,11 @@
+
+'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { PenSquare, BookMarked, Bell, BrainCircuit, Loader2, X } from "lucide-react";
+import { PenSquare, BookMarked, Bell, BrainCircuit, Loader2, X, Mail } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { useSchoolData } from "@/context/school-data-context";
+import { useSchoolData, NewMessageData } from "@/context/school-data-context";
 import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import {
   ChartContainer,
@@ -17,6 +19,69 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { analyzeClassPerformance, AnalyzeClassPerformanceOutput } from "@/ai/flows/analyze-class-performance";
 import { useToast } from "@/hooks/use-toast";
 import { getLetterGrade } from "@/lib/utils";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+
+
+const messageSchema = z.object({
+  subject: z.string().min(3, "Subject is required."),
+  body: z.string().min(10, "Message body must be at least 10 characters."),
+});
+
+type MessageFormValues = z.infer<typeof messageSchema>;
+
+function ContactAdminDialog() {
+  const { addMessage } = useSchoolData();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const form = useForm<MessageFormValues>({
+    resolver: zodResolver(messageSchema),
+    defaultValues: { subject: '', body: '' },
+  });
+
+  function onSubmit(values: MessageFormValues) {
+    const messageData: NewMessageData = {
+      to: 'Admin',
+      ...values,
+    };
+    addMessage(messageData);
+    form.reset();
+    setIsOpen(false);
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full"><Mail className="mr-2 h-4 w-4" /> Contact Admin</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Contact School Administrator</DialogTitle>
+          <DialogDescription>
+            Send a message regarding administrative matters or general queries.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            <FormField control={form.control} name="subject" render={({ field }) => ( <FormItem><FormLabel>Subject</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="body" render={({ field }) => ( <FormItem><FormLabel>Message</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <DialogFooter>
+              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Send Message
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 
 // Helper to standardize grades for the chart
@@ -297,7 +362,7 @@ export default function TeacherDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-3"><BookMarked className="h-6 w-6 text-primary" /> Your Courses</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent>
             <div className="text-3xl font-bold">{teacherCourses.length} Courses</div>
             <p className="text-sm text-muted-foreground">You are currently teaching {totalStudentsTaught} students this semester.</p>
             <div className="flex gap-2 pt-2">
@@ -323,12 +388,10 @@ export default function TeacherDashboard() {
             ) : (
               <p className="text-muted-foreground">No upcoming events.</p>
             )}
+             <div className="mt-4">
+                <ContactAdminDialog />
+             </div>
           </CardContent>
-          <CardFooter>
-             <Link href="/dashboard/events" passHref className="w-full">
-              <Button variant="outline" className="w-full">View All Events</Button>
-            </Link>
-          </CardFooter>
         </Card>
       </div>
       <AIClassPerformanceAnalyzer />

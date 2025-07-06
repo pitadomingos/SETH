@@ -2,6 +2,7 @@
 
 import { type CreateLessonPlanOutput } from "@/ai/flows/create-lesson-plan";
 import { type GenerateTestOutput } from "@/ai/flows/generate-test";
+import { type Role } from "@/context/auth-context";
 
 export interface FinanceRecord { id: string; studentId: string; studentName: string; description: string; totalAmount: number; amountPaid: number; dueDate: string; }
 export interface Expense { id: string; description: string; category: string; amount: number; date: string; proofUrl: string; }
@@ -56,6 +57,18 @@ export interface ActivityLog {
   details: string;
 }
 
+export interface Message {
+  id: string;
+  timestamp: Date;
+  schoolId: string;
+  fromUserName: string;
+  fromUserRole: Role;
+  to: 'Admin' | 'Developer' | string; // Role name or specific user ID
+  subject: string;
+  body: string;
+  status: 'Pending' | 'Resolved';
+}
+
 interface SchoolData {
     profile: SchoolProfile;
     students: Student[];
@@ -82,6 +95,7 @@ interface SchoolData {
     terms: AcademicTerm[];
     holidays: Holiday[];
     activityLogs: ActivityLog[];
+    messages: Message[];
 }
 
 export interface SchoolProfile { id: string; name: string; head: string; address: string; phone: string; email: string; motto: string; logoUrl: string; tier?: 'Premium' | 'Pro' | 'Starter'; gradingSystem: '20-Point' | 'GPA' | 'Letter'; currency: 'USD' | 'ZAR' | 'MZN'; status: 'Active' | 'Suspended' | 'Inactive'; gradeCapacity: Record<string, number>; }
@@ -190,6 +204,7 @@ export const schoolData: Record<string, SchoolData> = {
     terms: northwoodTerms,
     holidays: northwoodHolidays,
     activityLogs: northwoodActivityLogs,
+    messages: [],
     admissions: [ { id: 'ADM001', name: 'John Smith', appliedFor: 'Grade 9', date: '2024-05-10', status: 'Pending', formerSchool: 'Eastwood Elementary', grades: 'A average in all subjects.', parentName: 'Mary Smith', parentEmail: 'm.smith@family.com', dateOfBirth: '2009-03-12' }, { id: 'ADM002', name: 'Emily White', appliedFor: 'Grade 10', date: '2024-05-09', status: 'Approved', formerSchool: 'Westwood Middle', grades: 'Excellent academic record, especially in sciences.', parentName: 'David White', parentEmail: 'd.white@family.com', dateOfBirth: '2008-11-23' }, ],
     exams: [ { id: 'EXM001', title: 'Mid-term Mathematics', subject: 'Mathematics', grade: '10', date: new Date(new Date().setDate(new Date().getDate() + 10)), time: '09:00', duration: '2 hours', room: '201', board: 'Internal' }, { id: 'EXM004', title: 'IGCSE Physics Paper 4', subject: 'Physics', grade: '10', date: new Date(new Date().setDate(new Date().getDate() + 20)), time: '13:00', duration: '75 minutes', room: 'Hall A', board: 'Cambridge' }, ],
     assets: [ { id: 'ASSET001', name: 'Dell Latitude Laptop', category: 'IT Equipment', status: 'In Use', location: 'Room 201', assignedTo: 'Prof. Michael Chen' }, { id: 'ASSET002', name: 'Epson Projector', category: 'AV Equipment', status: 'Available', location: 'Storage', assignedTo: 'N/A' }, ],
@@ -217,6 +232,7 @@ export const schoolData: Record<string, SchoolData> = {
     terms: oakridgeTerms,
     holidays: oakridgeHolidays,
     activityLogs: oakridgeActivityLogs,
+    messages: [],
     admissions: [ { id: 'OAK-ADM001', name: 'Alice Wonder', appliedFor: 'Grade 9', date: '2024-05-15', status: 'Approved', formerSchool: 'Wonderland Middle', grades: 'Top of class.', parentName: 'Charles Wonder', parentEmail: 'c.wonder@family.com', dateOfBirth: '2009-07-07' }, ],
     exams: [ { id: 'OAK-EXM001', title: 'Biology Entrance Exam', subject: 'Biology', grade: '9', date: new Date(new Date().setDate(new Date().getDate() + 10)), time: '09:00', duration: '2 hours', room: 'L1', board: 'Internal' }, ],
     assets: [ { id: 'OAK-ASSET001', name: 'Microscope Array', category: 'Lab Equipment', status: 'In Use', location: 'Lab 1', assignedTo: 'Ms. Rachel Adams' }, ],
@@ -244,6 +260,7 @@ export const schoolData: Record<string, SchoolData> = {
     terms: maplewoodTerms,
     holidays: maplewoodHolidays,
     activityLogs: maplewoodActivityLogs,
+    messages: [],
     admissions: [ { id: 'MAP-ADM001', name: 'Leo Tolstoy', appliedFor: 'Grade 9', date: '2024-06-01', status: 'Pending', formerSchool: 'Literary Prep', grades: 'Strong in humanities.', parentName: 'Sophia Tolstoy', parentEmail: 's.tolstoy@family.com', dateOfBirth: '2009-01-01' }, ],
     exams: [ { id: 'MAP-EXM001', title: 'World History Final', subject: 'History', grade: '9', date: new Date(new Date().setDate(new Date().getDate() + 15)), time: '10:00', duration: '90 minutes', room: 'H1', board: 'IB' }, ],
     assets: [ { id: 'MAP-ASSET001', name: 'Smart Board', category: 'AV Equipment', status: 'In Use', location: 'H1', assignedTo: 'Mr. David Lee' }, ],

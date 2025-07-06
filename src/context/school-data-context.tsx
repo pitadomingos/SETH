@@ -24,8 +24,9 @@ import {
     SavedTest,
     DeployedTest,
     ActivityLog,
+    Message,
 } from '@/lib/mock-data';
-import { useAuth } from './auth-context';
+import { useAuth, Role } from './auth-context';
 import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
 import { GenerateTestOutput } from '@/ai/flows/generate-test';
 import { useToast } from '@/hooks/use-toast';
@@ -35,7 +36,7 @@ export type Grade = InitialGrade;
 export type SchoolProfile = InitialSchoolProfile;
 export type Class = InitialClass;
 export type Course = InitialCourse;
-export type { Team, Competition, Admission, Student, ActivityLog };
+export type { Team, Competition, Admission, Student, ActivityLog, Message };
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
 interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }
@@ -58,6 +59,7 @@ export interface NewAdmissionData {
   gradesSummary: string;
 }
 export interface NewDeployedTestData { testId: string; classId: string; deadline: Date; }
+export interface NewMessageData { to: 'Admin' | 'Developer' | string; subject: string; body: string; }
 
 
 interface SchoolDataContextType {
@@ -121,6 +123,9 @@ interface SchoolDataContextType {
   deployedTests: DeployedTest[];
   addDeployedTest: (data: NewDeployedTestData) => void;
   activityLogs: ActivityLog[];
+  messages: Message[];
+  addMessage: (data: NewMessageData) => void;
+  updateMessageStatus: (messageId: string, status: Message['status']) => void;
   isLoading: boolean;
 }
 
@@ -157,6 +162,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [savedTests, setSavedTests] = useState<SavedTest[]>([]);
   const [deployedTests, setDeployedTests] = useState<DeployedTest[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -239,6 +245,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setSavedTests(data.savedTests || []);
       setDeployedTests(data.deployedTests || []);
       setActivityLogs(data.activityLogs || []);
+      setMessages(data.messages || []);
       if(data.teachers) {
           const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
           setSubjects(initialSubjects);
@@ -479,7 +486,57 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addPlayerToTeam = (teamId: string, studentId: string) => { setTeamsData(prev => prev.map(team => team.id === teamId ? { ...team, playerIds: [...team.playerIds, studentId] } : team)); };
   const removePlayerFromTeam = (teamId: string, studentId: string) => { setTeamsData(prev => prev.map(team => team.id === teamId ? { ...team, playerIds: team.playerIds.filter(id => id !== studentId) } : team)); };
   const updateApplicationStatus = (id: string, status: Admission['status']) => { setAdmissionsData(prev => prev.map(app => app.id === id ? { ...app, status } : app)); };
+  
+  const addMessage = (data: NewMessageData) => {
+    if (!user || !role) return;
 
+    const schoolId = role === 'GlobalAdmin' ? 'system' : user.schoolId;
+    if (!schoolId) return;
+
+    const newMessage: Message = {
+      id: `MSG${Date.now()}`,
+      timestamp: new Date(),
+      schoolId: schoolId,
+      fromUserName: user.name,
+      fromUserRole: role,
+      to: data.to,
+      subject: data.subject,
+      body: data.body,
+      status: 'Pending',
+    };
+
+    setMessages(prev => [newMessage, ...prev]);
+
+    // Also need to update the mock "DB"
+    setAllSchoolData(prevAllData => {
+        const newAllData = { ...prevAllData };
+        if (newAllData[schoolId]) {
+            newAllData[schoolId].messages.unshift(newMessage);
+        }
+        return newAllData;
+    });
+
+    toast({ title: 'Message Sent!' });
+  };
+
+  const updateMessageStatus = (messageId: string, status: Message['status']) => {
+    setMessages(prev => prev.map(m => m.id === messageId ? { ...m, status } : m));
+
+    if (!user?.schoolId) return;
+    setAllSchoolData(prevAllData => {
+        const newAllData = { ...prevAllData };
+        if (newAllData[user.schoolId!]) {
+            const schoolMessages = newAllData[user.schoolId!].messages;
+            const msgIndex = schoolMessages.findIndex(m => m.id === messageId);
+            if (msgIndex > -1) {
+                schoolMessages[msgIndex].status = status;
+            }
+        }
+        return newAllData;
+    });
+
+    toast({ title: `Message marked as ${status}` });
+  }
 
   const value = {
     schoolProfile, updateSchoolProfile,
@@ -510,6 +567,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     savedTests, addSavedTest, deleteSavedTest,
     deployedTests, addDeployedTest,
     activityLogs,
+    messages,
+    addMessage,
+    updateMessageStatus,
     isLoading,
   };
 

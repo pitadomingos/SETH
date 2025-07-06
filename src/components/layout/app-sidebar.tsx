@@ -40,6 +40,7 @@ import {
     FileCheck,
     Briefcase,
     History,
+    Mail,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -73,6 +74,7 @@ const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/global-admin/all-schools', label: 'All Schools', icon: Building },
     { href: '/dashboard/global-admin/students', label: 'All Students', icon: GraduationCap },
     { href: '/dashboard/global-admin/parents', label: 'All Parents', icon: HeartHandshake },
+    { href: '/dashboard/global-admin/inbox', label: 'Inbox', icon: Mail },
     { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
     { href: '/dashboard/finance-proposal', label: 'Project Proposal', icon: Briefcase },
     { href: '/dashboard/system-documentation', label: 'System Docs', icon: FileText },
@@ -92,6 +94,7 @@ const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
     { href: '/dashboard/assets', label: 'Assets', icon: Package },
     { href: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
+    { href: '/dashboard/inbox', label: 'Inbox', icon: Mail },
     { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
     { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Award },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
