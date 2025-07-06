@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, MoreHorizontal, Search } from 'lucide-react';
+import { Loader2, MoreHorizontal, Search, HeartHandshake, Users, CheckCircle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -13,11 +12,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 
+const PAGE_SIZE = 10;
+
 export default function GlobalParentsPage() {
   const { role, isLoading: authLoading } = useAuth();
   const { allSchoolData, isLoading: schoolLoading, parentStatusOverrides, updateParentStatus } = useSchoolData();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const isLoading = authLoading || schoolLoading;
 
@@ -59,11 +61,35 @@ export default function GlobalParentsPage() {
     );
   }, [allParents, searchTerm]);
 
+  const paginatedParents = useMemo(() => {
+    const startIndex = (currentPage - 1) * PAGE_SIZE;
+    const endIndex = startIndex + PAGE_SIZE;
+    return filteredParents.slice(startIndex, endIndex);
+  }, [filteredParents, currentPage]);
+
+  const totalPages = Math.ceil(filteredParents.length / PAGE_SIZE);
+
+  const summaryStats = useMemo(() => {
+    const totalChildren = allParents.reduce((acc, parent) => acc + parent.children.length, 0);
+    const activeParents = allParents.filter(p => p.status === 'Active').length;
+    const suspendedParents = allParents.length - activeParents;
+    return {
+      totalParents: allParents.length,
+      totalChildren,
+      activeParents,
+      suspendedParents,
+    };
+  }, [allParents]);
+
   useEffect(() => {
     if (!isLoading && role !== 'GlobalAdmin') {
       router.push('/dashboard');
     }
   }, [role, isLoading, router]);
+  
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   if (isLoading || role !== 'GlobalAdmin' || !allSchoolData) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -83,10 +109,29 @@ export default function GlobalParentsPage() {
         <h2 className="text-3xl font-bold tracking-tight">Global Parent Management</h2>
         <p className="text-muted-foreground">View and manage all parent accounts across the network.</p>
       </header>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Parents</CardTitle><HeartHandshake className="h-4 w-4 text-muted-foreground" /></CardHeader>
+          <CardContent><div className="text-2xl font-bold">{summaryStats.totalParents}</div></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Children Linked</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader>
+          <CardContent><div className="text-2xl font-bold">{summaryStats.totalChildren}</div></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Active Accounts</CardTitle><CheckCircle className="h-4 w-4 text-muted-foreground" /></CardHeader>
+          <CardContent><div className="text-2xl font-bold text-green-500">{summaryStats.activeParents}</div></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Suspended Accounts</CardTitle><XCircle className="h-4 w-4 text-muted-foreground" /></CardHeader>
+          <CardContent><div className="text-2xl font-bold text-red-500">{summaryStats.suspendedParents}</div></CardContent>
+        </Card>
+      </div>
       
       <Card>
         <CardHeader>
-          <CardTitle>All Parents ({allParents.length})</CardTitle>
+          <CardTitle>All Parents ({filteredParents.length})</CardTitle>
           <CardDescription>A complete list of every parent with children enrolled in the system.</CardDescription>
           <div className="relative mt-4">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -112,7 +157,7 @@ export default function GlobalParentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredParents.map(parent => (
+              {paginatedParents.map(parent => (
                 <TableRow key={parent.email}>
                   <TableCell className="font-medium">{parent.name}</TableCell>
                   <TableCell>{parent.email}</TableCell>
@@ -145,6 +190,29 @@ export default function GlobalParentsPage() {
             <p className="text-center text-muted-foreground py-10">No parents found matching your search.</p>
           )}
         </CardContent>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-end space-x-2 p-4 border-t">
+            <span className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </Card>
     </div>
   );
