@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy } from 'lucide-react';
+import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, GraduationCap } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function ProjectProposalPage() {
@@ -145,6 +145,34 @@ export default function ProjectProposalPage() {
                 <p className="text-sm text-muted-foreground">Launch a pilot program with a select group of schools in Mozambique to gather feedback and refine features. Initiate targeted marketing campaigns for a full market launch.</p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Layers /> The Future Vision: A Lifelong Learning Ecosystem</CardTitle>
+            <CardDescription>From the first day of pre-school to university graduation, a single thread of data.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">Our ultimate vision extends beyond the K-12 classroom. We aim to create a cohesive, three-part ecosystem that supports a student's entire educational journey. While the Pre-School and University modules will be developed as distinct, specialized applications due to their unique complexities, they will be built on a shared data philosophy.</p>
+            <div className="grid md:grid-cols-3 gap-6 mt-6">
+              <div className="flex flex-col items-center text-center p-4 rounded-lg bg-muted/50">
+                <Baby className="h-10 w-10 text-primary mb-3"/>
+                <h4 className="font-semibold">EduManage Pre-School</h4>
+                <p className="text-sm text-muted-foreground mt-1">Focusing on developmental milestones, play-based learning, and parent communication, creating the foundational data points for a child's educational profile.</p>
+              </div>
+              <div className="flex flex-col items-center text-center p-4 rounded-lg bg-primary/10 border border-primary/20 shadow-inner">
+                <School className="h-10 w-10 text-primary mb-3"/>
+                <h4 className="font-semibold">EduManage K-12 (Core)</h4>
+                <p className="text-sm text-muted-foreground mt-1">Our current platform, perfecting the management of curriculum-based education, assessments, and school operations, building a rich academic history.</p>
+              </div>
+              <div className="flex flex-col items-center text-center p-4 rounded-lg bg-muted/50">
+                <GraduationCap className="h-10 w-10 text-primary mb-3"/>
+                <h4 className="font-semibold">EduManage University</h4>
+                <p className="text-sm text-muted-foreground mt-1">A specialized module for higher education, managing complex course credits, research, and career services, leveraging the student's entire K-12 history for better guidance.</p>
+              </div>
+            </div>
+            <p className="text-muted-foreground mt-6">This interconnected system will provide unprecedented insights, allowing educators and advisors to track progress, identify long-term trends, and offer truly personalized guidance from early childhood through to career entry. This is not just school management; it is lifetime learning management.</p>
           </CardContent>
         </Card>
         
