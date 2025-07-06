@@ -12,7 +12,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
     title: 'Developer / System Owner Guide',
     points: [
       'System Dashboard: Get a high-level overview of network-wide statistics and run AI-powered analyses across multiple schools.',
-      'All Schools Management: View all schools in the system. From here, you can manage a school\'s status (Active, Suspended) and switch context to manage a school directly.',
+      'All Schools Management: View all schools in the system. From here, you can manage a school\'s status (Active, Suspended) and switch context to manage a school directly using the "Log in as user" feature.',
       'Inbox: Receive, view, and track messages from School Administrators across the network.',
       'Global User Management: Access dedicated pages to view and manage every student and parent account across the entire network, including suspending access.',
       'Activity Logs: View a global feed of all significant actions taken by users across all schools for complete system oversight.',
@@ -30,7 +30,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
         'School Profile: View and edit your school\'s core information like name, address, and contact details. Upload a school logo and manage your subscription plan.',
         'User Management: View student and teacher profiles. New teachers can be added, and students are enrolled automatically through Admissions.',
         'Admissions: Review and process new student applications. Approving an application automatically creates the student\'s record and links them to their parent\'s account.',
-        'Course Management (Academics): Define courses by assigning a subject, teacher, and a recurring weekly schedule to a class section.',
+        'Academics: Define courses by assigning a subject, teacher, and a recurring weekly schedule to a class section. You can use the "Analyze Schedule" feature to find booking conflicts.',
         'Class Management (Classes): Define and manage student groups (e.g., "Class 9-A").',
         'Finance: Track school-wide revenue and expenses. Record partial or full payments for student fees and create new ad-hoc fee transactions.',
         'Sports Management: Create sports teams, assign coaches, and manage player rosters. You can also delete teams, which will remove associated competitions.',
@@ -39,7 +39,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
         'Inbox: Receive and manage messages from your school\'s teachers. You can mark messages as resolved.',
         'Activity Logs: Review a log of all recent activities within your school to track user actions and system changes.',
         'Leaderboards: Check academic rankings to see how students are performing.',
-        'Settings: Configure application-wide behavior, such as the grading display format (e.g., 20-Point Scale, Letter Grades, GPA).',
+        'Settings: Configure application-wide behavior, such as the grading display format (e.g., 20-Point Scale, Letter Grades, GPA) and the school\'s currency.',
     ]
   },
   Teacher: {

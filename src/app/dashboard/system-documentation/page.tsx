@@ -61,7 +61,7 @@ export default function SystemDocumentationPage() {
           <CardContent className="space-y-4">
             <div>
               <h3 className="font-semibold"><code>/src/app/dashboard</code></h3>
-              <p className="text-sm text-muted-foreground">Contains all application routes, pages, and layouts. Includes dynamic routes like <code>/test/[id]</code> for test-taking.</p>
+              <p className="text-sm text-muted-foreground">Contains all application routes, pages (including global admin routes), and layouts. Includes dynamic routes like <code>/test/[id]</code> for test-taking.</p>
             </div>
             <div>
               <h3 className="font-semibold"><code>/src/components</code></h3>
@@ -69,7 +69,7 @@ export default function SystemDocumentationPage() {
             </div>
              <div>
               <h3 className="font-semibold flex items-center gap-2"><BrainCircuit /> <code>/src/ai/flows</code></h3>
-              <p className="text-sm text-muted-foreground">Houses the Genkit flows and AI-related logic, including: <code>create-lesson-plan</code>, <code>generate-test</code>, <code>grade-student-test</code>, <code>analyze-school-performance</code>, <code>identify-struggling-students</code>, and more.</p>
+              <p className="text-sm text-muted-foreground">Houses the Genkit flows and AI-related logic, including: <code>create-lesson-plan</code>, <code>generate-test</code>, <code>grade-student-test</code>, <code>analyze-schedule-conflicts</code>, <code>analyze-school-performance</code>, <code>identify-struggling-students</code>, and more.</p>
             </div>
              <div>
               <h3 className="font-semibold"><code>/src/context</code></h3>
@@ -86,7 +86,7 @@ export default function SystemDocumentationPage() {
           <CardContent className="space-y-4">
              <div>
               <h3 className="font-semibold">In-Memory Mock Database</h3>
-              <p className="text-sm text-muted-foreground">The app currently uses static mock data from srouce/lib/mock-data.ts for rapid prototyping. To simulate persistence, this mock data object is mutated directly in the data context provider. This allows changes to persist throughout a user's session without a real backend.</p>
+              <p className="text-sm text-muted-foreground">The app currently uses static mock data from src/lib/mock-data.ts for rapid prototyping. To simulate persistence, this mock data object is mutated directly in the data context provider. This allows changes to persist throughout a user's session without a real backend.</p>
             </div>
             <div>
               <h3 className="font-semibold">Stateful Context Providers</h3>
@@ -107,7 +107,7 @@ export default function SystemDocumentationPage() {
                 </div>
                 <div>
                     <h3 className="font-semibold">Centralized User Management</h3>
-                    <p className="text-sm text-muted-foreground">Dedicated pages allow the Global Admin to view, search, and manage every student, teacher, and parent across all schools, including updating their account status.</p>
+                    <p className="text-sm text-muted-foreground">Dedicated pages allow the Global Admin to view, search, and manage every student and parent across all schools, including updating their account status.</p>
                 </div>
                 <div>
                     <h3 className="font-semibold">Automated Student Enrollment</h3>
