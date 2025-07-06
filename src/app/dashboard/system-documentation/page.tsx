@@ -86,16 +86,33 @@ export default function SystemDocumentationPage() {
           <CardContent className="space-y-4">
              <div>
               <h3 className="font-semibold">In-Memory Mock Database</h3>
-              <p className="text-sm text-muted-foreground">The app currently uses static mock data from <code>src/lib/mock-data.ts</code> for rapid prototyping. To simulate persistence for features like school status changes and new admissions, this mock data object is mutated directly in the data context provider. This allows changes to persist throughout a user's session without a real backend.</p>
+              <p className="text-sm text-muted-foreground">The app currently uses static mock data from srouce/lib/mock-data.ts for rapid prototyping. To simulate persistence, this mock data object is mutated directly in the data context provider. This allows changes to persist throughout a user's session without a real backend.</p>
             </div>
             <div>
               <h3 className="font-semibold">Stateful Context Providers</h3>
-              <p className="text-sm text-muted-foreground">The <code>AuthProvider</code> and <code>SchoolDataProvider</code> contexts work together to create a dynamic, in-memory state. Based on the logged-in user, the system loads the correct slice of data, simulating a real multi-tenant backend and allowing actions (like adding a student or recording a payment) to update the UI instantly.</p>
+              <p className="text-sm text-muted-foreground">The <code>AuthProvider</code> and <code>SchoolDataProvider</code> contexts work together to create a dynamic, in-memory state. Based on the logged-in user, the system loads the correct slice of data, simulating a real multi-tenant backend and allowing actions to update the UI instantly.</p>
             </div>
           </CardContent>
         </Card>
-
+        
         <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Share2 /> Key System Flows & Logic</CardTitle>
+                <CardDescription>Core automated workflows and logic within the application.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div>
+                    <h3 className="font-semibold">Automated Student Enrollment</h3>
+                    <p className="text-sm text-muted-foreground">When an Administrator approves an application in the Admissions module, the system automatically creates a new student record and adds them to the school's roster. This streamlines the onboarding process.</p>
+                </div>
+                <div>
+                    <h3 className="font-semibold">In-App Messaging System</h3>
+                    <p className="text-sm text-muted-foreground">A role-based messaging system allows for communication within the app. Teachers can contact their Admins, and Admins can contact the Developer. Messages are routed and stored based on the user's role and school context, with a status tracking system (Pending/Resolved).</p>
+                </div>
+            </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Cloud /> Backend & Firebase Integration Roadmap</CardTitle>
             <CardDescription>A step-by-step plan to transition to a full Firebase backend.</CardDescription>
