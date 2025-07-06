@@ -104,7 +104,7 @@ interface SchoolDataContextType {
   addAudience: (audience: string) => void;
   deleteAudience: (audience: string) => void;
   expenseCategories: string[];
-  expensesData: Expense[];
+  expenses: Expense[];
   addExpense: (data: NewExpenseData) => void;
   teamsData: Team[];
   addTeam: (data: NewTeamData) => void;
@@ -554,23 +554,35 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateMessageStatus = (messageId: string, status: Message['status']) => {
+    // Optimistically update the local messages for the current context (if any)
     setMessages(prev => prev.map(m => m.id === messageId ? { ...m, status } : m));
 
-    if (!user?.schoolId) return;
+    // Update the master mock data
     setAllSchoolData(prevAllData => {
         const newAllData = { ...prevAllData };
-        if (newAllData[user.schoolId!]) {
-            const schoolMessages = newAllData[user.schoolId!].messages;
-            const msgIndex = schoolMessages.findIndex(m => m.id === messageId);
+        let updated = false;
+
+        // Find which school the message belongs to
+        for (const schoolId in newAllData) {
+            const school = newAllData[schoolId];
+            const msgIndex = school.messages.findIndex(m => m.id === messageId);
             if (msgIndex > -1) {
-                schoolMessages[msgIndex].status = status;
+                // Found it. Update the status.
+                school.messages[msgIndex].status = status;
+                updated = true;
+                break; // Exit the loop once found
             }
         }
+        
+        if (!updated) {
+            console.warn(`Message with ID ${messageId} not found in any school.`);
+        }
+        
         return newAllData;
     });
 
     toast({ title: `Message marked as ${status}` });
-  }
+  };
 
   const value = {
     schoolProfile, updateSchoolProfile,

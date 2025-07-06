@@ -7,12 +7,14 @@ import { useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Mail, CheckCircle, Hourglass } from 'lucide-react';
+import { Loader2, Mail, CheckCircle, Hourglass, MoreHorizontal } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 export default function GlobalInboxPage() {
   const { role, isLoading: authLoading } = useAuth();
-  const { allSchoolData, isLoading: dataLoading } = useSchoolData();
+  const { allSchoolData, isLoading: dataLoading, updateMessageStatus } = useSchoolData();
   const router = useRouter();
   
   const isLoading = authLoading || dataLoading;
@@ -56,7 +58,7 @@ export default function GlobalInboxPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Mail /> Incoming Messages</CardTitle>
-          <CardDescription>This inbox is read-only in the prototype. Status updates are not supported for the developer role yet.</CardDescription>
+          <CardDescription>Review messages from school admins and manage their status.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -67,6 +69,7 @@ export default function GlobalInboxPage() {
                 <TableHead>Subject</TableHead>
                 <TableHead>Received</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead><span className="sr-only">Actions</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -88,10 +91,26 @@ export default function GlobalInboxPage() {
                       {msg.status}
                     </Badge>
                   </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => updateMessageStatus(msg.id, 'Pending')} disabled={msg.status === 'Pending'}>
+                          Mark as Pending
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateMessageStatus(msg.id, 'Resolved')} disabled={msg.status === 'Resolved'}>
+                          Mark as Resolved
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               )) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">No messages yet.</TableCell>
+                  <TableCell colSpan={6} className="h-24 text-center">No messages yet.</TableCell>
                 </TableRow>
               )}
             </TableBody>
