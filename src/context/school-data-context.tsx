@@ -69,6 +69,7 @@ interface SchoolDataContextType {
   updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
   studentsData: Student[];
   addStudentFromAdmission: (admission: Admission) => void;
+  updateStudentStatus: (schoolId: string, studentId: string, status: Student['status']) => void;
   teachersData: Teacher[];
   addTeacher: (teacher: Omit<Teacher, 'id' | 'status'>) => void;
   classesData: Class[];
@@ -126,6 +127,8 @@ interface SchoolDataContextType {
   messages: Message[];
   addMessage: (data: NewMessageData) => void;
   updateMessageStatus: (messageId: string, status: Message['status']) => void;
+  parentStatusOverrides: Record<string, 'Active' | 'Suspended'>;
+  updateParentStatus: (email: string, status: 'Active' | 'Suspended') => void;
   isLoading: boolean;
 }
 
@@ -163,6 +166,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [deployedTests, setDeployedTests] = useState<DeployedTest[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [parentStatusOverrides, setParentStatusOverrides] = useState<Record<string, 'Active' | 'Suspended'>>({});
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -279,6 +283,30 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         };
         return newData;
     });
+  };
+
+  const updateParentStatus = (email: string, status: 'Active' | 'Suspended') => {
+    setParentStatusOverrides(prev => ({ ...prev, [email]: status }));
+    toast({ title: 'Parent Status Updated', description: `Status for ${email} has been set to ${status}.` });
+  };
+  
+  const updateStudentStatus = (schoolId: string, studentId: string, status: Student['status']) => {
+    if (initialSchoolData[schoolId]) {
+        const studentIndex = initialSchoolData[schoolId].students.findIndex(s => s.id === studentId);
+        if (studentIndex > -1) {
+            initialSchoolData[schoolId].students[studentIndex].status = status;
+        }
+    }
+    setAllSchoolData(prevData => {
+        const newData = { ...prevData };
+        if (newData[schoolId]) {
+            const school = {...newData[schoolId]};
+            school.students = school.students.map(s => s.id === studentId ? { ...s, status } : s);
+            newData[schoolId] = school;
+        }
+        return newData;
+    });
+    toast({ title: 'Student Status Updated' });
   };
 
   const updateSchoolProfile = (data: Partial<SchoolProfile>) => { setSchoolProfile(prev => prev ? { ...prev, ...data } : null); };
@@ -541,7 +569,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const value = {
     schoolProfile, updateSchoolProfile,
     allSchoolData, updateSchoolStatus,
-    studentsData, addStudentFromAdmission,
+    studentsData, addStudentFromAdmission, updateStudentStatus,
     teachersData, addTeacher,
     classesData, addClass,
     coursesData, addCourse,
@@ -570,6 +598,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     messages,
     addMessage,
     updateMessageStatus,
+    parentStatusOverrides,
+    updateParentStatus,
     isLoading,
   };
 
@@ -587,3 +617,4 @@ export const useSchoolData = () => {
   }
   return context;
 };
+
