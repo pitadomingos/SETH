@@ -58,7 +58,11 @@ function ComposeMessageDialog() {
       targetSchoolId: values.targetSchoolId,
     };
     addMessage(messageData);
-    form.reset();
+    form.reset({
+        targetSchoolId: '',
+        subject: '',
+        body: ''
+    });
     setIsOpen(false);
   }
 
