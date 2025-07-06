@@ -34,6 +34,11 @@ function ComposeMessageDialog() {
 
   const form = useForm<MessageFormValues>({
     resolver: zodResolver(messageSchema),
+    defaultValues: {
+        targetSchoolId: '',
+        subject: '',
+        body: ''
+    }
   });
   
   const adminRecipients = useMemo(() => {
