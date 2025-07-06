@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,18 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData, Admission } from '@/context/school-data-context';
-import { MoreHorizontal, Check, X, FileText, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Check, X, FileText, Loader2, User, Users2, BarChart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { calculateAge } from '@/lib/utils';
+import { Pie, PieChart, Cell, Bar, BarChart as RechartsBarChart, CartesianGrid, XAxis, YAxis, LabelList } from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartConfig,
+  ChartLegend,
+  ChartLegendContent,
+} from '@/components/ui/chart';
 
 function ViewApplicationDialog({ application }: { application: Admission }) {
     return (
@@ -30,6 +40,8 @@ function ViewApplicationDialog({ application }: { application: Admission }) {
                 <div className="space-y-4 py-4 text-sm max-h-[60vh] overflow-y-auto pr-4">
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                         <p className="font-semibold">Applicant Name:</p><p>{application.name}</p>
+                        <p className="font-semibold">Age:</p><p>{calculateAge(application.dateOfBirth)} years old</p>
+                        <p className="font-semibold">Sex:</p><p>{application.sex}</p>
                         <p className="font-semibold">Applying For:</p><p>{application.appliedFor}</p>
                         <p className="font-semibold">Date of Birth:</p><p>{application.dateOfBirth}</p>
                         <p className="font-semibold">Application Date:</p><p>{application.date}</p>
@@ -52,6 +64,87 @@ function ViewApplicationDialog({ application }: { application: Admission }) {
         </Dialog>
     );
 }
+
+function ApplicationsByGradeChart({ admissions }) {
+  const chartData = useMemo(() => {
+    const gradeCounts = admissions.reduce((acc, application) => {
+      const grade = application.appliedFor;
+      acc[grade] = (acc[grade] || 0) + 1;
+      return acc;
+    }, {});
+    
+    return Object.entries(gradeCounts).map(([name, count]) => ({
+      name: name.replace('Grade ', 'G'),
+      count: count as number,
+    })).sort((a,b) => parseInt(a.name.substring(1)) - parseInt(b.name.substring(1)));
+  }, [admissions]);
+
+  const chartConfig = {
+    count: { label: "Applications", color: "hsl(var(--chart-1))" },
+  } satisfies ChartConfig;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><BarChart /> Applications by Grade</CardTitle>
+        <CardDescription>Distribution of new applications per grade level.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+          <RechartsBarChart data={chartData} margin={{ top: 20 }}>
+            <CartesianGrid vertical={false} />
+            <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
+            <YAxis allowDecimals={false} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Bar dataKey="count" fill="var(--color-count)" radius={4}>
+              <LabelList dataKey="count" position="top" offset={4} className="fill-foreground" fontSize={12} />
+            </Bar>
+          </RechartsBarChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ApplicantGenderChart({ admissions }) {
+  const chartData = useMemo(() => {
+    const genderCounts = admissions.reduce((acc, application) => {
+      acc[application.sex] = (acc[application.sex] || 0) + 1;
+      return acc;
+    }, { Male: 0, Female: 0 });
+
+    return [{ name: 'Male', count: genderCounts.Male, fill: 'var(--color-male)' }, { name: 'Female', count: genderCounts.Female, fill: 'var(--color-female)' }];
+  }, [admissions]);
+
+  const chartConfig = {
+    count: { label: "Count" },
+    male: { label: "Male", color: "hsl(var(--chart-1))" },
+    female: { label: "Female", color: "hsl(var(--chart-2))" },
+  } satisfies ChartConfig;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Users2 /> Applicant Gender Ratio</CardTitle>
+        <CardDescription>Male vs. female applicant distribution.</CardDescription>
+      </CardHeader>
+      <CardContent className="flex justify-center">
+        <ChartContainer config={chartConfig} className="mx-auto aspect-square h-[200px]">
+          <PieChart>
+            <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
+            <Pie data={chartData} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label={({ name, count }) => `${name}: ${count}`}>
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Pie>
+            <ChartLegend content={<ChartLegendContent nameKey="name" />} />
+          </PieChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
 
 export default function AdmissionsPage() {
   const { role, isLoading: authLoading } = useAuth();
@@ -98,6 +191,12 @@ export default function AdmissionsPage() {
         <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Approved</CardTitle><Check className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold text-green-500">{stats.Approved || 0}</div><p className="text-xs text-muted-foreground">Enrolled in student body</p></CardContent></Card>
         <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Rejected</CardTitle><X className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-500">{stats.Rejected || 0}</div><p className="text-xs text-muted-foreground">Did not meet criteria</p></CardContent></Card>
       </div>
+      
+      <div className="grid gap-4 md:grid-cols-2">
+        <ApplicationsByGradeChart admissions={admissionsData} />
+        <ApplicantGenderChart admissions={admissionsData} />
+      </div>
+
       <Card>
         <CardHeader><CardTitle>Recent Applications</CardTitle><CardDescription>A list of the latest admission applications.</CardDescription></CardHeader>
         <CardContent>
