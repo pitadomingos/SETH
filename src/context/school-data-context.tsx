@@ -562,11 +562,15 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addMessage = (data: NewMessageData) => {
     if (!user || !role) return;
 
+    const fromSchoolId = user.schoolId; // Can be undefined for GlobalAdmin
     const targetSchoolId = data.targetSchoolId || user.schoolId;
+
     if (!targetSchoolId) {
         toast({ variant: 'destructive', title: 'Error', description: 'Message destination school not found.' });
         return;
     }
+    
+    const targetSchoolName = allSchoolData[targetSchoolId]?.profile.name || 'Unknown School';
 
     const newMessage: Message = {
       id: `MSG${Date.now()}`,
@@ -579,12 +583,32 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       body: data.body,
       status: 'Pending',
     };
+    
+    const logDetails = data.to === 'Developer'
+        ? `Sent message with subject "${data.subject}" to Developer.`
+        : `Sent message with subject "${data.subject}" to Admin of ${targetSchoolName}.`;
 
-    // Update the master mock data in the correct school's message list.
+    const logEntry: ActivityLog = {
+      id: `LOG${Date.now()}`,
+      timestamp: new Date(),
+      schoolId: fromSchoolId || targetSchoolId, // Log against sender's school, or target school if sender is global
+      user: user.name,
+      role: role,
+      action: 'Message',
+      details: logDetails,
+    };
+
+    // Update the master mock data
     setAllSchoolData(prevAllData => {
         const newAllData = { ...prevAllData };
+        // Add message to target school
         if (newAllData[targetSchoolId]) {
             newAllData[targetSchoolId].messages.unshift(newMessage);
+        }
+        // Add log entry to the appropriate school
+        const logSchoolId = fromSchoolId || targetSchoolId;
+        if (newAllData[logSchoolId]) {
+            newAllData[logSchoolId].activityLogs.unshift(logEntry);
         }
         return newAllData;
     });

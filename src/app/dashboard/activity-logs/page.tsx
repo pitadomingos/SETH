@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { History, Loader2, User, Building, Edit, Plus, Trash2, BarChart, LogIn, Search } from 'lucide-react';
+import { History, Loader2, User, Building, Edit, Plus, Trash2, BarChart, LogIn, Search, Mail } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Input } from '@/components/ui/input';
 
@@ -18,6 +18,7 @@ const actionIcons = {
     Update: <Edit className="h-4 w-4" />,
     Delete: <Trash2 className="h-4 w-4" />,
     Analysis: <BarChart className="h-4 w-4" />,
+    Message: <Mail className="h-4 w-4" />,
     Default: <History className="h-4 w-4" />,
 };
 
