@@ -47,7 +47,7 @@ import Link from 'next/link';
 import { type LucideIcon } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 
-interface NavLink {
+export interface NavLink {
     href: string;
     label: string;
     icon: LucideIcon;
@@ -68,7 +68,7 @@ const documentationLinks: NavLink[] = [
     { href: '/dashboard/user-manual', label: 'User Manual', icon: BookUser },
 ];
 
-const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
+export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
   GlobalAdmin: [
     { href: '/dashboard/global-admin', label: 'System Dashboard', icon: Globe },
     { href: '/dashboard/global-admin/all-schools', label: 'All Schools', icon: Building },

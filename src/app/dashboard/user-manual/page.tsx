@@ -1,9 +1,10 @@
 
 'use client';
-import { useAuth } from '@/context/auth-context';
+import { useAuth, Role } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2 } from 'lucide-react';
+import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2, List } from 'lucide-react';
 import { type LucideIcon } from 'lucide-react';
+import { roleLinks, type NavLink } from '@/components/layout/app-sidebar';
 
 const userGuides: Record<string, { icon: LucideIcon, title: string, points: string[] }> = {
   GlobalAdmin: {
@@ -98,8 +99,13 @@ export default function UserManualPage() {
           <p className="text-muted-foreground">A comprehensive guide for all user roles in the EduManage system.</p>
         </header>
         <div className="space-y-6">
-          {Object.values(userGuides).map((guide) => {
+          {Object.entries(userGuides).map(([roleKey, guide]) => {
             const GuideIcon = guide.icon;
+            const menuItems = roleLinks[roleKey as Role] || [];
+            const uniqueMenuItems = menuItems.filter((link, index, self) =>
+              index === self.findIndex((l) => l.href === link.href)
+            );
+
             return (
               <Card key={guide.title}>
                 <CardHeader>
@@ -109,12 +115,29 @@ export default function UserManualPage() {
                   </div>
                   <CardDescription>Key features and functionalities available to this role.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <ul className="list-disc space-y-3 pl-6 text-muted-foreground">
-                    {guide.points.map((point, index) => (
-                      <li key={index}>{point}</li>
-                    ))}
-                  </ul>
+                <CardContent className="grid gap-8 md:grid-cols-2">
+                  <div>
+                    <h4 className="font-semibold mb-3">Core Features</h4>
+                    <ul className="list-disc space-y-3 pl-6 text-muted-foreground">
+                      {guide.points.map((point, index) => (
+                        <li key={index}>{point}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-3 flex items-center gap-2"><List className="h-4 w-4"/> Sidebar Menu</h4>
+                    <div className="space-y-2 p-3 bg-muted rounded-md">
+                      {uniqueMenuItems.map((item, index) => {
+                        const ItemIcon = item.icon;
+                        return (
+                          <div key={index} className="flex items-center gap-3 text-sm">
+                            <ItemIcon className="h-4 w-4 text-muted-foreground" />
+                            <span>{item.label}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             );
