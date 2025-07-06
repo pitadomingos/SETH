@@ -1,10 +1,9 @@
 
-
 'use client';
 import { useSchoolData, Teacher } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Loader2, MoreHorizontal, Edit, Search } from 'lucide-react';
+import { UserPlus, Loader2, MoreHorizontal, Edit, Search, Presentation, CheckCircle, XCircle, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
@@ -17,6 +16,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+
+const PAGE_SIZE = 10;
 
 const teacherSchema = z.object({
   name: z.string().min(2, "Name is required."),
@@ -158,6 +160,7 @@ export default function TeachersPage() {
     const { teachersData } = useSchoolData();
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
 
     const filteredTeachers = useMemo(() => {
         return teachersData.filter(teacher =>
@@ -167,11 +170,34 @@ export default function TeachersPage() {
         );
     }, [teachersData, searchTerm]);
 
+    const paginatedTeachers = useMemo(() => {
+        const startIndex = (currentPage - 1) * PAGE_SIZE;
+        return filteredTeachers.slice(startIndex, startIndex + PAGE_SIZE);
+    }, [filteredTeachers, currentPage]);
+
+    const totalPages = Math.ceil(filteredTeachers.length / PAGE_SIZE);
+
+    const summaryStats = useMemo(() => {
+        const activeTeachers = teachersData.filter(t => t.status === 'Active').length;
+        const inactiveTeachers = teachersData.length - activeTeachers;
+        const uniqueSubjects = new Set(teachersData.map(t => t.subject)).size;
+        return {
+            totalTeachers: teachersData.length,
+            activeTeachers,
+            inactiveTeachers,
+            uniqueSubjects,
+        };
+    }, [teachersData]);
+
     useEffect(() => {
         if (!isLoading && role !== 'Admin') {
             router.push('/dashboard');
         }
     }, [role, isLoading, router]);
+    
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
 
     if (isLoading || role !== 'Admin') {
         return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -187,9 +213,28 @@ export default function TeachersPage() {
                  <NewTeacherDialog />
             </header>
 
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Teachers</CardTitle><Presentation className="h-4 w-4 text-muted-foreground" /></CardHeader>
+                    <CardContent><div className="text-2xl font-bold">{summaryStats.totalTeachers}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Active Teachers</CardTitle><CheckCircle className="h-4 w-4 text-muted-foreground" /></CardHeader>
+                    <CardContent><div className="text-2xl font-bold text-green-500">{summaryStats.activeTeachers}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Inactive/Transferred</CardTitle><XCircle className="h-4 w-4 text-muted-foreground" /></CardHeader>
+                    <CardContent><div className="text-2xl font-bold text-red-500">{summaryStats.inactiveTeachers}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Subject Diversity</CardTitle><Briefcase className="h-4 w-4 text-muted-foreground" /></CardHeader>
+                    <CardContent><div className="text-2xl font-bold">{summaryStats.uniqueSubjects}</div></CardContent>
+                </Card>
+            </div>
+
             <Card>
                 <CardHeader>
-                    <CardTitle>All Teachers</CardTitle>
+                    <CardTitle>All Teachers ({filteredTeachers.length})</CardTitle>
                     <CardDescription>View and manage all teachers in the system.</CardDescription>
                     <div className="relative mt-4">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -216,7 +261,7 @@ export default function TeachersPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredTeachers.map((teacher) => (
+                            {paginatedTeachers.map((teacher) => (
                                 <TableRow key={teacher.id}>
                                     <TableCell className="font-medium">{teacher.name}</TableCell>
                                     <TableCell>{teacher.sex}</TableCell>
@@ -240,6 +285,27 @@ export default function TeachersPage() {
                         <p className="text-center text-muted-foreground py-10">No teachers found matching your search.</p>
                     )}
                 </CardContent>
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-end space-x-2 p-4 border-t">
+                        <span className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</span>
+                        <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        >
+                            <ChevronLeft className="h-4 w-4" /> Previous
+                        </Button>
+                        <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        >
+                            Next <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
             </Card>
         </div>
     );
