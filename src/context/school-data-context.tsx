@@ -59,7 +59,7 @@ export interface NewAdmissionData {
   gradesSummary: string;
 }
 export interface NewDeployedTestData { testId: string; classId: string; deadline: Date; }
-export interface NewMessageData { to: 'Admin' | 'Developer' | string; subject: string; body: string; }
+export interface NewMessageData { to: 'Admin' | 'Developer' | string; subject: string; body: string; targetSchoolId?: string; }
 
 
 interface SchoolDataContextType {
@@ -524,13 +524,16 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addMessage = (data: NewMessageData) => {
     if (!user || !role) return;
 
-    const schoolId = role === 'GlobalAdmin' ? 'system' : user.schoolId;
-    if (!schoolId) return;
+    const targetSchoolId = data.targetSchoolId || user.schoolId;
+    if (!targetSchoolId) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Message destination school not found.' });
+        return;
+    }
 
     const newMessage: Message = {
       id: `MSG${Date.now()}`,
       timestamp: new Date(),
-      schoolId: schoolId,
+      schoolId: targetSchoolId,
       fromUserName: user.name,
       fromUserRole: role,
       to: data.to,
@@ -539,38 +542,38 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       status: 'Pending',
     };
 
-    setMessages(prev => [newMessage, ...prev]);
-
-    // Also need to update the mock "DB"
+    // Update the master mock data in the correct school's message list.
     setAllSchoolData(prevAllData => {
         const newAllData = { ...prevAllData };
-        if (newAllData[schoolId]) {
-            newAllData[schoolId].messages.unshift(newMessage);
+        if (newAllData[targetSchoolId]) {
+            newAllData[targetSchoolId].messages.unshift(newMessage);
         }
         return newAllData;
     });
 
+    // Also update the local state if the user is in that context
+    if (targetSchoolId === user?.schoolId) {
+        setMessages(prev => [newMessage, ...prev]);
+    }
+
     toast({ title: 'Message Sent!' });
   };
 
+
   const updateMessageStatus = (messageId: string, status: Message['status']) => {
-    // Optimistically update the local messages for the current context (if any)
     setMessages(prev => prev.map(m => m.id === messageId ? { ...m, status } : m));
 
-    // Update the master mock data
     setAllSchoolData(prevAllData => {
         const newAllData = { ...prevAllData };
         let updated = false;
 
-        // Find which school the message belongs to
         for (const schoolId in newAllData) {
             const school = newAllData[schoolId];
             const msgIndex = school.messages.findIndex(m => m.id === messageId);
             if (msgIndex > -1) {
-                // Found it. Update the status.
                 school.messages[msgIndex].status = status;
                 updated = true;
-                break; // Exit the loop once found
+                break;
             }
         }
         

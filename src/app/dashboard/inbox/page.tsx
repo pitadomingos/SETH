@@ -12,7 +12,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
-export default function InboxPage() {
+export default function MessagingPage() {
   const { role, isLoading: authLoading } = useAuth();
   const { messages, updateMessageStatus, isLoading: dataLoading } = useSchoolData();
   const router = useRouter();
@@ -44,7 +44,7 @@ export default function InboxPage() {
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>
-        <h2 className="text-3xl font-bold tracking-tight">Inbox</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Messaging</h2>
         <p className="text-muted-foreground">
           Messages from staff members.
         </p>
