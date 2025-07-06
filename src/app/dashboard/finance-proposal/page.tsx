@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, GraduationCap } from 'lucide-react';
+import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, GraduationCap, Briefcase } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function ProjectProposalPage() {
@@ -167,12 +167,12 @@ export default function ProjectProposalPage() {
                 <p className="text-sm text-muted-foreground mt-1">Our current platform, perfecting the management of curriculum-based education, assessments, and school operations, building a rich academic history.</p>
               </div>
               <div className="flex flex-col items-center text-center p-4 rounded-lg bg-muted/50">
-                <GraduationCap className="h-10 w-10 text-primary mb-3"/>
-                <h4 className="font-semibold">EduManage University</h4>
-                <p className="text-sm text-muted-foreground mt-1">A specialized module for higher education, managing complex course credits, research, and career services, leveraging the student's entire K-12 history for better guidance.</p>
+                <Briefcase className="h-10 w-10 text-primary mb-3"/>
+                <h4 className="font-semibold">EduManage University & Careers</h4>
+                <p className="text-sm text-muted-foreground mt-1">A specialized module for higher education that also bridges the gap to employment. Upon student consent, employers and recruitment agents can gain temporary access to verified academic records, helping them choose the right candidates and understand their full educational journey.</p>
               </div>
             </div>
-            <p className="text-muted-foreground mt-6">This interconnected system will provide unprecedented insights, allowing educators and advisors to track progress, identify long-term trends, and offer truly personalized guidance from early childhood through to career entry. This is not just school management; it is lifetime learning management.</p>
+            <p className="text-muted-foreground mt-6">This interconnected system will provide unprecedented insights, allowing educators to track progress, advisors to offer personalized guidance, and employers to connect with qualified talent. This is not just school management; it is lifetime learning and career management.</p>
           </CardContent>
         </Card>
         
