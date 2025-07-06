@@ -109,21 +109,21 @@ export default function StudentsPage() {
         }
 
         const statusCounts = studentsData.reduce((acc, student) => {
-            acc.status[student.status] = (acc.status[student.status] || 0) + 1;
+            acc[student.status] = (acc[student.status] || 0) + 1;
             return acc;
-        }, { Active: 0, Inactive: 0, Transferred: 0 });
+        }, { Active: 0, Inactive: 0, Transferred: 0 } as Record<Student['status'], number>);
 
         const genderCounts = studentsData.reduce((acc, student) => {
             acc[student.sex] = (acc[student.sex] || 0) + 1;
             return acc;
-        }, { Male: 0, Female: 0 });
+        }, { Male: 0, Female: 0 } as Record<Student['sex'], number>);
 
 
         return {
             total: studentsData.length,
             schoolWideAverage,
             active: statusCounts.Active,
-            inactive: statusCounts.Inactive + statusCounts.Transferred,
+            inactive: (statusCounts.Inactive || 0) + (statusCounts.Transferred || 0),
             male: genderCounts.Male,
             female: genderCounts.Female,
         };
