@@ -294,7 +294,10 @@ function GradePerformanceChart() {
 export default function AdminDashboard() {
   const { studentsData, teachersData, classesData, financeData, events, schoolProfile, expensesData } = useSchoolData();
   const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
 
+  // Overall stats
   const totalRevenue = financeData.reduce((acc, f) => acc + f.amountPaid, 0);
   const totalExpenses = expensesData.reduce((acc, e) => acc + e.amount, 0);
   
@@ -305,6 +308,29 @@ export default function AdminDashboard() {
   const overdueFees = financeData
     .filter(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < now)
     .reduce((acc, f) => acc + (f.totalAmount - f.amountPaid), 0);
+
+  // Monthly stats
+  const monthlyFinanceData = financeData.filter(f => {
+    const dueDate = new Date(f.dueDate);
+    return dueDate.getMonth() === currentMonth && dueDate.getFullYear() === currentYear;
+  });
+
+  const monthlyExpensesData = expensesData.filter(e => {
+      const expenseDate = new Date(e.date);
+      return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
+  });
+
+  const monthlyTotalRevenue = monthlyFinanceData.reduce((acc, f) => acc + f.amountPaid, 0);
+  
+  const monthlyPendingFees = monthlyFinanceData
+    .filter(f => new Date(f.dueDate) >= now)
+    .reduce((acc, f) => acc + (f.totalAmount - f.amountPaid), 0);
+
+  const monthlyOverdueFees = monthlyFinanceData
+    .filter(f => new Date(f.dueDate) < now && (f.totalAmount - f.amountPaid > 0))
+    .reduce((acc, f) => acc + (f.totalAmount - f.amountPaid), 0);
+    
+  const monthlyTotalExpenses = monthlyExpensesData.reduce((acc, e) => acc + e.amount, 0);
 
   const studentGenderCount = studentsData.reduce((acc, student) => {
     acc[student.sex] = (acc[student.sex] || 0) + 1;
@@ -386,6 +412,7 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="text-2xl font-bold text-green-500">{formatCurrency(totalRevenue, schoolProfile?.currency)}</div>
             <p className="text-xs text-muted-foreground">This academic year</p>
+            <p className="text-xs text-muted-foreground pt-1">{formatCurrency(monthlyTotalRevenue, schoolProfile?.currency)} this month</p>
           </CardContent>
         </Card>
         <Card>
@@ -396,6 +423,7 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="text-2xl font-bold text-orange-500">{formatCurrency(pendingFees, schoolProfile?.currency)}</div>
             <p className="text-xs text-muted-foreground">Awaiting payment</p>
+            <p className="text-xs text-muted-foreground pt-1">{formatCurrency(monthlyPendingFees, schoolProfile?.currency)} this month</p>
           </CardContent>
         </Card>
         <Card>
@@ -406,6 +434,7 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="text-2xl font-bold text-red-500">{formatCurrency(overdueFees, schoolProfile?.currency)}</div>
             <p className="text-xs text-muted-foreground">Action required</p>
+            <p className="text-xs text-muted-foreground pt-1">{formatCurrency(monthlyOverdueFees, schoolProfile?.currency)} this month</p>
           </CardContent>
         </Card>
          <Card>
@@ -416,6 +445,7 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalExpenses, schoolProfile?.currency)}</div>
             <p className="text-xs text-muted-foreground">This academic year</p>
+            <p className="text-xs text-muted-foreground pt-1">{formatCurrency(monthlyTotalExpenses, schoolProfile?.currency)} this month</p>
           </CardContent>
         </Card>
       </div>
