@@ -227,13 +227,13 @@ function AttendanceTrendChart() {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                     <RechartsLineChart data={chartData} margin={{ left: -10, right: 10 }}>
+                     <RechartsBarChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 40 }}>
                         <CartesianGrid vertical={false} />
-                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} angle={-45} textAnchor="end" height={50} />
+                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} angle={-45} textAnchor="end" />
                         <YAxis dataKey="attendanceRate" tickFormatter={(value) => `${value}%`} />
                         <ChartTooltip content={<ChartTooltipContent formatter={(value) => `${value}%`}/>} />
-                        <Line type="monotone" dataKey="attendanceRate" stroke="var(--color-attendanceRate)" strokeWidth={2} dot={false} />
-                    </RechartsLineChart>
+                        <Bar dataKey="attendanceRate" fill="var(--color-attendanceRate)" radius={4} />
+                    </RechartsBarChart>
                 </ChartContainer>
             </CardContent>
         </Card>
