@@ -4,7 +4,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Users, Presentation, Settings, BrainCircuit, DollarSign, School, Gem } from 'lucide-react';
+import { Loader2, Users, Presentation, Settings, BrainCircuit, DollarSign, School, Gem, TrendingDown, BarChart2 } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useEffect, useState, useMemo } from 'react';
 import { analyzeSchoolSystem, AnalyzeSchoolSystemOutput } from '@/ai/flows/analyze-school-system';
@@ -17,7 +17,7 @@ import {
   ChartTooltipContent,
   ChartConfig
 } from '@/components/ui/chart';
-import { getGpaFromNumeric } from '@/lib/utils';
+import { getGpaFromNumeric, formatCurrency } from '@/lib/utils';
 
 
 const calculateAverageGpaForSchool = (grades) => {
@@ -217,19 +217,35 @@ export default function GlobalAdminDashboard() {
   const isLoading = authLoading || schoolLoading;
 
   const summaryStats = useMemo(() => {
-    if (!allSchoolData) return { schools: 0, students: 0, teachers: 0, revenue: 0 };
+    if (!allSchoolData) return { schools: 0, students: 0, teachers: 0, revenue: 0, expenses: 0, overdue: 0 };
     const schools = Object.values(allSchoolData);
     const totalStudents = schools.reduce((sum, school) => sum + school.students.length, 0);
     const totalTeachers = schools.reduce((sum, school) => sum + school.teachers.length, 0);
+    
     const totalRevenue = schools.reduce((sum, school) => {
         const schoolRevenue = school.finance.reduce((acc, f) => acc + f.amountPaid, 0);
         return sum + schoolRevenue;
     }, 0);
+    
+    const totalExpenses = schools.reduce((sum, school) => {
+        const schoolExpenses = school.expenses.reduce((acc, e) => acc + e.amount, 0);
+        return sum + schoolExpenses;
+    }, 0);
+
+    const totalOverdue = schools.reduce((sum, school) => {
+        const schoolOverdue = school.finance
+            .filter(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < new Date())
+            .reduce((acc, f) => acc + (f.totalAmount - f.amountPaid), 0);
+        return sum + schoolOverdue;
+    }, 0);
+
     return {
         schools: schools.length,
         students: totalStudents,
         teachers: totalTeachers,
         revenue: totalRevenue,
+        expenses: totalExpenses,
+        overdue: totalOverdue,
     }
   }, [allSchoolData]);
 
@@ -250,7 +266,7 @@ export default function GlobalAdminDashboard() {
         <p className="text-muted-foreground">High-level overview of the entire school network.</p>
       </header>
       
-       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Schools</CardTitle>
@@ -281,17 +297,43 @@ export default function GlobalAdminDashboard() {
             <p className="text-xs text-muted-foreground">Across all schools</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-500">${summaryStats.revenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Aggregated from all tenants</p>
-          </CardContent>
-        </Card>
       </div>
+
+       <div className="space-y-2">
+            <h3 className="text-xl font-semibold tracking-tight">Financial Overview</h3>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-green-500">{formatCurrency(summaryStats.revenue)}</div>
+                        <p className="text-xs text-muted-foreground">Aggregated from all tenants</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+                        <BarChart2 className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{formatCurrency(summaryStats.expenses)}</div>
+                        <p className="text-xs text-muted-foreground">Aggregated from all tenants</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Overdue Fees</CardTitle>
+                        <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-red-500">{formatCurrency(summaryStats.overdue)}</div>
+                        <p className="text-xs text-muted-foreground">Across all schools</p>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <TierPerformanceAnalysis allSchoolData={allSchoolData} />
