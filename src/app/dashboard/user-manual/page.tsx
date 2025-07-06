@@ -3,8 +3,9 @@
 import { useAuth } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2 } from 'lucide-react';
+import { type LucideIcon } from 'lucide-react';
 
-const userGuides = {
+const userGuides: Record<string, { icon: LucideIcon, title: string, points: string[] }> = {
   GlobalAdmin: {
     icon: Globe,
     title: 'Developer / System Owner Guide',
@@ -84,12 +85,47 @@ const userGuides = {
 
 export default function UserManualPage() {
   const { role, isLoading } = useAuth();
-  const guide = role ? userGuides[role] : null;
-  const GuideIcon = guide?.icon;
 
   if (isLoading) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
+  
+  if (role === 'GlobalAdmin') {
+    return (
+       <div className="space-y-6 animate-in fade-in-50">
+        <header>
+          <h2 className="text-3xl font-bold tracking-tight">System User Manuals</h2>
+          <p className="text-muted-foreground">A comprehensive guide for all user roles in the EduManage system.</p>
+        </header>
+        <div className="space-y-6">
+          {Object.values(userGuides).map((guide) => {
+            const GuideIcon = guide.icon;
+            return (
+              <Card key={guide.title}>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <GuideIcon className="h-6 w-6 text-primary" />
+                    <CardTitle className="text-2xl">{guide.title}</CardTitle>
+                  </div>
+                  <CardDescription>Key features and functionalities available to this role.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="list-disc space-y-3 pl-6 text-muted-foreground">
+                    {guide.points.map((point, index) => (
+                      <li key={index}>{point}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  const guide = role ? userGuides[role] : null;
+  const GuideIcon = guide?.icon;
   
   return (
     <div className="space-y-6 animate-in fade-in-50">
