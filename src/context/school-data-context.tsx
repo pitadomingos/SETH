@@ -74,6 +74,7 @@ interface SchoolDataContextType {
   teachersData: Teacher[];
   addTeacher: (teacher: Omit<Teacher, 'id' | 'status'>) => void;
   updateTeacher: (teacherId: string, data: Partial<Omit<Teacher, 'id' | 'status'>>) => void;
+  updateTeacherStatus: (schoolId: string, teacherId: string, status: Teacher['status']) => void;
   classesData: Class[];
   addClass: (classData: NewClassData) => void;
   admissionsData: Admission[];
@@ -293,22 +294,56 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const updateStudentStatus = (schoolId: string, studentId: string, status: Student['status']) => {
+    const studentName = initialSchoolData[schoolId]?.students.find(s => s.id === studentId)?.name || 'Unknown Student';
+    const schoolName = initialSchoolData[schoolId]?.profile.name || 'Unknown School';
+    
+    // Add log entry
+    const logEntry: ActivityLog = {
+      id: `LOGG${Date.now()}`,
+      timestamp: new Date(),
+      schoolId: schoolId,
+      user: user?.name || 'Global Admin',
+      role: role || 'GlobalAdmin',
+      action: 'Update',
+      details: `Changed status of student ${studentName} at ${schoolName} to ${status}.`
+    };
+
     if (initialSchoolData[schoolId]) {
         const studentIndex = initialSchoolData[schoolId].students.findIndex(s => s.id === studentId);
         if (studentIndex > -1) {
             initialSchoolData[schoolId].students[studentIndex].status = status;
+            initialSchoolData[schoolId].activityLogs.unshift(logEntry);
         }
     }
-    setAllSchoolData(prevData => {
-        const newData = { ...prevData };
-        if (newData[schoolId]) {
-            const school = {...newData[schoolId]};
-            school.students = school.students.map(s => s.id === studentId ? { ...s, status } : s);
-            newData[schoolId] = school;
-        }
-        return newData;
-    });
+
+    setAllSchoolData(prevData => ({ ...prevData })); // Force a re-render from the master object
     toast({ title: 'Student Status Updated' });
+  };
+
+  const updateTeacherStatus = (schoolId: string, teacherId: string, status: Teacher['status']) => {
+    const teacherName = initialSchoolData[schoolId]?.teachers.find(t => t.id === teacherId)?.name || 'Unknown Teacher';
+    const schoolName = initialSchoolData[schoolId]?.profile.name || 'Unknown School';
+
+    const logEntry: ActivityLog = {
+      id: `LOGG${Date.now()}`,
+      timestamp: new Date(),
+      schoolId: schoolId,
+      user: user?.name || 'Global Admin',
+      role: role || 'GlobalAdmin',
+      action: 'Update',
+      details: `Changed status of teacher ${teacherName} at ${schoolName} to ${status}.`
+    };
+
+    if (initialSchoolData[schoolId]) {
+      const teacherIndex = initialSchoolData[schoolId].teachers.findIndex(t => t.id === teacherId);
+      if (teacherIndex > -1) {
+        initialSchoolData[schoolId].teachers[teacherIndex].status = status;
+        initialSchoolData[schoolId].activityLogs.unshift(logEntry);
+      }
+    }
+
+    setAllSchoolData(prevData => ({ ...prevData }));
+    toast({ title: 'Teacher Status Updated' });
   };
 
   const updateSchoolProfile = (data: Partial<SchoolProfile>) => { setSchoolProfile(prev => prev ? { ...prev, ...data } : null); };
@@ -594,7 +629,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     schoolProfile, updateSchoolProfile,
     allSchoolData, updateSchoolStatus,
     studentsData, addStudentFromAdmission, updateStudentStatus,
-    teachersData, addTeacher, updateTeacher,
+    teachersData, addTeacher, updateTeacher, updateTeacherStatus,
     classesData, addClass,
     coursesData, addCourse,
     admissionsData, addAdmission, updateApplicationStatus,
