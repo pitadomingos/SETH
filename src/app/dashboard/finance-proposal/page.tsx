@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy } from 'lucide-react';
+import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function ProjectProposalPage() {
@@ -108,6 +108,17 @@ export default function ProjectProposalPage() {
         </Card>
 
         <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Trophy /> Motivation & Recognition: The EduManage Awards</CardTitle>
+                <CardDescription>Fostering a Culture of Excellence</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <p className="text-muted-foreground">To further drive engagement and celebrate success, we will establish the annual **EduManage Excellence Awards**. These awards will recognize top-performing schools, teachers, and students across the network, based on data-driven metrics from the platform's leaderboards.</p>
+                <p className="text-muted-foreground">This initiative creates a positive feedback loop, encouraging healthy competition and a focus on improvement. It also opens up a valuable revenue stream through **corporate sponsorships**, allowing local and international brands to align themselves with educational excellence in the region.</p>
+            </CardContent>
+        </Card>
+
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><CalendarClock /> Development Roadmap</CardTitle>
              <CardDescription>A clear timeline for moving from prototype to a scalable, production-ready application.</CardDescription>
@@ -154,5 +165,3 @@ export default function ProjectProposalPage() {
     </div>
   );
 }
-
-    

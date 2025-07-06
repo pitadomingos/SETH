@@ -111,7 +111,7 @@ const ParentLeaderboardView = () => {
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>
-        <h2 className="text-3xl font-bold tracking-tight">My Children's Rankings</h2>
+        <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2"><Trophy /> My Children's Rankings</h2>
         <p className="text-muted-foreground">A detailed look at your children's academic performance for the 2024-2025 year.</p>
       </header>
       <div className="space-y-6">
@@ -216,7 +216,7 @@ export default function LeaderboardsPage() {
     return (
         <div className="space-y-6 animate-in fade-in-50">
             <header>
-                <h2 className="text-3xl font-bold tracking-tight">Leaderboards</h2>
+                <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2"><Trophy /> Leaderboards</h2>
                 <p className="text-muted-foreground">Recognizing top student achievements.</p>
             </header>
 
