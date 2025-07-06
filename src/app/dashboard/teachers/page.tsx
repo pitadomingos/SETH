@@ -1,10 +1,9 @@
 
 'use client';
-import { useSchoolData } from '@/context/school-data-context';
+import { useSchoolData, Teacher } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Loader2 } from 'lucide-react';
+import { UserPlus, Loader2, MoreHorizontal, Edit } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -15,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const teacherSchema = z.object({
   name: z.string().min(2, "Name is required."),
@@ -82,6 +82,72 @@ function NewTeacherDialog() {
     )
 }
 
+function EditTeacherDialog({ teacher }: { teacher: Teacher }) {
+    const { updateTeacher, subjects } = useSchoolData();
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const form = useForm<TeacherFormValues>({
+        resolver: zodResolver(teacherSchema),
+        defaultValues: { ...teacher }
+    });
+    
+    useEffect(() => {
+        if(teacher) form.reset(teacher);
+    }, [teacher, form]);
+
+    function onSubmit(values: TeacherFormValues) {
+        updateTeacher(teacher.id, values);
+        setIsDialogOpen(false);
+    }
+
+    return (
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsDialogOpen(true)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>Edit Teacher: {teacher.name}</DialogTitle>
+                    <DialogDescription>Update the details for this teacher.</DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-4 py-4">
+                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="subject" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Subject</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select Subject" /></SelectTrigger></FormControl>
+                                    <SelectContent>{subjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="experience" render={({ field }) => ( <FormItem><FormLabel>Experience</FormLabel><FormControl><Input placeholder="e.g., 5 years" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="qualifications" render={({ field }) => ( <FormItem><FormLabel>Qualifications</FormLabel><FormControl><Input placeholder="e.g., M.Ed." {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <DialogFooter className="col-span-2 mt-4">
+                            <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+                            <Button type="submit" disabled={form.formState.isSubmitting}> {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Changes</Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 export default function TeachersPage() {
     const { role, isLoading } = useAuth();
     const { teachersData } = useSchoolData();
@@ -121,6 +187,7 @@ export default function TeachersPage() {
                                 <TableHead>Contact</TableHead>
                                 <TableHead>Experience</TableHead>
                                 <TableHead>Qualifications</TableHead>
+                                <TableHead><span className="sr-only">Actions</span></TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -134,6 +201,11 @@ export default function TeachersPage() {
                                     </TableCell>
                                     <TableCell>{teacher.experience}</TableCell>
                                     <TableCell>{teacher.qualifications}</TableCell>
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <EditTeacherDialog teacher={teacher} />
+                                        </DropdownMenu>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

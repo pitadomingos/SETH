@@ -36,7 +36,7 @@ export type Grade = InitialGrade;
 export type SchoolProfile = InitialSchoolProfile;
 export type Class = InitialClass;
 export type Course = InitialCourse;
-export type { Team, Competition, Admission, Student, ActivityLog, Message };
+export type { Team, Competition, Admission, Student, ActivityLog, Message, Teacher };
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
 interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }
@@ -72,6 +72,7 @@ interface SchoolDataContextType {
   updateStudentStatus: (schoolId: string, studentId: string, status: Student['status']) => void;
   teachersData: Teacher[];
   addTeacher: (teacher: Omit<Teacher, 'id' | 'status'>) => void;
+  updateTeacher: (teacherId: string, data: Partial<Omit<Teacher, 'id' | 'status'>>) => void;
   classesData: Class[];
   addClass: (classData: NewClassData) => void;
   admissionsData: Admission[];
@@ -392,6 +393,11 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const newTeacher: Teacher = { id: `T${Date.now()}`, ...teacherData, status: 'Active' };
     setTeachersData(prev => [newTeacher, ...prev]);
   };
+  
+  const updateTeacher = (teacherId: string, data: Partial<Omit<Teacher, 'id' | 'status'>>) => {
+    setTeachersData(prev => prev.map(t => t.id === teacherId ? { ...t, ...data } : t));
+    toast({ title: "Teacher Updated", description: "The teacher's information has been saved." });
+  };
 
   const addClass = (classData: NewClassData) => {
     const newClass: Class = { id: `C${Date.now()}`, ...classData };
@@ -570,7 +576,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     schoolProfile, updateSchoolProfile,
     allSchoolData, updateSchoolStatus,
     studentsData, addStudentFromAdmission, updateStudentStatus,
-    teachersData, addTeacher,
+    teachersData, addTeacher, updateTeacher,
     classesData, addClass,
     coursesData, addCourse,
     admissionsData, addAdmission, updateApplicationStatus,
@@ -617,4 +623,3 @@ export const useSchoolData = () => {
   }
   return context;
 };
-
