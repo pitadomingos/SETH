@@ -4,15 +4,69 @@ import { useSchoolData } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, GraduationCap, TrendingUp, CheckCircle, ArrowRightLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Search, GraduationCap, TrendingUp, CheckCircle, ArrowRightLeft, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { formatGradeDisplay, calculateAge } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 
 const PAGE_SIZE = 10;
+
+const StudentsByGradeChart = () => {
+    const { studentsData } = useSchoolData();
+
+    const chartData = useMemo(() => {
+        const gradeCounts = studentsData.reduce((acc, student) => {
+            const gradeKey = `Grade ${student.grade}`;
+            acc[gradeKey] = (acc[gradeKey] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+        
+        return Object.entries(gradeCounts)
+            .map(([name, students]) => ({ name, students: students as number }))
+            .sort((a, b) => parseInt(a.name.split(' ')[1]) - parseInt(b.name.split(' ')[1]));
+
+    }, [studentsData]);
+
+    const chartConfig = {
+        students: {
+            label: "Students",
+            color: "hsl(var(--chart-1))",
+        },
+    } satisfies ChartConfig;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Students by Grade Level</CardTitle>
+                <CardDescription>A distribution of students across all grades.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                    <BarChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                            dataKey="name"
+                            tickLine={false}
+                            tickMargin={10}
+                            axisLine={false}
+                        />
+                        <YAxis allowDecimals={false} />
+                        <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent indicator="dot" />}
+                        />
+                        <Bar dataKey="students" fill="var(--color-students)" radius={4} />
+                    </BarChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function StudentsPage() {
     const { role, isLoading } = useAuth();
@@ -55,15 +109,23 @@ export default function StudentsPage() {
         }
 
         const statusCounts = studentsData.reduce((acc, student) => {
-            acc[student.status] = (acc[student.status] || 0) + 1;
+            acc.status[student.status] = (acc.status[student.status] || 0) + 1;
             return acc;
         }, { Active: 0, Inactive: 0, Transferred: 0 });
+
+        const genderCounts = studentsData.reduce((acc, student) => {
+            acc[student.sex] = (acc[student.sex] || 0) + 1;
+            return acc;
+        }, { Male: 0, Female: 0 });
+
 
         return {
             total: studentsData.length,
             schoolWideAverage,
             active: statusCounts.Active,
-            inactive: statusCounts.Inactive + statusCounts.Transferred
+            inactive: statusCounts.Inactive + statusCounts.Transferred,
+            male: genderCounts.Male,
+            female: genderCounts.Female,
         };
     }, [studentsData, grades, schoolProfile]);
 
@@ -91,12 +153,16 @@ export default function StudentsPage() {
                 </div>
             </header>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Students</CardTitle><GraduationCap className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryStats.total}</div></CardContent></Card>
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">School Average Grade</CardTitle><TrendingUp className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryStats.schoolWideAverage}</div></CardContent></Card>
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Active Students</CardTitle><CheckCircle className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold text-green-500">{summaryStats.active}</div></CardContent></Card>
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Inactive / Transferred</CardTitle><ArrowRightLeft className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-500">{summaryStats.inactive}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Male Students</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryStats.male}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Female Students</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryStats.female}</div></CardContent></Card>
             </div>
+
+            <StudentsByGradeChart />
 
             <Card>
                 <CardHeader>
