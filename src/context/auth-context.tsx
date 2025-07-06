@@ -32,13 +32,13 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<LoginResult>;
   logout: () => void;
   isLoading: boolean;
-  switchSchoolContext: (schoolId: string) => void;
+  impersonateUser: (username: string) => Promise<LoginResult>;
   revertToGlobalAdmin: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const mockUsers: Record<string, { user: User, role: Role }> = {
+export const mockUsers: Record<string, { user: User, role: Role }> = {
   developer: { user: { username: 'developer', name: 'App Developer', email: 'dev@edumanage.app' }, role: 'GlobalAdmin' },
   admin1: { user: { username: 'admin1', name: 'Dr. Sarah Johnson', email: 's.johnson@northwood.edu', schoolId: 'northwood' }, role: 'Admin' },
   teacher1: { user: { username: 'teacher1', name: 'Prof. Michael Chen', email: 'm.chen@edumanage.com', schoolId: 'northwood' }, role: 'Teacher' },
@@ -141,37 +141,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const switchSchoolContext = (schoolId: string) => {
-     if (role === 'GlobalAdmin' && user) {
+  const impersonateUser = async (username: string): Promise<LoginResult> => {
+    const effectiveRole = originalRole || role;
+    if (effectiveRole !== 'GlobalAdmin') {
+        return { success: false, message: 'Only Global Admins can impersonate users.' };
+    }
+
+    const userRecord = mockUsers[username.toLowerCase()];
+    if (!userRecord) {
+        return { success: false, message: 'User not found.' };
+    }
+
+    if (!originalUser && user) {
         setOriginalUser(user);
         setOriginalRole(role);
         try {
             localStorage.setItem('originalUser', JSON.stringify(user));
-            localStorage.setItem('originalRole', role);
-        } catch (e) {
-            console.error("Local storage is not available.");
-        }
+            localStorage.setItem('originalRole', role || '');
+        } catch (e) { console.error("Local storage is not available."); }
     }
 
-    const adminUserRecord = Object.values(mockUsers).find(
-        (record) => record.user.schoolId === schoolId && record.role === 'Admin'
-    );
+    const { user: targetUser, role: targetRole } = userRecord;
+    setUser(targetUser);
+    setRole(targetRole);
+    try {
+        localStorage.setItem('user', JSON.stringify(targetUser));
+        localStorage.setItem('userRole', targetRole);
+        router.push('/dashboard');
+    } catch (e) { console.error("Local storage is not available."); }
 
-    if (adminUserRecord) {
-        const { user: adminUser, role: adminRole } = adminUserRecord;
-        setUser(adminUser);
-        setRole(adminRole);
-        try {
-            localStorage.setItem('user', JSON.stringify(adminUser));
-            localStorage.setItem('userRole', adminRole);
-            router.push('/dashboard'); 
-        } catch (e) {
-            console.error("Local storage is not available.");
-        }
-    } else {
-        console.error(`No admin user found for schoolId: ${schoolId}`);
-    }
+    return { success: true };
   };
+
 
   const revertToGlobalAdmin = () => {
     if (originalUser && originalRole) {
@@ -193,7 +194,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ role, user, originalUser, login, logout, isLoading, switchSchoolContext, revertToGlobalAdmin }}>
+    <AuthContext.Provider value={{ role, user, originalUser, login, logout, isLoading, impersonateUser, revertToGlobalAdmin }}>
       {children}
     </AuthContext.Provider>
   );

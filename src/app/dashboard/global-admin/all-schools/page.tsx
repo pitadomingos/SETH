@@ -1,6 +1,6 @@
 
 'use client';
-import { useAuth } from '@/context/auth-context';
+import { useAuth, mockUsers } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,11 +11,13 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AllSchoolsPage() {
-  const { role, isLoading: authLoading, switchSchoolContext } = useAuth();
+  const { role, isLoading: authLoading, impersonateUser } = useAuth();
   const { allSchoolData, isLoading: schoolLoading, updateSchoolStatus } = useSchoolData();
   const router = useRouter();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
 
   const isLoading = authLoading || schoolLoading;
@@ -28,7 +30,18 @@ export default function AllSchoolsPage() {
   }, [allSchoolData, searchTerm]);
   
   const handleManageSchool = (schoolId: string) => {
-    switchSchoolContext(schoolId);
+    const adminRecord = Object.values(mockUsers).find(
+      (record) => record.user.schoolId === schoolId && record.role === 'Admin'
+    );
+    if (adminRecord) {
+        impersonateUser(adminRecord.user.username);
+    } else {
+        toast({
+            variant: 'destructive',
+            title: "Operation Failed",
+            description: `Could not find an administrator for this school.`,
+        });
+    }
   };
   
   const handleStatusChange = (schoolId: string, status: SchoolProfile['status']) => {

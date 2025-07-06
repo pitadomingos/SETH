@@ -1,23 +1,26 @@
+
 'use client';
 
-import { useAuth } from '@/context/auth-context';
+import { useAuth, mockUsers } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, MoreHorizontal, Search, Presentation, CheckCircle, XCircle, ChevronLeft, ChevronRight, Briefcase } from 'lucide-react';
+import { Loader2, MoreHorizontal, Search, Presentation, CheckCircle, XCircle, ChevronLeft, ChevronRight, Briefcase, LogIn } from 'lucide-react';
 import { useSchoolData, Teacher } from '@/context/school-data-context';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 const PAGE_SIZE = 10;
 
 export default function GlobalTeachersPage() {
-  const { role, isLoading: authLoading } = useAuth();
+  const { role, isLoading: authLoading, impersonateUser } = useAuth();
   const { allSchoolData, isLoading: schoolLoading, updateTeacherStatus } = useSchoolData();
   const router = useRouter();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -79,6 +82,15 @@ export default function GlobalTeachersPage() {
   const handleStatusChange = (schoolId: string, teacherId: string, status: Teacher['status']) => {
     updateTeacherStatus(schoolId, teacherId, status);
   };
+  
+  const handleImpersonate = (email: string) => {
+    const username = Object.keys(mockUsers).find(key => mockUsers[key].user.email === email);
+    if (username) {
+        impersonateUser(username);
+    } else {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not find a login for this user.' });
+    }
+  }
 
   const getStatusVariant = (status: Teacher['status']) => {
     switch (status) {
@@ -161,8 +173,13 @@ export default function GlobalTeachersPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleImpersonate(teacher.email)}>
+                          <LogIn className="mr-2 h-4 w-4" />
+                          Log in as User
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Change Status</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => handleStatusChange(teacher.schoolId, teacher.id, 'Active')}>Active</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleStatusChange(teacher.schoolId, teacher.id, 'Inactive')}>Inactive</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleStatusChange(teacher.schoolId, teacher.id, 'Transferred')}>Transferred</DropdownMenuItem>

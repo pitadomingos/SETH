@@ -1,23 +1,26 @@
+
 'use client';
 
-import { useAuth } from '@/context/auth-context';
+import { useAuth, mockUsers } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, MoreHorizontal, Search, HeartHandshake, Users, CheckCircle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, MoreHorizontal, Search, HeartHandshake, Users, CheckCircle, XCircle, ChevronLeft, ChevronRight, LogIn } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 const PAGE_SIZE = 10;
 
 export default function GlobalParentsPage() {
-  const { role, isLoading: authLoading } = useAuth();
+  const { role, isLoading: authLoading, impersonateUser } = useAuth();
   const { allSchoolData, isLoading: schoolLoading, parentStatusOverrides, updateParentStatus } = useSchoolData();
   const router = useRouter();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -98,6 +101,15 @@ export default function GlobalParentsPage() {
   const handleStatusChange = (email: string, status: 'Active' | 'Suspended') => {
     updateParentStatus(email, status);
   };
+  
+  const handleImpersonate = (email: string) => {
+    const username = Object.keys(mockUsers).find(key => mockUsers[key].user.email === email);
+    if (username) {
+        impersonateUser(username);
+    } else {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not find a login for this user.' });
+    }
+  }
 
   const getStatusVariant = (status: 'Active' | 'Suspended') => {
     return status === 'Active' ? 'secondary' : 'destructive';
@@ -175,8 +187,13 @@ export default function GlobalParentsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleImpersonate(parent.email)}>
+                          <LogIn className="mr-2 h-4 w-4" />
+                          Log in as User
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Change Status</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => handleStatusChange(parent.email, 'Active')}>Active</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleStatusChange(parent.email, 'Suspended')}>Suspended</DropdownMenuItem>
                       </DropdownMenuContent>
