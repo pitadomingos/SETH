@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useSchoolData } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -81,6 +82,7 @@ export default function StudentsPage() {
                             <TableRow>
                                 <TableHead>Name</TableHead>
                                 <TableHead>Age</TableHead>
+                                <TableHead>Sex</TableHead>
                                 <TableHead>Class</TableHead>
                                 <TableHead>Contact</TableHead>
                                 <TableHead>Average Grade</TableHead>
@@ -91,6 +93,7 @@ export default function StudentsPage() {
                                 <TableRow key={student.id}>
                                     <TableCell className="font-medium">{student.name}</TableCell>
                                     <TableCell>{student.age}</TableCell>
+                                    <TableCell>{student.sex}</TableCell>
                                     <TableCell>Grade {student.grade} - {student.class}</TableCell>
                                     <TableCell>
                                         <div>{student.email}</div>

@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Users, BookOpen, School, CalendarDays, TrendingUp, DollarSign, Hourglass, TrendingDown, BarChart2, AlertTriangle, Mail } from "lucide-react";
@@ -250,6 +251,16 @@ export default function AdminDashboard() {
     .filter(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < now)
     .reduce((acc, f) => acc + (f.totalAmount - f.amountPaid), 0);
 
+  const studentGenderCount = studentsData.reduce((acc, student) => {
+    acc[student.sex] = (acc[student.sex] || 0) + 1;
+    return acc;
+  }, { Male: 0, Female: 0 });
+
+  const teacherGenderCount = teachersData.reduce((acc, teacher) => {
+    acc[teacher.sex] = (acc[teacher.sex] || 0) + 1;
+    return acc;
+  }, { Male: 0, Female: 0 });
+
   return (
     <div className="space-y-6">
       {schoolProfile && schoolProfile.status !== 'Active' && (
@@ -276,7 +287,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{studentsData.length}</div>
-            <p className="text-xs text-muted-foreground">+5% from last month</p>
+            <p className="text-xs text-muted-foreground">{studentGenderCount.Male} Male, {studentGenderCount.Female} Female</p>
           </CardContent>
         </Card>
         <Card>
@@ -286,7 +297,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{teachersData.length}</div>
-            <p className="text-xs text-muted-foreground">+2 since last month</p>
+            <p className="text-xs text-muted-foreground">{teacherGenderCount.Male} Male, {teacherGenderCount.Female} Female</p>
           </CardContent>
         </Card>
         <Card>

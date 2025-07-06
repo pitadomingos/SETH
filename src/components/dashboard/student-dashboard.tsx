@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
@@ -46,6 +47,7 @@ function AIFailureAnalysis({ student, grades, attendanceSummary }) {
         const result = await analyzeStudentFailure({
           studentName: student.name,
           age,
+          sex: student.sex,
           grades: gradesForAnalysis,
           attendanceSummary,
         });

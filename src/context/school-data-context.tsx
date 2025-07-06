@@ -55,6 +55,7 @@ export interface NewAdmissionData {
   name: string;
   dateOfBirth: string;
   appliedFor: string;
+  sex: 'Male' | 'Female';
   formerSchool: string;
   gradesSummary: string;
 }
@@ -368,6 +369,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         id: `S${Date.now()}`,
         name: admission.name,
         grade: admission.appliedFor.replace('Grade ', ''),
+        sex: admission.sex,
         class: 'Unassigned',
         email: `${admission.name.split(' ').join('.').toLowerCase()}@edumanage.com`,
         phone: 'N/A',
@@ -496,12 +498,13 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const newAdmission: Admission = {
         id: `ADM${Date.now()}`,
         name: data.name,
-        dateOfBirth: data.dateOfBirth,
+        dateOfBirth: format(data.dateOfBirth, 'yyyy-MM-dd'),
+        sex: data.sex,
         appliedFor: data.appliedFor,
         date: new Date().toISOString().split('T')[0],
         status: 'Pending',
         formerSchool: data.formerSchool,
-        grades: data.gradesSummary,
+        grades: data.gradesSummary || 'N/A',
         parentName: user.name,
         parentEmail: user.email,
     };
