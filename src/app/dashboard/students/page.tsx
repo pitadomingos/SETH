@@ -1,6 +1,6 @@
 
 'use client';
-import { useSchoolData } from '@/context/school-data-context';
+import { useSchoolData, Student } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { formatGradeDisplay, calculateAge } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, LabelList } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 
 const PAGE_SIZE = 10;
@@ -47,7 +47,7 @@ const StudentsByGradeChart = () => {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                    <BarChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                    <BarChart data={chartData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
                         <CartesianGrid vertical={false} />
                         <XAxis
                             dataKey="name"
@@ -60,7 +60,9 @@ const StudentsByGradeChart = () => {
                             cursor={false}
                             content={<ChartTooltipContent indicator="dot" />}
                         />
-                        <Bar dataKey="students" fill="var(--color-students)" radius={4} />
+                        <Bar dataKey="students" fill="var(--color-students)" radius={4}>
+                           <LabelList dataKey="students" position="top" offset={4} className="fill-foreground" fontSize={12} />
+                        </Bar>
                     </BarChart>
                 </ChartContainer>
             </CardContent>
