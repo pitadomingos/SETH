@@ -609,30 +609,26 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     // Update the master mock data
     setAllSchoolData(prevAllData => {
         const newAllData = { ...prevAllData };
-        // Add message to target school
         if (newAllData[targetSchoolId]) {
             newAllData[targetSchoolId].messages.unshift(newMessage);
+        } else {
+            console.warn(`Message target school ${targetSchoolId} not found`);
         }
-        // Add log entry to the appropriate school
+        
         const logSchoolId = fromSchoolId || targetSchoolId;
         if (newAllData[logSchoolId]) {
             newAllData[logSchoolId].activityLogs.unshift(logEntry);
+        } else {
+            console.warn(`Log target school ${logSchoolId} not found`);
         }
         return newAllData;
     });
-
-    // Also update the local state if the user is in that context
-    if (targetSchoolId === user?.schoolId) {
-        setMessages(prev => [newMessage, ...prev]);
-    }
 
     toast({ title: 'Message Sent!' });
   };
 
 
   const updateMessageStatus = (messageId: string, status: Message['status']) => {
-    setMessages(prev => prev.map(m => m.id === messageId ? { ...m, status } : m));
-
     setAllSchoolData(prevAllData => {
         const newAllData = { ...prevAllData };
         let updated = false;
