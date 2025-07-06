@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
@@ -112,7 +113,7 @@ interface SchoolDataContextType {
   addAudience: (audience: string) => void;
   deleteAudience: (audience: string) => void;
   expenseCategories: string[];
-  expenses: Expense[];
+  expensesData: Expense[];
   addExpense: (data: NewExpenseData) => void;
   teamsData: Team[];
   addTeam: (data: NewTeamData) => void;
@@ -149,7 +150,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { user, role } = useAuth();
   const { toast } = useToast();
 
-  const [allSchoolData, setAllSchoolData] = useState(initialSchoolData);
+  const [allSchoolData, setAllSchoolData] = useState(() => JSON.parse(JSON.stringify(initialSchoolData)));
   const [schoolProfile, setSchoolProfile] = useState<SchoolProfile | null>(null);
   const [financeData, setFinanceData] = useState<FinanceRecord[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
@@ -186,7 +187,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if (role === 'GlobalAdmin') {
       setSchoolProfile(null);
       const allLogs = Object.values(allSchoolData).flatMap(school => school.activityLogs || []);
+      const allMessages = Object.values(allSchoolData).flatMap(school => school.messages || []);
       setActivityLogs(allLogs);
+      setMessages(allMessages);
       setIsLoading(false);
       return;
     }
@@ -250,15 +253,15 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setExpenseCategories(data.expenseCategories || []);
       setTeamsData(data.teams || []);
       setCompetitionsData(data.competitions || []);
-      setEvents(data.events || []);
-      setTerms(data.terms || []);
-      setHolidays(data.holidays || []);
+      setEvents(data.events.map(e => ({...e, date: new Date(e.date)})));
+      setTerms(data.terms.map(t => ({...t, startDate: new Date(t.startDate), endDate: new Date(t.endDate)})));
+      setHolidays(data.holidays.map(h => ({...h, date: new Date(h.date)})));
       setCoursesData(data.courses || []);
-      setLessonPlans(data.lessonPlans || []);
-      setSavedTests(data.savedTests || []);
-      setDeployedTests(data.deployedTests || []);
-      setActivityLogs(data.activityLogs || []);
-      setMessages(data.messages || []);
+      setLessonPlans(data.lessonPlans.map(lp => ({...lp, createdAt: new Date(lp.createdAt)})) || []);
+      setSavedTests(data.savedTests.map(st => ({...st, createdAt: new Date(st.createdAt)})) || []);
+      setDeployedTests(data.deployedTests.map(dt => ({...dt, createdAt: new Date(dt.createdAt), deadline: new Date(dt.deadline)})) || []);
+      setActivityLogs(data.activityLogs.map(log => ({...log, timestamp: new Date(log.timestamp)})) || []);
+      setMessages(data.messages.map(msg => ({...msg, timestamp: new Date(msg.timestamp)})) || []);
       if(data.teachers) {
           const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
           setSubjects(initialSubjects);
@@ -273,24 +276,18 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [user, role, allSchoolData]);
 
   const updateSchoolStatus = (schoolId: string, status: SchoolProfile['status']) => {
-    // Mutate the mock "database" directly so changes persist across logins in the demo
-    if (initialSchoolData[schoolId]) {
-      initialSchoolData[schoolId].profile.status = status;
-    }
-
-    // Update the React state to trigger UI re-renders
     setAllSchoolData(prevData => {
-        if (!prevData || !prevData[schoolId]) return prevData;
-        
-        const newData = { ...prevData };
+      const newData = { ...prevData };
+      if (newData[schoolId]) {
         newData[schoolId] = {
-            ...newData[schoolId],
-            profile: {
-                ...newData[schoolId].profile,
-                status: status,
-            },
+          ...newData[schoolId],
+          profile: {
+            ...newData[schoolId].profile,
+            status: status,
+          },
         };
-        return newData;
+      }
+      return newData;
     });
   };
 
@@ -300,10 +297,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const updateStudentStatus = (schoolId: string, studentId: string, status: Student['status']) => {
-    const studentName = initialSchoolData[schoolId]?.students.find(s => s.id === studentId)?.name || 'Unknown Student';
-    const schoolName = initialSchoolData[schoolId]?.profile.name || 'Unknown School';
+    const studentName = allSchoolData[schoolId]?.students.find(s => s.id === studentId)?.name || 'Unknown Student';
+    const schoolName = allSchoolData[schoolId]?.profile.name || 'Unknown School';
     
-    // Add log entry
     const logEntry: ActivityLog = {
       id: `LOGG${Date.now()}`,
       timestamp: new Date(),
@@ -314,21 +310,23 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       details: `Changed status of student ${studentName} at ${schoolName} to ${status}.`
     };
 
-    if (initialSchoolData[schoolId]) {
-        const studentIndex = initialSchoolData[schoolId].students.findIndex(s => s.id === studentId);
-        if (studentIndex > -1) {
-            initialSchoolData[schoolId].students[studentIndex].status = status;
-            initialSchoolData[schoolId].activityLogs.unshift(logEntry);
+    setAllSchoolData(prevData => {
+        const newData = { ...prevData };
+        if (newData[schoolId]) {
+            newData[schoolId] = {
+                ...newData[schoolId],
+                students: newData[schoolId].students.map(s => s.id === studentId ? { ...s, status } : s),
+                activityLogs: [logEntry, ...newData[schoolId].activityLogs]
+            };
         }
-    }
-
-    setAllSchoolData(prevData => ({ ...prevData })); // Force a re-render from the master object
+        return newData;
+    });
     toast({ title: 'Student Status Updated' });
   };
 
   const updateTeacherStatus = (schoolId: string, teacherId: string, status: Teacher['status']) => {
-    const teacherName = initialSchoolData[schoolId]?.teachers.find(t => t.id === teacherId)?.name || 'Unknown Teacher';
-    const schoolName = initialSchoolData[schoolId]?.profile.name || 'Unknown School';
+    const teacherName = allSchoolData[schoolId]?.teachers.find(t => t.id === teacherId)?.name || 'Unknown Teacher';
+    const schoolName = allSchoolData[schoolId]?.profile.name || 'Unknown School';
 
     const logEntry: ActivityLog = {
       id: `LOGG${Date.now()}`,
@@ -340,15 +338,17 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       details: `Changed status of teacher ${teacherName} at ${schoolName} to ${status}.`
     };
 
-    if (initialSchoolData[schoolId]) {
-      const teacherIndex = initialSchoolData[schoolId].teachers.findIndex(t => t.id === teacherId);
-      if (teacherIndex > -1) {
-        initialSchoolData[schoolId].teachers[teacherIndex].status = status;
-        initialSchoolData[schoolId].activityLogs.unshift(logEntry);
-      }
-    }
-
-    setAllSchoolData(prevData => ({ ...prevData }));
+    setAllSchoolData(prevData => {
+        const newData = { ...prevData };
+        if (newData[schoolId]) {
+            newData[schoolId] = {
+                ...newData[schoolId],
+                teachers: newData[schoolId].teachers.map(t => t.id === teacherId ? { ...t, status } : t),
+                activityLogs: [logEntry, ...newData[schoolId].activityLogs]
+            };
+        }
+        return newData;
+    });
     toast({ title: 'Teacher Status Updated' });
   };
 
@@ -404,7 +404,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addStudentFromAdmission = (admission: Admission) => {
-    if (!user?.schoolId) return; // Ensure we are in a school context
+    if (!user?.schoolId) return;
 
     const newStudent: Student = {
         id: `S${Date.now()}`,
@@ -422,11 +422,15 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     };
     
     setAllSchoolData(prevAllData => {
+        const schoolId = user.schoolId!;
         const newAllData = { ...prevAllData };
-        if (newAllData[user.schoolId!]) {
-          newAllData[user.schoolId!].students.push(newStudent);
+        if (newAllData[schoolId]) {
+          newAllData[schoolId] = {
+              ...newAllData[schoolId],
+              students: [...newAllData[schoolId].students, newStudent]
+          }
         } else {
-          console.error(`School with id ${user.schoolId} not found`);
+          console.error(`School with id ${schoolId} not found`);
         }
         return newAllData;
     });
@@ -553,7 +557,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setAllSchoolData(prevAllData => {
         const newAllData = { ...prevAllData };
         if (newAllData[data.schoolId]) {
-          newAllData[data.schoolId].admissions.unshift(newAdmission);
+          newAllData[data.schoolId] = {
+            ...newAllData[data.schoolId],
+            admissions: [newAdmission, ...newAllData[data.schoolId].admissions]
+          };
         } else {
           console.error(`School with id ${data.schoolId} not found`);
         }
@@ -568,8 +575,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addMessage = (data: NewMessageData) => {
     if (!user || !role) return;
 
-    const fromSchoolId = user.schoolId; // Can be undefined for GlobalAdmin
-    const targetSchoolId = data.targetSchoolId || user.schoolId;
+    const fromSchoolId = user.schoolId;
+    const targetSchoolId = data.targetSchoolId || fromSchoolId;
 
     if (!targetSchoolId) {
         toast({ variant: 'destructive', title: 'Error', description: 'Message destination school not found.' });
@@ -599,29 +606,38 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const logEntry: ActivityLog = {
       id: `LOG${Date.now()}`,
       timestamp: new Date(),
-      schoolId: fromSchoolId || targetSchoolId, // Log against sender's school, or target school if sender is global
+      schoolId: fromSchoolId || targetSchoolId,
       user: user.name,
       role: role,
       action: 'Message',
       details: logDetails,
     };
 
-    // Update the master mock data
     setAllSchoolData(prevAllData => {
-        const newAllData = { ...prevAllData };
-        if (newAllData[targetSchoolId]) {
-            newAllData[targetSchoolId].messages.unshift(newMessage);
+      const newAllData = { ...prevAllData };
+      const logSchoolId = fromSchoolId || targetSchoolId;
+      
+      if (newAllData[targetSchoolId]) {
+        newAllData[targetSchoolId] = {
+          ...newAllData[targetSchoolId],
+          messages: [newMessage, ...newAllData[targetSchoolId].messages],
+        };
+      }
+      
+      if (newAllData[logSchoolId]) {
+        if (logSchoolId === targetSchoolId) {
+          // If log and message go to the same school, update the already cloned object
+          newAllData[logSchoolId].activityLogs = [logEntry, ...newAllData[logSchoolId].activityLogs];
         } else {
-            console.warn(`Message target school ${targetSchoolId} not found`);
+          // If they are different (Global Admin case), clone the log school object separately
+          newAllData[logSchoolId] = {
+            ...newAllData[logSchoolId],
+            activityLogs: [logEntry, ...newAllData[logSchoolId].activityLogs],
+          };
         }
-        
-        const logSchoolId = fromSchoolId || targetSchoolId;
-        if (newAllData[logSchoolId]) {
-            newAllData[logSchoolId].activityLogs.unshift(logEntry);
-        } else {
-            console.warn(`Log target school ${logSchoolId} not found`);
-        }
-        return newAllData;
+      }
+
+      return newAllData;
     });
 
     toast({ title: 'Message Sent!' });
@@ -631,20 +647,16 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const updateMessageStatus = (messageId: string, status: Message['status']) => {
     setAllSchoolData(prevAllData => {
         const newAllData = { ...prevAllData };
-        let updated = false;
-
+        
         for (const schoolId in newAllData) {
             const school = newAllData[schoolId];
             const msgIndex = school.messages.findIndex(m => m.id === messageId);
             if (msgIndex > -1) {
-                school.messages[msgIndex].status = status;
-                updated = true;
-                break;
+                const newMessages = [...school.messages];
+                newMessages[msgIndex] = { ...newMessages[msgIndex], status: status };
+                newAllData[schoolId] = { ...school, messages: newMessages };
+                break; 
             }
-        }
-        
-        if (!updated) {
-            console.warn(`Message with ID ${messageId} not found in any school.`);
         }
         
         return newAllData;
@@ -666,7 +678,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     assetsData, addAsset,
     assignments: [],
     grades, addGrade,
-    attendance: [],
+    attendance: allSchoolData[user?.schoolId || '']?.attendance || [],
     events, addEvent,
     subjects, addSubject,
     examBoards, addExamBoard, deleteExamBoard,

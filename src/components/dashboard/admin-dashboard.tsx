@@ -22,7 +22,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 
 
@@ -83,26 +83,33 @@ function ContactDeveloperDialog() {
 
 function AttendanceTrendChart() {
   const { attendance } = useSchoolData();
-  const thirtyDaysAgo = subDays(new Date(), 30);
-  const relevantAttendance = attendance.filter(a => new Date(a.date) >= thirtyDaysAgo);
-  
-  const dailyData = relevantAttendance.reduce((acc, record) => {
-    const date = format(new Date(record.date), 'MMM d');
-    if (!acc[date]) {
-      acc[date] = { present: 0, total: 0 };
-    }
-    acc[date].total++;
-    if (record.status === 'present' || record.status === 'late') {
-      acc[date].present++;
-    }
-    return acc;
-  }, {});
 
-  const chartData = Object.keys(dailyData).map(date => ({
-    date,
-    percentage: dailyData[date].total > 0 ? Math.round((dailyData[date].present / dailyData[date].total) * 100) : 0
-  })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const chartData = useMemo(() => {
+    const thirtyDaysAgo = subDays(new Date(), 30);
+    if (!attendance || attendance.length === 0) return [];
+    
+    const relevantAttendance = attendance.filter(a => new Date(a.date) >= thirtyDaysAgo);
 
+    const dailyData = relevantAttendance.reduce((acc, record) => {
+      const dateKey = format(new Date(record.date), 'yyyy-MM-dd');
+      if (!acc[dateKey]) {
+        acc[dateKey] = { present: 0, total: 0, date: new Date(record.date) };
+      }
+      acc[dateKey].total++;
+      if (record.status === 'present' || record.status === 'late') {
+        acc[dateKey].present++;
+      }
+      return acc;
+    }, {} as Record<string, { present: number; total: number; date: Date }>);
+
+    return Object.values(dailyData)
+      .map(data => ({
+        date: format(data.date, 'MMM d'),
+        fullDate: data.date,
+        percentage: data.total > 0 ? Math.round((data.present / data.total) * 100) : 0,
+      }))
+      .sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime());
+  }, [attendance]);
 
   const chartConfig = {
     percentage: {
@@ -126,7 +133,6 @@ function AttendanceTrendChart() {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tickFormatter={(value) => value.slice(0, 3)}
             />
              <YAxis
               tickLine={false}
@@ -142,6 +148,7 @@ function AttendanceTrendChart() {
     </Card>
   );
 }
+
 
 function AcademicPerformanceChart() {
     const { grades, schoolProfile } = useSchoolData();
