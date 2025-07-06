@@ -8,13 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Loader2, PlusCircle, User, School, Clock, MapPin, Trash2 } from 'lucide-react';
+import { BookOpen, Loader2, PlusCircle, User, School, Clock, MapPin, Trash2, BrainCircuit, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useSchoolData, NewCourseData } from '@/context/school-data-context';
+import { useSchoolData } from '@/context/school-data-context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { analyzeScheduleConflicts, type AnalyzeScheduleConflictsOutput } from '@/ai/flows/analyze-schedule-conflicts';
 
 const courseSchema = z.object({
   subject: z.string().min(1, "Subject is required."),
@@ -116,6 +118,115 @@ function NewCourseDialog() {
   );
 }
 
+function AnalyzeScheduleDialog() {
+  const { coursesData, teachersData, classesData } = useSchoolData();
+  const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<AnalyzeScheduleConflictsOutput | null>(null);
+
+  const handleRunAnalysis = async () => {
+    setIsLoading(true);
+    setAnalysisResult(null);
+    try {
+      const analysisInput = {
+        courses: coursesData.map(course => {
+          const teacher = teachersData.find(t => t.id === course.teacherId);
+          const classSection = classesData.find(c => c.id === course.classId);
+          return {
+            subject: course.subject,
+            teacherName: teacher?.name || 'N/A',
+            className: classSection?.name || 'N/A',
+            schedule: course.schedule,
+          };
+        }),
+      };
+
+      const result = await analyzeScheduleConflicts(analysisInput);
+      setAnalysisResult(result);
+    } catch (e) {
+      console.error(e);
+      toast({
+        variant: 'destructive',
+        title: 'Analysis Failed',
+        description: 'Could not run the schedule analysis. Please try again later.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const onOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      // Reset state when closing
+      setAnalysisResult(null);
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="outline"><BrainCircuit className="mr-2 h-4 w-4" /> Analyze Schedule</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>AI Schedule Conflict Analysis</DialogTitle>
+          <DialogDescription>
+            The AI will analyze the entire course schedule for teacher and room booking conflicts.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4 min-h-[20rem] max-h-[70vh] overflow-y-auto pr-4">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <Loader2 className="h-10 w-10 animate-spin mb-4 text-primary" />
+              <p>Analyzing schedule for conflicts...</p>
+            </div>
+          ) : analysisResult ? (
+            <div className="space-y-6">
+              <div className={`p-4 rounded-lg border ${analysisResult.hasConflicts ? 'border-destructive/20 bg-destructive/5' : 'border-green-500/20 bg-green-500/5'}`}>
+                <h3 className={`font-bold flex items-center gap-2 ${analysisResult.hasConflicts ? 'text-destructive' : 'text-green-600'}`}>
+                  {analysisResult.hasConflicts ? <AlertTriangle /> : <CheckCircle />}
+                  Analysis Summary
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">{analysisResult.summary}</p>
+              </div>
+              {analysisResult.hasConflicts && (
+                <div>
+                  <h4 className="font-semibold mb-2">Detected Conflicts:</h4>
+                  <ul className="space-y-3">
+                    {analysisResult.conflicts.map((conflict, index) => (
+                      <li key={index} className="p-4 bg-muted rounded-md text-sm">
+                        <p className="font-semibold text-card-foreground">{conflict.type}</p>
+                        <p className="text-muted-foreground mt-1">{conflict.details}</p>
+                        <p className="text-primary font-medium mt-2">Suggestion: <span className="text-muted-foreground">{conflict.suggestion}</span></p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <p className="text-center">Click the button below to start the analysis.</p>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <DialogClose asChild><Button type="button" variant="secondary">Close</Button></DialogClose>
+          {!analysisResult && (
+             <Button onClick={handleRunAnalysis} disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                Run Analysis
+             </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AcademicsPage() {
   const { role, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -133,12 +244,15 @@ export default function AcademicsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
-      <header className="flex justify-between items-center">
+      <header className="flex flex-wrap gap-2 justify-between items-center">
         <div>
             <h2 className="text-3xl font-bold tracking-tight">Course Management</h2>
             <p className="text-muted-foreground">Create and manage courses by assigning subjects, teachers, and schedules to class sections.</p>
         </div>
-        <NewCourseDialog />
+        <div className="flex gap-2">
+            <AnalyzeScheduleDialog />
+            <NewCourseDialog />
+        </div>
       </header>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

@@ -12,3 +12,4 @@ import '@/ai/flows/identify-struggling-students.ts';
 import '@/ai/flows/analyze-teacher-performance.ts';
 import '@/ai/flows/analyze-school-performance.ts';
 import '@/ai/flows/grade-student-test.ts';
+import '@/ai/flows/analyze-schedule-conflicts.ts';
