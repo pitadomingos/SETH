@@ -59,7 +59,14 @@ export interface NewAdmissionData {
   gradesSummary: string;
 }
 export interface NewDeployedTestData { testId: string; classId: string; deadline: Date; }
-export interface NewMessageData { to: 'Admin' | 'Developer' | string; subject: string; body: string; targetSchoolId?: string; }
+export interface NewMessageData {
+  to: 'Admin' | 'Developer' | string;
+  subject: string;
+  body: string;
+  targetSchoolId?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+}
 
 
 interface SchoolDataContextType {
@@ -581,6 +588,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       subject: data.subject,
       body: data.body,
       status: 'Pending',
+      attachmentUrl: data.attachmentUrl,
+      attachmentName: data.attachmentName,
     };
     
     const logDetails = data.to === 'Developer'

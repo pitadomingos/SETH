@@ -67,6 +67,8 @@ export interface Message {
   subject: string;
   body: string;
   status: 'Pending' | 'Resolved';
+  attachmentUrl?: string;
+  attachmentName?: string;
 }
 
 interface SchoolData {
