@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Mail, CheckCircle, Hourglass, MoreHorizontal, PlusCircle } from 'lucide-react';
+import { Loader2, Mail, CheckCircle, Hourglass, MoreHorizontal, PlusCircle, Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -91,6 +91,36 @@ function ComposeMessageDialog() {
             </DialogFooter>
           </form>
         </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ViewMessageDialog({ message }: { message: Message & { schoolName: string } }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+            <Eye className="mr-2 h-4 w-4" /> View Message
+        </DropdownMenuItem>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{message.subject}</DialogTitle>
+          <DialogDescription>
+            From: {message.fromUserName} ({message.schoolName})
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <div className="p-4 bg-muted rounded-md max-h-64 overflow-y-auto">
+            <p className="text-sm whitespace-pre-wrap">{message.body}</p>
+          </div>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button">Close</Button>
+          </DialogClose>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -186,6 +216,8 @@ export default function GlobalMessagingPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <ViewMessageDialog message={msg} />
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => updateMessageStatus(msg.id, 'Pending')} disabled={msg.status === 'Pending'}>
                           Mark as Pending
                         </DropdownMenuItem>
