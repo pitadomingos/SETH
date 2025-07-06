@@ -132,7 +132,6 @@ function AttendanceTrendChart() {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              domain={[80, 100]}
               tickFormatter={(value) => `${value}%`}
             />
             <ChartTooltip content={<ChartTooltipContent />} />
