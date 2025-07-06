@@ -144,7 +144,7 @@ function UpgradePlanDialog() {
                 <DialogHeader>
                     <DialogTitle>Confirm Upgrade to {selectedTier} Tier</DialogTitle>
                     <DialogDescription>
-                        Please review the terms of service before completing your upgrade.
+                        By confirming, you enter into a service agreement with Pixel Digital Solutions. Please review the terms below.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4 text-sm">
@@ -162,7 +162,7 @@ function UpgradePlanDialog() {
                           htmlFor="terms"
                           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                         >
-                          I have read and agree to the terms and conditions.
+                          I agree to the subscription terms with Pixel Digital Solutions.
                         </label>
                     </div>
                 </div>

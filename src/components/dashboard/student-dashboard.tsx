@@ -455,7 +455,7 @@ export default function StudentDashboard() {
                     </Dialog>
                 </div>
                 <p className="text-xs text-muted-foreground self-center">
-                    Documents created by EduManage System {new Date().getFullYear()}
+                    Document by Pixel Digital Solutions {new Date().getFullYear()}
                 </p>
             </CardFooter>
         </Card>

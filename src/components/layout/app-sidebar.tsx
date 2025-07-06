@@ -186,10 +186,9 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <div className="p-2 text-center text-xs text-muted-foreground">
-          © 2024 EduManage Inc.
+          © 2024 Pixel Digital Solutions
         </div>
       </SidebarFooter>
     </>
   );
 }
-    
