@@ -17,6 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, LabelList } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 
 const PAGE_SIZE = 10;
 
@@ -155,6 +157,61 @@ function EditTeacherDialog({ teacher }: { teacher: Teacher }) {
     )
 }
 
+function TeachersBySubjectChart() {
+    const { teachersData } = useSchoolData();
+
+    const chartData = useMemo(() => {
+        const subjectCounts = teachersData.reduce((acc, teacher) => {
+            acc[teacher.subject] = (acc[teacher.subject] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+        
+        return Object.entries(subjectCounts)
+            .map(([name, teachers]) => ({ name, teachers: teachers as number }))
+            .sort((a, b) => b.teachers - a.teachers);
+
+    }, [teachersData]);
+
+    const chartConfig = {
+        teachers: {
+            label: "Teachers",
+            color: "hsl(var(--chart-2))",
+        },
+    } satisfies ChartConfig;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Teachers by Subject</CardTitle>
+                <CardDescription>A distribution of teaching staff across subjects.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                    <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 30 }}>
+                        <CartesianGrid horizontal={false} />
+                        <YAxis
+                            dataKey="name"
+                            type="category"
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={10}
+                            width={80}
+                        />
+                        <XAxis type="number" hide />
+                        <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent indicator="dot" />}
+                        />
+                        <Bar dataKey="teachers" fill="var(--color-teachers)" radius={4}>
+                           <LabelList dataKey="teachers" position="right" offset={8} className="fill-foreground" fontSize={12} />
+                        </Bar>
+                    </BarChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function TeachersPage() {
     const { role, isLoading } = useAuth();
     const { teachersData } = useSchoolData();
@@ -231,6 +288,8 @@ export default function TeachersPage() {
                     <CardContent><div className="text-2xl font-bold">{summaryStats.uniqueSubjects}</div></CardContent>
                 </Card>
             </div>
+
+            <TeachersBySubjectChart />
 
             <Card>
                 <CardHeader>
