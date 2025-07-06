@@ -1,24 +1,27 @@
 
-
 'use client';
 import { useSchoolData } from '@/context/school-data-context';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, GraduationCap, TrendingUp, CheckCircle, ArrowRightLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { formatGradeDisplay, calculateAge } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+
+const PAGE_SIZE = 10;
 
 export default function StudentsPage() {
     const { role, isLoading } = useAuth();
     const { studentsData, grades, schoolProfile } = useSchoolData();
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState('');
-    
-    const studentsWithDetails = useMemo(() => {
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const filteredStudents = useMemo(() => {
         return studentsData.map(student => {
             const studentGrades = grades.filter(g => g.studentId === student.id);
             let averageGrade: string | number = 'N/A';
@@ -30,16 +33,39 @@ export default function StudentsPage() {
             
             const age = student.dateOfBirth ? calculateAge(student.dateOfBirth) : 'N/A';
 
-            return {
-                ...student,
-                averageGrade,
-                age,
-            };
+            return { ...student, averageGrade, age };
         }).filter(student =>
             student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             student.email.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [studentsData, grades, schoolProfile, searchTerm]);
+
+    const paginatedStudents = useMemo(() => {
+        const startIndex = (currentPage - 1) * PAGE_SIZE;
+        return filteredStudents.slice(startIndex, startIndex + PAGE_SIZE);
+    }, [filteredStudents, currentPage]);
+    
+    const totalPages = Math.ceil(filteredStudents.length / PAGE_SIZE);
+    
+    const summaryStats = useMemo(() => {
+        let schoolWideAverage: string | number = 'N/A';
+        if (grades.length > 0) {
+            const totalPoints = grades.reduce((acc, g) => acc + parseFloat(g.grade), 0);
+            schoolWideAverage = formatGradeDisplay(totalPoints / grades.length, schoolProfile?.gradingSystem);
+        }
+
+        const statusCounts = studentsData.reduce((acc, student) => {
+            acc[student.status] = (acc[student.status] || 0) + 1;
+            return acc;
+        }, { Active: 0, Inactive: 0, Transferred: 0 });
+
+        return {
+            total: studentsData.length,
+            schoolWideAverage,
+            active: statusCounts.Active,
+            inactive: statusCounts.Inactive + statusCounts.Transferred
+        };
+    }, [studentsData, grades, schoolProfile]);
 
 
     useEffect(() => {
@@ -47,6 +73,10 @@ export default function StudentsPage() {
             router.push('/dashboard');
         }
     }, [role, isLoading, router]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
 
     if (isLoading || role !== 'Admin') {
         return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -61,9 +91,16 @@ export default function StudentsPage() {
                 </div>
             </header>
 
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Students</CardTitle><GraduationCap className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryStats.total}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">School Average Grade</CardTitle><TrendingUp className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryStats.schoolWideAverage}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Active Students</CardTitle><CheckCircle className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold text-green-500">{summaryStats.active}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Inactive / Transferred</CardTitle><ArrowRightLeft className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-500">{summaryStats.inactive}</div></CardContent></Card>
+            </div>
+
             <Card>
                 <CardHeader>
-                    <CardTitle>All Students</CardTitle>
+                    <CardTitle>All Students ({filteredStudents.length})</CardTitle>
                     <CardDescription>A list of all currently enrolled students.</CardDescription>
                     <div className="relative mt-4">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -89,7 +126,7 @@ export default function StudentsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {studentsWithDetails.map((student) => (
+                            {paginatedStudents.map((student) => (
                                 <TableRow key={student.id}>
                                     <TableCell className="font-medium">{student.name}</TableCell>
                                     <TableCell>{student.age}</TableCell>
@@ -108,10 +145,21 @@ export default function StudentsPage() {
                             ))}
                         </TableBody>
                     </Table>
-                     {studentsWithDetails.length === 0 && (
-                        <p className="text-muted-foreground text-center py-10">No students found matching your search.</p>
+                    {filteredStudents.length === 0 && (
+                        <p className="text-center text-muted-foreground py-10 col-span-full">No students found matching your search.</p>
                     )}
                 </CardContent>
+                {totalPages > 1 && (
+                    <CardFooter className="flex items-center justify-end space-x-2 border-t pt-4">
+                        <span className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</span>
+                        <Button variant="outline" size="sm" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+                            <ChevronLeft className="h-4 w-4" /> Previous
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
+                            Next <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </CardFooter>
+                )}
             </Card>
         </div>
     );
