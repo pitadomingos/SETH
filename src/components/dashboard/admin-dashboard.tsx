@@ -3,7 +3,7 @@
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Users, BookOpen, School, CalendarDays, TrendingUp, DollarSign, Hourglass, TrendingDown, BarChart2, AlertTriangle, Mail } from "lucide-react";
-import { Bar, BarChart as RechartsBarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
+import { format, addDays } from 'date-fns';
 
 
 const messageSchema = z.object({
@@ -181,6 +182,115 @@ function SubjectPerformanceChart() {
     );
 }
 
+function AttendanceTrendChart() {
+    const { attendance } = useSchoolData();
+
+    const chartData = useMemo(() => {
+        const attendanceByDate = attendance.reduce((acc, record) => {
+            const date = record.date;
+            if (!acc[date]) {
+                acc[date] = { present: 0, late: 0, absent: 0 };
+            }
+            acc[date][record.status]++;
+            return acc;
+        }, {});
+
+        const last30Days = Array.from({ length: 30 }, (_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            return d.toISOString().split('T')[0];
+        }).reverse();
+
+        return last30Days.map(dateStr => {
+            const dayData = attendanceByDate[dateStr];
+            const total = dayData ? dayData.present + dayData.late + dayData.absent : 0;
+            const rate = total > 0 ? (dayData.present / total) * 100 : 100; // Default to 100 if no records
+            return {
+                date: format(new Date(dateStr), 'MMM d'),
+                'Attendance %': parseFloat(rate.toFixed(1)),
+            };
+        });
+    }, [attendance]);
+
+    const chartConfig = {
+        'Attendance %': {
+            label: 'Attendance %',
+            color: 'hsl(var(--chart-1))',
+        },
+    } satisfies ChartConfig;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Attendance Trend</CardTitle>
+                <CardDescription>Overall student attendance rate over the last 30 days.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                     <RechartsLineChart data={chartData} margin={{ left: -10, right: 10 }}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} angle={-45} textAnchor="end" height={50} />
+                        <YAxis tickFormatter={(value) => `${value}%`} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Line type="monotone" dataKey="Attendance %" stroke="var(--color-Attendance-%)" strokeWidth={2} dot={false} />
+                    </RechartsLineChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+    );
+}
+
+function GradePerformanceChart() {
+    const { grades } = useSchoolData();
+
+    const chartData = useMemo(() => {
+        const gradesByMonth = grades.reduce((acc, grade) => {
+            const month = format(grade.date, 'yyyy-MM');
+            if (!acc[month]) {
+                acc[month] = [];
+            }
+            acc[month].push(parseFloat(grade.grade));
+            return acc;
+        }, {});
+
+        return Object.entries(gradesByMonth)
+            .map(([month, monthGrades]) => ({
+                month: format(new Date(month), 'MMM yy'),
+                'Avg Grade': monthGrades.reduce((sum, g) => sum + g, 0) / monthGrades.length,
+            }))
+            .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
+
+    }, [grades]);
+
+    const chartConfig = {
+        'Avg Grade': {
+            label: "Avg. Grade",
+            color: "hsl(var(--chart-2))",
+        },
+    } satisfies ChartConfig;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Academic Performance</CardTitle>
+                <CardDescription>School-wide average grade over the last few months.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                    <RechartsLineChart data={chartData}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                        <YAxis domain={[10, 20]} />
+                        <ChartTooltip content={<ChartTooltipContent formatter={(value) => (value as number).toFixed(2)}/>} />
+                        <Line type="monotone" dataKey="Avg Grade" stroke="var(--color-Avg-Grade)" strokeWidth={2} dot={false} />
+                    </RechartsLineChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+    );
+}
+
+
 export default function AdminDashboard() {
   const { studentsData, teachersData, classesData, financeData, events, schoolProfile, expensesData } = useSchoolData();
   const now = new Date();
@@ -311,8 +421,10 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-         <TeacherPerformanceChart />
-         <SubjectPerformanceChart />
+        <AttendanceTrendChart />
+        <GradePerformanceChart />
+        <TeacherPerformanceChart />
+        <SubjectPerformanceChart />
       </div>
     </div>
   );
