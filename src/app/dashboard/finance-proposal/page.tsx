@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase } from 'lucide-react';
+import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function ProjectProposalPage() {
@@ -135,7 +135,7 @@ export default function ProjectProposalPage() {
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold shrink-0">2</span>
               <div>
                 <h4 className="font-semibold">Phase 2 (Q4 2025): Financial Integration & Automation</h4>
-                <p className="text-sm text-muted-foreground">Integrate with regional payment gateways (e.g., M-Pesa, PayGate) for seamless fee collection. Implement automated invoicing, billing cycles, and payment reminders.</p>
+                <p className="text-sm text-muted-foreground">This phase focuses on creating a frictionless financial ecosystem. We will integrate with key regional payment providers including mobile money (M-Pesa, eMola, EcoCash) and traditional banking systems. This will enable automated invoicing, one-click fee payments from the Parent Portal, real-time payment tracking, and automated reminders for overdue fees, significantly reducing the administrative burden of collections.</p>
               </div>
             </div>
              <div className="flex items-start gap-4">
@@ -147,11 +147,48 @@ export default function ProjectProposalPage() {
             </div>
           </CardContent>
         </Card>
+
+         <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Layers /> Continuous Improvement: Seasonal Updates</CardTitle>
+                <CardDescription>Beyond the core roadmap, we are committed to continuous innovation through regular seasonal updates.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6 sm:grid-cols-2">
+                <div className="flex items-start gap-3">
+                    <Smartphone className="h-5 w-5 text-primary mt-1 shrink-0" />
+                    <div>
+                        <h4 className="font-semibold">Native Mobile Apps</h4>
+                        <p className="text-sm text-muted-foreground">Dedicated iOS and Android applications for parents and students to enhance accessibility and engagement.</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-3">
+                    <LineChart className="h-5 w-5 text-primary mt-1 shrink-0" />
+                    <div>
+                        <h4 className="font-semibold">Predictive Analytics</h4>
+                        <p className="text-sm text-muted-foreground">Tools to predict student dropout risks or identify opportunities for academic intervention based on historical data.</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-3">
+                    <Target className="h-5 w-5 text-primary mt-1 shrink-0" />
+                    <div>
+                        <h4 className="font-semibold">Goal Setting</h4>
+                        <p className="text-sm text-muted-foreground">Collaborative tools for students and parents to set, track, and manage academic and personal development goals.</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-3">
+                    <Club className="h-5 w-5 text-primary mt-1 shrink-0" />
+                    <div>
+                        <h4 className="font-semibold">Extracurricular Management</h4>
+                        <p className="text-sm text-muted-foreground">A dedicated module for managing non-academic activities, clubs, and sports teams with scheduling and communication tools.</p>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
         
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Layers /> The Future Vision: A Lifelong Learning Ecosystem</CardTitle>
-            <CardDescription>From the first day of pre-school to university graduation, a single thread of data.</CardDescription>
+            <CardTitle className="flex items-center gap-2"><Briefcase /> The Future Vision: A Lifelong Learning Ecosystem</CardTitle>
+            <CardDescription>From the first day of pre-school to university graduation and beyond.</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">Our ultimate vision extends beyond the K-12 classroom. We aim to create a cohesive, three-part ecosystem that supports a student's entire educational journey. While the Pre-School and University modules will be developed as distinct, specialized applications due to their unique complexities, they will be built on a shared data philosophy.</p>
@@ -169,7 +206,7 @@ export default function ProjectProposalPage() {
               <div className="flex flex-col items-center text-center p-4 rounded-lg bg-muted/50">
                 <Briefcase className="h-10 w-10 text-primary mb-3"/>
                 <h4 className="font-semibold">EduManage University & Careers</h4>
-                <p className="text-sm text-muted-foreground mt-1">A specialized module for higher education that also bridges the gap to employment. Upon student consent, employers and recruitment agents can gain temporary access to verified academic records, helping them choose the right candidates and understand their full educational journey.</p>
+                <p className="text-sm text-muted-foreground mt-1">A specialized module for higher education that also bridges the gap to employment. Upon student consent, employers and recruitment agents can gain temporary, verified access to academic records, helping them connect with the right talent.</p>
               </div>
             </div>
             <p className="text-muted-foreground mt-6">This interconnected system will provide unprecedented insights, allowing educators to track progress, advisors to offer personalized guidance, and employers to connect with qualified talent. This is not just school management; it is lifetime learning and career management.</p>
@@ -193,3 +230,5 @@ export default function ProjectProposalPage() {
     </div>
   );
 }
+
+    
