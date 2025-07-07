@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import Link from 'next/link';
 import { PenSquare, BookMarked, Bell, BrainCircuit, Loader2, X, Mail, CalendarCheck } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData, NewMessageData } from "@/context/school-data-context";
-import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis, LabelList } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,

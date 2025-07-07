@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { FileText, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks } from "lucide-react";
+import { FileText, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData } from "@/context/school-data-context";
 import { useToast } from '@/hooks/use-toast';
@@ -137,20 +137,22 @@ function AttendanceBreakdownChart({ studentId }) {
   const studentAttendance = attendance.filter(a => a.studentId === studentId);
   
   const breakdown = studentAttendance.reduce((acc, record) => {
-    acc[record.status] = (acc[record.status] || 0) + 1;
+    acc[record.status.toLowerCase()] = (acc[record.status.toLowerCase()] || 0) + 1;
     return acc;
-  }, { present: 0, late: 0, absent: 0});
+  }, { present: 0, late: 0, absent: 0, sick: 0});
 
   const chartData = [
     { status: 'Present', value: breakdown.present, fill: 'var(--color-present)' },
     { status: 'Late', value: breakdown.late, fill: 'var(--color-late)' },
     { status: 'Absent', value: breakdown.absent, fill: 'var(--color-absent)' },
+    { status: 'Sick', value: breakdown.sick, fill: 'var(--color-sick)' },
   ];
 
   const chartConfig = {
     present: { label: 'Present', color: 'hsl(var(--chart-2))' },
     late: { label: 'Late', color: 'hsl(var(--chart-4))' },
     absent: { label: 'Absent', color: 'hsl(var(--destructive))' },
+    sick: { label: 'Sick', icon: HeartPulse, color: 'hsl(var(--chart-3))' },
   } satisfies ChartConfig;
 
   return (
@@ -290,12 +292,12 @@ export default function StudentDashboard() {
   }, [grades, studentId]);
 
   const studentAttendanceSummary = useMemo(() => {
-    if (!studentId) return { present: 0, late: 0, absent: 0 };
+    if (!studentId) return { present: 0, late: 0, absent: 0, sick: 0 };
     const records = attendance.filter(a => a.studentId === studentId);
     return records.reduce((acc, record) => {
-      acc[record.status] = (acc[record.status] || 0) + 1;
+      acc[record.status.toLowerCase()] = (acc[record.status.toLowerCase()] || 0) + 1;
       return acc;
-    }, { present: 0, late: 0, absent: 0 });
+    }, { present: 0, late: 0, absent: 0, sick: 0 });
   }, [attendance, studentId]);
 
   const hasPassed = useMemo(() => {

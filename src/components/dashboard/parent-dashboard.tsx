@@ -1,12 +1,13 @@
 
+
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { useSchoolData, FinanceRecord, NewAdmissionData } from '@/context/school-data-context';
+import { useSchoolData, NewAdmissionData, Competition, Team, Student } from '@/context/school-data-context';
 import { generateParentAdvice, GenerateParentAdviceOutput } from '@/ai/flows/generate-parent-advice';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, User, GraduationCap, DollarSign, ListChecks, BarChart2, UserPlus, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn, formatCurrency } from '@/lib/utils';
 import {
@@ -35,6 +36,7 @@ const applicationSchema = z.object({
   schoolId: z.string({ required_error: "Please select a school to apply to."}),
   name: z.string().min(2, "Applicant name must be at least 2 characters."),
   dateOfBirth: z.date({ required_error: "Date of birth is required." }),
+  sex: z.enum(['Male', 'Female'], { required_error: "Please select a gender." }),
   appliedFor: z.string().min(1, "Please specify the grade being applied for."),
   formerSchool: z.string().min(2, "Please enter the name of the former school."),
   gradesSummary: z.string().min(10, "Please provide a brief summary of previous grades.").optional(),
@@ -70,6 +72,7 @@ function NewApplicationDialog() {
       schoolId: values.schoolId,
       name: values.name,
       dateOfBirth: format(values.dateOfBirth, 'yyyy-MM-dd'),
+      sex: values.sex,
       appliedFor: values.appliedFor,
       formerSchool: values.formerSchool,
       gradesSummary: values.gradesSummary || 'N/A',
@@ -100,7 +103,10 @@ function NewApplicationDialog() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
             <FormField control={form.control} name="schoolId" render={({ field }) => ( <FormItem><FormLabel>School to Apply To</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select School" /></SelectTrigger></FormControl><SelectContent>{schoolList.map(school => <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
             <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Child's Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+                <FormField control={form.control} name="sex" render={({ field }) => ( <FormItem><FormLabel>Sex</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+            </div>
             <FormField control={form.control} name="appliedFor" render={({ field }) => (
                 <FormItem>
                     <FormLabel>Applying for Grade</FormLabel>
@@ -245,7 +251,56 @@ function GradeDistribution({ grades }) {
   )
 }
 
-const getStatusInfo = (fee: FinanceRecord) => {
+function ParentSportsActivities() {
+    const { studentsData, teamsData, competitionsData } = useSchoolData();
+
+    const upcomingCompetitions = useMemo(() => {
+        const childrenIds = studentsData.map(c => c.id);
+        const childrenTeams = teamsData.filter(t => t.playerIds.some(pId => childrenIds.includes(pId)));
+        const teamMap = new Map(childrenTeams.map(t => [t.id, t]));
+        
+        return competitionsData
+            .filter(c => c.date >= new Date() && teamMap.has(c.ourTeamId))
+            .map(c => ({
+                ...c,
+                team: teamMap.get(c.ourTeamId),
+                players: studentsData.filter(s => teamMap.get(c.ourTeamId)?.playerIds.includes(s.id))
+            }))
+            .sort((a,b) => a.date.getTime() - b.date.getTime());
+    }, [studentsData, teamsData, competitionsData]);
+
+    if (upcomingCompetitions.length === 0) return null;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Trophy /> My Children's Sports</CardTitle>
+                <CardDescription>Upcoming games and competitions for your children.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ul className="space-y-4">
+                    {upcomingCompetitions.map(comp => (
+                        <li key={comp.id} className="flex items-start gap-4">
+                            <div className="flex flex-col items-center p-2 bg-muted rounded-md w-14">
+                                <span className="font-bold text-lg">{format(comp.date, 'dd')}</span>
+                                <span className="text-xs uppercase">{format(comp.date, 'MMM')}</span>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold">{comp.team?.name} vs {comp.opponent}</h4>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                    <div className="flex items-center gap-2"><User className="h-3 w-3"/><span>Player(s): {comp.players.map(p => p.name).join(', ')}</span></div>
+                                    <div className="flex items-center gap-2"><CalendarIcon className="h-3 w-3"/><span>{format(comp.date, 'EEEE')} at {comp.time}</span></div>
+                                </div>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </CardContent>
+        </Card>
+    );
+}
+
+const getStatusInfo = (fee) => {
     const balance = fee.totalAmount - fee.amountPaid;
     const isOverdue = new Date(fee.dueDate) < new Date() && balance > 0;
 
@@ -280,12 +335,12 @@ export default function ParentDashboard() {
   }, [grades, selectedChildId]);
   
   const childAttendanceSummary = useMemo(() => {
-    if (!selectedChildId) return { present: 0, late: 0, absent: 0 };
+    if (!selectedChildId) return { present: 0, late: 0, absent: 0, sick: 0 };
     const records = attendance.filter(a => a.studentId === selectedChildId);
     return records.reduce((acc, record) => {
-      acc[record.status] = (acc[record.status] || 0) + 1;
+      acc[record.status.toLowerCase()] = (acc[record.status.toLowerCase()] || 0) + 1;
       return acc;
-    }, { present: 0, late: 0, absent: 0 });
+    }, { present: 0, late: 0, absent: 0, sick: 0 });
   }, [attendance, selectedChildId]);
 
   const childFinanceSummary = useMemo(() => {
@@ -409,7 +464,10 @@ export default function ParentDashboard() {
                 </Card>
               </div>
           </div>
-          <GradeDistribution grades={childGrades} />
+          <div className="grid gap-6 md:grid-cols-2">
+            <GradeDistribution grades={childGrades} />
+            <ParentSportsActivities />
+          </div>
         </div>
       ) : (
         <Card>
@@ -421,3 +479,4 @@ export default function ParentDashboard() {
     </div>
   );
 }
+
