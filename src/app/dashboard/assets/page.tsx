@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2, Search } from 'lucide-react';
+import { PlusCircle, Loader2, Search, Package, PackageCheck, Wrench, CheckCircle } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -16,6 +16,17 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+// Charting imports
+import { Pie, PieChart, Cell, Bar, BarChart as RechartsBarChart, CartesianGrid, XAxis, YAxis, LabelList } from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartConfig,
+  ChartLegend,
+  ChartLegendContent,
+} from '@/components/ui/chart';
 
 const assetSchema = z.object({
   name: z.string().min(3, "Asset name is required."),
@@ -94,6 +105,91 @@ function NewAssetDialog() {
     )
 }
 
+function AssetsByStatusChart({ assets }) {
+  const chartData = useMemo(() => {
+    const statusCounts = assets.reduce((acc, asset) => {
+      acc[asset.status] = (acc[asset.status] || 0) + 1;
+      return acc;
+    }, { 'In Use': 0, 'Available': 0, 'Maintenance': 0 });
+
+    return [
+      { name: 'Available', count: statusCounts.Available, fill: 'var(--color-available)' },
+      { name: 'In Use', count: statusCounts['In Use'], fill: 'var(--color-in-use)' },
+      { name: 'Maintenance', count: statusCounts.Maintenance, fill: 'var(--color-maintenance)' },
+    ];
+  }, [assets]);
+
+  const chartConfig = {
+    count: { label: "Count" },
+    available: { label: "Available", color: "hsl(var(--chart-2))" },
+    'in-use': { label: "In Use", color: "hsl(var(--chart-1))" },
+    maintenance: { label: "Maintenance", color: "hsl(var(--chart-4))" },
+  } satisfies ChartConfig;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Assets by Status</CardTitle>
+        <CardDescription>Current status distribution of all school assets.</CardDescription>
+      </CardHeader>
+      <CardContent className="flex justify-center">
+        <ChartContainer config={chartConfig} className="mx-auto aspect-square h-[250px]">
+          <PieChart>
+            <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
+            <Pie data={chartData} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label={({ name, count }) => `${name}: ${count}`}>
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Pie>
+            <ChartLegend content={<ChartLegendContent nameKey="name" />} />
+          </PieChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AssetsByCategoryChart({ assets }) {
+  const chartData = useMemo(() => {
+    const categoryCounts = assets.reduce((acc, asset) => {
+      acc[asset.category] = (acc[asset.category] || 0) + 1;
+      return acc;
+    }, {});
+    
+    return Object.entries(categoryCounts).map(([name, count]) => ({
+      name,
+      count: count as number,
+    })).sort((a,b) => b.count - a.count);
+  }, [assets]);
+
+  const chartConfig = {
+    count: { label: "Assets", color: "hsl(var(--chart-1))" },
+  } satisfies ChartConfig;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Assets by Category</CardTitle>
+        <CardDescription>Breakdown of assets across different categories.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+          <RechartsBarChart data={chartData} margin={{ top: 20 }}>
+            <CartesianGrid vertical={false} />
+            <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
+            <YAxis allowDecimals={false} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Bar dataKey="count" fill="var(--color-count)" radius={4}>
+              <LabelList dataKey="count" position="top" offset={4} className="fill-foreground" fontSize={12} />
+            </Bar>
+          </RechartsBarChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+
 export default function AssetsPage() {
   const { role, isLoading } = useAuth();
   const { assetsData } = useSchoolData();
@@ -108,6 +204,17 @@ export default function AssetsPage() {
       asset.assignedTo.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [assetsData, searchTerm]);
+  
+  const summaryStats = useMemo(() => {
+    const stats = assetsData.reduce((acc, asset) => {
+        acc.total++;
+        if (asset.status === 'In Use') acc.inUse++;
+        else if (asset.status === 'Available') acc.available++;
+        else if (asset.status === 'Maintenance') acc.maintenance++;
+        return acc;
+    }, { total: 0, inUse: 0, available: 0, maintenance: 0 });
+    return stats;
+  }, [assetsData]);
 
   useEffect(() => {
     if (!isLoading && role !== 'Admin') {
@@ -137,6 +244,18 @@ export default function AssetsPage() {
         </div>
         <NewAssetDialog />
       </header>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Assets</CardTitle><Package className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryStats.total}</div></CardContent></Card>
+          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Assets In Use</CardTitle><PackageCheck className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryStats.inUse}</div></CardContent></Card>
+          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Available</CardTitle><CheckCircle className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold text-green-500">{summaryStats.available}</div></CardContent></Card>
+          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">In Maintenance</CardTitle><Wrench className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold text-orange-500">{summaryStats.maintenance}</div></CardContent></Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+          <AssetsByStatusChart assets={assetsData} />
+          <AssetsByCategoryChart assets={assetsData} />
+      </div>
 
       <Card>
         <CardHeader>
