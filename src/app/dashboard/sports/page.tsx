@@ -90,7 +90,7 @@ function NewTeamDialog() {
 
 function NewCompetitionDialog() {
     const { addCompetition, teamsData } = useSchoolData();
-    const [isOpen, setIsDialogOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
 
     const form = useForm<CompetitionFormValues>({
         resolver: zodResolver(competitionSchema),
