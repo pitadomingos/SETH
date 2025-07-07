@@ -3,27 +3,24 @@
 
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, UserPlus, Loader2, PlusCircle, Settings, BookCopy, Users, CalendarDays, Calendar as CalendarIcon, DollarSign, Save, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Loader2, PlusCircle, Settings, CalendarDays, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
+import { useSchoolData } from '@/context/school-data-context';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 
 
 const boardSchema = z.object({
@@ -57,10 +54,8 @@ type HolidayFormValues = z.infer<typeof holidaySchema>;
 export default function AdminPanelPage() {
     const { role, isLoading: authLoading } = useAuth();
     const router = useRouter();
-    const { toast } = useToast();
 
     const { 
-        schoolProfile, updateSchoolProfile,
         examBoards, addExamBoard, deleteExamBoard,
         studentsData, teachersData, 
         feeDescriptions, addFeeDescription, deleteFeeDescription,
@@ -74,13 +69,6 @@ export default function AdminPanelPage() {
     const [isAudienceDialogOpen, setIsAudienceDialogOpen] = useState(false);
     const [isTermDialogOpen, setIsTermDialogOpen] = useState(false);
     const [isHolidayDialogOpen, setIsHolidayDialogOpen] = useState(false);
-    const [gradeCapacities, setGradeCapacities] = useState<Record<string, number>>(schoolProfile?.gradeCapacity || {});
-
-    useEffect(() => {
-        if (schoolProfile) {
-            setGradeCapacities(schoolProfile.gradeCapacity || {});
-        }
-    }, [schoolProfile]);
 
     useEffect(() => {
         if (!authLoading && role !== 'Admin') {
@@ -112,30 +100,6 @@ export default function AdminPanelPage() {
         case 'Inactive': return 'destructive';
         case 'Transferred': return 'outline';
         default: return 'default';
-        }
-    };
-
-    function handleCurrencyChange(value: SchoolProfile['currency']) {
-        if (schoolProfile) {
-            updateSchoolProfile({ currency: value });
-            toast({
-                title: "Currency Updated",
-                description: `The school currency has been set to ${value}.`,
-            });
-        }
-    }
-
-    const handleCapacityChange = (grade: string, value: string) => {
-        setGradeCapacities(prev => ({ ...prev, [grade]: Number(value) >= 0 ? Number(value) : 0 }));
-    };
-
-    const handleSaveCapacities = () => {
-        if (schoolProfile) {
-            updateSchoolProfile({ gradeCapacity: gradeCapacities });
-            toast({
-                title: "Capacities Updated",
-                description: "Grade level capacities have been saved.",
-            });
         }
     };
 
@@ -225,27 +189,10 @@ export default function AdminPanelPage() {
 
                  <Card className="xl:col-span-1">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Settings /> System Data</CardTitle>
-                        <CardDescription>Manage system-wide data definitions.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Settings /> System Data Lists</CardTitle>
+                        <CardDescription>Manage data used in dropdowns across the app.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div>
-                            <div className="flex items-center justify-between">
-                                <h4 className="font-semibold">School Currency</h4>
-                            </div>
-                            <div className="mt-3">
-                                <Select value={schoolProfile?.currency} onValueChange={handleCurrencyChange} >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select currency" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="USD">USD ($)</SelectItem>
-                                        <SelectItem value="ZAR">ZAR (R)</SelectItem>
-                                        <SelectItem value="MZN">MZN (MT)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
                         <div>
                             <div className="flex items-center justify-between">
                                 <h4 className="font-semibold">Examination Boards</h4>
@@ -321,32 +268,6 @@ export default function AdminPanelPage() {
                             </ul>
                         </div>
                     </CardContent>
-                </Card>
-
-                 <Card className="lg:col-span-2 xl:col-span-3">
-                    <CardHeader>
-                        <CardTitle>Grade Capacity Management</CardTitle>
-                        <CardDescription>Set the maximum number of students for each grade level to manage admissions.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                            {Array.from({ length: 12 }, (_, i) => String(i + 1)).map(grade => (
-                                <div key={grade} className="space-y-2">
-                                    <Label htmlFor={`grade-capacity-${grade}`}>Grade {grade}</Label>
-                                    <Input
-                                        id={`grade-capacity-${grade}`}
-                                        type="number"
-                                        value={gradeCapacities[grade] || ''}
-                                        onChange={(e) => handleCapacityChange(grade, e.target.value)}
-                                        placeholder="0"
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                    <CardFooter>
-                        <Button onClick={handleSaveCapacities}><Save className="mr-2 h-4 w-4" /> Save Capacities</Button>
-                    </CardFooter>
                 </Card>
             </div>
         </div>
