@@ -49,7 +49,7 @@ function SchoolWideAnalysis() {
 
             // Financials
             const totalFees = financeData.reduce((sum, f) => sum + f.totalAmount, 0);
-            const totalRevenue = financeData.reduce((sum, f) => sum + f.amountPaid, 0);
+            const totalRevenue = financeData.reduce((sum, f) => acc + f.amountPaid, 0);
             const collectionRate = totalFees > 0 ? (totalRevenue / totalFees) * 100 : 100;
             const overdueAmount = financeData
                 .filter(f => new Date(f.dueDate) < new Date() && f.totalAmount > f.amountPaid)
@@ -134,9 +134,9 @@ function SchoolWideAnalysis() {
                           <div>
                               <h4 className="font-semibold mb-2 text-sm">Key Performance Indicators</h4>
                               <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                                  <BarChart data={result.keyMetrics} layout="vertical" margin={{ left: 10, right: 20 }}>
+                                  <BarChart data={result.keyMetrics} layout="vertical" margin={{ left: 10, right: 30 }}>
                                       <CartesianGrid horizontal={false} />
-                                      <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={100} />
+                                      <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={120} />
                                       <XAxis type="number" hide />
                                       <ChartTooltip cursor={false} content={<ChartTooltipContent formatter={(value, name, item) => `${value.toFixed(1)}${item.payload.unit || ''}`} />} />
                                       <Bar dataKey="value" fill="var(--color-value)" radius={4} />
