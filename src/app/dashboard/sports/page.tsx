@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData, Team, Competition, Student } from '@/context/school-data-context';
-import { Trophy, Users, PlusCircle, Loader2, User as UserIcon, X, Calendar as CalendarIcon, Clock, MapPin, Swords, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Trophy, Users, PlusCircle, Loader2, User as UserIcon, X, Calendar as CalendarIcon, Clock, MapPin, Swords, Trash2, Check, Award, History } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 
 
 const teamSchema = z.object({
@@ -37,6 +38,12 @@ const competitionSchema = z.object({
   location: z.string().min(3, "Location is required."),
 });
 type CompetitionFormValues = z.infer<typeof competitionSchema>;
+
+const resultSchema = z.object({
+  ourScore: z.coerce.number().int().min(0, "Score must be positive."),
+  opponentScore: z.coerce.number().int().min(0, "Score must be positive."),
+});
+type ResultFormValues = z.infer<typeof resultSchema>;
 
 function NewTeamDialog() {
     const { addTeam, teachersData } = useSchoolData();
@@ -140,46 +147,45 @@ function NewCompetitionDialog() {
     );
 }
 
-function ViewCompetitionDetailsDialog({ competition, team }: { competition: Competition, team?: Team }) {
+function RecordResultDialog({ competition, team }: { competition: Competition, team?: Team }) {
+    const { addCompetitionResult } = useSchoolData();
+    const [isOpen, setIsOpen] = useState(false);
+
+    const form = useForm<ResultFormValues>({
+        resolver: zodResolver(resultSchema),
+        defaultValues: { ourScore: 0, opponentScore: 0 }
+    });
+
+    function onSubmit(values: ResultFormValues) {
+        addCompetitionResult(competition.id, values);
+        form.reset();
+        setIsOpen(false);
+    }
+    
     return (
-        <Dialog>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button>View Details</Button>
+                <Button variant="outline" size="sm"><Award className="mr-2 h-4 w-4" /> Record Result</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>{competition.title}</DialogTitle>
+                    <DialogTitle>Record Competition Result</DialogTitle>
                     <DialogDescription>
-                        Match details for {team?.name || 'our team'} vs {competition.opponent}.
+                        {team?.name || 'Our Team'} vs {competition.opponent}
                     </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4 text-sm">
-                    <div className="flex items-center">
-                        <Trophy className="mr-3 h-4 w-4 text-muted-foreground" />
-                        <span><span className="font-semibold">Team:</span> {team?.name} ({team?.coach})</span>
-                    </div>
-                    <div className="flex items-center">
-                        <Users className="mr-3 h-4 w-4 text-muted-foreground" />
-                        <span><span className="font-semibold">Opponent:</span> {competition.opponent}</span>
-                    </div>
-                    <div className="flex items-center">
-                        <CalendarIcon className="mr-3 h-4 w-4 text-muted-foreground" />
-                        <span><span className="font-semibold">Date:</span> {format(competition.date, "EEEE, MMMM d, yyyy")}</span>
-                    </div>
-                    <div className="flex items-center">
-                        <Clock className="mr-3 h-4 w-4 text-muted-foreground" />
-                        <span><span className="font-semibold">Time:</span> {competition.time}</span>
-                    </div>
-                    <div className="flex items-center">
-                        <MapPin className="mr-3 h-4 w-4 text-muted-foreground" />
-                        <span><span className="font-semibold">Location:</span> {competition.location}</span>
-                    </div>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button>Close</Button>
-                    </DialogClose>
-                </DialogFooter>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name="ourScore" render={({ field }) => ( <FormItem><FormLabel>{team?.name || 'Our Score'}</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="opponentScore" render={({ field }) => ( <FormItem><FormLabel>Opponent Score</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        </div>
+                        <DialogFooter className="mt-4">
+                            <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+                            <Button type="submit">Save Result</Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
             </DialogContent>
         </Dialog>
     );
@@ -277,6 +283,43 @@ function ManageTeamDialog({ team, students, allTeams, addPlayerToTeam, removePla
   )
 }
 
+function CompetitionCard({ competition, team }: { competition: Competition, team?: Team }) {
+  const getOutcomeBadge = (outcome: 'Win' | 'Loss' | 'Draw') => {
+    switch(outcome) {
+      case 'Win': return <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Win</Badge>;
+      case 'Loss': return <Badge variant="destructive">Loss</Badge>;
+      case 'Draw': return <Badge variant="outline">Draw</Badge>;
+    }
+  };
+
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-4 p-4 border rounded-lg">
+      <div className="flex-1">
+        <h3 className="font-semibold text-lg">{competition.title}</h3>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+            {team && <span className="text-2xl">{team.icon}</span>}
+            <span>{team?.name || 'School Team'}</span>
+            <Swords className="h-4 w-4 text-primary" />
+            <span>{competition.opponent}</span>
+        </div>
+        {competition.result && (
+          <div className="mt-2 text-sm flex items-center gap-2">
+            <span className="font-bold">{competition.result.ourScore} - {competition.result.opponentScore}</span>
+            {getOutcomeBadge(competition.result.outcome)}
+          </div>
+        )}
+      </div>
+      <div className="w-full sm:w-auto flex items-center gap-4 mt-3 sm:mt-0">
+          <div className="text-sm text-right flex-1">
+              <p>{format(competition.date, 'EEEE, MMM d')}</p>
+              <p className="text-muted-foreground">{competition.time} at {competition.location}</p>
+          </div>
+          {new Date(competition.date) < new Date() && !competition.result && <RecordResultDialog competition={competition} team={team} />}
+      </div>
+    </li>
+  )
+}
+
 export default function SportsPage() {
   const { role, isLoading } = useAuth();
   const { teamsData, studentsData, addPlayerToTeam, removePlayerFromTeam, competitionsData, deleteTeam } = useSchoolData();
@@ -293,6 +336,7 @@ export default function SportsPage() {
   }
   
   const upcomingCompetitions = competitionsData.filter(c => c.date >= new Date()).sort((a, b) => a.date.getTime() - b.date.getTime());
+  const pastCompetitions = competitionsData.filter(c => c.date < new Date()).sort((a, b) => b.date.getTime() - a.date.getTime());
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
@@ -359,30 +403,30 @@ export default function SportsPage() {
                 <ul className="space-y-4">
                     {upcomingCompetitions.map(comp => {
                         const team = teamsData.find(t => t.id === comp.ourTeamId);
-                        return (
-                             <li key={comp.id} className="flex flex-wrap items-center justify-between gap-4 p-4 border rounded-lg">
-                                <div className="flex-1">
-                                    <h3 className="font-semibold text-lg">{comp.title}</h3>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                                        {team && <span className="text-2xl">{team.icon}</span>}
-                                        <span>{team?.name || 'School Team'}</span>
-                                        <Swords className="h-4 w-4 text-primary" />
-                                        <span>{comp.opponent}</span>
-                                    </div>
-                                </div>
-                                <div className="w-full sm:w-auto flex items-center gap-4 mt-3 sm:mt-0">
-                                    <div className="text-sm text-right flex-1">
-                                        <p>{format(comp.date, 'EEEE, MMM d')}</p>
-                                        <p className="text-muted-foreground">{comp.time} at {comp.location}</p>
-                                    </div>
-                                    <ViewCompetitionDetailsDialog competition={comp} team={team} />
-                                </div>
-                            </li>
-                        );
+                        return <CompetitionCard key={comp.id} competition={comp} team={team} />;
                     })}
                 </ul>
             ) : (
                 <p className="text-muted-foreground text-center py-8">No upcoming sports events scheduled.</p>
+            )}
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2"><History /> Competition Results</CardTitle>
+            <CardDescription>A record of past competitions and their outcomes.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            {pastCompetitions.length > 0 ? (
+                <ul className="space-y-4">
+                    {pastCompetitions.map(comp => {
+                        const team = teamsData.find(t => t.id === comp.ourTeamId);
+                        return <CompetitionCard key={comp.id} competition={comp} team={team} />;
+                    })}
+                </ul>
+            ) : (
+                <p className="text-muted-foreground text-center py-8">No past competitions found.</p>
             )}
         </CardContent>
       </Card>

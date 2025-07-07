@@ -15,7 +15,7 @@ import {
     SchoolProfile as InitialSchoolProfile, 
     Expense, 
     Team, 
-    Competition, 
+    Competition as InitialCompetition,
     SchoolEvent,
     AcademicTerm,
     Holiday,
@@ -38,7 +38,8 @@ export type Grade = InitialGrade;
 export type SchoolProfile = InitialSchoolProfile;
 export type Class = InitialClass;
 export type Course = InitialCourse;
-export type { Team, Competition, Admission, Student, ActivityLog, Message, Teacher, Attendance };
+export type Competition = InitialCompetition;
+export type { Team, Admission, Student, ActivityLog, Message, Teacher, Attendance };
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
 interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }
@@ -125,6 +126,7 @@ interface SchoolDataContextType {
   removePlayerFromTeam: (teamId: string, studentId: string) => void;
   competitionsData: Competition[];
   addCompetition: (data: NewCompetitionData) => void;
+  addCompetitionResult: (competitionId: string, scores: { ourScore: number, opponentScore: number }) => void;
   terms: AcademicTerm[];
   addTerm: (data: NewTermData) => void;
   holidays: Holiday[];
@@ -208,6 +210,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       const allEvents: SchoolEvent[] = [];
       const schoolIdsOfChildren = new Set<string>();
       const childrenIds = new Set<string>();
+      let allTeams: Team[] = [];
+      let allCompetitions: Competition[] = [];
 
       for (const schoolIdKey in allSchoolData) {
         const school = allSchoolData[schoolIdKey];
@@ -220,6 +224,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
                 allStudents.push(child);
                 childrenIds.add(child.id);
             });
+            allTeams.push(...school.teams);
+            allCompetitions.push(...school.competitions.map(c => ({...c, date: new Date(c.date)})));
         }
       }
 
@@ -232,7 +238,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
       schoolIdsOfChildren.forEach(sId => {
           const school = allSchoolData[sId];
-          const schoolEventsWithSchoolName = school.events.map(event => ({ ...event, schoolName: school.profile.name }));
+          const schoolEventsWithSchoolName = school.events.map(event => ({ ...event, schoolName: school.profile.name, date: new Date(event.date) }));
           allEvents.push(...schoolEventsWithSchoolName);
       });
       
@@ -242,6 +248,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setGrades(allGrades);
       setAttendance(allAttendance);
       setEvents(allEvents);
+      setTeamsData(allTeams);
+      setCompetitionsData(allCompetitions);
       setIsLoading(false);
     } else if (user?.schoolId && allSchoolData[user.schoolId]) {
       schoolId = user.schoolId;
@@ -489,6 +497,15 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setCompetitionsData(prev => [...prev, newCompetition].sort((a,b) => a.date.getTime() - b.date.getTime()));
   };
 
+  const addCompetitionResult = (competitionId: string, scores: { ourScore: number; opponentScore: number; }) => {
+    const outcome = scores.ourScore > scores.opponentScore ? 'Win' : scores.ourScore < scores.opponentScore ? 'Loss' : 'Draw';
+    const result = { ...scores, outcome };
+    setCompetitionsData(prev =>
+      prev.map(c => c.id === competitionId ? { ...c, result } : c)
+    );
+    toast({ title: 'Result Recorded', description: 'The competition result has been saved.' });
+  };
+
   const addEvent = (data: NewEventData) => {
     const newEvent: SchoolEvent = { id: `EVT${Date.now()}`, ...data, };
     setEvents(prev => [...prev, newEvent].sort((a,b) => a.date.getTime() - b.date.getTime()));
@@ -722,7 +739,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     expenseCategories,
     expensesData, addExpense,
     teamsData, addTeam, deleteTeam, addPlayerToTeam, removePlayerFromTeam,
-    competitionsData, addCompetition,
+    competitionsData, addCompetition, addCompetitionResult,
     terms, addTerm,
     holidays, addHoliday,
     lessonPlans, addLessonPlan,
