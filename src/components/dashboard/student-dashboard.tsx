@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
@@ -23,6 +24,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import Image from 'next/image';
 import { analyzeStudentFailure, AnalyzeStudentFailureOutput } from '@/ai/flows/analyze-student-failure';
 import { formatGradeDisplay, calculateAge } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const calculateAverageNumericGrade = (studentId: string, grades: any[]) => {
     if (!studentId || !grades) return 0;
@@ -85,13 +87,13 @@ function AIFailureAnalysis({ student, grades, attendanceSummary }) {
   }
 
   return (
-    <div className="space-y-4 p-4 text-sm bg-destructive/5 border border-destructive/20 rounded-md">
+    <div className="space-y-4 text-sm">
        <div>
-         <h4 className="font-semibold text-destructive mb-1">AI-Powered Academic Analysis</h4>
-         <p className="text-muted-foreground">{analysis.failureAnalysis}</p>
+         <AlertTitle className="mb-2">AI-Powered Academic Analysis</AlertTitle>
+         <AlertDescription>{analysis.failureAnalysis}</AlertDescription>
        </div>
        <div>
-         <h4 className="font-semibold text-destructive mb-1">Suggestions for Success</h4>
+         <h4 className="font-semibold text-destructive mb-1 mt-4">Suggestions for Success</h4>
          <p className="whitespace-pre-wrap text-muted-foreground">{analysis.resitSuggestions}</p>
        </div>
     </div>
@@ -141,10 +143,10 @@ function AttendanceBreakdownChart({ studentId }) {
   }, { present: 0, late: 0, absent: 0, sick: 0});
 
   const chartData = [
-    { status: 'Present', value: breakdown.present, fill: 'var(--color-present)' },
-    { status: 'Late', value: breakdown.late, fill: 'var(--color-late)' },
-    { status: 'Absent', value: breakdown.absent, fill: 'var(--color-absent)' },
-    { status: 'Sick', value: breakdown.sick, fill: 'var(--color-sick)' },
+    { status: 'present', value: breakdown.present, fill: 'var(--color-present)' },
+    { status: 'late', value: breakdown.late, fill: 'var(--color-late)' },
+    { status: 'absent', value: breakdown.absent, fill: 'var(--color-absent)' },
+    { status: 'sick', value: breakdown.sick, fill: 'var(--color-sick)' },
   ];
 
   const chartConfig = {
@@ -180,24 +182,41 @@ function AttendanceBreakdownChart({ studentId }) {
   );
 }
 
-function CompletionStatusContent({ student, hasPassed, areAllFeesPaid, grades, attendanceSummary }) {
-  if (!hasPassed) {
-    return <AIFailureAnalysis student={student} grades={grades} attendanceSummary={attendanceSummary} />;
-  }
-
-  if (!areAllFeesPaid) {
+function CompletionStatusAlert({ student, hasPassed, areAllFeesPaid, grades, attendanceSummary }) {
+  if (hasPassed && areAllFeesPaid) {
     return (
-      <p className="text-sm text-accent-foreground/80 bg-accent/20 p-3 rounded-md">
-        You have an outstanding balance on your account. Please clear all pending fees to enable document previews and downloads.
-      </p>
+      <Alert>
+        <CheckCircle className="h-4 w-4" />
+        <AlertTitle>Congratulations!</AlertTitle>
+        <AlertDescription>
+          You have met all academic and financial requirements for completion. You can now preview and download your official documents below.
+        </AlertDescription>
+      </Alert>
     );
   }
 
-  return (
-    <p className="text-sm text-muted-foreground">
-      Congratulations! You have met all requirements for completion. You can now preview and download your official documents.
-    </p>
-  );
+  if (!hasPassed) {
+    return (
+      <Alert variant="destructive">
+        <XCircle className="h-4 w-4" />
+        <AIFailureAnalysis student={student} grades={grades} attendanceSummary={attendanceSummary} />
+      </Alert>
+    );
+  }
+  
+  if (!areAllFeesPaid) {
+    return (
+      <Alert className="border-amber-500/50 text-amber-600 dark:border-amber-500 [&>svg]:text-amber-600">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Outstanding Balance</AlertTitle>
+        <AlertDescription>
+           You have an outstanding balance on your account. Please clear all pending fees to enable document previews and downloads.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  return null;
 }
 
 function AssignedTests({ student, studentClass }) {
@@ -253,7 +272,6 @@ export default function StudentDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const {
-    assignments,
     grades,
     financeData,
     studentsData,
@@ -282,8 +300,6 @@ export default function StudentDashboard() {
     if (!student) return null;
     return classesData.find(c => c.grade === student.grade && c.name.split('-')[1].trim() === student.class);
   }, [student, classesData]);
-
-  const pendingAssignments = assignments.filter(a => a.status === 'pending' || a.status === 'overdue').sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   
   const studentGrades = useMemo(() => {
     if (!studentId) return [];
@@ -334,6 +350,15 @@ export default function StudentDashboard() {
         <h2 className="text-3xl font-bold tracking-tight">Student Dashboard</h2>
         <p className="text-muted-foreground">Welcome back, {user?.name}</p>
       </header>
+      
+       <CompletionStatusAlert 
+          student={student}
+          hasPassed={hasPassed}
+          areAllFeesPaid={areAllFeesPaid} 
+          grades={studentGrades}
+          attendanceSummary={studentAttendanceSummary}
+       />
+      
        <div className="grid gap-6 lg:grid-cols-2">
           <RankCard studentId={studentId} />
           <AttendanceBreakdownChart studentId={studentId} />
@@ -358,29 +383,11 @@ export default function StudentDashboard() {
 
        <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    {isEligibleForCompletion ? (
-                        <CheckCircle className="text-green-500"/>
-                    ) : !hasPassed ? (
-                         <XCircle className="text-destructive"/>
-                    ) : (
-                        <AlertTriangle className="text-accent" />
-                    )}
-                    Completion Documents
-                </CardTitle>
+                <CardTitle>Completion Documents</CardTitle>
                 <CardDescription>
-                    Your official certificate and academic transcript.
+                    Your official certificate and academic transcript. Access is granted once all academic and financial requirements are met.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                 <CompletionStatusContent 
-                    student={student}
-                    hasPassed={hasPassed}
-                    areAllFeesPaid={areAllFeesPaid} 
-                    grades={studentGrades}
-                    attendanceSummary={studentAttendanceSummary}
-                 />
-            </CardContent>
             <CardFooter className="flex flex-col items-start gap-2">
                 <div className="flex w-full gap-2">
                     <Dialog>
