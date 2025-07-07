@@ -23,6 +23,7 @@ const AnalyzeStudentFailureInputSchema = z.object({
     present: z.number(),
     late: z.number(),
     absent: z.number(),
+    sick: z.number().optional(),
   }).describe('A summary of the student\'s attendance.'),
 });
 export type AnalyzeStudentFailureInput = z.infer<typeof AnalyzeStudentFailureInputSchema>;
@@ -59,9 +60,12 @@ Sex: {{{sex}}}
 - Present: {{attendanceSummary.present}} days
 - Late: {{attendanceSummary.late}} days
 - Absent: {{attendanceSummary.absent}} days
+{{#if attendanceSummary.sick}}
+- Sick: {{attendanceSummary.sick}} days
+{{/if}}
 
 **Analysis Task:**
-1.  **Analyze Failure:** Examine the grades and attendance. Consider the student's age and sex as context but do not focus on them unless it's highly relevant (e.g., significantly older or younger than typical for their grade). Identify the key contributing factors. Is it poor performance in one specific, critical subject? Is it a general trend of low grades across the board? Does high absenteeism correlate with poor grades?
+1.  **Analyze Failure:** Examine the grades and attendance. Consider the student's age and sex as context but do not focus on them unless it's highly relevant (e.g., significantly older or younger than typical for their grade). Identify the key contributing factors. Is it poor performance in one specific, critical subject? Is it a general trend of low grades across the board? Does high absenteeism or sickness correlate with poor grades?
 2.  **Provide Suggestions:** Based on your analysis, provide a bulleted list of actionable suggestions. These should be practical and encouraging. For example, suggest focusing on specific subjects, seeking tutoring, improving study habits, or creating a study schedule.
 
 **Output Tone:**

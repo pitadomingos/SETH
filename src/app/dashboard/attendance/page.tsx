@@ -12,7 +12,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, UserCheck, UserX, Clock, Loader2, Save, FileCheck } from 'lucide-react';
+import { Calendar as CalendarIcon, UserCheck, UserX, Clock, Loader2, Save, FileCheck, HeartPulse } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { cn } from '@/lib/utils';
 import { useForm, Controller } from 'react-hook-form';
@@ -79,7 +79,7 @@ export default function AttendancePage() {
   }, [studentsInClass, formattedDate, selectedCourseId, attendance, form]);
 
 
-  const onSubmit = (data: Record<string, 'Present' | 'Late' | 'Absent'>) => {
+  const onSubmit = (data: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => {
     addLessonAttendance(selectedCourseId, formattedDate, data);
     toast({
         title: 'Attendance Saved',
@@ -169,7 +169,7 @@ export default function AttendancePage() {
                                                     <RadioGroup 
                                                         onValueChange={field.onChange}
                                                         value={field.value}
-                                                        className="flex gap-4"
+                                                        className="flex flex-wrap gap-4"
                                                     >
                                                         <div className="flex items-center space-x-2">
                                                             <RadioGroupItem value="Present" id={`${student.id}-present`} />
@@ -182,6 +182,10 @@ export default function AttendancePage() {
                                                          <div className="flex items-center space-x-2">
                                                             <RadioGroupItem value="Absent" id={`${student.id}-absent`} />
                                                             <Label htmlFor={`${student.id}-absent`} className="flex items-center gap-1"><UserX className="h-4 w-4 text-red-500"/> Absent</Label>
+                                                        </div>
+                                                         <div className="flex items-center space-x-2">
+                                                            <RadioGroupItem value="Sick" id={`${student.id}-sick`} />
+                                                            <Label htmlFor={`${student.id}-sick`} className="flex items-center gap-1"><HeartPulse className="h-4 w-4 text-blue-500"/> Sick</Label>
                                                         </div>
                                                     </RadioGroup>
                                                 )}

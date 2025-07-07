@@ -21,6 +21,7 @@ const GenerateParentAdviceInputSchema = z.object({
     present: z.number(),
     late: z.number(),
     absent: z.number(),
+    sick: z.number().optional(),
   }).describe('A summary of the student\'s attendance.'),
 });
 export type GenerateParentAdviceInput = z.infer<typeof GenerateParentAdviceInputSchema>;
@@ -53,6 +54,9 @@ const prompt = ai.definePrompt({
   - Present: {{attendanceSummary.present}} days
   - Late: {{attendanceSummary.late}} days
   - Absent: {{attendanceSummary.absent}} days
+  {{#if attendanceSummary.sick}}
+  - Sick: {{attendanceSummary.sick}} days
+  {{/if}}
   
   Based on this data, provide a helpful, positive, and actionable report for the parent. Be encouraging and focus on constructive advice.
   

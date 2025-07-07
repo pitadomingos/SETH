@@ -99,7 +99,7 @@ interface SchoolDataContextType {
   grades: Grade[];
   addGrade: (data: NewGradeData) => void;
   attendance: Attendance[];
-  addLessonAttendance: (courseId: string, date: string, attendanceData: Record<string, 'Present' | 'Late' | 'Absent'>) => void;
+  addLessonAttendance: (courseId: string, date: string, attendanceData: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => void;
   events: SchoolEvent[];
   addEvent: (data: NewEventData) => void;
   coursesData: Course[];
@@ -671,7 +671,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     toast({ title: `Message marked as ${status}` });
   };
 
-  const addLessonAttendance = (courseId: string, date: string, attendanceData: Record<string, 'Present' | 'Late' | 'Absent'>) => {
+  const addLessonAttendance = (courseId: string, date: string, attendanceData: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => {
     if (!user?.schoolId) return;
 
     setAllSchoolData(prevAllData => {

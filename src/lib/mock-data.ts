@@ -109,7 +109,7 @@ interface Exam { id: string; title: string; subject: string; grade: string; date
 interface Asset { id: string; name: string; category: string; status: 'In Use' | 'Available' | 'Maintenance'; location: string; assignedTo: string; }
 interface Assignment { id: string; title: string; subject: string; grade: string; dueDate: string; status: 'pending' | 'submitted' | 'overdue'; }
 export interface Grade { studentId: string; subject: string; grade: string; date: Date; }
-export interface Attendance { id: string; studentId: string; date: string; courseId: string; status: 'Present' | 'Late' | 'Absent'; }
+export interface Attendance { id: string; studentId: string; date: string; courseId: string; status: 'Present' | 'Late' | 'Absent' | 'Sick'; }
 export interface SchoolEvent { id: string; date: Date; title: string; type: string; location: string; organizer: string; audience: string; schoolName?: string; }
 
 const now = new Date();
