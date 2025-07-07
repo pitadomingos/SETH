@@ -258,7 +258,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setExpensesData(data.expenses || []);
       setExpenseCategories(data.expenseCategories || []);
       setTeamsData(data.teams || []);
-      setCompetitionsData(data.competitions || []);
+      setCompetitionsData(data.competitions.map(c => ({ ...c, date: new Date(c.date) })) || []);
       setEvents(data.events.map(e => ({...e, date: new Date(e.date)})));
       setTerms(data.terms.map(t => ({...t, startDate: new Date(t.startDate), endDate: new Date(t.endDate)})));
       setHolidays(data.holidays.map(h => ({...h, date: new Date(h.date)})));
@@ -481,6 +481,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const addPlayerToTeam = (teamId: string, studentId: string) => { setTeamsData(prev => prev.map(team => team.id === teamId ? { ...team, playerIds: [...team.playerIds, studentId] } : team)); };
+  const removePlayerFromTeam = (teamId: string, studentId: string) => { setTeamsData(prev => prev.map(team => team.id === teamId ? { ...team, playerIds: team.playerIds.filter(id => id !== studentId) } : team)); };
+
   const addCompetition = (data: NewCompetitionData) => {
     const newCompetition: Competition = { id: `COMP${Date.now()}`, ...data, };
     setCompetitionsData(prev => [...prev, newCompetition].sort((a,b) => a.date.getTime() - b.date.getTime()));
@@ -574,8 +577,6 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const addPlayerToTeam = (teamId: string, studentId: string) => { setTeamsData(prev => prev.map(team => team.id === teamId ? { ...team, playerIds: [...team.playerIds, studentId] } : team)); };
-  const removePlayerFromTeam = (teamId: string, studentId: string) => { setTeamsData(prev => prev.map(team => team.id === teamId ? { ...team, playerIds: team.playerIds.filter(id => id !== studentId) } : team)); };
   const updateApplicationStatus = (id: string, status: Admission['status']) => { setAdmissionsData(prev => prev.map(app => app.id === id ? { ...app, status } : app)); };
   
   const addMessage = (data: NewMessageData) => {

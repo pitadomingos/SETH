@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useSchoolData, Team, Competition } from '@/context/school-data-context';
+import { useSchoolData, Team, Competition, Student } from '@/context/school-data-context';
 import { Trophy, Users, PlusCircle, Loader2, User as UserIcon, X, Calendar as CalendarIcon, Clock, MapPin, Swords, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -90,7 +90,7 @@ function NewTeamDialog() {
 
 function NewCompetitionDialog() {
     const { addCompetition, teamsData } = useSchoolData();
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsDialogOpen] = useState(false);
 
     const form = useForm<CompetitionFormValues>({
         resolver: zodResolver(competitionSchema),
@@ -214,7 +214,7 @@ function DeleteTeamDialog({ team, onDelete }: { team: Team; onDelete: (teamId: s
   );
 }
 
-function ManageTeamDialog({ team, students, allTeams, addPlayerToTeam, removePlayerFromTeam, deleteTeam }) {
+function ManageTeamDialog({ team, students, allTeams, addPlayerToTeam, removePlayerFromTeam, deleteTeam }: { team: Team, students: Student[], allTeams: Team[], addPlayerToTeam: (teamId: string, studentId: string) => void, removePlayerFromTeam: (teamId: string, studentId: string) => void, deleteTeam: (teamId: string) => void }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [studentToAdd, setStudentToAdd] = useState('');
 
