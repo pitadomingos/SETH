@@ -15,7 +15,7 @@ import { format } from 'date-fns';
 import { Calendar as CalendarIcon, UserCheck, UserX, Clock, Loader2, Save, FileCheck } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { cn } from '@/lib/utils';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AttendancePage() {
