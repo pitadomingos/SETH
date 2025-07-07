@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Mail, MoreHorizontal, CheckCircle, Hourglass, Reply, Paperclip, Send, PlusCircle } from 'lucide-react';
+import { Loader2, Mail, MoreHorizontal, CheckCircle, Hourglass, Reply, Paperclip, Send, PlusCircle, Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -29,15 +29,26 @@ const messageSchema = z.object({
 });
 type MessageFormValues = z.infer<typeof messageSchema>;
 
-function ComposeMessageDialog() {
+function ComposeMessageDialog({ open, onOpenChange, replyTo }: { open?: boolean, onOpenChange?: (open: boolean) => void, replyTo?: Message }) {
   const { addMessage } = useSchoolData();
-  const [isOpen, setIsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const form = useForm<MessageFormValues>({
     resolver: zodResolver(messageSchema),
-    defaultValues: { subject: '', body: '' },
+    defaultValues: { 
+      subject: replyTo ? `Re: ${replyTo.subject}` : '', 
+      body: '' 
+    },
   });
+  
+  useEffect(() => {
+    form.reset({
+      subject: replyTo ? `Re: ${replyTo.subject}` : '',
+      body: '',
+      attachmentName: '',
+      attachmentUrl: '',
+    });
+  }, [replyTo, form]);
 
   function onSubmit(values: MessageFormValues) {
     const messageData: NewMessageData = {
@@ -46,7 +57,7 @@ function ComposeMessageDialog() {
     };
     addMessage(messageData);
     form.reset();
-    setIsOpen(false);
+    onOpenChange?.(false);
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,15 +69,12 @@ function ComposeMessageDialog() {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button><PlusCircle className="mr-2 h-4 w-4" /> Compose Message</Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Contact Developer</DialogTitle>
           <DialogDescription>
-            Send a message regarding system issues or feedback.
+            {replyTo ? `Replying to message about "${replyTo.subject}"` : "Send a message regarding system issues or feedback."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -92,30 +100,12 @@ function ComposeMessageDialog() {
   );
 }
 
-function ViewAndReplyDialog({ message }: { message: Message }) {
-  const { addMessage } = useSchoolData();
-  const [isOpen, setIsOpen] = useState(false);
-
-  const form = useForm<MessageFormValues>({
-    resolver: zodResolver(messageSchema),
-    defaultValues: { subject: '', body: '' },
-  });
-
-  function onSubmit(values: MessageFormValues) {
-    const replyData: NewMessageData = {
-      to: 'Developer',
-      subject: `Re: ${message.subject}`,
-      body: values.body,
-    };
-    addMessage(replyData);
-    form.reset();
-    setIsOpen(false);
-  }
-
+function ViewMessageDialog({ message }: { message: Message }) {
+  const [isReplyOpen, setIsReplyOpen] = useState(false);
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">View & Reply</Button>
+        <Button variant="outline" size="sm"><Eye className="mr-2 h-4 w-4"/> View</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -135,31 +125,12 @@ function ViewAndReplyDialog({ message }: { message: Message }) {
                 </a>
             </Button>
           )}
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="body"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your Reply</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Type your reply here..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <DialogClose asChild><Button type="button" variant="ghost">Cancel</Button></DialogClose>
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Reply className="mr-2 h-4 w-4" />}
-                  Send Reply
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
         </div>
+        <DialogFooter>
+          <DialogClose asChild><Button type="button" variant="secondary">Close</Button></DialogClose>
+          <Button onClick={() => setIsReplyOpen(true)}><Reply className="mr-2 h-4 w-4" /> Reply</Button>
+        </DialogFooter>
+        <ComposeMessageDialog open={isReplyOpen} onOpenChange={setIsReplyOpen} replyTo={message} />
       </DialogContent>
     </Dialog>
   );
@@ -169,6 +140,7 @@ export default function MessagingPage() {
   const { role, user, isLoading: authLoading } = useAuth();
   const { messages, updateMessageStatus, isLoading: dataLoading } = useSchoolData();
   const router = useRouter();
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
   
   const isLoading = authLoading || dataLoading;
 
@@ -207,7 +179,8 @@ export default function MessagingPage() {
               Communicate with your staff and the system developers.
             </p>
         </div>
-        <ComposeMessageDialog />
+        <Button onClick={() => setIsComposeOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Contact Developer</Button>
+        <ComposeMessageDialog open={isComposeOpen} onOpenChange={setIsComposeOpen} />
       </header>
 
       <Tabs defaultValue="inbox">
@@ -254,7 +227,7 @@ export default function MessagingPage() {
                             </Badge>
                         </TableCell>
                         <TableCell className="text-right space-x-2">
-                            <ViewAndReplyDialog message={msg} />
+                            <ViewMessageDialog message={msg} />
                             <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>

@@ -121,9 +121,7 @@ function ViewMessageDialog({ message }: { message: Message & { schoolName: strin
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-            <Eye className="mr-2 h-4 w-4" /> View Message
-        </DropdownMenuItem>
+        <Button variant="outline" size="sm"><Eye className="mr-2 h-4 w-4" /> View</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -222,7 +220,7 @@ export default function GlobalMessagingPage() {
                         <TableHead>Subject</TableHead>
                         <TableHead>Received</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead><span className="sr-only">Actions</span></TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -248,22 +246,23 @@ export default function GlobalMessagingPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                             <div className="flex items-center justify-end gap-2">
                                 <ViewMessageDialog message={msg} />
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => updateMessageStatus(msg.id, 'Pending')} disabled={msg.status === 'Pending'}>
-                                  Mark as Pending
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => updateMessageStatus(msg.id, 'Resolved')} disabled={msg.status === 'Resolved'}>
-                                  Mark as Resolved
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                                <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                                    <DropdownMenuItem onClick={() => updateMessageStatus(msg.id, 'Pending')} disabled={msg.status === 'Pending'}>
+                                    Mark as Pending
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => updateMessageStatus(msg.id, 'Resolved')} disabled={msg.status === 'Resolved'}>
+                                    Mark as Resolved
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                           </TableCell>
                         </TableRow>
                       )) : (
