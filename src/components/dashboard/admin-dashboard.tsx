@@ -193,11 +193,13 @@ function AttendanceTrendChart() {
         const attendanceByDate = attendance.reduce((acc, record) => {
             const date = record.date;
             if (!acc[date]) {
-                acc[date] = { present: 0, late: 0, absent: 0 };
+                acc[date] = { present: 0, late: 0, absent: 0, sick: 0 };
             }
-            acc[date][record.status]++;
+            if (record.status.toLowerCase() in acc[date]) {
+               acc[date][record.status.toLowerCase()]++;
+            }
             return acc;
-        }, {});
+        }, {} as Record<string, { present: number; late: number; absent: number; sick: number; }>);
 
         const last30Days = Array.from({ length: 30 }, (_, i) => {
             const d = new Date();
@@ -207,8 +209,8 @@ function AttendanceTrendChart() {
 
         return last30Days.map(dateStr => {
             const dayData = attendanceByDate[dateStr];
-            const total = dayData ? dayData.present + dayData.late + dayData.absent : 0;
-            const rate = total > 0 ? (dayData.present / total) * 100 : 100; // Default to 100 if no records
+            const total = dayData ? dayData.present + dayData.late + dayData.absent + dayData.sick : 0;
+            const rate = total > 0 ? ((dayData.present + dayData.late) / total) * 100 : 100;
             return {
                 date: format(new Date(dateStr), 'MMM d'),
                 attendanceRate: parseFloat(rate.toFixed(1)),
@@ -231,15 +233,25 @@ function AttendanceTrendChart() {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                     <RechartsBarChart data={chartData} margin={{ top: 20, right: 10, left: -10, bottom: 40 }}>
+                     <RechartsLineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                         <CartesianGrid vertical={false} />
-                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} angle={-45} textAnchor="end" />
-                        <YAxis dataKey="attendanceRate" tickFormatter={(value) => `${value}%`} hide/>
-                        <ChartTooltip content={<ChartTooltipContent formatter={(value) => `${value}%`}/>} />
-                        <Bar dataKey="attendanceRate" fill="var(--color-attendanceRate)" radius={4}>
-                            <LabelList dataKey="attendanceRate" position="top" className="fill-foreground" fontSize={12} formatter={(value: number) => `${value.toFixed(0)}%`} />
-                        </Bar>
-                    </RechartsBarChart>
+                        <XAxis
+                          dataKey="date"
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={8}
+                          tickFormatter={(value) => value.slice(0, 6)}
+                        />
+                        <YAxis tickFormatter={(value) => `${value}%`} />
+                        <ChartTooltip content={<ChartTooltipContent formatter={(value) => `${value.toFixed(1)}%`}/>} />
+                        <Line
+                          type="monotone"
+                          dataKey="attendanceRate"
+                          stroke="var(--color-attendanceRate)"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                    </RechartsLineChart>
                 </ChartContainer>
             </CardContent>
         </Card>
@@ -329,7 +341,7 @@ export default function AdminDashboard() {
   const monthlyTotalRevenue = monthlyFinanceData.reduce((acc, f) => acc + f.amountPaid, 0);
   
   const monthlyPendingFees = monthlyFinanceData
-    .filter(f => new Date(f.dueDate) >= now)
+    .filter(f => new Date(f.dueDate) >= now && (f.totalAmount - f.amountPaid > 0))
     .reduce((acc, f) => acc + (f.totalAmount - f.amountPaid), 0);
 
   const monthlyOverdueFees = monthlyFinanceData
