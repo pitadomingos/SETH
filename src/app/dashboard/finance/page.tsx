@@ -374,7 +374,7 @@ function ExpenseAllocationChart({ expenses }) {
 
 const getStatusInfo = (fee: FinanceRecord) => {
     const balance = fee.totalAmount - fee.amountPaid;
-    const isOverdue = new Date(fee.dueDate) < new Date();
+    const isOverdue = new Date(fee.dueDate) < new Date() && balance > 0;
 
     if (balance <= 0) {
         return { text: 'Paid', variant: 'secondary' as const };
@@ -390,13 +390,21 @@ const getStatusInfo = (fee: FinanceRecord) => {
 
 function AdminFinanceView() {
   const { financeData, recordPayment, expensesData, schoolProfile } = useSchoolData();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [feeSearchTerm, setFeeSearchTerm] = useState('');
+  const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
   
   const filteredFinanceData = useMemo(() => {
     return financeData.filter(item => 
-      item.studentName.toLowerCase().includes(searchTerm.toLowerCase())
+      item.studentName.toLowerCase().includes(feeSearchTerm.toLowerCase())
     );
-  }, [financeData, searchTerm]);
+  }, [financeData, feeSearchTerm]);
+
+  const filteredExpenses = useMemo(() => {
+    return expensesData.filter(item => 
+      item.description.toLowerCase().includes(expenseSearchTerm.toLowerCase()) ||
+      item.category.toLowerCase().includes(expenseSearchTerm.toLowerCase())
+    );
+  }, [expensesData, expenseSearchTerm]);
 
   const now = new Date();
   const totalRevenue = financeData.reduce((acc, f) => acc + f.amountPaid, 0);
@@ -479,8 +487,8 @@ function AdminFinanceView() {
                     type="search"
                     placeholder="Search by student name..."
                     className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={feeSearchTerm}
+                    onChange={(e) => setFeeSearchTerm(e.target.value)}
                   />
                 </div>
             </CardHeader>
@@ -511,11 +519,11 @@ function AdminFinanceView() {
                               </TableRow>
                             );
                         })}
+                         {filteredFinanceData.length === 0 && (
+                          <TableRow><TableCell colSpan={5} className="h-24 text-center">No records found matching your search.</TableCell></TableRow>
+                        )}
                     </TableBody>
                 </Table>
-                {filteredFinanceData.length === 0 && (
-                  <p className="text-center text-muted-foreground py-10">No records found matching your search.</p>
-                )}
             </CardContent>
           </Card>
         </div>
@@ -528,6 +536,16 @@ function AdminFinanceView() {
             <CardHeader>
                 <CardTitle>Expense Records</CardTitle>
                 <CardDescription>A log of all recorded school expenses.</CardDescription>
+                <div className="relative pt-4">
+                  <Search className="absolute left-2.5 top-6.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Search by description or category..."
+                    className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
+                    value={expenseSearchTerm}
+                    onChange={(e) => setExpenseSearchTerm(e.target.value)}
+                  />
+                </div>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -541,7 +559,7 @@ function AdminFinanceView() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {expensesData.map(expense => (
+                        {filteredExpenses.map(expense => (
                           <TableRow key={expense.id}>
                               <TableCell>{expense.date}</TableCell>
                               <TableCell className="font-medium">{expense.description}</TableCell>
@@ -552,6 +570,9 @@ function AdminFinanceView() {
                               </TableCell>
                           </TableRow>
                         ))}
+                         {filteredExpenses.length === 0 && (
+                          <TableRow><TableCell colSpan={5} className="h-24 text-center">No records found matching your search.</TableCell></TableRow>
+                        )}
                     </TableBody>
                 </Table>
             </CardContent>
