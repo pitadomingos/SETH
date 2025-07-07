@@ -18,7 +18,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData } from '@/context/school-data-context';
 import { cn } from '@/lib/utils';
-import { ClipboardList, GraduationCap, Calendar as CalendarIcon, Clock, MapPin, PlusCircle, Loader2 } from 'lucide-react';
+import { ClipboardList, GraduationCap, Calendar as CalendarIcon, Clock, MapPin, PlusCircle, Loader2, User } from 'lucide-react';
 
 const examSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters."),
@@ -29,13 +29,14 @@ const examSchema = z.object({
   time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format (HH:MM)."),
   duration: z.string().min(3, "Duration is required."),
   room: z.string().min(1, "Room is required."),
+  invigilator: z.string({ required_error: "An invigilator is required." }),
 });
 
 type ExamFormValues = z.infer<typeof examSchema>;
 
 export default function ExaminationsPage() {
   const { role, isLoading: authLoading } = useAuth();
-  const { examsData, examBoards } = useSchoolData();
+  const { examsData, examBoards, teachersData } = useSchoolData();
   const router = useRouter();
   const [exams, setExams] = useState(examsData);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -56,6 +57,7 @@ export default function ExaminationsPage() {
         time: '09:00',
         duration: '2 hours',
         room: '',
+        invigilator: '',
     },
   });
 
@@ -233,6 +235,28 @@ export default function ExaminationsPage() {
                         </FormItem>
                     )}
                     />
+                     <FormField
+                        control={form.control}
+                        name="invigilator"
+                        render={({ field }) => (
+                        <FormItem className="col-span-2">
+                            <FormLabel>Invigilator</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select an invigilator" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {teachersData.map(teacher => (
+                                        <SelectItem key={teacher.id} value={teacher.name}>{teacher.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
                 </div>
                 <DialogFooter>
                   <DialogClose asChild>
@@ -267,7 +291,7 @@ export default function ExaminationsPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                             <GraduationCap className="h-4 w-4" />
                             <span>Grade {exam.grade}</span>
@@ -283,6 +307,10 @@ export default function ExaminationsPage() {
                         <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4" />
                             <span>Room {exam.room}</span>
+                        </div>
+                         <div className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            <span>Invigilator: {exam.invigilator}</span>
                         </div>
                     </div>
                 </CardContent>
