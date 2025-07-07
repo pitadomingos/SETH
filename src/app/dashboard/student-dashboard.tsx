@@ -137,22 +137,22 @@ function AttendanceBreakdownChart({ studentId }) {
   const studentAttendance = attendance.filter(a => a.studentId === studentId);
   
   const breakdown = studentAttendance.reduce((acc, record) => {
-    acc[record.status] = (acc[record.status] || 0) + 1;
+    acc[record.status.toLowerCase()] = (acc[record.status.toLowerCase()] || 0) + 1;
     return acc;
   }, { present: 0, late: 0, absent: 0, sick: 0});
 
   const chartData = [
-    { status: 'Present', value: breakdown.present, fill: 'var(--color-present)' },
-    { status: 'Late', value: breakdown.late, fill: 'var(--color-late)' },
-    { status: 'Absent', value: breakdown.absent, fill: 'var(--color-absent)' },
-    { status: 'Sick', value: breakdown.sick, fill: 'var(--color-sick)' },
+    { status: 'Present', value: breakdown.present, fill: 'var(--color-Present)' },
+    { status: 'Late', value: breakdown.late, fill: 'var(--color-Late)' },
+    { status: 'Absent', value: breakdown.absent, fill: 'var(--color-Absent)' },
+    { status: 'Sick', value: breakdown.sick, fill: 'var(--color-Sick)' },
   ];
 
   const chartConfig = {
-    present: { label: 'Present', color: 'hsl(var(--chart-2))' },
-    late: { label: 'Late', color: 'hsl(var(--chart-4))' },
-    absent: { label: 'Absent', color: 'hsl(var(--destructive))' },
-    sick: { label: 'Sick', color: 'hsl(var(--chart-3))' },
+    Present: { label: 'Present', color: 'hsl(var(--chart-2))' },
+    Late: { label: 'Late', color: 'hsl(var(--chart-4))' },
+    Absent: { label: 'Absent', color: 'hsl(var(--destructive))' },
+    Sick: { label: 'Sick', icon: HeartPulse, color: 'hsl(var(--chart-3))' },
   } satisfies ChartConfig;
 
   return (
@@ -295,7 +295,7 @@ export default function StudentDashboard() {
     if (!studentId) return { present: 0, late: 0, absent: 0, sick: 0 };
     const records = attendance.filter(a => a.studentId === studentId);
     return records.reduce((acc, record) => {
-      acc[record.status] = (acc[record.status] || 0) + 1;
+      acc[record.status.toLowerCase()] = (acc[record.status.toLowerCase()] || 0) + 1;
       return acc;
     }, { present: 0, late: 0, absent: 0, sick: 0 });
   }, [attendance, studentId]);
