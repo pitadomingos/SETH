@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { analyzeScheduleConflicts, type AnalyzeScheduleConflictsOutput } from '@/ai/flows/analyze-schedule-conflicts';
+import { Badge } from '@/components/ui/badge';
 
 const courseSchema = z.object({
   subject: z.string().min(1, "Subject is required."),
@@ -227,16 +228,81 @@ function AnalyzeScheduleDialog() {
   );
 }
 
+function SubjectDetailsDialog({ subject, courses }: { subject: string; courses: any[] }) {
+  const { teachersData, classesData } = useSchoolData();
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Card className="cursor-pointer hover:bg-muted transition-colors">
+          <CardHeader className="p-4">
+            <CardTitle className="text-lg flex items-center gap-2"><BookOpen /> {subject}</CardTitle>
+          </CardHeader>
+        </Card>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>School-Wide Schedule for {subject}</DialogTitle>
+          <DialogDescription>
+            Showing all scheduled classes for this subject.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="max-h-[70vh] overflow-y-auto pr-6 space-y-6 py-4">
+          {courses.map((course, index) => {
+            const teacher = teachersData.find(t => t.id === course.teacherId);
+            const classSection = classesData.find(c => c.id === course.classId);
+            return (
+              <div key={course.id}>
+                {index > 0 && <Separator className="mb-6" />}
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="font-semibold text-base">{classSection?.name || 'N/A'}</h3>
+                  <Badge variant="outline">{teacher?.name || 'N/A'}</Badge>
+                </div>
+                <div className="space-y-2">
+                  {course.schedule.map((slot: any, sIndex: number) => (
+                    <div key={sIndex} className="flex justify-between items-center text-sm text-muted-foreground p-2 bg-muted rounded-md">
+                      <span>{slot.day}</span>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1.5"><Clock className="h-4 w-4" /><span>{slot.startTime} - {slot.endTime}</span></div>
+                        <div className="flex items-center gap-1.5"><MapPin className="h-4 w-4" /><span>{slot.room}</span></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <DialogFooter>
+            <DialogClose asChild>
+                <Button type="button" variant="secondary">Close</Button>
+            </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AcademicsPage() {
   const { role, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const { coursesData, teachersData, classesData } = useSchoolData();
+  const { coursesData } = useSchoolData();
 
   useEffect(() => {
     if (!authLoading && role !== 'Admin') {
       router.push('/dashboard');
     }
   }, [role, authLoading, router]);
+
+  const coursesBySubject = useMemo(() => {
+    return coursesData.reduce((acc, course) => {
+      if (!acc[course.subject]) {
+        acc[course.subject] = [];
+      }
+      acc[course.subject].push(course);
+      return acc;
+    }, {} as Record<string, any[]>);
+  }, [coursesData]);
 
   if (authLoading || role !== 'Admin') {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -246,8 +312,8 @@ export default function AcademicsPage() {
     <div className="space-y-6 animate-in fade-in-50">
       <header className="flex flex-wrap gap-2 justify-between items-center">
         <div>
-            <h2 className="text-3xl font-bold tracking-tight">Course Management</h2>
-            <p className="text-muted-foreground">Create and manage courses by assigning subjects, teachers, and schedules to class sections.</p>
+            <h2 className="text-3xl font-bold tracking-tight">Academics</h2>
+            <p className="text-muted-foreground">Manage school subjects and their schedules.</p>
         </div>
         <div className="flex gap-2">
             <AnalyzeScheduleDialog />
@@ -255,36 +321,10 @@ export default function AcademicsPage() {
         </div>
       </header>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {coursesData.map(course => {
-          const teacher = teachersData.find(t => t.id === course.teacherId);
-          const classSection = classesData.find(c => c.id === course.classId);
-          return (
-            <Card key={course.id}>
-              <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><BookOpen /> {course.subject}</CardTitle>
-                  <CardDescription>A course for {classSection?.name || 'N/A'}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center text-sm text-muted-foreground"><User className="mr-2 h-4 w-4" /> <span>Teacher: {teacher?.name || 'N/A'}</span></div>
-                <div className="flex items-center text-sm text-muted-foreground"><School className="mr-2 h-4 w-4" /> <span>For Class: {classSection?.name || 'N/A'}</span></div>
-                <Separator />
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm">Schedule</h4>
-                  {course.schedule.map((slot, index) => (
-                    <div key={index} className="flex justify-between items-center text-xs text-muted-foreground">
-                       <span>{slot.day}</span>
-                       <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1"><Clock className="h-3 w-3" /><span>{slot.startTime} - {slot.endTime}</span></div>
-                          <div className="flex items-center gap-1"><MapPin className="h-3 w-3" /><span>{slot.room}</span></div>
-                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        {Object.entries(coursesBySubject).map(([subject, courses]) => (
+           <SubjectDetailsDialog key={subject} subject={subject} courses={courses} />
+        ))}
          {coursesData.length === 0 && (
           <p className="text-muted-foreground col-span-full text-center py-10">No courses have been created yet.</p>
         )}
