@@ -372,7 +372,25 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     toast({ title: 'Teacher Status Updated' });
   };
 
-  const updateSchoolProfile = (data: Partial<SchoolProfile>) => { setSchoolProfile(prev => prev ? { ...prev, ...data } : null); };
+  const updateSchoolProfile = (data: Partial<SchoolProfile>) => {
+    setSchoolProfile(prev => {
+        if (!prev) return null;
+        const updatedProfile = { ...prev, ...data };
+        
+        if (user?.schoolId) {
+            setAllSchoolData(prevAllData => ({
+                ...prevAllData,
+                [user.schoolId!]: {
+                    ...prevAllData[user.schoolId!],
+                    profile: updatedProfile,
+                }
+            }));
+        }
+        
+        return updatedProfile;
+    });
+  };
+
   const addSubject = (subject: string) => !subjects.includes(subject) && setSubjects(prev => [...prev, subject].sort());
   const addExamBoard = (board: string) => !examBoards.includes(board) && setExamBoards(prev => [...prev, board].sort());
   const deleteExamBoard = (board: string) => {

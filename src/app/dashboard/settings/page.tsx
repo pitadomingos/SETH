@@ -26,7 +26,7 @@ export default function SettingsPage() {
 
   function handleGradingSystemChange(value: SchoolProfile['gradingSystem']) {
     if (schoolProfile) {
-        updateSchoolProfile({ ...schoolProfile, gradingSystem: value });
+        updateSchoolProfile({ gradingSystem: value });
         toast({
             title: "Grading System Updated",
             description: `The school now uses the ${value} system for displaying grades.`,

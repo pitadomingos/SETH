@@ -117,7 +117,7 @@ export default function AdminPanelPage() {
 
     function handleCurrencyChange(value: SchoolProfile['currency']) {
         if (schoolProfile) {
-            updateSchoolProfile({ ...schoolProfile, currency: value });
+            updateSchoolProfile({ currency: value });
             toast({
                 title: "Currency Updated",
                 description: `The school currency has been set to ${value}.`,
@@ -131,7 +131,7 @@ export default function AdminPanelPage() {
 
     const handleSaveCapacities = () => {
         if (schoolProfile) {
-            updateSchoolProfile({ ...schoolProfile, gradeCapacity: gradeCapacities });
+            updateSchoolProfile({ gradeCapacity: gradeCapacities });
             toast({
                 title: "Capacities Updated",
                 description: "Grade level capacities have been saved.",
