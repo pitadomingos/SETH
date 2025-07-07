@@ -13,6 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 const PAGE_SIZE = 10;
 
@@ -22,6 +23,7 @@ export default function GlobalParentsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedGrade, setSelectedGrade] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
 
   const isLoading = authLoading || schoolLoading;
@@ -43,7 +45,7 @@ export default function GlobalParentsPage() {
             });
           }
           const parent = parentMap.get(student.parentEmail);
-          parent.children.push(student.name);
+          parent.children.push({ name: student.name, grade: student.grade });
           parent.schools.add(school.profile.name);
         }
       });
@@ -53,16 +55,25 @@ export default function GlobalParentsPage() {
       ...p,
       schools: Array.from(p.schools).join(', '),
       status: parentStatusOverrides[p.email] || 'Active',
+      childrenGrades: [...new Set(p.children.map(c => c.grade))]
     }));
   }, [allSchoolData, parentStatusOverrides]);
 
+  const availableGrades = useMemo(() => {
+    if (!allParents) return [];
+    const grades = new Set(allParents.flatMap(p => p.childrenGrades));
+    return ['all', ...Array.from(grades).sort((a, b) => parseInt(a) - parseInt(b))];
+  }, [allParents]);
+  
   const filteredParents = useMemo(() => {
-    return allParents.filter(parent =>
-      parent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      parent.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      parent.schools.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [allParents, searchTerm]);
+    return allParents.filter(parent => {
+      const matchesSearch = parent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        parent.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        parent.schools.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesGrade = selectedGrade === 'all' || parent.childrenGrades.includes(selectedGrade);
+      return matchesSearch && matchesGrade;
+    });
+  }, [allParents, searchTerm, selectedGrade]);
 
   const paginatedParents = useMemo(() => {
     const startIndex = (currentPage - 1) * PAGE_SIZE;
@@ -92,7 +103,7 @@ export default function GlobalParentsPage() {
   
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, selectedGrade]);
 
   if (isLoading || role !== 'GlobalAdmin' || !allSchoolData) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -145,15 +156,26 @@ export default function GlobalParentsPage() {
         <CardHeader>
           <CardTitle>All Parents ({filteredParents.length})</CardTitle>
           <CardDescription>A complete list of every parent with children enrolled in the system.</CardDescription>
-          <div className="relative mt-4">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search by parent name, email, or school..."
-              className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="flex flex-wrap items-center gap-4 pt-4">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search parent, email, or school..."
+                className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Select value={selectedGrade} onValueChange={setSelectedGrade}>
+                <SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="Filter by grade..." /></SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Grades</SelectItem>
+                    {availableGrades.filter(g => g !== 'all').map(grade => (
+                        <SelectItem key={grade} value={grade}>Grade {grade}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>

@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { getGpaFromNumeric } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 const PAGE_SIZE = 10;
 
@@ -23,6 +24,7 @@ export default function GlobalStudentsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedGrade, setSelectedGrade] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
 
   const isLoading = authLoading || schoolLoading;
@@ -38,13 +40,20 @@ export default function GlobalStudentsPage() {
     );
   }, [allSchoolData]);
 
+  const availableGrades = useMemo(() => {
+    const grades = new Set(allStudents.map(student => student.grade));
+    return ['all', ...Array.from(grades).sort((a, b) => parseInt(a) - parseInt(b))];
+  }, [allStudents]);
+
   const filteredStudents = useMemo(() => {
-    return allStudents.filter(student =>
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.parentName.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [allStudents, searchTerm]);
+    return allStudents.filter(student => {
+        const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            student.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            student.parentName.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesGrade = selectedGrade === 'all' || student.grade === selectedGrade;
+        return matchesSearch && matchesGrade;
+    });
+  }, [allStudents, searchTerm, selectedGrade]);
 
   const paginatedStudents = useMemo(() => {
     const startIndex = (currentPage - 1) * PAGE_SIZE;
@@ -82,7 +91,7 @@ export default function GlobalStudentsPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, selectedGrade]);
 
   if (isLoading || role !== 'GlobalAdmin' || !allSchoolData) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -140,15 +149,26 @@ export default function GlobalStudentsPage() {
         <CardHeader>
           <CardTitle>All Students ({filteredStudents.length})</CardTitle>
           <CardDescription>A complete list of every student enrolled in the system.</CardDescription>
-          <div className="relative mt-4">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search by student, school, or parent..."
-              className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="flex flex-wrap items-center gap-4 pt-4">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search by student, school, or parent..."
+                className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+             <Select value={selectedGrade} onValueChange={setSelectedGrade}>
+              <SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="Filter by grade..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Grades</SelectItem>
+                {availableGrades.filter(g => g !== 'all').map(grade => (
+                  <SelectItem key={grade} value={grade}>Grade {grade}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>

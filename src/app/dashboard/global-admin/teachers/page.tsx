@@ -13,6 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 const PAGE_SIZE = 10;
 
@@ -22,6 +23,7 @@ export default function GlobalTeachersPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
 
   const isLoading = authLoading || schoolLoading;
@@ -37,13 +39,20 @@ export default function GlobalTeachersPage() {
     );
   }, [allSchoolData]);
 
+  const availableSubjects = useMemo(() => {
+    const subjects = new Set(allTeachers.map(teacher => teacher.subject));
+    return ['all', ...Array.from(subjects).sort()];
+  }, [allTeachers]);
+
   const filteredTeachers = useMemo(() => {
-    return allTeachers.filter(teacher =>
-      teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      teacher.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      teacher.subject.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [allTeachers, searchTerm]);
+    return allTeachers.filter(teacher => {
+        const matchesSearch = teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            teacher.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            teacher.subject.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSubject = selectedSubject === 'all' || teacher.subject === selectedSubject;
+        return matchesSearch && matchesSubject;
+    });
+  }, [allTeachers, searchTerm, selectedSubject]);
 
   const paginatedTeachers = useMemo(() => {
     const startIndex = (currentPage - 1) * PAGE_SIZE;
@@ -73,7 +82,7 @@ export default function GlobalTeachersPage() {
   
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, selectedSubject]);
 
   if (isLoading || role !== 'GlobalAdmin' || !allSchoolData) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -131,15 +140,26 @@ export default function GlobalTeachersPage() {
         <CardHeader>
           <CardTitle>All Teachers ({filteredTeachers.length})</CardTitle>
           <CardDescription>A complete list of every teacher in the system.</CardDescription>
-          <div className="relative mt-4">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search by teacher, school, or subject..."
-              className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="flex flex-wrap items-center gap-4 pt-4">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search by teacher, school, or subject..."
+                className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                <SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="Filter by subject..." /></SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Subjects</SelectItem>
+                    {availableSubjects.filter(s => s !== 'all').map(subject => (
+                        <SelectItem key={subject} value={subject}>{subject}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
@@ -203,8 +223,7 @@ export default function GlobalTeachersPage() {
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
             >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
+              <ChevronLeft className="h-4 w-4" /> Previous
             </Button>
             <Button
               variant="outline"
