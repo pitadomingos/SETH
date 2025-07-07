@@ -191,7 +191,7 @@ const oakridgeFinance: FinanceRecord[] = [ { id: 'FEE101', studentId: 'S101', st
 const oakridgeExpenses: Expense[] = [ { id: 'EXP101', description: 'Staff Salaries - August', category: 'Salaries', amount: 35000, date: '2024-08-31', proofUrl: 'https://placehold.co/400x200.png' }, { id: 'EXP102', description: 'Building Maintenance', category: 'Maintenance', amount: 2500, date: '2024-08-20', proofUrl: 'https://placehold.co/400x200.png' }, ];
 const oakridgeEvents: SchoolEvent[] = [ { id: 'EVT101', date: new Date(new Date().setDate(new Date().getDate() + 5)), title: 'Welcome Orientation', type: 'Meeting', location: 'Auditorium', organizer: 'Admin Office', audience: 'New Students & Parents' }, { id: 'EVT102', date: new Date(new Date().setDate(new Date().getDate() + 18)), title: 'Annual Sports Day', type: 'Sports', location: 'Sports Field', organizer: 'Sports Dept.', audience: 'Whole School' }, ];
 const oakridgeTerms: AcademicTerm[] = [];
-const oakridgeHolidays: Holiday[] = [];
+const oakridgeHolidays: Holiday[] = [ { id: 'HOL101', name: 'Thanksgiving', date: new Date(currentYear, 10, 28) }];
 const oakridgeActivityLogs: ActivityLog[] = [
     { id: 'LOGO001', timestamp: new Date(new Date().setDate(new Date().getDate() - 2)), schoolId: 'oakridge', user: 'Mr. James Maxwell', role: 'Admin', action: 'Login', details: 'User logged in successfully.' },
     { id: 'LOGO002', timestamp: new Date(new Date().setHours(new Date().getHours() - 8)), schoolId: 'oakridge', user: 'Mr. James Maxwell', role: 'Admin', action: 'Create', details: 'Approved application for Alice Wonder.' },
@@ -211,7 +211,7 @@ const maplewoodFinance: FinanceRecord[] = [ { id: 'FEE201', studentId: 'S201', s
 const maplewoodExpenses: Expense[] = [ { id: 'EXP201', description: 'IB Program Fees', category: 'Academics', amount: 12000, date: '2024-08-10', proofUrl: 'https://placehold.co/400x200.png' }, { id: 'EXP202', description: 'Staff Salaries - August', category: 'Salaries', amount: 45000, date: '2024-08-31', proofUrl: 'https://placehold.co/400x200.png' }, ];
 const maplewoodEvents: SchoolEvent[] = [ { id: 'EVT201', date: new Date(new Date().setDate(new Date().getDate() + 20)), title: 'International Day', type: 'Cultural', location: 'School Grounds', organizer: 'Cultural Committee', audience: 'Whole School Community' }, ];
 const maplewoodTerms: AcademicTerm[] = [];
-const maplewoodHolidays: Holiday[] = [];
+const maplewoodHolidays: Holiday[] = [ { id: 'HOL201', name: 'Heritage Day', date: new Date(currentYear, 8, 24) }];
 const maplewoodActivityLogs: ActivityLog[] = [
     { id: 'LOGM001', timestamp: new Date(new Date().setDate(new Date().getDate() - 1)), schoolId: 'maplewood', user: 'Ms. Eleanor Vance', role: 'Admin', action: 'Login', details: 'User logged in successfully.' },
 ];

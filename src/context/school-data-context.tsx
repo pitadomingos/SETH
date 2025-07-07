@@ -41,7 +41,7 @@ export type Class = InitialClass;
 export type Course = InitialCourse;
 export type Competition = InitialCompetition;
 export type SavedReport = InitialSavedReport;
-export type { Team, Admission, Student, ActivityLog, Message, Teacher, Attendance };
+export type { Team, Admission, Student, ActivityLog, Message, Teacher, Attendance, Holiday };
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
 interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }

@@ -1,9 +1,8 @@
 
-
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Users, BookOpen, School, CalendarDays, TrendingUp, DollarSign, Hourglass, TrendingDown, BarChart2, AlertTriangle, Mail } from "lucide-react";
-import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis, LabelList } from 'recharts';
+import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis, LabelList, Legend, Dot } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -186,8 +185,19 @@ function SubjectPerformanceChart() {
     );
 }
 
+const CustomizedDot = (props) => {
+  const { cx, cy, payload } = props;
+  if (payload.isHoliday) {
+    return <Dot cx={cx} cy={cy} r={4} fill="hsl(var(--destructive))" />;
+  }
+  if (payload.isWeekend) {
+    return <Dot cx={cx} cy={cy} r={3} fill="hsl(var(--muted-foreground))" opacity={0.5} />;
+  }
+  return null;
+};
+
 function AttendanceTrendChart() {
-    const { attendance } = useSchoolData();
+    const { attendance, holidays } = useSchoolData();
 
     const chartData = useMemo(() => {
         const attendanceByDate = attendance.reduce((acc, record) => {
@@ -203,26 +213,36 @@ function AttendanceTrendChart() {
 
         const last30Days = Array.from({ length: 30 }, (_, i) => {
             const d = new Date();
-            d.setDate(d.getDate() - i);
-            return d.toISOString().split('T')[0];
-        }).reverse();
+            d.setDate(d.getDate() - (29 - i));
+            return d;
+        });
+        
+        const holidayDateStrings = holidays.map(h => format(h.date, 'yyyy-MM-dd'));
 
-        return last30Days.map(dateStr => {
+        return last30Days.map(d => {
+            const dateStr = format(d, 'yyyy-MM-dd');
+            const dayOfWeek = d.getDay();
+            
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            const isHoliday = holidayDateStrings.includes(dateStr);
+
             const dayData = attendanceByDate[dateStr];
             const total = dayData ? dayData.present + dayData.late + dayData.absent + dayData.sick : 0;
             const rate = total > 0 ? ((dayData.present + dayData.late) / total) * 100 : 100;
+            
             return {
-                date: format(new Date(dateStr), 'MMM d'),
+                date: format(d, 'MMM d'),
                 attendanceRate: parseFloat(rate.toFixed(1)),
+                isWeekend,
+                isHoliday,
             };
         });
-    }, [attendance]);
+    }, [attendance, holidays]);
 
     const chartConfig = {
-        attendanceRate: {
-            label: 'Attendance %',
-            color: 'hsl(var(--chart-1))',
-        },
+        attendanceRate: { label: 'Attendance %', color: 'hsl(var(--chart-1))' },
+        holiday: { label: 'Holiday', color: 'hsl(var(--destructive))' },
+        weekend: { label: 'Weekend', color: 'hsl(var(--muted-foreground))' },
     } satisfies ChartConfig;
 
     return (
@@ -233,7 +253,7 @@ function AttendanceTrendChart() {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                     <RechartsLineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                     <RechartsLineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
                         <CartesianGrid vertical={false} />
                         <XAxis
                           dataKey="date"
@@ -244,13 +264,16 @@ function AttendanceTrendChart() {
                         />
                         <YAxis domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
                         <ChartTooltip content={<ChartTooltipContent formatter={(value) => `${value.toFixed(1)}%`}/>} />
+                        <Legend verticalAlign="bottom" height={36} />
                         <Line
                           type="monotone"
                           dataKey="attendanceRate"
                           stroke="var(--color-attendanceRate)"
                           strokeWidth={2}
-                          dot={false}
+                          dot={<CustomizedDot />}
                         />
+                         <Line type="monotone" name="Holiday" dataKey="dummyHoliday" stroke="hsl(var(--destructive))" dot={{r: 4}} activeDot={false} strokeWidth={0} />
+                         <Line type="monotone" name="Weekend" dataKey="dummyWeekend" stroke="hsl(var(--muted-foreground))" dot={{r: 3, opacity: 0.5}} activeDot={false} strokeWidth={0} />
                     </RechartsLineChart>
                 </ChartContainer>
             </CardContent>
