@@ -35,7 +35,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
         'Finance: Track school-wide revenue and expenses. Record partial or full payments for student fees and create new ad-hoc fee transactions.',
         'Sports Management: Create sports teams, assign coaches, and manage player rosters. You can also delete teams, which will remove associated competitions.',
         'Event Management: Create and schedule new school events from the Events page, including details like location, organizer, and target audience.',
-        'Admin Panel: Configure system-wide data. You can now add and delete items like Examination Boards, Fee Descriptions, and Event Audiences.',
+        'Admin Panel: A central hub to manage users, configure the academic calendar (terms & holidays), and define system-wide data like currency, exam boards, fee descriptions, and grade-level capacities.',
         'Inbox: Receive and manage messages from your school\'s teachers. You can mark messages as resolved.',
         'Activity Logs: Review a log of all recent activities within your school to track user actions and system changes.',
         'Leaderboards: Check academic rankings to see how students are performing.',
@@ -47,6 +47,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
     title: 'Teacher Guide',
     points: [
       'Dashboard: Quickly access common actions, view your courses, see upcoming deadlines, and run AI analysis on your classes. You can also contact your School Administrator from here.',
+      'Take Attendance: A dedicated interface to mark attendance for each of your lessons, including statuses like Present, Late, Absent, and Sick.',
       'AI Lesson Planner: Generate performance-aware weekly lesson plans. Plans are automatically saved and can be printed for classroom use.',
       'AI Test Generator: Create, save, and delete ad-hoc tests. Deploy your saved tests to classes with specific deadlines.',
       'Grading: Access a dedicated gradebook to enter grades for students in your classes. These grades are instantly reflected throughout the app.',
@@ -59,7 +60,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
     icon: GraduationCap,
     title: 'Student Guide',
     points: [
-      'Dashboard: See a summary of your academic progress, upcoming assignments, recent grades, and your current school rank.',
+      'Dashboard: See a summary of your academic progress, upcoming assignments, recent grades, an overview of your attendance, and your current school rank.',
       'Take Assigned Tests: View tests assigned to you on your dashboard, complete them through a dedicated interface, and receive your AI-generated score immediately upon submission.',
       'Schedules: Check your course schedule, see your teachers, and track your progress in each class.',
       'Leaderboards: See where you rank among your peers in overall, class, and subject-specific leaderboards.',
@@ -75,7 +76,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
     points: [
       'Dashboard: Get a complete overview of your children\'s school life. Click on a child\'s card to update the dashboard with their specific information.',
       'New Child Applications: Submit new admission applications for your other children. The form will show you available vacancies for the selected grade.',
-      'AI-Powered Insights: Receive AI-generated advice on how to support your selected child\'s learning, including their strengths and areas for improvement.',
+      'AI-Powered Insights: Receive AI-generated advice based on grades and attendance data on how to support your selected child\'s learning, including their strengths and areas for improvement.',
       'Finance Portal: View detailed fee information for each child, including total amount, amount paid, and outstanding balance.',
       'Leaderboards: View a personalized report of your children\'s academic rankings in their school, class, and subjects.',
       'Events: Keep track of important school events, with clear labels for which school an event belongs to.',

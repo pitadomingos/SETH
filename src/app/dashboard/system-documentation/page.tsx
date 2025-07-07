@@ -106,8 +106,8 @@ export default function SystemDocumentationPage() {
                     <p className="text-sm text-muted-foreground">The Global Admin can "Log in as" any user in the system. This provides an exact view of what the user sees, enabling efficient troubleshooting and support.</p>
                 </div>
                 <div>
-                    <h3 className="font-semibold">Centralized User Management</h3>
-                    <p className="text-sm text-muted-foreground">Dedicated pages allow the Global Admin to view, search, and manage every student and parent across all schools, including updating their account status.</p>
+                    <h3 className="font-semibold">Granular Attendance Tracking</h3>
+                    <p className="text-sm text-muted-foreground">The system supports lesson-specific attendance marking by teachers. This detailed data provides deeper insights into student behavior and feeds into various AI analyses, moving beyond simple daily check-ins.</p>
                 </div>
                 <div>
                     <h3 className="font-semibold">Automated Student Enrollment</h3>
