@@ -11,19 +11,27 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const AnalyzeClassPerformanceInputSchema = z.object({
-  className: z.string().describe('The name of the class being analyzed.'),
-  subject: z.string().describe('The subject being analyzed for the class.'),
-  grades: z.array(z.string()).describe('An array of letter grades for the students in the class for the specified subject (e.g., ["A", "B+", "C-"]).'),
-});
-export type AnalyzeClassPerformanceInput = z.infer<typeof AnalyzeClassPerformanceInputSchema>;
-
 const AnalyzeClassPerformanceOutputSchema = z.object({
   analysis: z.string().describe('A concise, data-driven analysis of the class\'s performance, including average performance and any notable distribution patterns.'),
   recommendation: z.string().describe('A clear recommendation. If performance is poor, suggest an ad hoc test and provide a strong justification. If performance is good, suggest enrichment activities. State if a notification has been sent to the Head of School.'),
   interventionNeeded: z.boolean().describe('A boolean flag that is true if the analysis suggests an ad-hoc test or other intervention is needed, otherwise false.'),
+  comparisonAnalysis: z.string().optional().describe('A brief analysis comparing the current results to the previous ones, noting progress or regression.'),
 });
 export type AnalyzeClassPerformanceOutput = z.infer<typeof AnalyzeClassPerformanceOutputSchema>;
+
+const PreviousClassAnalysisSchema = z.object({
+    generatedAt: z.string().describe("The ISO 8601 date string of when the previous analysis was generated."),
+    result: AnalyzeClassPerformanceOutputSchema,
+});
+
+const AnalyzeClassPerformanceInputSchema = z.object({
+  className: z.string().describe('The name of the class being analyzed.'),
+  subject: z.string().describe('The subject being analyzed for the class.'),
+  grades: z.array(z.string()).describe('An array of letter grades for the students in the class for the specified subject (e.g., ["A", "B+", "C-"]).'),
+  previousAnalysis: PreviousClassAnalysisSchema.optional().describe('A previously saved analysis for comparison.'),
+});
+export type AnalyzeClassPerformanceInput = z.infer<typeof AnalyzeClassPerformanceInputSchema>;
+
 
 export async function analyzeClassPerformance(input: AnalyzeClassPerformanceInput): Promise<AnalyzeClassPerformanceOutput> {
   return analyzeClassPerformanceFlow(input);
@@ -53,6 +61,15 @@ const prompt = ai.definePrompt({
   - If the class performance is satisfactory or excellent, suggest a potential enrichment activity or project to challenge the students further. Set the 'interventionNeeded' flag to false.
   
   Your tone should be professional, data-driven, and supportive.
+
+  {{#if previousAnalysis}}
+  **Previous Analysis Comparison:**
+  A previous analysis for this class was run on {{previousAnalysis.generatedAt}}. The results were:
+  - Previous Analysis: "{{previousAnalysis.result.analysis}}"
+  - Previous Recommendation: "{{previousAnalysis.result.recommendation}}"
+
+  Please compare the current data with the previous analysis. In the 'comparisonAnalysis' field, provide a brief, data-driven summary of the progress or regression. For example: "Performance has improved significantly since the last analysis..." or "There has been a decline in performance..."
+  {{/if}}
   `,
 });
 

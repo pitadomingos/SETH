@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { Loader2, User } from 'lucide-react';
+import { Loader2, User, GitCompareArrows } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolData } from '@/context/school-data-context';
+import { useSchoolData, SavedReport } from '@/context/school-data-context';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { analyzeSchoolPerformance, AnalyzeSchoolPerformanceOutput } from '@/ai/flows/analyze-school-performance';
@@ -17,6 +17,7 @@ import { analyzeTeacherPerformance, AnalyzeTeacherPerformanceOutput } from '@/ai
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Legend } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 import { getLetterGrade } from '@/lib/utils';
+import { format as formatDate } from 'date-fns';
 
 
 // School-Wide Analysis Component
@@ -29,7 +30,9 @@ function SchoolWideAnalysis() {
         financeData, 
         coursesData, 
         subjects,
-        classesData
+        classesData,
+        savedReports,
+        addSavedReport,
     } = useSchoolData();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
@@ -49,7 +52,7 @@ function SchoolWideAnalysis() {
 
             // Financials
             const totalFees = financeData.reduce((sum, f) => sum + f.totalAmount, 0);
-            const totalRevenue = financeData.reduce((sum, f) => acc + f.amountPaid, 0);
+            const totalRevenue = financeData.reduce((acc, f) => acc + f.amountPaid, 0);
             const collectionRate = totalFees > 0 ? (totalRevenue / totalFees) * 100 : 100;
             const overdueAmount = financeData
                 .filter(f => new Date(f.dueDate) < new Date() && f.totalAmount > f.amountPaid)
@@ -94,6 +97,10 @@ function SchoolWideAnalysis() {
                 ? allNumericGrades.reduce((sum, g) => sum + g, 0) / allNumericGrades.length
                 : 0;
 
+            const previousAnalysis = savedReports
+                .filter(r => r.type === 'SchoolPerformance' && r.targetId === schoolProfile.id)
+                .sort((a, b) => b.generatedAt.getTime() - a.generatedAt.getTime())[0];
+
             const analysisInput = {
                 schoolName: schoolProfile.name,
                 teachers: teacherMetrics,
@@ -101,10 +108,22 @@ function SchoolWideAnalysis() {
                 financials,
                 overallStudentCount: studentsData.length,
                 overallAverageGrade: parseFloat(overallAverageGrade.toFixed(2)),
+                previousAnalysis: previousAnalysis ? {
+                    generatedAt: previousAnalysis.generatedAt.toISOString(),
+                    result: previousAnalysis.result,
+                } : undefined,
             };
 
             const res = await analyzeSchoolPerformance(analysisInput);
             setResult(res);
+
+            addSavedReport({
+                type: 'SchoolPerformance',
+                targetId: schoolProfile.id,
+                targetName: schoolProfile.name,
+                result: res,
+            });
+
         } catch (error) {
             console.error(error);
             toast({ variant: 'destructive', title: 'Analysis Failed', description: error instanceof Error ? error.message : "An unknown error occurred." });
@@ -129,6 +148,12 @@ function SchoolWideAnalysis() {
                               <h4 className="font-semibold mb-1">Holistic AI Analysis:</h4>
                               <p className="text-muted-foreground whitespace-pre-wrap">{result.holisticAnalysis}</p>
                           </div>
+                           {result.comparisonAnalysis && (
+                            <div className="mt-4 p-4 rounded-md bg-blue-500/10 border border-blue-500/20">
+                                <h4 className="font-semibold text-blue-600 flex items-center gap-2"><GitCompareArrows /> Comparison to Last Report</h4>
+                                <p className="text-sm text-muted-foreground mt-1">{result.comparisonAnalysis}</p>
+                            </div>
+                          )}
                       </div>
                       {result.keyMetrics.length > 0 && (
                           <div>
@@ -153,7 +178,7 @@ function SchoolWideAnalysis() {
 
 // Class Analysis Component
 function ClassAnalysis() {
-  const { classesData, subjects, studentsData, grades } = useSchoolData();
+  const { classesData, subjects, studentsData, grades, savedReports, addSavedReport } = useSchoolData();
   const { toast } = useToast();
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
@@ -180,12 +205,28 @@ function ClassAnalysis() {
       const studentsInClass = studentsData.filter(s => s.grade === selectedClass.grade && s.class === selectedClass.name.split('-')[1].trim()).map(s => s.id);
       const relevantGrades = grades.filter(g => studentsInClass.includes(g.studentId) && g.subject === selectedSubject).map(g => g.grade);
 
+      const targetId = `${selectedClassId}-${selectedSubject}`;
+      const previousAnalysis = savedReports
+          .filter(r => r.type === 'ClassPerformance' && r.targetId === targetId)
+          .sort((a, b) => b.generatedAt.getTime() - a.generatedAt.getTime())[0];
+
       const analysisResult = await analyzeClassPerformance({
         className: selectedClass.name,
         subject: selectedSubject,
         grades: relevantGrades,
+        previousAnalysis: previousAnalysis ? {
+            generatedAt: previousAnalysis.generatedAt.toISOString(),
+            result: previousAnalysis.result,
+        } : undefined,
       });
       setResult(analysisResult);
+      
+      addSavedReport({
+        type: 'ClassPerformance',
+        targetId,
+        targetName: `${selectedClass.name} - ${selectedSubject}`,
+        result: analysisResult,
+      });
 
       if (relevantGrades.length > 0) {
         const gradeCounts = relevantGrades.reduce((acc, grade) => {
@@ -226,6 +267,12 @@ function ClassAnalysis() {
             <div className="space-y-4 text-sm">
                 <div className={`p-4 rounded-md ${result.interventionNeeded ? 'bg-destructive/10 border border-destructive/20' : 'bg-muted'}`}><h4 className="font-semibold mb-1">Analysis:</h4><p className="text-muted-foreground">{result.analysis}</p></div>
                 <div className={`p-4 rounded-md ${result.interventionNeeded ? 'bg-destructive/10 border border-destructive/20' : 'bg-muted'}`}><h4 className="font-semibold mb-1">Recommendation:</h4><p className="text-muted-foreground">{result.recommendation}</p></div>
+                 {result.comparisonAnalysis && (
+                    <div className="mt-4 p-4 rounded-md bg-blue-500/10 border border-blue-500/20">
+                        <h4 className="font-semibold text-blue-600 flex items-center gap-2"><GitCompareArrows /> Comparison to Last Report</h4>
+                        <p className="text-sm text-muted-foreground mt-1">{result.comparisonAnalysis}</p>
+                    </div>
+                )}
             </div>
             {chartData.length > 0 && (
                 <div>
@@ -350,7 +397,7 @@ function StrugglingStudents() {
 
 // Teacher Performance Component
 function TeacherPerformance() {
-  const { teachersData, coursesData, classesData, grades, studentsData } = useSchoolData();
+  const { teachersData, coursesData, classesData, grades, studentsData, savedReports, addSavedReport } = useSchoolData();
   const { toast } = useToast();
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -390,8 +437,29 @@ function TeacherPerformance() {
         return { className: classInfo.name, averageGrade: parseFloat(averageGrade.toFixed(2)), passingRate: parseFloat(passingRate.toFixed(2)) };
       }).filter(Boolean) as any[];
 
-      const analysisResult = await analyzeTeacherPerformance({ teacherName: teacher.name, subject: teacher.subject, classPerformances });
+      const previousAnalysis = savedReports
+          .filter(r => r.type === 'TeacherPerformance' && r.targetId === selectedTeacherId)
+          .sort((a, b) => b.generatedAt.getTime() - a.generatedAt.getTime())[0];
+
+      const analysisResult = await analyzeTeacherPerformance({
+        teacherName: teacher.name,
+        subject: teacher.subject,
+        classPerformances,
+        previousAnalysis: previousAnalysis ? {
+            generatedAt: previousAnalysis.generatedAt.toISOString(),
+            result: previousAnalysis.result,
+        } : undefined,
+      });
+
       setResult(analysisResult);
+
+      addSavedReport({
+        type: 'TeacherPerformance',
+        targetId: selectedTeacherId,
+        targetName: teacher.name,
+        result: analysisResult,
+      });
+
       if (classPerformances.length > 0) {
         setChartData(classPerformances.map(cp => ({
             name: cp.className,
@@ -425,6 +493,12 @@ function TeacherPerformance() {
                 <div className="p-4 rounded-md bg-muted"><h4 className="font-semibold mb-1">Overall Assessment:</h4><p className="text-muted-foreground">{result.overallAssessment}</p></div>
                 <div className="p-4 rounded-md bg-muted"><h4 className="font-semibold mb-1">Strengths:</h4><p className="text-muted-foreground whitespace-pre-wrap">{result.strengths}</p></div>
                 <div className="p-4 rounded-md bg-muted"><h4 className="font-semibold mb-1">Areas for Improvement:</h4><p className="text-muted-foreground whitespace-pre-wrap">{result.areasForImprovement}</p></div>
+                 {result.comparisonAnalysis && (
+                    <div className="mt-4 p-4 rounded-md bg-blue-500/10 border border-blue-500/20">
+                        <h4 className="font-semibold text-blue-600 flex items-center gap-2"><GitCompareArrows /> Comparison to Last Report</h4>
+                        <p className="text-sm text-muted-foreground mt-1">{result.comparisonAnalysis}</p>
+                    </div>
+                )}
             </div>
             {chartData.length > 0 && (
                 <div>

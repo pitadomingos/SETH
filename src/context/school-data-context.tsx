@@ -26,6 +26,7 @@ import {
     ActivityLog,
     Message,
     Attendance,
+    SavedReport as InitialSavedReport,
 } from '@/lib/mock-data';
 import { useAuth, Role } from './auth-context';
 import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
@@ -39,6 +40,7 @@ export type SchoolProfile = InitialSchoolProfile;
 export type Class = InitialClass;
 export type Course = InitialCourse;
 export type Competition = InitialCompetition;
+export type SavedReport = InitialSavedReport;
 export type { Team, Admission, Student, ActivityLog, Message, Teacher, Attendance };
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
@@ -144,6 +146,8 @@ interface SchoolDataContextType {
   updateMessageStatus: (messageId: string, status: Message['status']) => void;
   parentStatusOverrides: Record<string, 'Active' | 'Suspended'>;
   updateParentStatus: (email: string, status: 'Active' | 'Suspended') => void;
+  savedReports: SavedReport[];
+  addSavedReport: (report: Omit<SavedReport, 'id' | 'generatedAt'>) => void;
   isLoading: boolean;
 }
 
@@ -183,6 +187,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [parentStatusOverrides, setParentStatusOverrides] = useState<Record<string, 'Active' | 'Suspended'>>({});
+  const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -276,6 +281,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setDeployedTests(data.deployedTests.map(dt => ({...dt, createdAt: new Date(dt.createdAt), deadline: new Date(dt.deadline)})) || []);
       setActivityLogs(data.activityLogs.map(log => ({...log, timestamp: new Date(log.timestamp)})) || []);
       setMessages(data.messages.map(msg => ({...msg, timestamp: new Date(msg.timestamp)})) || []);
+      setSavedReports(data.savedReports.map(r => ({...r, generatedAt: new Date(r.generatedAt)})) || []);
       if(data.teachers) {
           const initialSubjects = [...new Set(data.teachers.map(t => t.subject))].sort();
           setSubjects(initialSubjects);
@@ -717,6 +723,16 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const addSavedReport = (report: Omit<SavedReport, 'id' | 'generatedAt'>) => {
+    const newReport: SavedReport = {
+      id: `REP${Date.now()}`,
+      generatedAt: new Date(),
+      ...report,
+    };
+    setSavedReports(prev => [newReport, ...prev]);
+  };
+
+
   const value = {
     schoolProfile, updateSchoolProfile,
     allSchoolData, updateSchoolStatus,
@@ -751,6 +767,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     updateMessageStatus,
     parentStatusOverrides,
     updateParentStatus,
+    savedReports,
+    addSavedReport,
     isLoading,
   };
 
