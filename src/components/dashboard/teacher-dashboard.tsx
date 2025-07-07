@@ -28,63 +28,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-
-const messageSchema = z.object({
-  subject: z.string().min(3, "Subject is required."),
-  body: z.string().min(10, "Message body must be at least 10 characters."),
-});
-
-type MessageFormValues = z.infer<typeof messageSchema>;
-
-function ContactAdminDialog() {
-  const { addMessage } = useSchoolData();
-  const [isOpen, setIsOpen] = useState(false);
-
-  const form = useForm<MessageFormValues>({
-    resolver: zodResolver(messageSchema),
-    defaultValues: { subject: '', body: '' },
-  });
-
-  function onSubmit(values: MessageFormValues) {
-    const messageData: NewMessageData = {
-      to: 'Admin',
-      ...values,
-    };
-    addMessage(messageData);
-    form.reset();
-    setIsOpen(false);
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="w-full"><Mail className="mr-2 h-4 w-4" /> Contact Admin</Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Contact School Administrator</DialogTitle>
-          <DialogDescription>
-            Send a message regarding administrative matters or general queries.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <FormField control={form.control} name="subject" render={({ field }) => ( <FormItem><FormLabel>Subject</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="body" render={({ field }) => ( <FormItem><FormLabel>Message</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <DialogFooter>
-              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Send Message
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-
 // Helper to standardize grades for the chart
 const getStandardLetterGrade = (grade: string): string => {
   const numericGrade = parseFloat(grade);
@@ -403,7 +346,9 @@ export default function TeacherDashboard() {
                 <p className="text-muted-foreground">No upcoming events.</p>
                 )}
                 <div className="mt-4">
-                    <ContactAdminDialog />
+                  <Link href="/dashboard/messaging" passHref className="w-full">
+                     <Button variant="outline" className="w-full"><Mail className="mr-2 h-4 w-4" /> Go to Messaging</Button>
+                  </Link>
                 </div>
             </CardContent>
             </Card>

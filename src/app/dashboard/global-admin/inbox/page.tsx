@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const messageSchema = z.object({
   targetSchoolId: z.string({ required_error: "Please select a recipient." }),
   subject: z.string().min(3, "Subject is required."),
-  body: z.string().min(10, "Message body must be at least 10 characters."),
+  body: z.string().min(10, "Message body must be at least 10 characters long."),
   attachmentUrl: z.string().optional(),
   attachmentName: z.string().optional(),
 });
@@ -56,11 +56,14 @@ function ComposeMessageDialog() {
   }, [allSchoolData]);
 
   function onSubmit(values: MessageFormValues) {
+    const school = allSchoolData?.[values.targetSchoolId];
+    if (!school) return;
+
     const messageData: NewMessageData = {
-      to: 'Admin',
+      // The recipient username for a message to the school is the Admin's email
+      recipientUsername: school.teachers.find(t => t.name === school.profile.head)?.email || '',
       subject: values.subject,
       body: values.body,
-      targetSchoolId: values.targetSchoolId,
       attachmentUrl: values.attachmentUrl,
       attachmentName: values.attachmentName,
     };
@@ -127,7 +130,7 @@ function ViewMessageDialog({ message }: { message: Message & { schoolName: strin
         <DialogHeader>
           <DialogTitle>{message.subject}</DialogTitle>
           <DialogDescription>
-            From: {message.fromUserName} ({message.schoolName})
+            From: {message.senderName} ({message.schoolName})
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
@@ -154,7 +157,7 @@ function ViewMessageDialog({ message }: { message: Message & { schoolName: strin
 
 
 export default function GlobalMessagingPage() {
-  const { role, isLoading: authLoading } = useAuth();
+  const { role, isLoading: authLoading, user } = useAuth();
   const { allSchoolData, isLoading: dataLoading, updateMessageStatus } = useSchoolData();
   const router = useRouter();
   
@@ -173,8 +176,8 @@ export default function GlobalMessagingPage() {
     ).sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [allSchoolData]);
 
-  const inboxMessages = allMessages.filter(m => m.to === 'Developer');
-  const sentMessages = allMessages.filter(m => m.fromUserRole === 'GlobalAdmin');
+  const inboxMessages = allMessages.filter(m => m.recipientUsername === user?.email);
+  const sentMessages = allMessages.filter(m => m.senderUsername === user?.email);
 
   const getStatusVariant = (status: Message['status']) => {
     return status === 'Resolved' ? 'secondary' : 'default';
@@ -217,7 +220,7 @@ export default function GlobalMessagingPage() {
                       <TableRow>
                         <TableHead>School</TableHead>
                         <TableHead>From</TableHead>
-                        <TableHead>Subject</TableHead>
+                        <TableHead>Subject & Preview</TableHead>
                         <TableHead>Received</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -228,8 +231,8 @@ export default function GlobalMessagingPage() {
                         <TableRow key={msg.id}>
                           <TableCell className="font-medium">{msg.schoolName}</TableCell>
                           <TableCell>
-                            <div className="font-medium">{msg.fromUserName}</div>
-                            <div className="text-sm text-muted-foreground">{msg.fromUserRole}</div>
+                            <div className="font-medium">{msg.senderName}</div>
+                            <div className="text-sm text-muted-foreground">{msg.senderRole}</div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
@@ -294,7 +297,7 @@ export default function GlobalMessagingPage() {
                     <TableBody>
                       {sentMessages.length > 0 ? sentMessages.map(msg => (
                         <TableRow key={msg.id}>
-                          <TableCell className="font-medium">{msg.to}</TableCell>
+                          <TableCell className="font-medium">{msg.recipientName}</TableCell>
                           <TableCell>{msg.schoolName}</TableCell>
                           <TableCell>
                              <div className="flex items-center gap-2">

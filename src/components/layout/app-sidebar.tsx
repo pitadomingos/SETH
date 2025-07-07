@@ -94,7 +94,7 @@ export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
     { href: '/dashboard/assets', label: 'Assets', icon: Package },
     { href: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
-    { href: '/dashboard/inbox', label: 'Messaging', icon: Mail },
+    { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
     { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
     { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Award },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
@@ -109,6 +109,7 @@ export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/attendance', label: 'Attendance', icon: CalendarCheck },
     { href: '/dashboard/lesson-planner', label: 'Lesson Planner', icon: PenSquare },
     { href: '/dashboard/ai-testing', label: 'AI Test Generator', icon: FlaskConical },
+    { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
   ],
   Student: [
     ...commonLinks,
@@ -118,6 +119,7 @@ export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     ...commonLinks,
     { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Award },
     { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
+    { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
   ],
 };
 

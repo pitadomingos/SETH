@@ -28,7 +28,7 @@ import {
     Attendance,
     SavedReport as InitialSavedReport,
 } from '@/lib/mock-data';
-import { useAuth, Role } from './auth-context';
+import { useAuth, Role, mockUsers } from './auth-context';
 import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
 import { GenerateTestOutput } from '@/ai/flows/generate-test';
 import { useToast } from '@/hooks/use-toast';
@@ -66,10 +66,9 @@ export interface NewAdmissionData {
 }
 export interface NewDeployedTestData { testId: string; classId: string; deadline: Date; }
 export interface NewMessageData {
-  to: 'Admin' | 'Developer' | string;
+  recipientUsername: string;
   subject: string;
   body: string;
-  targetSchoolId?: string;
   attachmentUrl?: string;
   attachmentName?: string;
 }
@@ -213,6 +212,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       const allAttendance: any[] = [];
       const allFinance: any[] = [];
       const allEvents: SchoolEvent[] = [];
+      const allMessagesForParent: Message[] = [];
       const schoolIdsOfChildren = new Set<string>();
       const childrenIds = new Set<string>();
       let allTeams: Team[] = [];
@@ -231,6 +231,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             });
             allTeams.push(...school.teams);
             allCompetitions.push(...school.competitions.map(c => ({...c, date: new Date(c.date)})));
+            allMessagesForParent.push(...school.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
         }
       }
 
@@ -247,7 +248,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           allEvents.push(...schoolEventsWithSchoolName);
       });
       
-      setSchoolProfile(allSchoolData['northwood'].profile); // Parents need a default context for some actions
+      const firstSchoolId = schoolIdsOfChildren.values().next().value || 'northwood';
+      setSchoolProfile(allSchoolData[firstSchoolId].profile);
       setStudentsData(allStudents);
       setFinanceData(allFinance);
       setGrades(allGrades);
@@ -255,6 +257,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setEvents(allEvents);
       setTeamsData(allTeams);
       setCompetitionsData(allCompetitions);
+      setMessages(allMessagesForParent);
+      setTeachersData(Object.values(allSchoolData).flatMap(s => s.teachers));
       setIsLoading(false);
     } else if (user?.schoolId && allSchoolData[user.schoolId]) {
       schoolId = user.schoolId;
@@ -623,68 +627,42 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addMessage = (data: NewMessageData) => {
     if (!user || !role) return;
 
-    const fromSchoolId = user.schoolId;
-    const targetSchoolId = data.targetSchoolId || fromSchoolId;
+    const recipient = Object.values(mockUsers).find(u => u.user.email === data.recipientUsername);
+    if (!recipient) {
+      toast({ variant: 'destructive', title: 'Recipient not found' });
+      return;
+    }
 
-    if (!targetSchoolId) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Message destination school not found.' });
-        return;
+    const schoolIdForMessage = recipient.user.schoolId || user.schoolId;
+
+    if (!schoolIdForMessage) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Cannot determine message destination.' });
+      return;
     }
     
-    const targetSchoolName = allSchoolData[targetSchoolId]?.profile.name || 'Unknown School';
-
     const newMessage: Message = {
       id: `MSG${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       timestamp: new Date(),
-      schoolId: targetSchoolId,
-      fromUserName: user.name,
-      fromUserRole: role,
-      to: data.to,
+      schoolId: schoolIdForMessage,
+      senderUsername: user.email,
+      senderName: user.name,
+      senderRole: role,
+      recipientUsername: data.recipientUsername,
+      recipientName: recipient.user.name,
+      recipientRole: recipient.role,
       subject: data.subject,
       body: data.body,
+      isRead: false,
       status: 'Pending',
       attachmentUrl: data.attachmentUrl,
       attachmentName: data.attachmentName,
     };
     
-    const logDetails = data.to === 'Developer'
-        ? `Sent message with subject "${data.subject}" to Developer.`
-        : `Sent message with subject "${data.subject}" to Admin of ${targetSchoolName}.`;
-
-    const logEntry: ActivityLog = {
-      id: `LOG${Date.now()}`,
-      timestamp: new Date(),
-      schoolId: fromSchoolId || targetSchoolId,
-      user: user.name,
-      role: role,
-      action: 'Message',
-      details: logDetails,
-    };
-
     setAllSchoolData(prevAllData => {
       const newAllData = { ...prevAllData };
-      const logSchoolId = fromSchoolId || targetSchoolId;
-      
-      if (newAllData[targetSchoolId]) {
-        newAllData[targetSchoolId] = {
-          ...newAllData[targetSchoolId],
-          messages: [newMessage, ...newAllData[targetSchoolId].messages],
-        };
+      if (newAllData[schoolIdForMessage]) {
+          newAllData[schoolIdForMessage].messages.push(newMessage);
       }
-      
-      if (newAllData[logSchoolId]) {
-        if (logSchoolId === targetSchoolId) {
-          // If log and message go to the same school, update the already cloned object
-          newAllData[logSchoolId].activityLogs = [logEntry, ...newAllData[logSchoolId].activityLogs];
-        } else {
-          // If they are different (Global Admin case), clone the log school object separately
-          newAllData[logSchoolId] = {
-            ...newAllData[logSchoolId],
-            activityLogs: [logEntry, ...newAllData[logSchoolId].activityLogs],
-          };
-        }
-      }
-
       return newAllData;
     });
 

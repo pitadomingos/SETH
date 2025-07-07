@@ -1,16 +1,15 @@
 
 'use client';
-import { useAuth } from '@/context/auth-context';
+import { useAuth, mockUsers } from '@/context/auth-context';
 import { useSchoolData, Message, NewMessageData } from '@/context/school-data-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Mail, MoreHorizontal, CheckCircle, Hourglass, Reply, Paperclip, Send, PlusCircle, Eye } from 'lucide-react';
+import { Loader2, Mail, Reply, Paperclip, Send, PlusCircle, Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose, DialogFooter } from '@/components/ui/dialog';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,9 +18,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 const messageSchema = z.object({
+  recipientUsername: z.string({ required_error: "Please select a recipient." }),
   subject: z.string().min(3, "Subject is required."),
   body: z.string().min(10, "Message body must be at least 10 characters long."),
   attachmentUrl: z.string().optional(),
@@ -30,30 +31,88 @@ const messageSchema = z.object({
 type MessageFormValues = z.infer<typeof messageSchema>;
 
 function ComposeMessageDialog({ open, onOpenChange, replyTo }: { open?: boolean, onOpenChange?: (open: boolean) => void, replyTo?: Message }) {
-  const { addMessage } = useSchoolData();
+  const { addMessage, teachersData, studentsData, schoolProfile, coursesData, classesData } = useSchoolData();
+  const { user, role } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const form = useForm<MessageFormValues>({
     resolver: zodResolver(messageSchema),
-    defaultValues: { 
-      subject: replyTo ? `Re: ${replyTo.subject}` : '', 
-      body: '' 
-    },
   });
   
   useEffect(() => {
     form.reset({
+      recipientUsername: replyTo ? replyTo.senderUsername : '',
       subject: replyTo ? `Re: ${replyTo.subject}` : '',
       body: '',
       attachmentName: '',
       attachmentUrl: '',
     });
-  }, [replyTo, form]);
+  }, [replyTo, open, form]);
+
+  const recipientList = useMemo(() => {
+    if (!user || !role) return [];
+    
+    if (role === 'Admin') {
+      return teachersData.map(t => ({ value: t.email, label: `${t.name} (Teacher)` }));
+    }
+    if (role === 'Teacher') {
+        const admin = Object.values(mockUsers).find(u => u.user.schoolId === user.schoolId && u.role === 'Admin');
+        const parentSet = new Set<string>();
+        const teacherId = teachersData.find(t => t.email === user.email)?.id;
+        const teacherCourses = coursesData.filter(c => c.teacherId === teacherId);
+        const teacherClassIds = teacherCourses.map(c => c.classId);
+        const taughtStudents = studentsData.filter(s => {
+            const studentClass = classesData.find(c => c.grade === s.grade && c.name.split('-')[1].trim() === s.class);
+            return studentClass && teacherClassIds.includes(studentClass.id);
+        });
+
+        taughtStudents.forEach(s => parentSet.add(s.parentEmail));
+        
+        const parents = Array.from(parentSet).map(email => {
+            const student = studentsData.find(s => s.parentEmail === email);
+            return { value: email, label: `${student?.parentName} (Parent)` };
+        });
+
+        const recipients = [...parents];
+        if (admin) recipients.unshift({ value: admin.user.email, label: `${admin.user.name} (Admin)` });
+        return recipients;
+    }
+
+    if (role === 'Parent') {
+        const admin = Object.values(mockUsers).find(u => u.user.schoolId === schoolProfile?.id && u.role === 'Admin');
+        const children = studentsData.filter(s => s.parentEmail === user.email);
+        const teacherSet = new Set<string>();
+        children.forEach(child => {
+            const studentClass = classesData.find(c => c.grade === child.grade && c.name.split('-')[1].trim() === child.class);
+            if(studentClass) {
+                const teachers = coursesData.filter(course => course.classId === studentClass.id).map(c => c.teacherId);
+                teachers.forEach(teacherId => {
+                    const teacher = teachersData.find(t => t.id === teacherId);
+                    if (teacher) teacherSet.add(teacher.email);
+                });
+            }
+        });
+
+        const teachers = Array.from(teacherSet).map(email => {
+            const teacher = teachersData.find(t => t.email === email);
+            return { value: email, label: `${teacher?.name} (Teacher)` };
+        });
+
+        const recipients = [...teachers];
+        if(admin) recipients.unshift({ value: admin.user.email, label: `${admin.user.name} (Admin)` });
+        return recipients;
+    }
+
+    return [];
+  }, [role, user, teachersData, studentsData, schoolProfile, coursesData, classesData]);
 
   function onSubmit(values: MessageFormValues) {
     const messageData: NewMessageData = {
-      to: 'Developer',
-      ...values,
+      recipientUsername: values.recipientUsername,
+      subject: values.subject,
+      body: values.body,
+      attachmentUrl: values.attachmentUrl,
+      attachmentName: values.attachmentName,
     };
     addMessage(messageData);
     form.reset();
@@ -72,20 +131,32 @@ function ComposeMessageDialog({ open, onOpenChange, replyTo }: { open?: boolean,
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Contact Developer</DialogTitle>
+          <DialogTitle>{replyTo ? 'Reply to Message' : 'Compose Message'}</DialogTitle>
           <DialogDescription>
-            {replyTo ? `Replying to message about "${replyTo.subject}"` : "Send a message regarding system issues or feedback."}
+            {replyTo ? `Replying about "${replyTo.subject}"` : "Send a message to a member of the school."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            <FormField
+              control={form.control}
+              name="recipientUsername"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Recipient</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!!replyTo}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select a recipient..." /></SelectTrigger></FormControl>
+                    <SelectContent>{recipientList.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField control={form.control} name="subject" render={({ field }) => ( <FormItem><FormLabel>Subject</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="body" render={({ field }) => ( <FormItem><FormLabel>Message</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormMessage /></FormItem> )} />
              <FormItem>
               <FormLabel>Attachment</FormLabel>
-              <FormControl>
-                <Input type="file" ref={fileInputRef} onChange={handleFileChange} />
-              </FormControl>
+              <FormControl><Input type="file" ref={fileInputRef} onChange={handleFileChange} /></FormControl>
             </FormItem>
             <DialogFooter>
               <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
@@ -100,8 +171,7 @@ function ComposeMessageDialog({ open, onOpenChange, replyTo }: { open?: boolean,
   );
 }
 
-function ViewMessageDialog({ message }: { message: Message }) {
-  const [isReplyOpen, setIsReplyOpen] = useState(false);
+function ViewMessageDialog({ message, onReply }: { message: Message, onReply: (message: Message) => void }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -110,9 +180,7 @@ function ViewMessageDialog({ message }: { message: Message }) {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{message.subject}</DialogTitle>
-          <DialogDescription>
-            From: {message.fromUserName} ({message.fromUserRole})
-          </DialogDescription>
+          <DialogDescription>From: {message.senderName} ({message.senderRole})</DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
           <div className="p-4 bg-muted rounded-md max-h-48 overflow-y-auto">
@@ -128,9 +196,8 @@ function ViewMessageDialog({ message }: { message: Message }) {
         </div>
         <DialogFooter>
           <DialogClose asChild><Button type="button" variant="secondary">Close</Button></DialogClose>
-          <Button onClick={() => setIsReplyOpen(true)}><Reply className="mr-2 h-4 w-4" /> Reply</Button>
+          <DialogClose asChild><Button onClick={() => onReply(message)}><Reply className="mr-2 h-4 w-4" /> Reply</Button></DialogClose>
         </DialogFooter>
-        <ComposeMessageDialog open={isReplyOpen} onOpenChange={setIsReplyOpen} replyTo={message} />
       </DialogContent>
     </Dialog>
   );
@@ -138,32 +205,43 @@ function ViewMessageDialog({ message }: { message: Message }) {
 
 export default function MessagingPage() {
   const { role, user, isLoading: authLoading } = useAuth();
-  const { messages, updateMessageStatus, isLoading: dataLoading } = useSchoolData();
+  const { messages, isLoading: dataLoading } = useSchoolData();
   const router = useRouter();
   const [isComposeOpen, setIsComposeOpen] = useState(false);
-  
+  const [replyToMessage, setReplyToMessage] = useState<Message | undefined>(undefined);
+
   const isLoading = authLoading || dataLoading;
 
   useEffect(() => {
-    if (!isLoading && role !== 'Admin') {
+    if (!isLoading && !['Admin', 'Teacher', 'Parent'].includes(role || '')) {
       router.push('/dashboard');
     }
   }, [role, isLoading, router]);
 
-  const inboxMessages = useMemo(() => {
-    return messages.filter(m => m.to === 'Admin').sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }, [messages]);
+  const { inboxMessages, sentMessages } = useMemo(() => {
+    if (!user) return { inboxMessages: [], sentMessages: [] };
+    
+    const userIdentifier = user.email; // Use email as the unique identifier
 
-  const sentMessages = useMemo(() => {
-    return messages.filter(m => m.fromUserName === user?.name).sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
+    const inbox = messages
+      .filter(m => m.recipientUsername === userIdentifier)
+      .sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    const sent = messages
+      .filter(m => m.senderUsername === userIdentifier)
+      .sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
+      
+    return { inboxMessages: inbox, sentMessages: sent };
   }, [messages, user]);
-
-  const getStatusVariant = (status: Message['status']) => {
-    return status === 'Resolved' ? 'secondary' : 'default';
+  
+  const handleReply = (message: Message) => {
+    setReplyToMessage(message);
+    setIsComposeOpen(true);
   };
   
-  const getStatusIcon = (status: Message['status']) => {
-    return status === 'Resolved' ? <CheckCircle className="h-4 w-4" /> : <Hourglass className="h-4 w-4" />;
+  const handleOpenCompose = () => {
+    setReplyToMessage(undefined);
+    setIsComposeOpen(true);
   };
 
   if (isLoading) {
@@ -175,12 +253,10 @@ export default function MessagingPage() {
       <header className="flex flex-wrap gap-2 justify-between items-center">
         <div>
             <h2 className="text-3xl font-bold tracking-tight">Messaging Center</h2>
-            <p className="text-muted-foreground">
-              Communicate with your staff and the system developers.
-            </p>
+            <p className="text-muted-foreground">Communicate with staff and parents.</p>
         </div>
-        <Button onClick={() => setIsComposeOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Contact Developer</Button>
-        <ComposeMessageDialog open={isComposeOpen} onOpenChange={setIsComposeOpen} />
+        <Button onClick={handleOpenCompose}><PlusCircle className="mr-2 h-4 w-4" /> Compose Message</Button>
+        <ComposeMessageDialog open={isComposeOpen} onOpenChange={setIsComposeOpen} replyTo={replyToMessage} />
       </header>
 
       <Tabs defaultValue="inbox">
@@ -191,66 +267,44 @@ export default function MessagingPage() {
         <TabsContent value="inbox">
             <Card>
                 <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Mail /> Incoming Messages</CardTitle>
-                <CardDescription>Review messages and mark them as resolved.</CardDescription>
+                  <CardTitle className="flex items-center gap-2"><Mail /> Incoming Messages</CardTitle>
                 </CardHeader>
                 <CardContent>
-                <Table>
+                  <Table>
                     <TableHeader>
-                    <TableRow>
+                      <TableRow>
                         <TableHead>From</TableHead>
                         <TableHead>Subject</TableHead>
                         <TableHead>Received</TableHead>
-                        <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
+                      </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {inboxMessages.length > 0 ? inboxMessages.map(msg => (
+                      {inboxMessages.length > 0 ? inboxMessages.map(msg => (
                         <TableRow key={msg.id}>
-                        <TableCell>
-                            <div className="font-medium">{msg.fromUserName}</div>
-                            <div className="text-sm text-muted-foreground">{msg.fromUserRole}</div>
-                        </TableCell>
-                        <TableCell>
+                          <TableCell>
+                            <div className="font-medium">{msg.senderName}</div>
+                            <div className="text-sm text-muted-foreground">{msg.senderRole}</div>
+                          </TableCell>
+                          <TableCell>
                             <div className="flex items-center gap-2">
                                {msg.attachmentUrl && <Paperclip className="h-4 w-4 text-muted-foreground" />}
                                <p className="font-medium">{msg.subject}</p>
                             </div>
                             <p className="text-sm text-muted-foreground truncate max-w-xs">{msg.body}</p>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-xs">{formatDistanceToNow(msg.timestamp, { addSuffix: true })}</TableCell>
-                        <TableCell>
-                            <Badge variant={getStatusVariant(msg.status)} className="flex items-center gap-2">
-                            {getStatusIcon(msg.status)}
-                            {msg.status}
-                            </Badge>
-                        </TableCell>
-                        <TableCell className="text-right space-x-2">
-                            <ViewMessageDialog message={msg} />
-                            <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Change Status</DropdownMenuLabel>
-                                <DropdownMenuItem onClick={() => updateMessageStatus(msg.id, 'Pending')} disabled={msg.status === 'Pending'}>
-                                Mark as Pending
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => updateMessageStatus(msg.id, 'Resolved')} disabled={msg.status === 'Resolved'}>
-                                Mark as Resolved
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                            </DropdownMenu>
-                        </TableCell>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-xs">{formatDistanceToNow(msg.timestamp, { addSuffix: true })}</TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <ViewMessageDialog message={msg} onReply={handleReply} />
+                          </TableCell>
                         </TableRow>
-                    )) : (
+                      )) : (
                         <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">No messages yet.</TableCell>
+                          <TableCell colSpan={4} className="h-24 text-center">Your inbox is empty.</TableCell>
                         </TableRow>
-                    )}
+                      )}
                     </TableBody>
-                </Table>
+                  </Table>
                 </CardContent>
             </Card>
         </TabsContent>
@@ -258,7 +312,6 @@ export default function MessagingPage() {
            <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2"><Send /> Sent Messages</CardTitle>
-                  <CardDescription>A record of messages you have sent.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
@@ -272,7 +325,10 @@ export default function MessagingPage() {
                     <TableBody>
                       {sentMessages.length > 0 ? sentMessages.map(msg => (
                         <TableRow key={msg.id}>
-                          <TableCell className="font-medium">{msg.to}</TableCell>
+                          <TableCell>
+                             <div className="font-medium">{msg.recipientName}</div>
+                             <div className="text-sm text-muted-foreground">{msg.recipientRole}</div>
+                          </TableCell>
                           <TableCell>
                              <div className="flex items-center gap-2">
                                {msg.attachmentUrl && <Paperclip className="h-4 w-4 text-muted-foreground" />}
@@ -283,7 +339,7 @@ export default function MessagingPage() {
                         </TableRow>
                       )) : (
                         <TableRow>
-                          <TableCell colSpan={3} className="h-24 text-center">No sent messages yet.</TableCell>
+                          <TableCell colSpan={3} className="h-24 text-center">You haven't sent any messages.</TableCell>
                         </TableRow>
                       )}
                     </TableBody>
