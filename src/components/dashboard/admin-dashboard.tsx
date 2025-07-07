@@ -242,7 +242,7 @@ function AttendanceTrendChart() {
                           tickMargin={8}
                           tickFormatter={(value) => value.slice(0, 6)}
                         />
-                        <YAxis tickFormatter={(value) => `${value}%`} />
+                        <YAxis domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
                         <ChartTooltip content={<ChartTooltipContent formatter={(value) => `${value.toFixed(1)}%`}/>} />
                         <Line
                           type="monotone"
