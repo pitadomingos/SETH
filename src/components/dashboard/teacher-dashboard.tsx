@@ -3,7 +3,7 @@
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { PenSquare, BookMarked, Bell, BrainCircuit, Loader2, X, Mail } from "lucide-react";
+import { PenSquare, BookMarked, Bell, BrainCircuit, Loader2, X, Mail, CalendarCheck } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData, NewMessageData } from "@/context/school-data-context";
 import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis } from 'recharts';
@@ -358,6 +358,17 @@ export default function TeacherDashboard() {
             </Link>
           </CardFooter>
         </Card>
+         <Card className="flex flex-col justify-between">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3"><CalendarCheck className="h-6 w-6 text-primary" /> Take Attendance</CardTitle>
+            <CardDescription className="pt-2">A dedicated interface to mark attendance for each of your lessons.</CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Link href="/dashboard/attendance" passHref className="w-full">
+              <Button className="w-full">Take Attendance</Button>
+            </Link>
+          </CardFooter>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-3"><BookMarked className="h-6 w-6 text-primary" /> Your Courses</CardTitle>
@@ -375,24 +386,27 @@ export default function TeacherDashboard() {
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3"><Bell className="h-6 w-6 text-primary" /> Upcoming Event</CardTitle>
-          </CardHeader>
-           <CardContent>
-            {nextEvent ? (
-              <>
-                <p className="text-lg font-semibold">{nextEvent.title}</p>
-                <p className="text-sm text-muted-foreground">{nextEvent.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-              </>
-            ) : (
-              <p className="text-muted-foreground">No upcoming events.</p>
-            )}
-             <div className="mt-4">
-                <ContactAdminDialog />
-             </div>
-          </CardContent>
-        </Card>
+        
+        <div className="md:col-span-2 lg:col-span-1">
+            <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-3"><Bell className="h-6 w-6 text-primary" /> Upcoming Event</CardTitle>
+            </CardHeader>
+            <CardContent>
+                {nextEvent ? (
+                <>
+                    <p className="text-lg font-semibold">{nextEvent.title}</p>
+                    <p className="text-sm text-muted-foreground">{nextEvent.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+                </>
+                ) : (
+                <p className="text-muted-foreground">No upcoming events.</p>
+                )}
+                <div className="mt-4">
+                    <ContactAdminDialog />
+                </div>
+            </CardContent>
+            </Card>
+        </div>
       </div>
       <AIClassPerformanceAnalyzer />
       <div className="grid gap-6 lg:grid-cols-2">

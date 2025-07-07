@@ -25,18 +25,20 @@ import {
     DeployedTest,
     ActivityLog,
     Message,
+    Attendance,
 } from '@/lib/mock-data';
 import { useAuth, Role } from './auth-context';
 import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
 import { GenerateTestOutput } from '@/ai/flows/generate-test';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 export type FinanceRecord = InitialFinanceRecord;
 export type Grade = InitialGrade;
 export type SchoolProfile = InitialSchoolProfile;
 export type Class = InitialClass;
 export type Course = InitialCourse;
-export type { Team, Competition, Admission, Student, ActivityLog, Message, Teacher };
+export type { Team, Competition, Admission, Student, ActivityLog, Message, Teacher, Attendance };
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
 interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }
@@ -96,7 +98,8 @@ interface SchoolDataContextType {
   assignments: any[];
   grades: Grade[];
   addGrade: (data: NewGradeData) => void;
-  attendance: any[];
+  attendance: Attendance[];
+  addLessonAttendance: (courseId: string, date: string, attendanceData: Record<string, 'Present' | 'Late' | 'Absent'>) => void;
   events: SchoolEvent[];
   addEvent: (data: NewEventData) => void;
   coursesData: Course[];
@@ -176,6 +179,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [deployedTests, setDeployedTests] = useState<DeployedTest[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [parentStatusOverrides, setParentStatusOverrides] = useState<Record<string, 'Active' | 'Suspended'>>({});
   
   const [isLoading, setIsLoading] = useState(true);
@@ -236,6 +240,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setStudentsData(allStudents);
       setFinanceData(allFinance);
       setGrades(allGrades);
+      setAttendance(allAttendance);
       setEvents(allEvents);
       setIsLoading(false);
     } else if (user?.schoolId && allSchoolData[user.schoolId]) {
@@ -249,6 +254,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setAssetsData(data.assets || []);
       setFinanceData(data.finance || []);
       setGrades(data.grades || []);
+      setAttendance(data.attendance || []);
       setExpensesData(data.expenses || []);
       setExpenseCategories(data.expenseCategories || []);
       setTeamsData(data.teams || []);
@@ -665,6 +671,34 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     toast({ title: `Message marked as ${status}` });
   };
 
+  const addLessonAttendance = (courseId: string, date: string, attendanceData: Record<string, 'Present' | 'Late' | 'Absent'>) => {
+    if (!user?.schoolId) return;
+
+    setAllSchoolData(prevAllData => {
+      const schoolId = user.schoolId!;
+      const newAllData = { ...prevAllData };
+      const schoolData = { ...newAllData[schoolId] };
+
+      // Filter out existing records for this specific course and date
+      const otherAttendance = schoolData.attendance.filter(
+        rec => !(rec.courseId === courseId && rec.date === date)
+      );
+
+      // Create new records
+      const newRecords: Attendance[] = Object.entries(attendanceData).map(([studentId, status]) => ({
+        id: `ATT${Date.now()}${studentId}`,
+        studentId,
+        courseId,
+        date,
+        status,
+      }));
+      
+      schoolData.attendance = [...otherAttendance, ...newRecords];
+      newAllData[schoolId] = schoolData;
+      return newAllData;
+    });
+  };
+
   const value = {
     schoolProfile, updateSchoolProfile,
     allSchoolData, updateSchoolStatus,
@@ -678,7 +712,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     assetsData, addAsset,
     assignments: [],
     grades, addGrade,
-    attendance: allSchoolData[user?.schoolId || '']?.attendance || [],
+    attendance, addLessonAttendance,
     events, addEvent,
     subjects, addSubject,
     examBoards, addExamBoard, deleteExamBoard,
