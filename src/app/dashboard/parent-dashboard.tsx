@@ -7,7 +7,7 @@ import { useSchoolData, NewAdmissionData, Competition, Team, Student } from '@/c
 import { generateParentAdvice, GenerateParentAdviceOutput } from '@/ai/flows/generate-parent-advice';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, Swords } from 'lucide-react';
+import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn, formatCurrency } from '@/lib/utils';
 import {
@@ -479,3 +479,4 @@ export default function ParentDashboard() {
     </div>
   );
 }
+
