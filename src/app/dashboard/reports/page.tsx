@@ -18,6 +18,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Legend } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 import { getLetterGrade } from '@/lib/utils';
 import { format as formatDate } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 
 // School-Wide Analysis Component
@@ -144,31 +145,37 @@ function SchoolWideAnalysis() {
                 {result && (
                   <div className="pt-4 animate-in fade-in-50 grid gap-6 md:grid-cols-2">
                       <div className="space-y-4 text-sm">
-                          <div className="p-4 rounded-md bg-muted max-h-96 overflow-y-auto">
+                           <div className="p-4 rounded-md bg-muted max-h-[20rem] overflow-y-auto">
                               <h4 className="font-semibold mb-1">Holistic AI Analysis:</h4>
                               <p className="text-muted-foreground whitespace-pre-wrap">{result.holisticAnalysis}</p>
                           </div>
                            {result.comparisonAnalysis && (
-                            <div className="mt-4 p-4 rounded-md bg-blue-500/10 border border-blue-500/20">
+                            <div className="p-4 rounded-md bg-blue-500/10 border border-blue-500/20">
                                 <h4 className="font-semibold text-blue-600 flex items-center gap-2"><GitCompareArrows /> Comparison to Last Report</h4>
                                 <p className="text-sm text-muted-foreground mt-1">{result.comparisonAnalysis}</p>
                             </div>
                           )}
                       </div>
-                      {result.keyMetrics.length > 0 && (
-                          <div>
-                              <h4 className="font-semibold mb-2 text-sm">Key Performance Indicators</h4>
-                              <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                                  <BarChart data={result.keyMetrics} layout="vertical" margin={{ left: 10, right: 30 }}>
-                                      <CartesianGrid horizontal={false} />
-                                      <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={120} />
-                                      <XAxis type="number" hide />
-                                      <ChartTooltip cursor={false} content={<ChartTooltipContent formatter={(value, name, item) => `${value.toFixed(1)}${item.payload.unit || ''}`} />} />
-                                      <Bar dataKey="value" fill="var(--color-value)" radius={4} />
-                                  </BarChart>
-                              </ChartContainer>
-                          </div>
-                      )}
+                      <div className="space-y-4">
+                            <div className="flex justify-between items-center bg-muted p-3 rounded-md">
+                                <h4 className="font-semibold">Overall Performance Score</h4>
+                                <Badge variant="outline" className="text-lg">{result.performanceScore.toFixed(1)} / 100</Badge>
+                            </div>
+                          {result.keyMetrics.length > 0 && (
+                              <div>
+                                  <h4 className="font-semibold mb-2 text-sm">Key Performance Indicators</h4>
+                                  <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                                      <BarChart data={result.keyMetrics} layout="vertical" margin={{ left: 10, right: 30 }}>
+                                          <CartesianGrid horizontal={false} />
+                                          <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={120} />
+                                          <XAxis type="number" hide />
+                                          <ChartTooltip cursor={false} content={<ChartTooltipContent formatter={(value, name, item) => `${value.toFixed(1)}${item.payload.unit || ''}`} />} />
+                                          <Bar dataKey="value" fill="var(--color-value)" radius={4} />
+                                      </BarChart>
+                                  </ChartContainer>
+                              </div>
+                          )}
+                      </div>
                   </div>
                 )}
             </CardContent>
@@ -490,6 +497,10 @@ function TeacherPerformance() {
         {result && (
           <div className="pt-4 animate-in fade-in-50 grid gap-6 md:grid-cols-2">
             <div className="space-y-4 text-sm">
+                <div className="flex justify-between items-center bg-muted p-3 rounded-md">
+                    <h4 className="font-semibold">Overall Performance Score</h4>
+                    <Badge variant="outline" className="text-lg">{result.performanceScore.toFixed(1)} / 100</Badge>
+                </div>
                 <div className="p-4 rounded-md bg-muted"><h4 className="font-semibold mb-1">Overall Assessment:</h4><p className="text-muted-foreground">{result.overallAssessment}</p></div>
                 <div className="p-4 rounded-md bg-muted"><h4 className="font-semibold mb-1">Strengths:</h4><p className="text-muted-foreground whitespace-pre-wrap">{result.strengths}</p></div>
                 <div className="p-4 rounded-md bg-muted"><h4 className="font-semibold mb-1">Areas for Improvement:</h4><p className="text-muted-foreground whitespace-pre-wrap">{result.areasForImprovement}</p></div>

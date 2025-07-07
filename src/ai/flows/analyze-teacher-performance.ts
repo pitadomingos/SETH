@@ -16,6 +16,7 @@ const AnalyzeTeacherPerformanceOutputSchema = z.object({
   strengths: z.string().describe("A bulleted list of specific strengths observed from the data (e.g., 'High pass rate in Class 10-A')."),
   areasForImprovement: z.string().describe("A bulleted list of areas that may need attention (e.g., 'Lower than expected average in Class 9-B')."),
   comparisonAnalysis: z.string().optional().describe('A brief analysis comparing the current results to the previous ones, noting progress or regression.'),
+  performanceScore: z.number().min(0).max(100).describe("A calculated performance score for the teacher from 0 to 100 based on student results."),
 });
 export type AnalyzeTeacherPerformanceOutput = z.infer<typeof AnalyzeTeacherPerformanceOutputSchema>;
 
@@ -64,6 +65,8 @@ Analyze the data to provide a balanced and constructive performance review.
 - Consider both the average grade and the passing rate. A high average with a low pass rate might indicate a wide gap in student understanding.
 
 Provide an overall assessment, followed by bulleted lists of specific strengths and potential areas for improvement. Your tone should be professional and supportive, intended to help the administrator have a constructive conversation with the teacher.
+
+Please also calculate a single 'performanceScore' from 0 to 100. A score of 100 represents a teacher whose students consistently achieve high average grades (e.g., >16/20) and high passing rates (>90%) across all classes. A score below 60 would indicate significant performance issues in one or more classes. Factor in both the average grade and passing rate in your calculation.
 
 {{#if previousAnalysis}}
 **Previous Analysis Comparison:**

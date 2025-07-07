@@ -41,6 +41,7 @@ const AnalyzeSchoolPerformanceOutputSchema = z.object({
   holisticAnalysis: z.string().describe("A comprehensive, multi-paragraph analysis covering academic, teacher, and financial performance. Identify strengths, weaknesses, and provide actionable recommendations."),
   keyMetrics: z.array(KeyMetricSchema).describe("An array of key performance indicators for charting."),
   comparisonAnalysis: z.string().optional().describe('A brief analysis comparing the current results to the previous ones, noting progress or regression.'),
+  performanceScore: z.number().min(0).max(100).describe("A calculated holistic performance score for the school from 0 to 100."),
 });
 export type AnalyzeSchoolPerformanceOutput = z.infer<typeof AnalyzeSchoolPerformanceOutputSchema>;
 
@@ -102,6 +103,8 @@ const prompt = ai.definePrompt({
     -   The school-wide average grade (out of 20).
     -   The overall pass rate (calculated as 100 minus the average of all subject failure rates).
     -   The fee collection rate (%).
+
+3.  **Performance Score:** Finally, calculate a single, holistic 'performanceScore' for the school from 0 to 100. Use the following weighting: Academics (overall average grade, subject failure rates) should account for 60% of the score, and Financial Health (fee collection rate) should account for 40%. A high score requires strong results in both areas.
 
 {{#if previousAnalysis}}
 **Previous Analysis Comparison:**
