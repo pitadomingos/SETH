@@ -68,7 +68,7 @@ export default function SystemDocumentationPage() {
               <p className="text-sm text-muted-foreground">Home to reusable React components, including UI elements from ShadCN and custom-built dashboard components.</p>
             </div>
              <div>
-              <h3 className="font-semibold flex items-center gap-2"><BrainCircuit /> <code>/src/ai/flows</code></h3>
+              <h3 className="font-semibold flex items-center gap-2"><BrainCircuit /> s<code>rc/ai/flows</code></h3>
               <p className="text-sm text-muted-foreground">Houses the Genkit flows and AI-related logic, including: <code>create-lesson-plan</code>, <code>generate-test</code>, <code>grade-student-test</code>, <code>analyze-schedule-conflicts</code>, <code>analyze-school-performance</code>, <code>identify-struggling-students</code>, and more.</p>
             </div>
              <div>
@@ -127,28 +127,28 @@ export default function SystemDocumentationPage() {
           </CardHeader>
           <CardContent className="space-y-4">
               <div className="flex items-start gap-3">
-                  <KeyRound className="h-5 w-5 text-amber-500 mt-1 shrink-0" />
+                  <KeyRound className="h-5 w-5 text-accent mt-1 shrink-0" />
                   <div>
                       <h4 className="font-semibold">1. Firebase Authentication</h4>
                       <p className="text-sm text-muted-foreground">Replace the mock login system with Firebase Authentication. Implement email/password sign-up and sign-in, and manage user sessions and roles securely.</p>
                   </div>
               </div>
               <div className="flex items-start gap-3">
-                  <Server className="h-5 w-5 text-amber-500 mt-1 shrink-0" />
+                  <Server className="h-5 w-5 text-accent mt-1 shrink-0" />
                   <div>
                       <h4 className="font-semibold">2. Firestore Database & Data Modeling</h4>
                       <p className="text-sm text-muted-foreground">Design and create Firestore collections for schools, users, students, grades, etc. Structure the data for efficient queries and scalability, replacing the <code>mock-data.ts</code> file.</p>
                   </div>
               </div>
                <div className="flex items-start gap-3">
-                  <UploadCloud className="h-5 w-5 text-amber-500 mt-1 shrink-0" />
+                  <UploadCloud className="h-5 w-5 text-accent mt-1 shrink-0" />
                   <div>
                       <h4 className="font-semibold">3. Cloud Storage & API Layer</h4>
                       <p className="text-sm text-muted-foreground">Implement Firebase Storage for file uploads (e.g., logos, expense receipts). Create a set of server-side functions (e.g., Server Actions) to handle all Create, Read, Update, and Delete (CRUD) operations with Firestore and Storage, governed by security rules.</p>
                   </div>
               </div>
               <div className="flex items-start gap-3">
-                  <Database className="h-5 w-5 text-amber-500 mt-1 shrink-0" />
+                  <Database className="h-5 w-5 text-accent mt-1 shrink-0" />
                   <div>
                       <h4 className="font-semibold">4. Data Fetching & Mutation</h4>
                       <p className="text-sm text-muted-foreground">Update the <code>SchoolDataProvider</code> to fetch data from the new API layer instead of local mock data. Wire up all forms and actions (e.g., adding a student, uploading a logo) to call the API for persistent changes.</p>

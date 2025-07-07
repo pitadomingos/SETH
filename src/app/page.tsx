@@ -27,8 +27,8 @@ export default function LoginPage() {
   
   if (isLoading || (!authIsLoading && role)) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 p-4">
-        {role && user && schoolProfile ? (
+      <main className="flex min-h-screen items-center justify-center bg-background p-4">
+        {role && user && (role !== 'GlobalAdmin' && schoolProfile) ? (
           <Card className="w-full max-w-md animate-in fade-in-50">
             <CardHeader className="items-center text-center">
               <div className="flex items-center gap-2">
@@ -64,7 +64,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 p-4">
+    <main className="flex min-h-screen items-center justify-center bg-background p-4">
       <LoginForm />
     </main>
   );

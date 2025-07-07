@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
@@ -479,4 +478,3 @@ export default function ParentDashboard() {
     </div>
   );
 }
-

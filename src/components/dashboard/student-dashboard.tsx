@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
@@ -188,7 +187,7 @@ function CompletionStatusContent({ student, hasPassed, areAllFeesPaid, grades, a
 
   if (!areAllFeesPaid) {
     return (
-      <p className="text-sm text-amber-600 dark:text-amber-500">
+      <p className="text-sm text-accent-foreground/80 bg-accent/20 p-3 rounded-md">
         You have an outstanding balance on your account. Please clear all pending fees to enable document previews and downloads.
       </p>
     );
@@ -365,7 +364,7 @@ export default function StudentDashboard() {
                     ) : !hasPassed ? (
                          <XCircle className="text-destructive"/>
                     ) : (
-                        <AlertTriangle className="text-amber-500" />
+                        <AlertTriangle className="text-accent" />
                     )}
                     Completion Documents
                 </CardTitle>

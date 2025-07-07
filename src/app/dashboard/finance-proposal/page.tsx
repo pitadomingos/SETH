@@ -101,7 +101,7 @@ export default function ProjectProposalPage() {
                 <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-muted-foreground">
                     <li><span className="font-semibold">Starter:</span> Core management features for emerging schools.</li>
                     <li><span className="font-semibold text-primary">Pro:</span> Adds advanced AI tools for established institutions.</li>
-                    <li><span className="font-semibold text-teal-600 dark:text-teal-400">Premium:</span> Multi-school management for districts and groups.</li>
+                    <li><span className="font-semibold text-accent">Premium:</span> Multi-school management for districts and groups.</li>
                 </ul>
              </div>
           </CardContent>
@@ -230,7 +230,3 @@ export default function ProjectProposalPage() {
     </div>
   );
 }
-
-    
-
-    

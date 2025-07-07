@@ -33,7 +33,7 @@ export function AppHeader() {
             ) : (
                 <GraduationCap className="h-6 w-6 text-primary" />
             )}
-            <h1 className="text-xl font-semibold font-headline">{schoolProfile?.name || 'EduManage'}</h1>
+            <h1 className="text-xl font-semibold">{schoolProfile?.name || 'EduManage'}</h1>
         </div>
       </div>
       <div className="flex items-center gap-4">
