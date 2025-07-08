@@ -20,15 +20,15 @@ export default function PremiumAdminDashboard() {
 
   const isLoading = authLoading || schoolLoading;
   
-  const managedSchoolIds = useMemo(() => {
-    if (!user || !user.groupId || !schoolGroups) return [];
-    return schoolGroups[user.groupId] || [];
+  const userGroupId = useMemo(() => {
+    if (!user || !user.schoolId || !schoolGroups) return null;
+    return Object.keys(schoolGroups).find(groupId => schoolGroups[groupId].includes(user.schoolId!));
   }, [user, schoolGroups]);
 
   const managedSchools = useMemo(() => {
-    if (!allSchoolData || managedSchoolIds.length === 0) return [];
-    return managedSchoolIds.map(id => allSchoolData[id]).filter(Boolean);
-  }, [allSchoolData, managedSchoolIds]);
+    if (!allSchoolData || !userGroupId || !schoolGroups[userGroupId]) return [];
+    return schoolGroups[userGroupId].map(id => allSchoolData[id]).filter(Boolean);
+  }, [allSchoolData, userGroupId, schoolGroups]);
 
   const summaryStats = useMemo(() => {
     const totalStudents = managedSchools.reduce((sum, school) => sum + school.students.length, 0);
@@ -55,14 +55,8 @@ export default function PremiumAdminDashboard() {
     }
   };
 
-  useEffect(() => {
-    if (!isLoading && role !== 'PremiumAdmin') {
-      router.push('/dashboard');
-    }
-  }, [role, isLoading, router]);
 
-
-  if (isLoading || role !== 'PremiumAdmin' || !allSchoolData) {
+  if (isLoading || !allSchoolData) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
@@ -73,7 +67,7 @@ export default function PremiumAdminDashboard() {
                 <h2 className="text-3xl font-bold tracking-tight">Group Dashboard</h2>
                 <p className="text-muted-foreground">Management overview for your school group.</p>
             </div>
-            <NewSchoolDialog groupId={user?.groupId} />
+            <NewSchoolDialog groupId={userGroupId || undefined} />
         </header>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

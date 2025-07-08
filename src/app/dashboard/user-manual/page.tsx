@@ -21,21 +21,12 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
       'To-Do List: View the project\'s development progress and upcoming features.',
     ],
   },
-  PremiumAdmin: {
-    icon: Gem,
-    title: 'School Group Administrator Guide',
-    points: [
-      'Group Dashboard: Get a high-level overview of all schools within your designated group.',
-      'Aggregate Statistics: View combined totals for students and teachers across your network.',
-      'Manage Individual Schools: Click the "Manage School" button for any school in your group. This will take you into that school\'s specific admin dashboard, allowing you to perform all standard administrative tasks for that institution.',
-      'Impersonation Flow: The "Manage School" feature uses an impersonation flow, giving you the exact same view and permissions as that school\'s local administrator.',
-    ],
-  },
   Admin: {
     icon: ShieldCheck,
     title: 'School Administrator Guide',
     points: [
         'Dashboard: Get a high-level overview of your school\'s statistics. You can also contact the developer from here.',
+        'Premium Dashboard: If your school has a Premium subscription, your dashboard shows a multi-school management view. You can see aggregate stats for your group, add new schools to it, and manage each school individually.',
         'AI Academic Reports: Access a suite of AI-powered reports, including a School-Wide Analysis, Class Performance breakdowns, a list of Struggling Students, and data-driven Teacher Performance reviews.',
         'School Profile: View and edit your school\'s core information like name, address, and contact details. Upload a school logo and manage your subscription plan.',
         'User Management: View student and teacher profiles. New teachers can be added, and students are enrolled automatically through Admissions.',

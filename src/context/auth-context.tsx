@@ -5,14 +5,13 @@ import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { schoolData } from '@/lib/mock-data';
 
-export type Role = 'GlobalAdmin' | 'PremiumAdmin' | 'Admin' | 'Teacher' | 'Student' | 'Parent';
+export type Role = 'GlobalAdmin' | 'Admin' | 'Teacher' | 'Student' | 'Parent';
 
 interface User {
   username: string;
   name: string;
   email: string;
   schoolId?: string;
-  groupId?: string;
 }
 
 interface LoginCredentials {
@@ -52,7 +51,6 @@ export const mockUsers: Record<string, { user: User, role: Role }> = {
   teacher3: { user: { username: 'teacher3', name: 'Mr. David Lee', email: 'd.lee@maplewood.edu', schoolId: 'maplewood' }, role: 'Teacher' },
   student3: { user: { username: 'student3', name: 'Chloe Dubois', email: 'c.dubois@maplewood.edu', schoolId: 'maplewood' }, role: 'Student' },
   student4: { user: { username: 'student4', name: 'William Miller', email: 'w.miller@edumanage.com', schoolId: 'northwood' }, role: 'Student' },
-  admin4: { user: { username: 'admin4', name: 'Richard Branson', email: 'r.branson@educorp.com', groupId: 'educorp' }, role: 'PremiumAdmin' },
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -105,7 +103,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let correctPassword = '';
     switch (creds.role) {
       case 'GlobalAdmin': correctPassword = 'dev123'; break;
-      case 'PremiumAdmin': correctPassword = 'admin123'; break;
       case 'Admin': correctPassword = 'admin123'; break;
       case 'Teacher': correctPassword = 'teacher123'; break;
       case 'Student': correctPassword = 'student123'; break;
@@ -146,8 +143,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const impersonateUser = async (username: string): Promise<LoginResult> => {
     const effectiveRole = originalRole || role;
-    if (effectiveRole !== 'GlobalAdmin' && effectiveRole !== 'PremiumAdmin') {
-        return { success: false, message: 'Only administrators can impersonate users.' };
+    if (effectiveRole !== 'GlobalAdmin') {
+        return { success: false, message: 'Only Global Administrators can impersonate users.' };
     }
 
     const userRecord = mockUsers[username.toLowerCase()];
@@ -193,7 +190,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setOriginalUser(null);
       setOriginalRole(null);
       
-      const dashboardPath = originalRole === 'PremiumAdmin' ? '/dashboard/premium-admin' : '/dashboard/global-admin';
+      const dashboardPath = '/dashboard/global-admin';
       router.push(dashboardPath);
     }
   };

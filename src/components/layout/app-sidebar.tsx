@@ -83,10 +83,6 @@ export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/system-documentation', label: 'System Docs', icon: FileText },
     { href: '/dashboard/todo-list', label: 'To-Do List', icon: ListTodo },
   ],
-  PremiumAdmin: [
-    { href: '/dashboard/premium-admin', label: 'Group Dashboard', icon: Gem },
-    { href: '/dashboard/profile', label: 'Profile', icon: User },
-  ],
   Admin: [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/school-profile', label: 'School Profile', icon: Building },
