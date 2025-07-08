@@ -40,7 +40,7 @@ export function AppHeader() {
         {originalUser && (
             <Button variant="outline" size="sm" onClick={revertToGlobalAdmin}>
                 <Globe className="mr-2 h-4 w-4" />
-                Return to Global Dashboard
+                Return to {originalUser.groupId ? 'Group' : 'Global'} Dashboard
             </Button>
         )}
         <ThemeToggle />
