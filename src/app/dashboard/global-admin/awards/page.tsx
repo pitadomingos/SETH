@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/context/auth-context';
@@ -11,7 +10,6 @@ import { useEffect, useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getGpaFromNumeric, formatCurrency } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
 
 const calculateAverageGpaForSchool = (grades) => {
     if (!grades || grades.length === 0) return 0;
@@ -23,7 +21,6 @@ export default function AwardsPage() {
   const { role, isLoading: authLoading } = useAuth();
   const { allSchoolData, isLoading: schoolLoading } = useSchoolData();
   const router = useRouter();
-  const { toast } = useToast();
 
   const isLoading = authLoading || schoolLoading;
 
@@ -94,10 +91,7 @@ export default function AwardsPage() {
   }
 
   const handleAnnounceWinners = () => {
-    toast({
-      title: 'Winners Announced!',
-      description: 'A notification has been sent to all schools celebrating the winners. (This is a simulated action)',
-    });
+    console.log("Announcing winners... (Functionality to be connected to backend)");
   };
 
   return (
