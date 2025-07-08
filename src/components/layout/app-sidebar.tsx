@@ -48,6 +48,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { type LucideIcon } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
+import { useMemo } from 'react';
 
 export interface NavLink {
     href: string;
@@ -73,7 +74,7 @@ const documentationLinks: NavLink[] = [
 export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
   GlobalAdmin: [
     { href: '/dashboard/global-admin', label: 'System Dashboard', icon: Globe },
-    { href: '/dashboard/global-admin/all-schools', label: 'All Schools', icon: Building },
+    { href: '/dashboard/manage-schools', label: 'All Schools', icon: Building },
     { href: '/dashboard/global-admin/students', label: 'All Students', icon: GraduationCap },
     { href: '/dashboard/global-admin/teachers', label: 'All Teachers', icon: Presentation },
     { href: '/dashboard/global-admin/parents', label: 'All Parents', icon: HeartHandshake },
@@ -126,14 +127,30 @@ export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
 };
 
 export function AppSidebar() {
-  const { role } = useAuth();
-  const { schoolProfile } = useSchoolData();
+  const { user, role } = useAuth();
+  const { schoolProfile, schoolGroups } = useSchoolData();
   const pathname = usePathname();
-  
+
+  const isPremiumAdmin = useMemo(() => {
+    if (role !== 'Admin' || !user?.schoolId || !schoolGroups) return false;
+    return Object.values(schoolGroups).some(group => group.includes(user.schoolId!));
+  }, [role, user, schoolGroups]);
+
   const getLinksForRole = () => {
     if (!role) return [];
-    return roleLinks[role] || [];
-  }
+    let links = [...(roleLinks[role] || [])];
+    
+    if (role === 'Admin' && isPremiumAdmin) {
+        const manageLink = { href: '/dashboard/manage-schools', label: 'Manage Schools', icon: Building };
+        const profileIndex = links.findIndex(l => l.href === '/dashboard/school-profile');
+        if (profileIndex !== -1) {
+            links.splice(profileIndex + 1, 0, manageLink);
+        } else {
+            links.unshift(manageLink);
+        }
+    }
+    return links;
+  };
 
   const allLinks = getLinksForRole();
 
