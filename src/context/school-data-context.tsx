@@ -206,7 +206,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     let schoolId: string | undefined;
 
-    if (role === 'GlobalAdmin' || role === 'PremiumAdmin') {
+    if (role === 'GlobalAdmin' || (role === 'Admin' && Object.values(schoolGroups).some(g => g.includes(user?.schoolId || '')))) {
       setSchoolProfile(null);
       const allLogs = Object.values(allSchoolData).flatMap(school => school.activityLogs || []);
       const allMessages = Object.values(allSchoolData).flatMap(school => school.messages || []);
@@ -309,7 +309,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         setSchoolProfile(null);
         setIsLoading(false);
     }
-  }, [user, role, allSchoolData]);
+  }, [user, role, allSchoolData, schoolGroups]);
 
   const addSchool = (data: NewSchoolData, groupId?: string) => {
     const schoolId = data.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15);
@@ -317,6 +317,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const newSchoolProfile: SchoolProfile = {
       id: schoolId,
       ...data,
+      tier: groupId ? 'Premium' : data.tier,
       logoUrl: 'https://placehold.co/100x100.png',
       gradingSystem: '20-Point',
       currency: 'USD',

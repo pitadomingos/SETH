@@ -71,20 +71,22 @@ export function NewSchoolDialog({ groupId }: { groupId?: string }) {
                 <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
             </div>
              <FormField control={form.control} name="motto" render={({ field }) => ( <FormItem><FormLabel>School Motto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="tier" render={({ field }) => ( 
-                <FormItem>
-                    <FormLabel>Subscription Tier</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select Tier" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                            <SelectItem value="Starter">Starter</SelectItem>
-                            <SelectItem value="Pro">Pro</SelectItem>
-                            <SelectItem value="Premium">Premium</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                </FormItem> 
-              )} />
+             {!groupId && (
+                <FormField control={form.control} name="tier" render={({ field }) => ( 
+                    <FormItem>
+                        <FormLabel>Subscription Tier</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select Tier" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="Starter">Starter</SelectItem>
+                                <SelectItem value="Pro">Pro</SelectItem>
+                                <SelectItem value="Premium">Premium</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem> 
+                )} />
+             )}
             <DialogFooter className="mt-4">
               <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
               <Button type="submit" disabled={form.formState.isSubmitting}>
