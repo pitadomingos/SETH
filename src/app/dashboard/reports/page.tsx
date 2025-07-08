@@ -19,6 +19,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '
 import { getLetterGrade } from '@/lib/utils';
 import { format as formatDate } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { FeatureLock } from '@/components/layout/feature-lock';
 
 
 // School-Wide Analysis Component
@@ -536,17 +537,28 @@ function TeacherPerformance() {
 }
 
 export default function ReportsPage() {
-  const { role, isLoading } = useAuth();
+  const { role, isLoading: authLoading } = useAuth();
+  const { schoolProfile, isLoading: schoolLoading } = useSchoolData();
   const router = useRouter();
+
+  const isLoading = authLoading || schoolLoading;
 
   useEffect(() => {
     if (!isLoading && role !== 'Admin') {
       router.push('/dashboard');
     }
   }, [role, isLoading, router]);
-
-  if (isLoading || role !== 'Admin') {
+  
+  if (isLoading) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+  
+  if (role !== 'Admin') {
+     return <div className="flex h-full items-center justify-center"><p>Access Denied</p></div>;
+  }
+
+  if (schoolProfile?.tier === 'Starter') {
+    return <FeatureLock featureName="AI Reports" />;
   }
   
   return (

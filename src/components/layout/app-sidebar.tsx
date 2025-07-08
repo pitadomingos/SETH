@@ -41,6 +41,7 @@ import {
     Briefcase,
     History,
     Mail,
+    Lock,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -84,6 +85,7 @@ export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
   Admin: [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/school-profile', label: 'School Profile', icon: Building },
+    { href: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
     { href: '/dashboard/students', label: 'Students', icon: GraduationCap },
     { href: '/dashboard/teachers', label: 'Teachers', icon: Presentation },
     { href: '/dashboard/classes', label: 'Classes', icon: School },
@@ -93,7 +95,6 @@ export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
     { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
     { href: '/dashboard/assets', label: 'Assets', icon: Package },
-    { href: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
     { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
     { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
     { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Award },
@@ -142,6 +143,10 @@ export function AppSidebar() {
   );
 
   const isSchoolSuspended = schoolProfile?.status && schoolProfile.status !== 'Active';
+  const schoolTier = schoolProfile?.tier;
+
+  const proFeaturesForAdmin = ['/dashboard/reports', '/dashboard/admissions'];
+  const proFeaturesForTeacher = ['/dashboard/lesson-planner', '/dashboard/ai-testing'];
 
   return (
     <>
@@ -157,15 +162,29 @@ export function AppSidebar() {
         <SidebarMenu>
           {uniqueLinks.map((link) => {
             const allowedWhenSuspended = ['/dashboard', '/dashboard/school-profile'];
-            const isLinkDisabled = role === 'Admin' && isSchoolSuspended && !allowedWhenSuspended.includes(link.href);
+            const isSuspendedAndLocked = role === 'Admin' && isSchoolSuspended && !allowedWhenSuspended.includes(link.href);
+
+            let isTierLocked = false;
+            if (schoolTier === 'Starter') {
+              if (role === 'Admin' && proFeaturesForAdmin.includes(link.href)) {
+                isTierLocked = true;
+              }
+              if (role === 'Teacher' && proFeaturesForTeacher.includes(link.href)) {
+                isTierLocked = true;
+              }
+            }
+
+            const isLinkDisabled = isSuspendedAndLocked || isTierLocked;
+            const tooltipContent = isTierLocked ? `${link.label} (Upgrade to Pro)` : link.label;
 
             return (
               <SidebarMenuItem key={link.href}>
                 <Link href={isLinkDisabled ? '#' : link.href} passHref style={isLinkDisabled ? { pointerEvents: 'none', cursor: 'not-allowed' } : {}}>
-                  <SidebarMenuButton asChild disabled={isLinkDisabled} isActive={pathname.startsWith(link.href) && (link.href !== '/dashboard' || pathname === '/dashboard')} tooltip={link.label}>
+                  <SidebarMenuButton asChild disabled={isLinkDisabled} isActive={pathname.startsWith(link.href) && (link.href !== '/dashboard' || pathname === '/dashboard')} tooltip={tooltipContent}>
                       <span>
                         <link.icon className="h-4 w-4" />
                         <span>{link.label}</span>
+                        {isTierLocked && <Lock className="ml-auto h-3 w-3" />}
                       </span>
                   </SidebarMenuButton>
                 </Link>

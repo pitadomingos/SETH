@@ -23,6 +23,7 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from '@/components/ui/chart';
+import { FeatureLock } from '@/components/layout/feature-lock';
 
 function ViewApplicationDialog({ application }: { application: Admission }) {
     return (
@@ -148,18 +149,28 @@ function ApplicantGenderChart({ admissions }) {
 
 export default function AdmissionsPage() {
   const { role, isLoading: authLoading } = useAuth();
-  const { admissionsData, updateApplicationStatus, addStudentFromAdmission } = useSchoolData();
+  const { admissionsData, updateApplicationStatus, addStudentFromAdmission, schoolProfile, isLoading: schoolLoading } = useSchoolData();
   const router = useRouter();
   const { toast } = useToast();
   
+  const isLoading = authLoading || schoolLoading;
+
   useEffect(() => {
-    if (!authLoading && role !== 'Admin') {
+    if (!isLoading && role !== 'Admin') {
       router.push('/dashboard');
     }
-  }, [role, authLoading, router]);
+  }, [role, isLoading, router]);
 
-  if (authLoading || role !== 'Admin') {
+  if (isLoading) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+  
+  if (role !== 'Admin') {
+    return <div className="flex h-full items-center justify-center"><p>Access Denied</p></div>;
+  }
+
+  if (schoolProfile?.tier === 'Starter') {
+    return <FeatureLock featureName="Admissions" />;
   }
 
   const handleStatusChange = (application: Admission, status: Admission['status']) => {

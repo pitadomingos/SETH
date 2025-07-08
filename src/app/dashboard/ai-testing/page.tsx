@@ -36,6 +36,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { FeatureLock } from '@/components/layout/feature-lock';
 
 
 const GenerateTestInputSchema = z.object({
@@ -267,16 +268,18 @@ export default function AiTestingPage() {
   const { role, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const { addSavedTest } = useSchoolData();
+  const { addSavedTest, schoolProfile, isLoading: schoolLoading } = useSchoolData();
   const [generatedTest, setGeneratedTest] = useState<GenerateTestOutput | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSubmission, setLastSubmission] = useState<GenerateTestFormValues | null>(null);
 
+  const isLoading = authLoading || schoolLoading;
+
   useEffect(() => {
-    if (!authLoading && role !== 'Teacher') {
+    if (!isLoading && role !== 'Teacher') {
       router.push('/dashboard');
     }
-  }, [role, authLoading, router]);
+  }, [role, isLoading, router]);
 
   const form = useForm<GenerateTestFormValues>({
     resolver: zodResolver(GenerateTestInputSchema),
@@ -287,6 +290,19 @@ export default function AiTestingPage() {
       numQuestions: 5,
     },
   });
+  
+  if (isLoading) {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+  
+  if (role !== 'Teacher') {
+     return <div className="flex h-full items-center justify-center"><p>Access Denied</p></div>;
+  }
+
+  if (schoolProfile?.tier === 'Starter') {
+    return <FeatureLock featureName="AI Test Generator" />;
+  }
+
 
   async function onSubmit(values: GenerateTestFormValues) {
     setIsSubmitting(true);
@@ -324,10 +340,6 @@ export default function AiTestingPage() {
       setGeneratedTest(null);
       setLastSubmission(null);
     }
-  }
-
-  if (authLoading || role !== 'Teacher') {
-    return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (

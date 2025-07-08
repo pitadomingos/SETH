@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -17,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { FeatureLock } from '@/components/layout/feature-lock';
 
 const formSchema = z.object({
   classId: z.string().min(1, { message: 'Please select a class.' }),
@@ -62,10 +64,11 @@ export default function LessonPlannerPage() {
   const { role, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const { classesData, teachersData, studentsData, grades, lessonPlans, addLessonPlan, isLoading: dataLoading } = useSchoolData();
+  const { classesData, teachersData, studentsData, grades, lessonPlans, addLessonPlan, schoolProfile, isLoading: dataLoading } = useSchoolData();
 
   const [generatedPlan, setGeneratedPlan] = useState<CreateLessonPlanOutput | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isLoading = authLoading || dataLoading;
 
   const teacherInfo = useMemo(() => {
     return teachersData.find(t => t.name === user?.name);
@@ -78,10 +81,10 @@ export default function LessonPlannerPage() {
 
 
   useEffect(() => {
-    if (!authLoading && role !== 'Teacher') {
+    if (!isLoading && role !== 'Teacher') {
       router.push('/dashboard');
     }
-  }, [role, authLoading, router]);
+  }, [role, isLoading, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -90,6 +93,18 @@ export default function LessonPlannerPage() {
       weeklySyllabus: '',
     },
   });
+  
+  if (isLoading) {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+  
+  if (role !== 'Teacher') {
+     return <div className="flex h-full items-center justify-center"><p>Access Denied</p></div>;
+  }
+
+  if (schoolProfile?.tier === 'Starter') {
+    return <FeatureLock featureName="AI Lesson Planner" />;
+  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!teacherInfo) {
@@ -152,10 +167,6 @@ export default function LessonPlannerPage() {
 
   function handlePrint() {
     window.print();
-  }
-
-  if (authLoading || dataLoading || role !== 'Teacher') {
-    return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (

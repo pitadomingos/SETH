@@ -22,7 +22,7 @@ import Image from 'next/image';
 
 // --- New Component for the Upgrade Dialog ---
 function UpgradePlanDialog() {
-  const { schoolProfile } = useSchoolData();
+  const { schoolProfile, updateSchoolProfile } = useSchoolData();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<'selection' | 'confirmation'>('selection');
@@ -36,9 +36,12 @@ function UpgradePlanDialog() {
 
   const handleConfirmUpgrade = () => {
     if (!selectedTier) return;
+    
+    updateSchoolProfile({ tier: selectedTier });
+    
     toast({
       title: 'Upgrade Successful!',
-      description: `Your school has been upgraded to the ${selectedTier} plan. Features are now available. (This is a demo feature)`,
+      description: `Your school has been upgraded to the ${selectedTier} plan. Features are now available.`,
     });
     // Reset state and close dialog
     setIsOpen(false);
