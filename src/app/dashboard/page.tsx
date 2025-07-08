@@ -15,18 +15,21 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && role === 'GlobalAdmin') {
-      router.replace('/dashboard/global-admin');
+    if (!isLoading) {
+      if (role === 'GlobalAdmin') {
+        router.replace('/dashboard/global-admin');
+      } else if (role === 'PremiumAdmin') {
+        router.replace('/dashboard/premium-admin');
+      }
     }
   }, [role, isLoading, router]);
 
-  if (isLoading || role === 'GlobalAdmin') {
+  if (isLoading || role === 'GlobalAdmin' || role === 'PremiumAdmin') {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   return (
     <div className="animate-in fade-in-50">
-      {role === 'PremiumAdmin' && <PremiumAdminDashboard />}
       {role === 'Admin' && <AdminDashboard />}
       {role === 'Teacher' && <TeacherDashboard />}
       {role === 'Student' && <StudentDashboard />}

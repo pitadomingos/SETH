@@ -4,12 +4,13 @@ import { useAuth, mockUsers } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Building, Users, Presentation, Settings, School } from 'lucide-react';
+import { Loader2, Building, Users, Presentation, Settings, School, PlusCircle } from 'lucide-react';
 import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
+import { NewSchoolDialog } from '@/components/global-admin/new-school-dialog';
 
 export default function PremiumAdminDashboard() {
   const { role, user, isLoading: authLoading, impersonateUser } = useAuth();
@@ -67,9 +68,12 @@ export default function PremiumAdminDashboard() {
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
-        <header>
-            <h2 className="text-3xl font-bold tracking-tight">Group Dashboard</h2>
-            <p className="text-muted-foreground">Management overview for your school group.</p>
+        <header className="flex flex-wrap gap-2 justify-between items-center">
+            <div>
+                <h2 className="text-3xl font-bold tracking-tight">Group Dashboard</h2>
+                <p className="text-muted-foreground">Management overview for your school group.</p>
+            </div>
+            <NewSchoolDialog groupId={user?.groupId} />
         </header>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -88,7 +88,7 @@ interface SchoolDataContextType {
   updateSchoolProfile: (data: Partial<SchoolProfile>) => void;
   allSchoolData: typeof initialSchoolData | null;
   schoolGroups: typeof initialSchoolGroups | null;
-  addSchool: (data: NewSchoolData) => void;
+  addSchool: (data: NewSchoolData, groupId?: string) => void;
   updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
   studentsData: Student[];
   addStudentFromAdmission: (admission: Admission) => void;
@@ -311,7 +311,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, role, allSchoolData]);
 
-  const addSchool = (data: NewSchoolData) => {
+  const addSchool = (data: NewSchoolData, groupId?: string) => {
     const schoolId = data.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15);
     
     const newSchoolProfile: SchoolProfile = {
@@ -337,7 +337,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         id: `LOG${schoolId}${Date.now()}`,
         timestamp: new Date(),
         schoolId: schoolId,
-        user: user?.name || 'Global Admin',
+        user: user?.name || 'System Admin',
         role: role || 'GlobalAdmin',
         action: 'Create',
         details: `Provisioned new school: ${data.name}.`
@@ -349,6 +349,18 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       ...prev,
       [schoolId]: newSchoolData,
     }));
+
+    if (groupId) {
+      setSchoolGroups(prev => {
+        const newGroups = { ...prev };
+        if (newGroups[groupId]) {
+          newGroups[groupId] = [...newGroups[groupId], schoolId];
+        } else {
+          newGroups[groupId] = [schoolId];
+        }
+        return newGroups;
+      });
+    }
     
     toast({
       title: 'School Created!',

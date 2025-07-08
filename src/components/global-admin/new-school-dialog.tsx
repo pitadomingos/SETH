@@ -24,7 +24,7 @@ const schoolSchema = z.object({
 });
 type SchoolFormValues = z.infer<typeof schoolSchema>;
 
-export function NewSchoolDialog() {
+export function NewSchoolDialog({ groupId }: { groupId?: string }) {
   const { addSchool } = useSchoolData();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -42,7 +42,7 @@ export function NewSchoolDialog() {
   });
 
   function onSubmit(values: SchoolFormValues) {
-    addSchool(values);
+    addSchool(values, groupId);
     form.reset();
     setIsOpen(false);
   }
@@ -56,7 +56,7 @@ export function NewSchoolDialog() {
         <DialogHeader>
           <DialogTitle>Provision New School</DialogTitle>
           <DialogDescription>
-            Enter the details to create a new school in the system. An admin account will be simulated.
+            Enter the details to create a new school. An admin account will be simulated.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
