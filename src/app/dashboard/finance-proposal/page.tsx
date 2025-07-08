@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database } from 'lucide-react';
 import { useEffect } from 'react';
+import { Separator } from '@/components/ui/separator';
 
 export default function ProjectProposalPage() {
   const { role, isLoading } = useAuth();
@@ -88,22 +89,58 @@ export default function ProjectProposalPage() {
 
        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Target /> Go-to-Market & Sustainable Monetization</CardTitle>
+            <CardTitle className="flex items-center gap-2"><Target /> Go-to-Market, Monetization & Partnerships</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-8 md:grid-cols-2">
-              <div>
-                <h3 className="font-semibold text-card-foreground">Phased Regional Rollout</h3>
-                <p className="text-sm text-muted-foreground">Our initial launch will target independent and semi-private schools in Mozambique. Success here will create a proven case study for expansion into neighboring countries like South Africa, Zimbabwe, and Botswana, adapting to local curricula and needs.</p>
-             </div>
-             <div>
-                <h3 className="font-semibold text-card-foreground">Flexible & Accessible Pricing</h3>
-                <p className="text-sm text-muted-foreground">Our business model is a B2B SaaS subscription sold directly to educational institutions. We use a tiered, annual per-student pricing model, billed to the school in their local currency. This ensures predictable revenue for us and makes the platform accessible for institutions of all sizes. Schools have the flexibility to absorb this operational cost or incorporate it into their tuition structures.</p>
-                <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-muted-foreground">
-                    <li><span className="font-semibold">Starter:</span> Core management features for emerging schools.</li>
-                    <li><span className="font-semibold text-primary">Pro:</span> Adds advanced AI tools for established institutions.</li>
-                    <li><span className="font-semibold text-accent">Premium:</span> Multi-school management for districts and groups.</li>
-                </ul>
-             </div>
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="text-xl font-semibold text-card-foreground mb-3">Sustainable Monetization Model</h3>
+              <p className="text-sm text-muted-foreground">Our business model is a B2B SaaS subscription sold directly to educational institutions. We use a tiered, annual per-student pricing model, billed to the school in their local currency. This ensures predictable revenue for us and makes the platform accessible for institutions of all sizes. Schools have the flexibility to absorb this operational cost or incorporate it into their tuition structures.</p>
+              <ul className="list-disc pl-5 mt-4 space-y-2 text-sm text-muted-foreground">
+                  <li><span className="font-semibold">Starter:</span> Core management features for emerging schools.</li>
+                  <li><span className="font-semibold text-primary">Pro:</span> Adds advanced AI tools for established institutions.</li>
+                  <li><span className="font-semibold text-accent">Premium:</span> Multi-school management for districts and groups.</li>
+              </ul>
+            </div>
+            
+            <Separator />
+            
+            <div>
+              <h3 className="text-xl font-semibold text-card-foreground mb-3">Sales & Marketing Strategy</h3>
+              <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
+                  <div>
+                      <h4 className="font-semibold">Phased Regional Rollout</h4>
+                      <p className="text-sm text-muted-foreground mt-1">Our initial launch will target independent and semi-private schools in Mozambique. Success here will create a proven case study for expansion into neighboring countries like South Africa, Zimbabwe, and Botswana, adapting to local curricula and needs.</p>
+                  </div>
+                  <div>
+                      <h4 className="font-semibold">Direct Sales & Pilot Programs</h4>
+                      <p className="text-sm text-muted-foreground mt-1">An agile local sales team will conduct on-site demos and build relationships. We will offer a limited number of schools a free or heavily discounted pilot program in exchange for feedback and testimonials to use as powerful case studies.</p>
+                  </div>
+                  <div>
+                      <h4 className="font-semibold">Digital Marketing</h4>
+                      <p className="text-sm text-muted-foreground mt-1">Launch targeted ad campaigns on platforms like LinkedIn and Facebook focusing on school administrators. Develop content marketing (blogs, whitepapers) around the benefits of EdTech to establish thought leadership.</p>
+                  </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div>
+              <h3 className="text-xl font-semibold text-card-foreground mb-3">Partnership & Ecosystem Building</h3>
+              <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
+                  <div>
+                      <h4 className="font-semibold">Technology Partners</h4>
+                      <p className="text-sm text-muted-foreground mt-1">Integrate with dominant regional mobile money providers (M-Pesa, eMola) and payment gateways to streamline fee collection. Partner with local hardware vendors to offer bundled deals on tablets.</p>
+                  </div>
+                  <div>
+                      <h4 className="font-semibold">Government & Associations</h4>
+                      <p className="text-sm text-muted-foreground mt-1">Engage with Ministries of Education and Private School Associations to gain endorsements and access to a wider network of potential clients.</p>
+                  </div>
+                   <div>
+                      <h4 className="font-semibold">Corporate Sponsorships</h4>
+                      <p className="text-sm text-muted-foreground mt-1">Secure sponsorships for the "EduManage Excellence Awards" from local and international companies looking to invest in the region's educational development, creating an additional revenue stream.</p>
+                  </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
