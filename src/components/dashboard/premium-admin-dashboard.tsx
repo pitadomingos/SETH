@@ -1,12 +1,11 @@
 
 'use client';
 import { useAuth, mockUsers } from '@/context/auth-context';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Building, Users, Presentation, Settings, School, PlusCircle } from 'lucide-react';
 import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
@@ -14,9 +13,8 @@ import { NewSchoolDialog } from '@/components/global-admin/new-school-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 export default function PremiumAdminDashboard() {
-  const { role, user, isLoading: authLoading, impersonateUser } = useAuth();
+  const { user, isLoading: authLoading, impersonateUser } = useAuth();
   const { allSchoolData, isLoading: schoolLoading, schoolGroups, updateSchoolStatus } = useSchoolData();
-  const router = useRouter();
   const { toast } = useToast();
 
   const isLoading = authLoading || schoolLoading;

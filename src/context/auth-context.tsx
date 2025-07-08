@@ -143,24 +143,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const impersonateUser = async (username: string): Promise<LoginResult> => {
-    const effectiveRole = originalRole || role;
-    const effectiveUser = originalUser || user;
+    const impersonator = originalUser || user;
+    const impersonatorRole = originalRole || role;
 
-    // A premium admin is an Admin whose schoolId is part of a group
+    if (!impersonator || !impersonatorRole) {
+      return { success: false, message: 'Could not identify the user initiating the action.' };
+    }
+
+    const targetUserRecord = mockUsers[username.toLowerCase()];
+    if (!targetUserRecord) {
+      return { success: false, message: 'User to impersonate not found.' };
+    }
+
     const isPremiumAdmin = 
-      effectiveRole === 'Admin' &&
-      effectiveUser?.schoolId &&
-      Object.values(schoolGroups).some(group => group.includes(effectiveUser.schoolId!));
+      impersonatorRole === 'Admin' &&
+      impersonator.schoolId &&
+      Object.values(schoolGroups).some(group => group.includes(impersonator.schoolId!));
 
-    if (effectiveRole !== 'GlobalAdmin' && !isPremiumAdmin) {
-      return { success: false, message: 'Only Global or Premium Administrators can impersonate users.' };
+    const canImpersonate = 
+      impersonatorRole === 'GlobalAdmin' || 
+      (isPremiumAdmin && 
+        targetUserRecord.user.schoolId && 
+        Object.values(schoolGroups).some(group => group.includes(targetUserRecord.user.schoolId!)));
+
+    if (!canImpersonate) {
+      return { success: false, message: 'You do not have permission to manage this user.' };
     }
-
-    const userRecord = mockUsers[username.toLowerCase()];
-    if (!userRecord) {
-        return { success: false, message: 'User not found.' };
-    }
-
+    
+    // If this is the first impersonation, save the original user state.
     if (!originalUser && user) {
         setOriginalUser(user);
         setOriginalRole(role);
@@ -170,18 +180,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } catch (e) { console.error("Local storage is not available."); }
     }
 
-    const { user: targetUser, role: targetRole } = userRecord;
+    const { user: targetUser, role: targetRole } = targetUserRecord;
     setUser(targetUser);
     setRole(targetRole);
     try {
         localStorage.setItem('user', JSON.stringify(targetUser));
         localStorage.setItem('userRole', targetRole);
-        router.push('/dashboard');
+        // We push instead of replace to allow the back button to work as expected
+        router.push('/dashboard'); 
     } catch (e) { console.error("Local storage is not available."); }
 
     return { success: true };
   };
-
 
   const revertImpersonation = () => {
     if (originalUser && originalRole) {

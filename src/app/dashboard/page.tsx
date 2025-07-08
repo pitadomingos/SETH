@@ -12,15 +12,17 @@ import { useSchoolData } from '@/context/school-data-context';
 import PremiumAdminDashboard from '@/components/dashboard/premium-admin-dashboard';
 
 export default function DashboardPage() {
-  const { role, user, isLoading } = useAuth();
-  const { schoolProfile, schoolGroups, isLoading: schoolDataIsLoading } = useSchoolData();
+  const { role, user, isLoading, originalUser } = useAuth();
+  const { schoolGroups, isLoading: schoolDataIsLoading } = useSchoolData();
   const router = useRouter();
 
   const isPremiumAdmin = useMemo(() => {
-    if (role !== 'Admin' || !user?.schoolId || !schoolGroups) return false;
-    // Check if the admin's schoolId is part of any group
+    // A user is a premium admin if their original role was Admin (not an impersonated one)
+    // and their school is part of any school group.
+    const effectiveRole = originalUser ? null : role; // Only consider the actual logged-in user, not impersonated ones
+    if (effectiveRole !== 'Admin' || !user?.schoolId || !schoolGroups) return false;
     return Object.values(schoolGroups).some(groupSchools => groupSchools.includes(user.schoolId!));
-  }, [role, user, schoolGroups]);
+  }, [role, user, schoolGroups, originalUser]);
 
 
   useEffect(() => {
