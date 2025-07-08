@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { schoolData } from '@/lib/mock-data';
+import { schoolData, schoolGroups } from '@/lib/mock-data';
 
 export type Role = 'GlobalAdmin' | 'Admin' | 'Teacher' | 'Student' | 'Parent';
 
@@ -29,11 +29,12 @@ interface AuthContextType {
   role: Role | null;
   user: User | null;
   originalUser: User | null;
+  originalRole: Role | null;
   login: (credentials: LoginCredentials) => Promise<LoginResult>;
   logout: () => void;
   isLoading: boolean;
   impersonateUser: (username: string) => Promise<LoginResult>;
-  revertToGlobalAdmin: () => void;
+  revertImpersonation: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -143,8 +144,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const impersonateUser = async (username: string): Promise<LoginResult> => {
     const effectiveRole = originalRole || role;
-    if (effectiveRole !== 'GlobalAdmin') {
-        return { success: false, message: 'Only Global Administrators can impersonate users.' };
+    const effectiveUser = originalUser || user;
+
+    // A premium admin is an Admin whose schoolId is part of a group
+    const isPremiumAdmin = 
+      effectiveRole === 'Admin' &&
+      effectiveUser?.schoolId &&
+      Object.values(schoolGroups).some(group => group.includes(effectiveUser.schoolId!));
+
+    if (effectiveRole !== 'GlobalAdmin' && !isPremiumAdmin) {
+      return { success: false, message: 'Only Global or Premium Administrators can impersonate users.' };
     }
 
     const userRecord = mockUsers[username.toLowerCase()];
@@ -174,7 +183,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
 
-  const revertToGlobalAdmin = () => {
+  const revertImpersonation = () => {
     if (originalUser && originalRole) {
       setUser(originalUser);
       setRole(originalRole);
@@ -190,13 +199,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setOriginalUser(null);
       setOriginalRole(null);
       
-      const dashboardPath = '/dashboard/global-admin';
-      router.push(dashboardPath);
+      router.push('/dashboard');
     }
   };
 
   return (
-    <AuthContext.Provider value={{ role, user, originalUser, login, logout, isLoading, impersonateUser, revertToGlobalAdmin }}>
+    <AuthContext.Provider value={{ role, user, originalUser, originalRole, login, logout, isLoading, impersonateUser, revertImpersonation }}>
       {children}
     </AuthContext.Provider>
   );

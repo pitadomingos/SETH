@@ -19,9 +19,19 @@ import { useSchoolData } from '@/context/school-data-context';
 import Image from 'next/image';
 
 export function AppHeader() {
-  const { user, logout, originalUser, revertToGlobalAdmin } = useAuth();
+  const { user, logout, originalUser, originalRole, revertImpersonation } = useAuth();
   const { schoolProfile } = useSchoolData();
   const initials = user?.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+  
+  const getRevertButtonText = () => {
+    if (originalRole === 'GlobalAdmin') {
+        return 'Return to Global Dashboard';
+    }
+    if (originalRole === 'Admin') {
+        return 'Return to Group Dashboard';
+    }
+    return 'Return to Main Dashboard';
+};
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
@@ -38,9 +48,9 @@ export function AppHeader() {
       </div>
       <div className="flex items-center gap-4">
         {originalUser && (
-            <Button variant="outline" size="sm" onClick={revertToGlobalAdmin}>
+            <Button variant="outline" size="sm" onClick={revertImpersonation}>
                 <Globe className="mr-2 h-4 w-4" />
-                Return to {originalUser.groupId ? 'Group' : 'Global'} Dashboard
+                {getRevertButtonText()}
             </Button>
         )}
         <ThemeToggle />
