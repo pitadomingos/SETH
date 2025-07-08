@@ -11,10 +11,11 @@ import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { NewSchoolDialog } from '@/components/global-admin/new-school-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 export default function PremiumAdminDashboard() {
   const { role, user, isLoading: authLoading, impersonateUser } = useAuth();
-  const { allSchoolData, isLoading: schoolLoading, schoolGroups } = useSchoolData();
+  const { allSchoolData, isLoading: schoolLoading, schoolGroups, updateSchoolStatus } = useSchoolData();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -52,6 +53,19 @@ export default function PremiumAdminDashboard() {
             title: "Operation Failed",
             description: `Could not find an administrator for this school.`,
         });
+    }
+  };
+
+  const handleStatusChange = (schoolId: string, status: SchoolProfile['status']) => {
+    updateSchoolStatus(schoolId, status);
+  };
+
+  const getStatusVariant = (status: SchoolProfile['status']) => {
+    switch (status) {
+      case 'Active': return 'secondary';
+      case 'Suspended': return 'default';
+      case 'Inactive': return 'destructive';
+      default: return 'outline';
     }
   };
 
@@ -122,7 +136,18 @@ export default function PremiumAdminDashboard() {
                                         <CardDescription>{school.profile.address}</CardDescription>
                                     </div>
                                 </div>
-                                <Badge variant="secondary">{school.profile.status}</Badge>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Badge variant={getStatusVariant(school.profile.status)} className="cursor-pointer">{school.profile.status}</Badge>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => handleStatusChange(school.profile.id, 'Active')}>Active</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleStatusChange(school.profile.id, 'Suspended')}>Suspended</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleStatusChange(school.profile.id, 'Inactive')}>Inactive</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-2">
