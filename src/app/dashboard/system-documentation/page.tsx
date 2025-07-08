@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -69,7 +70,7 @@ export default function SystemDocumentationPage() {
             </div>
              <div>
               <h3 className="font-semibold flex items-center gap-2"><BrainCircuit /> s<code>rc/ai/flows</code></h3>
-              <p className="text-sm text-muted-foreground">Houses the Genkit flows and AI-related logic, including: <code>create-lesson-plan</code>, <code>generate-test</code>, <code>grade-student-test</code>, <code>analyze-schedule-conflicts</code>, <code>analyze-school-performance</code>, <code>identify-struggling-students</code>, and more.</p>
+              <p className="text-sm text-muted-foreground">Houses the Genkit flows and AI-related logic, including: code>create-lesson-plan</code>, <code>generate-test</code>, <code>grade-student-test</code>, <code>analyze-schedule-conflicts</code>, <code>analyze-school-performance</code>, <code>identify-struggling-students</code>, and more.</p>
             </div>
              <div>
               <h3 className="font-semibold"><code>/src/context</code></h3>

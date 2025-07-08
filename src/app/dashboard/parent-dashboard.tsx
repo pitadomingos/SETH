@@ -230,7 +230,7 @@ function GradeDistribution({ grades }) {
   const chartConfig = {
     gpa: {
       label: 'GPA',
-      color: 'hsl(var(--chart-2))',
+      color: 'hsl(var(--chart-1))',
     },
   } satisfies ChartConfig;
 
