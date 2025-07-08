@@ -98,6 +98,10 @@ function DeployTestDialog({ test }: { test: SavedTest }) {
 
     const form = useForm<DeployTestFormValues>({
         resolver: zodResolver(deployTestSchema),
+        defaultValues: {
+            classId: '',
+            deadline: new Date(),
+        }
     });
 
     function onSubmit(values: DeployTestFormValues) {

@@ -42,6 +42,9 @@ function NewCourseDialog() {
   const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseSchema),
     defaultValues: {
+      subject: '',
+      teacherId: '',
+      classId: '',
       schedule: [{ day: 'Monday', startTime: '09:00', endTime: '10:00', room: '' }],
     },
   });

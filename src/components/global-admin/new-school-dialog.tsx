@@ -30,7 +30,15 @@ export function NewSchoolDialog() {
 
   const form = useForm<SchoolFormValues>({
     resolver: zodResolver(schoolSchema),
-    defaultValues: { tier: 'Starter' },
+    defaultValues: {
+      name: '',
+      head: '',
+      address: '',
+      phone: '',
+      email: '',
+      motto: '',
+      tier: 'Starter',
+    },
   });
 
   function onSubmit(values: SchoolFormValues) {

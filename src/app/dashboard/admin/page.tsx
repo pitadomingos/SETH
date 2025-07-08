@@ -85,8 +85,8 @@ export default function AdminPanelPage() {
     const boardForm = useForm<BoardFormValues>({ resolver: zodResolver(boardSchema), defaultValues: { name: '' } });
     const descriptionForm = useForm<DescriptionFormValues>({ resolver: zodResolver(descriptionSchema), defaultValues: { name: '' } });
     const audienceForm = useForm<AudienceFormValues>({ resolver: zodResolver(audienceSchema), defaultValues: { name: '' } });
-    const termForm = useForm<TermFormValues>({ resolver: zodResolver(termSchema) });
-    const holidayForm = useForm<HolidayFormValues>({ resolver: zodResolver(holidaySchema) });
+    const termForm = useForm<TermFormValues>({ resolver: zodResolver(termSchema), defaultValues: { name: '' } });
+    const holidayForm = useForm<HolidayFormValues>({ resolver: zodResolver(holidaySchema), defaultValues: { name: '' } });
 
     function onBoardSubmit(values: BoardFormValues) { addExamBoard(values.name); boardForm.reset(); setIsBoardDialogOpen(false); }
     function onDescriptionSubmit(values: DescriptionFormValues) { addFeeDescription(values.name); descriptionForm.reset(); setIsDescriptionDialogOpen(false); }

@@ -58,6 +58,11 @@ function NewTransactionDialog() {
 
   const form = useForm<NewTransactionFormValues>({
     resolver: zodResolver(newTransactionSchema),
+    defaultValues: {
+        studentId: '',
+        description: '',
+        totalAmount: 0,
+    }
   });
 
   function onSubmit(values: NewTransactionFormValues) {
@@ -202,6 +207,8 @@ function NewExpenseDialog() {
     defaultValues: {
       description: '',
       amount: 0,
+      category: '',
+      proofUrl: '',
     }
   });
 

@@ -41,7 +41,7 @@ function NewTeacherDialog() {
     
     const form = useForm<TeacherFormValues>({
         resolver: zodResolver(teacherSchema),
-        defaultValues: { name: '', subject: '', email: '', phone: '', address: '', experience: '', qualifications: '' }
+        defaultValues: { name: '', subject: '', email: '', phone: '', address: '', experience: '', qualifications: '', sex: 'Male' }
     });
 
     function onSubmit(values: TeacherFormValues) {
