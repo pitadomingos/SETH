@@ -150,7 +150,7 @@ export default function ProjectProposalPage() {
                 <CardDescription>Fostering a Culture of Excellence</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <p className="text-muted-foreground">To further drive engagement and celebrate success, we will establish the annual **EduManage Excellence Awards**. These awards will recognize top-performing schools, teachers, and students across the network, based on data-driven metrics from the platform's leaderboards.</p>
+                <p className="text-muted-foreground">To further drive engagement and celebrate success, we will establish the annual **EduManage Excellence Awards**. These awards will recognize top-performing schools, teachers, and students across the network, based on data-driven metrics pulled from the platform. The system owner can manage and announce these awards from a dedicated page in their dashboard.</p>
                 <p className="text-muted-foreground">This initiative creates a positive feedback loop, encouraging healthy competition and a focus on improvement. It also opens up a valuable revenue stream through **corporate sponsorships**, allowing local and international brands to align themselves with educational excellence in the region.</p>
             </CardContent>
         </Card>
