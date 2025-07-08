@@ -42,6 +42,7 @@ import {
     History,
     Mail,
     Lock,
+    Gem,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -81,6 +82,10 @@ export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/finance-proposal', label: 'Project Proposal', icon: Briefcase },
     { href: '/dashboard/system-documentation', label: 'System Docs', icon: FileText },
     { href: '/dashboard/todo-list', label: 'To-Do List', icon: ListTodo },
+  ],
+  PremiumAdmin: [
+    { href: '/dashboard/premium-admin', label: 'Group Dashboard', icon: Gem },
+    { href: '/dashboard/profile', label: 'Profile', icon: User },
   ],
   Admin: [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },

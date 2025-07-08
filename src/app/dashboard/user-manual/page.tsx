@@ -2,7 +2,7 @@
 'use client';
 import { useAuth, Role } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2, List } from 'lucide-react';
+import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2, List, Gem } from 'lucide-react';
 import { type LucideIcon } from 'lucide-react';
 import { roleLinks, type NavLink } from '@/components/layout/app-sidebar';
 
@@ -12,13 +12,23 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
     title: 'Developer / System Owner Guide',
     points: [
       'System Dashboard: Get a high-level overview of network-wide statistics and run AI-powered analyses across multiple schools.',
-      'All Schools Management: View all schools in the system. From here, you can manage a school\'s status (Active, Suspended) and switch context to manage a school directly using the "Log in as user" feature.',
+      'All Schools Management: View and provision all schools in the system. From here, you can manage a school\'s status (Active, Suspended) and switch context to manage a school directly using the "Log in as user" feature.',
       'Inbox: Receive, view, and track messages from School Administrators across the network.',
       'Global User Management: Access dedicated pages to view and manage every student and parent account across the entire network, including suspending access.',
       'Activity Logs: View a global feed of all significant actions taken by users across all schools for complete system oversight.',
       'Project Proposal: Review the high-level business and development proposal for EduManage.',
       'System Documentation: Access technical documentation about the application\'s architecture and technology stack.',
       'To-Do List: View the project\'s development progress and upcoming features.',
+    ],
+  },
+  PremiumAdmin: {
+    icon: Gem,
+    title: 'School Group Administrator Guide',
+    points: [
+      'Group Dashboard: Get a high-level overview of all schools within your designated group.',
+      'Aggregate Statistics: View combined totals for students and teachers across your network.',
+      'Manage Individual Schools: Click the "Manage School" button for any school in your group. This will take you into that school\'s specific admin dashboard, allowing you to perform all standard administrative tasks for that institution.',
+      'Impersonation Flow: The "Manage School" feature uses an impersonation flow, giving you the exact same view and permissions as that school\'s local administrator.',
     ],
   },
   Admin: {

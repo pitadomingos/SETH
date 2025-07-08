@@ -1,10 +1,10 @@
 
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { 
     schoolData as initialSchoolData, 
+    schoolGroups as initialSchoolGroups,
     FinanceRecord as InitialFinanceRecord, 
     Grade as InitialGrade, 
     Student, 
@@ -87,6 +87,7 @@ interface SchoolDataContextType {
   schoolProfile: SchoolProfile | null;
   updateSchoolProfile: (data: Partial<SchoolProfile>) => void;
   allSchoolData: typeof initialSchoolData | null;
+  schoolGroups: typeof initialSchoolGroups | null;
   addSchool: (data: NewSchoolData) => void;
   updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
   studentsData: Student[];
@@ -169,6 +170,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   const [allSchoolData, setAllSchoolData] = useState(() => JSON.parse(JSON.stringify(initialSchoolData)));
+  const [schoolGroups, setSchoolGroups] = useState(() => JSON.parse(JSON.stringify(initialSchoolGroups)));
   const [schoolProfile, setSchoolProfile] = useState<SchoolProfile | null>(null);
   const [financeData, setFinanceData] = useState<FinanceRecord[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
@@ -204,7 +206,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     let schoolId: string | undefined;
 
-    if (role === 'GlobalAdmin') {
+    if (role === 'GlobalAdmin' || role === 'PremiumAdmin') {
       setSchoolProfile(null);
       const allLogs = Object.values(allSchoolData).flatMap(school => school.activityLogs || []);
       const allMessages = Object.values(allSchoolData).flatMap(school => school.messages || []);
@@ -787,7 +789,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const value = {
     schoolProfile, updateSchoolProfile,
-    allSchoolData, addSchool, updateSchoolStatus,
+    allSchoolData, schoolGroups, addSchool, updateSchoolStatus,
     studentsData, addStudentFromAdmission, updateStudentStatus,
     teachersData, addTeacher, updateTeacher, updateTeacherStatus,
     classesData, addClass,

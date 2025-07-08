@@ -307,3 +307,7 @@ export const schoolData: Record<string, SchoolData> = {
     assignments: [ { id: 'MAP-A001', title: 'Essay on Renaissance Art', subject: 'History', grade: '9', dueDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(), status: 'pending' }, ],
   },
 };
+
+export const schoolGroups = {
+  educorp: ['maplewood']
+};

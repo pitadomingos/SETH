@@ -1,3 +1,4 @@
+
 'use client';
 import { useAuth } from '@/context/auth-context';
 import AdminDashboard from '@/components/dashboard/admin-dashboard';
@@ -7,6 +8,7 @@ import ParentDashboard from '@/components/dashboard/parent-dashboard';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import PremiumAdminDashboard from './premium-admin/page';
 
 export default function DashboardPage() {
   const { role, isLoading } = useAuth();
@@ -24,6 +26,7 @@ export default function DashboardPage() {
 
   return (
     <div className="animate-in fade-in-50">
+      {role === 'PremiumAdmin' && <PremiumAdminDashboard />}
       {role === 'Admin' && <AdminDashboard />}
       {role === 'Teacher' && <TeacherDashboard />}
       {role === 'Student' && <StudentDashboard />}
