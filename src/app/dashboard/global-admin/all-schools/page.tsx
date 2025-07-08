@@ -4,7 +4,7 @@ import { useAuth, mockUsers } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Building, Users, Presentation, Settings, Search } from 'lucide-react';
+import { Loader2, Building, Users, Presentation, Settings, Search, PlusCircle } from 'lucide-react';
 import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { NewSchoolDialog } from '@/components/global-admin/new-school-dialog';
 
 export default function AllSchoolsPage() {
   const { role, isLoading: authLoading, impersonateUser } = useAuth();
@@ -63,9 +64,12 @@ export default function AllSchoolsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
-      <header>
-        <h2 className="text-3xl font-bold tracking-tight">All Schools Management</h2>
-        <p className="text-muted-foreground">Oversee and manage all schools in the system.</p>
+      <header className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+            <h2 className="text-3xl font-bold tracking-tight">All Schools Management</h2>
+            <p className="text-muted-foreground">Oversee and manage all schools in the system.</p>
+        </div>
+        <NewSchoolDialog />
       </header>
 
        <div className="relative">

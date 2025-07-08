@@ -72,12 +72,22 @@ export interface NewMessageData {
   attachmentUrl?: string;
   attachmentName?: string;
 }
+export interface NewSchoolData {
+    name: string;
+    head: string;
+    address: string;
+    phone: string;
+    email: string;
+    motto?: string;
+    tier: 'Starter' | 'Pro' | 'Premium';
+}
 
 
 interface SchoolDataContextType {
   schoolProfile: SchoolProfile | null;
   updateSchoolProfile: (data: Partial<SchoolProfile>) => void;
   allSchoolData: typeof initialSchoolData | null;
+  addSchool: (data: NewSchoolData) => void;
   updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
   studentsData: Student[];
   addStudentFromAdmission: (admission: Admission) => void;
@@ -298,6 +308,52 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
     }
   }, [user, role, allSchoolData]);
+
+  const addSchool = (data: NewSchoolData) => {
+    const schoolId = data.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15);
+    
+    const newSchoolProfile: SchoolProfile = {
+      id: schoolId,
+      ...data,
+      logoUrl: 'https://placehold.co/100x100.png',
+      gradingSystem: '20-Point',
+      currency: 'USD',
+      status: 'Active',
+      gradeCapacity: { "1": 30, "2": 30, "3": 30, "4": 30, "5": 30, "6": 35, "7": 35, "8": 35, "9": 40, "10": 40, "11": 40, "12": 40 },
+    };
+
+    const newSchoolData = {
+      profile: newSchoolProfile,
+      students: [], teachers: [], classes: [], courses: [], lessonPlans: [],
+      savedTests: [], deployedTests: [], admissions: [], exams: [],
+      finance: [], assets: [], assignments: [], grades: [], attendance: [],
+      events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'],
+      audiences: ['All Students', 'Parents', 'Teachers'],
+      expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance'],
+      expenses: [], teams: [], competitions: [], terms: [], holidays: [],
+      activityLogs: [{
+        id: `LOG${schoolId}${Date.now()}`,
+        timestamp: new Date(),
+        schoolId: schoolId,
+        user: user?.name || 'Global Admin',
+        role: role || 'GlobalAdmin',
+        action: 'Create',
+        details: `Provisioned new school: ${data.name}.`
+      }],
+      messages: [], savedReports: [],
+    };
+
+    setAllSchoolData(prev => ({
+      ...prev,
+      [schoolId]: newSchoolData,
+    }));
+    
+    toast({
+      title: 'School Created!',
+      description: `School "${data.name}" has been added. The default admin username is 'admin_${schoolId}' with password 'admin123'. An email would be sent in production.`,
+      duration: 10000,
+    });
+  };
 
   const updateSchoolStatus = (schoolId: string, status: SchoolProfile['status']) => {
     setAllSchoolData(prevData => {
@@ -731,7 +787,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const value = {
     schoolProfile, updateSchoolProfile,
-    allSchoolData, updateSchoolStatus,
+    allSchoolData, addSchool, updateSchoolStatus,
     studentsData, addStudentFromAdmission, updateStudentStatus,
     teachersData, addTeacher, updateTeacher, updateTeacherStatus,
     classesData, addClass,
