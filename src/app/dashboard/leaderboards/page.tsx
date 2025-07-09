@@ -174,8 +174,8 @@ const IndividualRankingView = () => {
 
 
 export default function LeaderboardsPage() {
-    const { role } = useAuth();
-    const { studentsData, classesData, grades, schoolProfile } = useSchoolData();
+    const { role, user } = useAuth();
+    const { studentsData, classesData, grades, schoolProfile, coursesData, teachersData } = useSchoolData();
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
     const gradingSystem = schoolProfile?.gradingSystem;
@@ -184,6 +184,19 @@ export default function LeaderboardsPage() {
         ...student,
         averageScore: calculateAverageScore(student.id, grades),
     })).sort((a, b) => b.averageScore - a.averageScore), [studentsData, grades]);
+    
+    const teacherInfo = useMemo(() => {
+        if (role !== 'Teacher' || !user) return null;
+        return teachersData.find(t => t.email === user.email);
+    }, [role, user, teachersData]);
+
+    const teacherClasses = useMemo(() => {
+        if (!teacherInfo) return classesData; // Admins see all
+        const teacherCourseClassIds = coursesData
+            .filter(c => c.teacherId === teacherInfo.id)
+            .map(c => c.classId);
+        return classesData.filter(c => teacherCourseClassIds.includes(c.id));
+    }, [teacherInfo, classesData, coursesData]);
 
 
     const subjects = useMemo(() => [...new Set(grades.map(g => g.subject))], [grades]);
@@ -258,7 +271,7 @@ export default function LeaderboardsPage() {
                                         <SelectValue placeholder="Select a class" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {classesData.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                        {teacherClasses.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>

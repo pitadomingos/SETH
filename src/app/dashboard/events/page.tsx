@@ -128,7 +128,7 @@ function NewEventDialog() {
 }
 
 export default function EventsPage() {
-  const { events, studentsData } = useSchoolData();
+  const { events, studentsData, teachersData, coursesData, classesData } = useSchoolData();
   const { role, user } = useAuth();
   const [date, setDate] = React.useState<Date | undefined>(undefined);
   const eventDates = events.map(event => event.date);
@@ -137,6 +137,11 @@ export default function EventsPage() {
     if (role !== 'Student' || !user?.email) return null;
     return studentsData.find(s => s.email === user.email);
   }, [role, user, studentsData]);
+
+  const teacher = React.useMemo(() => {
+    if (role !== 'Teacher' || !user?.email) return null;
+    return teachersData.find(t => t.email === user.email);
+  }, [role, user, teachersData]);
 
   const displayedEvents = React.useMemo(() => {
     const sortedEvents = [...events].sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -166,6 +171,55 @@ export default function EventsPage() {
       });
     }
 
+    if (role === 'Teacher' && teacher) {
+        const teacherClassIds = coursesData.filter(c => c.teacherId === teacher.id).map(c => c.classId);
+        const teacherGrades = classesData.filter(c => teacherClassIds.includes(c.id)).map(c => parseInt(c.grade, 10));
+
+        filteredByRole = sortedEvents.filter(event => {
+            const audience = event.audience.toLowerCase();
+            if (audience.includes('teacher')) return true;
+            if (audience.includes('all staff')) return true;
+            if (audience.includes('whole school')) return true;
+
+            const gradeMatch = audience.match(/grade (\d+)/);
+            if (gradeMatch) {
+                const eventGrade = parseInt(gradeMatch[1], 10);
+                if (teacherGrades.includes(eventGrade)) return true;
+            }
+
+             const rangeMatch = audience.match(/grades (\d+)-(\d+)/);
+            if (rangeMatch) {
+                const min = parseInt(rangeMatch[1], 10);
+                const max = parseInt(rangeMatch[2], 10);
+                if (teacherGrades.some(g => g >= min && g <= max)) return true;
+            }
+            return false;
+        });
+    }
+
+    if (role === 'Parent' && user) {
+      const children = studentsData.filter(s => s.parentEmail === user.email);
+      const childrenGrades = [...new Set(children.map(c => parseInt(c.grade, 10)))];
+      
+      filteredByRole = sortedEvents.filter(event => {
+        const audience = event.audience.toLowerCase();
+        if (audience.includes('parent')) return true;
+        if (audience.includes('whole school')) return true;
+
+        if (childrenGrades.some(childGrade => audience.includes(`grade ${childGrade}`))) return true;
+        
+        const rangeMatch = audience.match(/grades (\d+)-(\d+)/);
+        if (rangeMatch) {
+            const min = parseInt(rangeMatch[1], 10);
+            const max = parseInt(rangeMatch[2], 10);
+            if (childrenGrades.some(g => g >= min && g <= max)) return true;
+        }
+
+        return false;
+      });
+    }
+
+
     if (date) {
       return filteredByRole.filter(e => e.date.toDateString() === date.toDateString());
     }
@@ -173,7 +227,7 @@ export default function EventsPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return filteredByRole.filter(e => e.date >= today);
-  }, [date, events, role, student]);
+  }, [date, events, role, user, student, teacher, studentsData, teachersData, coursesData, classesData]);
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
