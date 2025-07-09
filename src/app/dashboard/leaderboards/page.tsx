@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { useSchoolData } from '@/context/school-data-context';
 import { Award, Trophy, BookOpen } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import { schoolData } from '@/lib/mock-data';
 import { formatGradeDisplay } from '@/lib/utils';
 
 // --- Grade Calculation Helpers ---
@@ -69,12 +68,13 @@ const LeaderboardTable = ({ students, gradingSystem }) => {
 
 const IndividualRankingView = () => {
   const { role } = useAuth();
-  const { studentsData } = useSchoolData();
+  const { studentsData, allSchoolData } = useSchoolData();
 
   const allStudentsWithScoreBySchool = useMemo(() => {
+    if (!allSchoolData) return {};
     const data = {};
-    for (const schoolId in schoolData) {
-      const school = schoolData[schoolId];
+    for (const schoolId in allSchoolData) {
+      const school = allSchoolData[schoolId];
       data[schoolId] = {
         students: school.students.map(student => ({
           ...student,
@@ -84,15 +84,17 @@ const IndividualRankingView = () => {
       };
     }
     return data;
-  }, []);
+  }, [allSchoolData]);
 
   const getRank = (studentId, rankedList) => {
+    if (!rankedList) return { rank: 0, total: 0 };
     const rank = rankedList.findIndex(s => s.id === studentId) + 1;
     return { rank, total: rankedList.length };
   };
 
   const getSubjectRanks = (student, schoolId) => {
-      const schoolGrades = schoolData[schoolId]?.grades || [];
+      if (!allSchoolData || !allSchoolData[schoolId]) return [];
+      const schoolGrades = allSchoolData[schoolId]?.grades || [];
       const studentSubjects = [...new Set(schoolGrades.filter(g => g.studentId === student.id).map(g => g.subject))];
 
       return studentSubjects.map(subject => {
@@ -123,12 +125,12 @@ const IndividualRankingView = () => {
       </header>
       <div className="space-y-6">
         {studentsData.map(child => {
-          const schoolRanks = allStudentsWithScoreBySchool[child.schoolId]?.students || [];
+          const schoolRanks = allStudentsWithScoreBySchool[child.schoolId!]?.students || [];
           const classRanks = schoolRanks.filter(s => s.grade === child.grade && s.class === child.class);
           
           const overallRank = getRank(child.id, schoolRanks);
           const classRank = getRank(child.id, classRanks);
-          const subjectRanks = getSubjectRanks(child, child.schoolId);
+          const subjectRanks = getSubjectRanks(child, child.schoolId!);
 
           return (
             <Card key={child.id}>
@@ -178,17 +180,13 @@ export default function LeaderboardsPage() {
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
     const gradingSystem = schoolProfile?.gradingSystem;
 
-    if (role === 'Parent' || role === 'Student') {
-        return <IndividualRankingView />;
-    }
-
     const allStudentsWithScore = useMemo(() => studentsData.map(student => ({
         ...student,
         averageScore: calculateAverageScore(student.id, grades),
     })).sort((a, b) => b.averageScore - a.averageScore), [studentsData, grades]);
 
 
-    const subjects = [...new Set(grades.map(g => g.subject))];
+    const subjects = useMemo(() => [...new Set(grades.map(g => g.subject))], [grades]);
 
     const topStudentsInClass = useMemo(() => {
         if (!selectedClass) return [];
@@ -219,6 +217,9 @@ export default function LeaderboardsPage() {
         return rankedStudents;
     }, [selectedSubject, grades, studentsData]);
 
+    if (role === 'Parent' || role === 'Student') {
+        return <IndividualRankingView />;
+    }
 
     return (
         <div className="space-y-6 animate-in fade-in-50">
