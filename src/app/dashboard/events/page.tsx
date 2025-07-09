@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
@@ -127,22 +128,52 @@ function NewEventDialog() {
 }
 
 export default function EventsPage() {
-  const { events } = useSchoolData();
-  const { role } = useAuth();
+  const { events, studentsData } = useSchoolData();
+  const { role, user } = useAuth();
   const [date, setDate] = React.useState<Date | undefined>(undefined);
   const eventDates = events.map(event => event.date);
 
+  const student = React.useMemo(() => {
+    if (role !== 'Student' || !user?.email) return null;
+    return studentsData.find(s => s.email === user.email);
+  }, [role, user, studentsData]);
+
   const displayedEvents = React.useMemo(() => {
     const sortedEvents = [...events].sort((a, b) => a.date.getTime() - b.date.getTime());
+    
+    let filteredByRole = sortedEvents;
+
+    if (role === 'Student' && student) {
+      filteredByRole = sortedEvents.filter(event => {
+        const audience = event.audience.toLowerCase();
+        const studentGrade = parseInt(student.grade, 10);
+        if (audience.includes('all student')) return true;
+        if (audience.includes('whole school')) return true;
+        
+        if (audience.includes('grades')) {
+            const matches = audience.match(/(\d+)-(\d+)/);
+            if (matches) {
+                const min = parseInt(matches[1], 10);
+                const max = parseInt(matches[2], 10);
+                if (!isNaN(min) && !isNaN(max) && studentGrade >= min && studentGrade <= max) {
+                    return true;
+                }
+            }
+        }
+        if (audience.includes(`grade ${student.grade}`)) return true;
+
+        return false;
+      });
+    }
 
     if (date) {
-      return sortedEvents.filter(e => e.date.toDateString() === date.toDateString());
+      return filteredByRole.filter(e => e.date.toDateString() === date.toDateString());
     }
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return sortedEvents.filter(e => e.date >= today);
-  }, [date, events]);
+    return filteredByRole.filter(e => e.date >= today);
+  }, [date, events, role, student]);
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
