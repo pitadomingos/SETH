@@ -44,19 +44,12 @@ const applicationSchema = z.object({
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 function NewApplicationDialog() {
-  const { addAdmission, allSchoolData } from useSchoolData();
+  const { addAdmission, allSchoolData } = useSchoolData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema),
-    defaultValues: {
-      schoolId: '',
-      name: '',
-      appliedFor: '',
-      formerSchool: '',
-      gradesSummary: '',
-    }
   });
 
   const selectedSchoolId = form.watch('schoolId');
@@ -331,7 +324,7 @@ const getStatusInfo = (fee) => {
 
 export default function ParentDashboard() {
   const { user } = useAuth();
-  const { studentsData, grades, attendance, financeData, schoolProfile, isLoading: schoolDataLoading } = useSchoolData();
+  const { allSchoolData, studentsData, grades, attendance, financeData, isLoading: schoolDataLoading } = useSchoolData();
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -342,11 +335,9 @@ export default function ParentDashboard() {
 
   const selectedChild = useMemo(() => studentsData.find(c => c.id === selectedChildId), [selectedChildId, studentsData]);
   const selectedChildSchoolProfile = useMemo(() => {
-    if (!selectedChild?.schoolId) return schoolProfile;
-    // In a real app with better data structure, we'd fetch the specific school profile.
-    // Here we find it from the context if needed, defaulting to the general one.
-    return schoolProfile; // Simplification for mock data
-  }, [selectedChild, schoolProfile]);
+    if (!selectedChild?.schoolId || !allSchoolData) return null;
+    return allSchoolData[selectedChild.schoolId]?.profile;
+  }, [selectedChild, allSchoolData]);
 
   const childGrades = useMemo(() => {
     if (!selectedChildId) return [];

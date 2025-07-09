@@ -178,6 +178,11 @@ export default function LeaderboardsPage() {
     const { studentsData, classesData, grades, schoolProfile, coursesData, teachersData } = useSchoolData();
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+    
+    if (role === 'Parent' || role === 'Student') {
+        return <IndividualRankingView />;
+    }
+    
     const gradingSystem = schoolProfile?.gradingSystem;
 
     const allStudentsWithScore = useMemo(() => studentsData.map(student => ({
@@ -229,10 +234,6 @@ export default function LeaderboardsPage() {
 
         return rankedStudents;
     }, [selectedSubject, grades, studentsData]);
-
-    if (role === 'Parent' || role === 'Student') {
-        return <IndividualRankingView />;
-    }
 
     return (
         <div className="space-y-6 animate-in fade-in-50">
