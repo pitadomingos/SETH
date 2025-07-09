@@ -100,8 +100,6 @@ export default function SchedulePage() {
 
   const isLoading = authLoading || dataLoading;
   
-  const studentIdMap = { student1: 'S001', student2: 'S101', student3: 'S201', student4: 'S010', };
-
   const userCourses = useMemo(() => {
     if (!user || isLoading) return [];
     
@@ -112,9 +110,8 @@ export default function SchedulePage() {
     }
 
     if (role === 'Student') {
-      const studentId = user.username ? studentIdMap[user.username] : null;
-      if (!studentId) return [];
-      const studentInfo = studentsData.find(s => s.id === studentId);
+      if (!user?.email) return [];
+      const studentInfo = studentsData.find(s => s.email === user.email);
       if (!studentInfo) return [];
       const studentClass = classesData.find(c => c.grade === studentInfo.grade && c.name.split('-')[1].trim() === studentInfo.class);
       if (!studentClass) return [];
