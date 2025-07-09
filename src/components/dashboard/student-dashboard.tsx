@@ -280,21 +280,12 @@ export default function StudentDashboard() {
     classesData,
   } = useSchoolData();
   
-  const studentIdMap = {
-    student1: 'S001',
-    student2: 'S101',
-    student3: 'S201',
-    student4: 'S010',
-  };
-  const studentId = useMemo(() => {
-    if (!user) return null;
-    return studentIdMap[user.username] || null;
-  }, [user]);
-
   const student = useMemo(() => {
-    if (!studentId) return null;
-    return studentsData.find(s => s.id === studentId);
-  }, [studentsData, studentId]);
+    if (!user?.email) return null;
+    return studentsData.find(s => s.email === user.email);
+  }, [studentsData, user]);
+
+  const studentId = student?.id;
 
   const studentClass = useMemo(() => {
     if (!student) return null;

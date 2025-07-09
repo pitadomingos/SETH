@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,12 +13,12 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Sparkles, FlaskConical, ChevronRight, Save, History, BookOpen, Trash2, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader2, Sparkles, FlaskConical, ChevronRight, Save, History, BookOpen, Trash2, Calendar as CalendarIcon, FileCheck, BrainCircuit } from 'lucide-react';
 import { generateTest, type GenerateTestOutput } from '@/ai/flows/generate-test';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { useSchoolData, NewSavedTest, SavedTest, NewDeployedTestData } from '@/context/school-data-context';
+import { useSchoolData, NewSavedTest, SavedTest, NewDeployedTestData, DeployedTest } from '@/context/school-data-context';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose, DialogFooter } from '@/components/ui/dialog';
@@ -37,6 +37,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { FeatureLock } from '@/components/layout/feature-lock';
+import { analyzeTestResults, AnalyzeTestResultsOutput } from '@/ai/flows/analyze-test-results';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { formatGradeDisplay } from '@/lib/utils';
 
 
 const GenerateTestInputSchema = z.object({
@@ -201,9 +204,147 @@ function DeleteTestDialog({ test, onDelete }: { test: SavedTest; onDelete: (test
   );
 }
 
+function ViewResultsDialog({ deployment, test }: { deployment: DeployedTest; test: SavedTest; }) {
+  const { studentsData, schoolProfile } = useSchoolData();
+  const [isOpen, setIsOpen] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<AnalyzeTestResultsOutput | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleRunAnalysis = async () => {
+    setIsLoading(true);
+    setAnalysisResult(null);
+    try {
+      const submissions = deployment.submissions.map(sub => {
+        const student = studentsData.find(s => s.id === sub.studentId);
+        return {
+          studentId: sub.studentId,
+          studentName: student?.name || 'Unknown Student',
+          score: sub.score,
+          answers: sub.answers,
+        };
+      });
+
+      const result = await analyzeTestResults({
+        testTopic: test.topic,
+        questions: test.questions,
+        submissions,
+      });
+      setAnalysisResult(result);
+    } catch (e) {
+      console.error(e);
+      toast({
+        variant: 'destructive',
+        title: 'Analysis Failed',
+        description: 'Could not run the results analysis. Please try again later.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onOpenChange = (open: boolean) => {
+    if (!open) {
+      setAnalysisResult(null);
+      setIsLoading(false);
+    }
+    setIsOpen(open);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline"><FileCheck className="mr-2 h-4 w-4" /> View Results</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>Results for "{test.topic}"</DialogTitle>
+          <DialogDescription>Submissions and AI-powered analysis for this test deployment.</DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 max-h-[70vh] overflow-y-auto pr-4">
+          <div>
+            <h4 className="font-semibold mb-2">Student Submissions</h4>
+            {deployment.submissions.length > 0 ? (
+              <Table>
+                <TableHeader><TableRow><TableHead>Student</TableHead><TableHead className="text-right">Score</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {deployment.submissions.map(sub => {
+                    const student = studentsData.find(s => s.id === sub.studentId);
+                    return (
+                      <TableRow key={sub.studentId}>
+                        <TableCell>{student?.name || 'Unknown'}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="secondary">{formatGradeDisplay(sub.score, schoolProfile?.gradingSystem)}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            ) : <p className="text-sm text-muted-foreground text-center py-4">No submissions yet.</p>}
+          </div>
+          <div>
+            <h4 className="font-semibold mb-2 flex items-center gap-2"><BrainCircuit /> AI Analysis</h4>
+            <div className="p-4 border rounded-lg min-h-[20rem]">
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                  <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" />
+                  <p>Analyzing submissions...</p>
+                </div>
+              ) : analysisResult ? (
+                <div className="space-y-4">
+                  <div>
+                    <h5 className="font-semibold text-sm">Overall Summary</h5>
+                    <p className="text-sm text-muted-foreground">{analysisResult.overallSummary}</p>
+                  </div>
+                  {analysisResult.strugglingStudents.length > 0 && (
+                    <div>
+                      <h5 className="font-semibold text-sm mt-4">Revision Advice for Struggling Students</h5>
+                      <Accordion type="single" collapsible className="w-full">
+                        {analysisResult.strugglingStudents.map(s => (
+                          <AccordionItem key={s.studentId} value={s.studentId}>
+                            <AccordionTrigger>{s.studentName} ({formatGradeDisplay(s.score, schoolProfile?.gradingSystem)})</AccordionTrigger>
+                            <AccordionContent className="space-y-2">
+                              {s.revisionSuggestions.map((suggestion, i) => (
+                                <div key={i} className="text-xs p-2 bg-muted rounded-md">
+                                  <p className="font-semibold">{suggestion.topic}</p>
+                                  <p className="text-muted-foreground">{suggestion.reasoning}</p>
+                                </div>
+                              ))}
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                    </div>
+                  )}
+                  {analysisResult.strugglingStudents.length === 0 && (
+                     <p className="text-sm text-green-600 font-medium text-center py-6">Great news! No students were identified as struggling in this test.</p>
+                  )}
+                </div>
+              ) : (
+                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                    <p className="text-center">Click the button below to run the analysis.</p>
+                 </div>
+              )}
+            </div>
+            {!analysisResult && (
+              <Button onClick={handleRunAnalysis} disabled={isLoading || deployment.submissions.length === 0} className="mt-4 w-full">
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                Analyze Results
+              </Button>
+            )}
+          </div>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild><Button type="button">Close</Button></DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 function SavedTestsList() {
-    const { savedTests, deleteSavedTest } = useSchoolData();
+    const { savedTests, deleteSavedTest, deployedTests, classesData } = useSchoolData();
 
     if (savedTests.length === 0) {
         return (
@@ -222,45 +363,52 @@ function SavedTestsList() {
     return (
         <Card className="mt-8">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><History /> Saved Tests</CardTitle>
-                <CardDescription>Review your saved tests and deploy them to your classes.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><History /> Saved & Deployed Tests</CardTitle>
+                <CardDescription>Review your saved tests, deploy them to classes, and analyze the results.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Accordion type="single" collapsible className="w-full">
-                {savedTests.map((test) => (
-                    <AccordionItem value={test.id} key={test.id}>
-                    <AccordionTrigger>
-                        <div>
-                            <p className="font-semibold text-left">{test.topic}</p>
-                            <p className="text-sm text-muted-foreground text-left">{test.subject} - {test.gradeLevel} ({format(test.createdAt, 'PPP')})</p>
-                        </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-6 p-4">
-                        <div className="space-y-6">
-                         {test.questions.map((q, index) => (
-                            <div key={index} className="space-y-3 text-sm">
-                                <p className="font-semibold">{index + 1}. {q.questionText}</p>
-                                <RadioGroup value={q.correctAnswer} disabled>
-                                {q.options.map((option, optionIndex) => (
-                                    <div key={optionIndex} className="flex items-center space-x-2">
-                                        <RadioGroupItem value={option} id={`saved-${test.id}-${index}-${optionIndex}`} />
-                                        <Label htmlFor={`saved-${test.id}-${index}-${optionIndex}`} className={option === q.correctAnswer ? 'text-primary font-bold' : ''}>
-                                            {option}
-                                        </Label>
-                                    </div>
-                                ))}
-                                </RadioGroup>
-                                <p className="text-xs text-muted-foreground">Correct Answer: <span className="font-medium">{q.correctAnswer}</span></p>
+                {savedTests.map((test) => {
+                    const deployments = deployedTests.filter(dt => dt.testId === test.id);
+                    return (
+                        <AccordionItem value={test.id} key={test.id}>
+                        <AccordionTrigger>
+                            <div>
+                                <p className="font-semibold text-left">{test.topic}</p>
+                                <p className="text-sm text-muted-foreground text-left">{test.subject} - {test.gradeLevel} ({format(test.createdAt, 'PPP')})</p>
                             </div>
-                        ))}
-                        </div>
-                        <div className="flex justify-end gap-2 mt-4">
-                             <DeleteTestDialog test={test} onDelete={deleteSavedTest} />
-                             <DeployTestDialog test={test} />
-                        </div>
-                    </AccordionContent>
-                    </AccordionItem>
-                ))}
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-6 p-4">
+                           <div>
+                                <h4 className="font-semibold mb-2">Deployments</h4>
+                                {deployments.length > 0 ? (
+                                <div className="space-y-2">
+                                {deployments.map(dep => {
+                                    const className = classesData.find(c => c.id === dep.classId)?.name || 'N/A';
+                                    return (
+                                        <div key={dep.id} className="flex justify-between items-center bg-muted p-2 rounded-md">
+                                            <div>
+                                                <p className="font-medium">{className}</p>
+                                                <p className="text-xs text-muted-foreground">Due: {format(dep.deadline, 'PPP')}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Badge>{dep.submissions.length} Submissions</Badge>
+                                                <ViewResultsDialog deployment={dep} test={test} />
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                                </div>
+                                ) : <p className="text-sm text-muted-foreground">This test has not been deployed yet.</p>}
+                           </div>
+                           <div className="flex justify-end gap-2 mt-4">
+                                <DeleteTestDialog test={test} onDelete={deleteSavedTest} />
+                                <DeployTestDialog test={test} />
+                           </div>
+                        </AccordionContent>
+                        </AccordionItem>
+                    );
+                })}
                 </Accordion>
             </CardContent>
         </Card>

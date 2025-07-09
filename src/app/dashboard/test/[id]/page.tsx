@@ -22,7 +22,7 @@ export default function TakeTestPage() {
     const { toast } = useToast();
     const { user } = useAuth();
     const deployedTestId = params.id as string;
-    const { deployedTests, savedTests, isLoading: dataIsLoading } = useSchoolData();
+    const { deployedTests, savedTests, studentsData, isLoading: dataIsLoading } = useSchoolData();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [result, setResult] = useState<GradeStudentTestOutput | null>(null);
@@ -32,22 +32,13 @@ export default function TakeTestPage() {
         const ti = dt ? savedTests.find(s => s.id === dt.testId) : undefined;
         return { deployedTest: dt, testInfo: ti };
     }, [deployedTests, savedTests, deployedTestId]);
+    
+    const studentId = useMemo(() => studentsData.find(s => s.email === user?.email)?.id, [studentsData, user]);
 
     const form = useForm();
     const { control, handleSubmit } = form;
 
     async function onSubmit(data: Record<string, string>) {
-        if (!user || !user.email) return;
-
-        // Find the student's ID from mock users based on email
-        const studentIdMapByEmail = {
-            'e.rodriguez@edumanage.com': 'S001',
-            'b.carter@oakridge.com': 'S101',
-            'c.dubois@maplewood.com': 'S201',
-            'w.miller@edumanage.com': 'S010',
-        };
-        const studentId = studentIdMapByEmail[user.email];
-
         if (!studentId) {
             toast({ variant: 'destructive', title: "Error", description: "Could not identify student."});
             return;
