@@ -34,9 +34,9 @@ const messageSchema = z.object({
 type MessageFormValues = z.infer<typeof messageSchema>;
 
 function ContactAdminDialog() {
-  const { addMessage, user } = useAuth();
-  const { teachersData, schoolProfile } = useSchoolData();
+  const { addMessage } = useSchoolData();
   const [isOpen, setIsOpen] = useState(false);
+  const { schoolProfile, teachersData } = useSchoolData();
 
   const form = useForm<MessageFormValues>({
     resolver: zodResolver(messageSchema),
@@ -98,7 +98,7 @@ function UpcomingDeadlinesChart({ teacherCourses }) {
   const nextWeek = Array.from({ length: 7 }, (_, i) => addDays(today, i));
 
   const relevantEvents = useMemo(() => {
-    if (!teacherCourses) return [];
+    if (!teacherCourses || teacherCourses.length === 0) return [];
     
     const teacherClassGrades = [...new Set(teacherCourses.map(c => c.grade))];
     const audienceSubstrings = ['all student', 'whole school', ...teacherClassGrades.map(g => `grade ${g}`)];
@@ -109,6 +109,7 @@ function UpcomingDeadlinesChart({ teacherCourses }) {
   }, [events, teacherCourses]);
 
   const relevantTests = useMemo(() => {
+    if (!teacherCourses || teacherCourses.length === 0) return [];
     const teacherClassIds = teacherCourses.map(c => c.classId);
     return deployedTests.filter(dt => teacherClassIds.includes(dt.classId));
   }, [deployedTests, teacherCourses]);
@@ -154,7 +155,7 @@ function UpcomingDeadlinesChart({ teacherCourses }) {
 function AIClassPerformanceAnalyzer() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { classesData, teachersData, studentsData, grades, savedReports, addSavedReport } = useSchoolData();
+  const { classesData, teachersData, studentsData, grades, savedReports, addSavedReport, coursesData } = useSchoolData();
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalyzeClassPerformanceOutput | null>(null);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
@@ -382,4 +383,3 @@ export default function TeacherDashboard() {
     </div>
   );
 }
-
