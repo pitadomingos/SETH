@@ -125,7 +125,7 @@ function ClassPerformanceTrendChart({ teacherCourses }) {
             month: format(new Date(month), 'MMM yy'),
             avgGrade: (monthGrades as number[]).reduce((sum, g) => sum + g, 0) / (monthGrades as number[]).length,
         }))
-        .sort((a, b) => new Date(a.month).getTime() - b.month.getTime());
+        .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
 
   }, [teacherCourses, grades, studentsData, classesData]);
 
