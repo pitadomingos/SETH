@@ -55,18 +55,23 @@ function ComposeMessageDialog({ open, onOpenChange, replyTo }: { open?: boolean,
     if (role === 'Admin') {
       return teachersData.map(t => ({ value: t.email, label: `${t.name} (Teacher)` }));
     }
+    
     if (role === 'Teacher') {
         const admin = Object.values(mockUsers).find(u => u.user.schoolId === user.schoolId && u.role === 'Admin');
+        
         const parentSet = new Set<string>();
         const teacherId = teachersData.find(t => t.email === user.email)?.id;
         const teacherCourses = coursesData.filter(c => c.teacherId === teacherId);
         const teacherClassIds = teacherCourses.map(c => c.classId);
+        
         const taughtStudents = studentsData.filter(s => {
             const studentClass = classesData.find(c => c.grade === s.grade && c.name.split('-')[1].trim() === s.class);
             return studentClass && teacherClassIds.includes(studentClass.id);
         });
 
-        taughtStudents.forEach(s => parentSet.add(s.parentEmail));
+        taughtStudents.forEach(s => {
+            if (s.parentEmail) parentSet.add(s.parentEmail);
+        });
         
         const parents = Array.from(parentSet).map(email => {
             const student = studentsData.find(s => s.parentEmail === email);

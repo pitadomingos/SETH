@@ -1,13 +1,12 @@
 
-
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { PenSquare, BookMarked, Bell, BrainCircuit, Loader2, X, Mail, CalendarCheck, FileCheck, FlaskConical } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { useSchoolData } from "@/context/school-data-context";
-import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis, LabelList } from 'recharts';
+import { useSchoolData, NewMessageData } from "@/context/school-data-context";
+import { Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -19,82 +18,109 @@ import { useMemo, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { analyzeClassPerformance, AnalyzeClassPerformanceOutput } from "@/ai/flows/analyze-class-performance";
 import { useToast } from "@/hooks/use-toast";
-import { getLetterGrade } from "@/lib/utils";
+import * as z from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
-// Helper to standardize grades for the chart
-const getStandardLetterGrade = (grade: string): string => {
-  const numericGrade = parseFloat(grade);
-  if (!isNaN(numericGrade) && isFinite(numericGrade)) {
-    return getLetterGrade(numericGrade).replace(/[+-]/, '');
-  }
-  const letter = grade.charAt(0).toUpperCase();
-  if (['A', 'B', 'C', 'D', 'F'].includes(letter)) {
-    return letter;
-  }
-  return 'N/A'; // Fallback for any unexpected grade formats
-};
+const messageSchema = z.object({
+  subject: z.string().min(3, "Subject is required."),
+  body: z.string().min(10, "Message body must be at least 10 characters."),
+});
 
-function GradeDistributionChart() {
-  const { grades } = useSchoolData();
+type MessageFormValues = z.infer<typeof messageSchema>;
+
+function ContactAdminDialog() {
+  const { addMessage, user } = useAuth();
+  const { teachersData, schoolProfile } = useSchoolData();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const form = useForm<MessageFormValues>({
+    resolver: zodResolver(messageSchema),
+    defaultValues: { subject: '', body: '' },
+  });
   
-  const chartData = useMemo(() => {
-    const counts = grades.reduce((acc, gradeItem) => {
-      const standardGrade = getStandardLetterGrade(gradeItem.grade);
-      if (standardGrade !== 'N/A') {
-        acc[standardGrade] = (acc[standardGrade] || 0) + 1;
-      }
-      return acc;
-    }, {} as Record<string, number>);
+  const adminEmail = useMemo(() => {
+    if (!schoolProfile) return '';
+    const admin = teachersData.find(t => t.name === schoolProfile.head);
+    return admin?.email || '';
+  }, [schoolProfile, teachersData]);
 
-    const orderedGrades = ['A', 'B', 'C', 'D', 'F'];
-    return orderedGrades.map(g => ({
-      grade: g,
-      count: counts[g] || 0,
-    }));
-  }, [grades]);
+  function onSubmit(values: MessageFormValues) {
+    if (!adminEmail) return;
 
-  const chartConfig = {
-    count: {
-      label: "Count",
-      color: "hsl(var(--chart-1))",
-    },
-  } satisfies ChartConfig;
+    const messageData: NewMessageData = {
+      recipientUsername: adminEmail,
+      subject: values.subject,
+      body: values.body,
+    };
+    addMessage(messageData);
+    form.reset();
+    setIsOpen(false);
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Grade Distribution</CardTitle>
-        <CardDescription>Overview of grades assigned this semester</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-          <RechartsBarChart accessibilityLayer data={chartData}>
-            <CartesianGrid vertical={false} />
-            <XAxis dataKey="grade" tickLine={false} tickMargin={10} axisLine={false} />
-            <YAxis allowDecimals={false} />
-            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-            <Bar dataKey="count" fill="var(--color-count)" radius={8} />
-          </RechartsBarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline"><Mail className="mr-2 h-4 w-4" /> Contact Admin</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Contact School Administrator</DialogTitle>
+          <DialogDescription>
+            Send a message regarding school matters.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            <FormField control={form.control} name="subject" render={({ field }) => ( <FormItem><FormLabel>Subject</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="body" render={({ field }) => ( <FormItem><FormLabel>Message</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <DialogFooter>
+              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Send Message
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-function UpcomingDeadlinesChart() {
-  const { assignments, events } = useSchoolData();
+
+function UpcomingDeadlinesChart({ teacherCourses }) {
+  const { events, deployedTests } = useSchoolData();
   const today = new Date();
   const nextWeek = Array.from({ length: 7 }, (_, i) => addDays(today, i));
-  
-  const deadlines = assignments
-    .map(a => ({ date: new Date(a.dueDate), type: 'Assignment' }))
-    .concat(events.map(e => ({ date: e.date, type: 'Event' })));
 
+  const relevantEvents = useMemo(() => {
+    if (!teacherCourses) return [];
+    
+    const teacherClassGrades = [...new Set(teacherCourses.map(c => c.grade))];
+    const audienceSubstrings = ['all student', 'whole school', ...teacherClassGrades.map(g => `grade ${g}`)];
+
+    return events.filter(event => 
+      audienceSubstrings.some(sub => event.audience.toLowerCase().includes(sub))
+    );
+  }, [events, teacherCourses]);
+
+  const relevantTests = useMemo(() => {
+    const teacherClassIds = teacherCourses.map(c => c.classId);
+    return deployedTests.filter(dt => teacherClassIds.includes(dt.classId));
+  }, [deployedTests, teacherCourses]);
+
+  
   const chartData = nextWeek.map(day => {
     const formattedDay = format(day, 'yyyy-MM-dd');
+    const eventCount = relevantEvents.filter(e => format(e.date, 'yyyy-MM-dd') === formattedDay).length;
+    const testCount = relevantTests.filter(t => format(t.deadline, 'yyyy-MM-dd') === formattedDay).length;
     return {
       date: format(day, 'MMM d'),
-      count: deadlines.filter(d => format(d.date, 'yyyy-MM-dd') === formattedDay).length,
+      count: eventCount + testCount,
     };
   });
 
@@ -109,7 +135,7 @@ function UpcomingDeadlinesChart() {
     <Card>
       <CardHeader>
         <CardTitle>Upcoming Deadlines</CardTitle>
-        <CardDescription>Assignments and events due in the next 7 days</CardDescription>
+        <CardDescription>Tests and events relevant to your classes</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
@@ -128,7 +154,7 @@ function UpcomingDeadlinesChart() {
 function AIClassPerformanceAnalyzer() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { classesData, teachersData, studentsData, grades } = useSchoolData();
+  const { classesData, teachersData, studentsData, grades, savedReports, addSavedReport } = useSchoolData();
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalyzeClassPerformanceOutput | null>(null);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
@@ -137,10 +163,17 @@ function AIClassPerformanceAnalyzer() {
     return teachersData.find(t => t.name === user?.name);
   }, [teachersData, user]);
 
+  const teacherCourses = useMemo(() => {
+    if (!teacherInfo) return [];
+    return coursesData.filter(c => c.teacherId === teacherInfo.id);
+  }, [coursesData, teacherInfo]);
+  
+  const teacherClassIds = useMemo(() => teacherCourses.map(c => c.classId), [teacherCourses]);
+  
   const teacherClasses = useMemo(() => {
     if (!teacherInfo) return [];
-    return classesData.filter(c => c.teacher === teacherInfo.name);
-  }, [classesData, teacherInfo]);
+    return classesData.filter(c => teacherClassIds.includes(c.id));
+  }, [classesData, teacherInfo, teacherClassIds]);
 
   const handleAnalysis = async (classId: string) => {
     if (!classId) return;
@@ -165,13 +198,29 @@ function AIClassPerformanceAnalyzer() {
         .filter(g => studentsInClass.includes(g.studentId) && g.subject === teacherInfo.subject)
         .map(g => g.grade);
 
+      const targetId = `${selectedClassId}-${teacherInfo.subject}`;
+      const previousAnalysis = savedReports
+          .filter(r => r.type === 'ClassPerformance' && r.targetId === targetId)
+          .sort((a, b) => b.generatedAt.getTime() - a.generatedAt.getTime())[0];
+
       const analysisResult = await analyzeClassPerformance({
         className: selectedClass.name,
         subject: teacherInfo.subject,
         grades: relevantGrades,
+        previousAnalysis: previousAnalysis ? {
+          generatedAt: previousAnalysis.generatedAt.toISOString(),
+          result: previousAnalysis.result,
+        } : undefined,
       });
 
       setResult(analysisResult);
+      
+      addSavedReport({
+        type: 'ClassPerformance',
+        targetId,
+        targetName: `${selectedClass.name} - ${teacherInfo.subject}`,
+        result: analysisResult,
+      });
 
       if (analysisResult.interventionNeeded) {
         toast({
@@ -255,7 +304,7 @@ function AIClassPerformanceAnalyzer() {
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
-  const { coursesData, events, teachersData, classesData } = useSchoolData();
+  const { coursesData, teachersData, classesData } = useSchoolData();
 
   const teacherInfo = useMemo(() => {
     return teachersData.find(t => t.name === user?.name);
@@ -263,8 +312,16 @@ export default function TeacherDashboard() {
   
   const teacherCourses = useMemo(() => {
     if (!teacherInfo) return [];
-    return coursesData.filter(c => c.teacherId === teacherInfo.id);
-  }, [coursesData, teacherInfo]);
+    return coursesData
+      .filter(c => c.teacherId === teacherInfo.id)
+      .map(course => {
+        const classInfo = classesData.find(c => c.id === course.classId);
+        return {
+          ...course,
+          grade: classInfo?.grade || 'N/A',
+        };
+      });
+  }, [coursesData, teacherInfo, classesData]);
   
   const totalStudentsTaught = useMemo(() => {
     if (!teacherCourses.length) return 0;
@@ -275,13 +332,14 @@ export default function TeacherDashboard() {
     }, 0);
   }, [teacherCourses, classesData]);
 
-  const nextEvent = events.filter(e => e.date >= new Date()).sort((a,b) => a.date.getTime() - b.date.getTime())[0];
-
   return (
     <div className="space-y-6">
-      <header>
-        <h2 className="text-3xl font-bold tracking-tight">Teacher Dashboard</h2>
-        <p className="text-muted-foreground">Welcome back, {user?.name}</p>
+      <header className="flex flex-wrap gap-2 justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Teacher Dashboard</h2>
+          <p className="text-muted-foreground">Welcome back, {user?.name}</p>
+        </div>
+        <ContactAdminDialog />
       </header>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -315,28 +373,13 @@ export default function TeacherDashboard() {
                 </div>
             </CardContent>
             </Card>
-            <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-3"><Bell className="h-6 w-6 text-primary" /> Upcoming Event</CardTitle>
-            </CardHeader>
-            <CardContent>
-                {nextEvent ? (
-                <>
-                    <p className="text-lg font-semibold">{nextEvent.title}</p>
-                    <p className="text-sm text-muted-foreground">{nextEvent.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-                </>
-                ) : (
-                <p className="text-muted-foreground">No upcoming events.</p>
-                )}
-            </CardContent>
-            </Card>
         </div>
       </div>
       <AIClassPerformanceAnalyzer />
       <div className="grid gap-6 lg:grid-cols-2">
-        <GradeDistributionChart />
-        <UpcomingDeadlinesChart />
+        <UpcomingDeadlinesChart teacherCourses={teacherCourses} />
       </div>
     </div>
   );
 }
+
