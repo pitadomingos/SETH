@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Sparkles, Hammer, FlaskConical, CheckCircle, Info, Printer, History, ChevronDown } from 'lucide-react';
+import { Loader2, Sparkles, Hammer, FlaskConical, CheckCircle, Info, Printer, History } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useSchoolData } from '@/context/school-data-context';
 import { useRouter } from 'next/navigation';
@@ -21,7 +21,7 @@ import { format } from 'date-fns';
 import { FeatureLock } from '@/components/layout/feature-lock';
 
 const formSchema = z.object({
-  classId: z.string().min(1, { message: 'Please select a class.' }),
+  courseId: z.string().min(1, { message: 'Please select a course.' }),
   weeklySyllabus: z.string().min(10, { message: 'Syllabus must be at least 10 characters long.' }),
 });
 
@@ -64,7 +64,7 @@ export default function LessonPlannerPage() {
   const { role, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const { classesData, teachersData, studentsData, grades, lessonPlans, addLessonPlan, schoolProfile, isLoading: dataLoading } = useSchoolData();
+  const { classesData, teachersData, studentsData, grades, lessonPlans, addLessonPlan, schoolProfile, isLoading: dataLoading, coursesData } = useSchoolData();
 
   const [generatedPlan, setGeneratedPlan] = useState<CreateLessonPlanOutput | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,11 +73,19 @@ export default function LessonPlannerPage() {
   const teacherInfo = useMemo(() => {
     return teachersData.find(t => t.name === user?.name);
   }, [teachersData, user]);
-
-  const teacherClasses = useMemo(() => {
+  
+  const teacherCourses = useMemo(() => {
     if (!teacherInfo) return [];
-    return classesData.filter(c => c.teacher === teacherInfo.name);
-  }, [classesData, teacherInfo]);
+    return coursesData
+      .filter(c => c.teacherId === teacherInfo.id)
+      .map(course => {
+        const classInfo = classesData.find(c => c.id === course.classId);
+        return {
+          ...course,
+          label: `${course.subject} - ${classInfo?.name || 'Unknown Class'}`
+        }
+      });
+  }, [coursesData, teacherInfo, classesData]);
 
 
   useEffect(() => {
@@ -89,7 +97,7 @@ export default function LessonPlannerPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      classId: '',
+      courseId: '',
       weeklySyllabus: '',
     },
   });
@@ -115,7 +123,13 @@ export default function LessonPlannerPage() {
     setIsSubmitting(true);
     setGeneratedPlan(null);
 
-    const selectedClass = classesData.find(c => c.id === values.classId);
+    const selectedCourse = coursesData.find(c => c.id === values.courseId);
+    if (!selectedCourse) {
+       toast({ variant: 'destructive', title: 'Error', description: 'Selected course not found.' });
+       setIsSubmitting(false);
+       return;
+    }
+    const selectedClass = classesData.find(c => c.id === selectedCourse.classId);
     if (!selectedClass) {
       toast({ variant: 'destructive', title: 'Error', description: 'Selected class not found.' });
       setIsSubmitting(false);
@@ -128,23 +142,22 @@ export default function LessonPlannerPage() {
     ).map(s => s.id);
 
     const relevantGrades = grades
-      .filter(g => studentsInClass.includes(g.studentId) && g.subject === teacherInfo.subject)
+      .filter(g => studentsInClass.includes(g.studentId) && g.subject === selectedCourse.subject)
       .map(g => g.grade);
 
     try {
       const result = await createLessonPlan({
         className: selectedClass.name,
         gradeLevel: `Grade ${selectedClass.grade}`,
-        subject: teacherInfo.subject,
+        subject: selectedCourse.subject,
         weeklySyllabus: values.weeklySyllabus,
         recentGrades: relevantGrades,
       });
       setGeneratedPlan(result);
       
-      // Automatically save the plan
       addLessonPlan({
         className: selectedClass.name,
-        subject: teacherInfo.subject,
+        subject: selectedCourse.subject,
         weeklySyllabus: values.weeklySyllabus,
         weeklyPlan: result.weeklyPlan
       });
@@ -187,19 +200,19 @@ export default function LessonPlannerPage() {
                 <CardContent className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="classId"
+                    name="courseId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Class</FormLabel>
+                        <FormLabel>Course</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select a class" />
+                                    <SelectValue placeholder="Select a course" />
                                 </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                                {teacherClasses.map(c => (
-                                    <SelectItem key={c.id} value={c.id}>{c.name} ({teacherInfo?.subject})</SelectItem>
+                                {teacherCourses.map(c => (
+                                    <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>

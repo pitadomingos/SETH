@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData } from '@/context/school-data-context';
@@ -24,11 +24,10 @@ const gradeOptions = Array.from({ length: 21 }, (_, i) => {
 export default function GradingPage() {
   const { role, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const { classesData, studentsData, teachersData, subjects, addGrade } = useSchoolData();
+  const { classesData, studentsData, teachersData, coursesData, addGrade } = useSchoolData();
   const { toast } = useToast();
   
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
-  const [selectedSubject, setSelectedSubject] = useState<string>('');
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm();
@@ -43,33 +42,40 @@ export default function GradingPage() {
     return teachersData.find(t => t.name === user?.name);
   }, [teachersData, user]);
 
-  const teacherClasses = useMemo(() => {
+  const teacherCourses = useMemo(() => {
     if (!teacherInfo) return [];
-    return classesData.filter(c => c.teacher === teacherInfo.name);
-  }, [classesData, teacherInfo]);
+    return coursesData
+      .filter(c => c.teacherId === teacherInfo.id)
+      .map(course => {
+        const classInfo = classesData.find(c => c.id === course.classId);
+        return {
+          ...course,
+          label: `${course.subject} - ${classInfo?.name || 'Unknown Class'}`
+        }
+      });
+  }, [coursesData, teacherInfo, classesData]);
+
+  const selectedCourse = useMemo(() => {
+    return teacherCourses.find(c => c.id === selectedCourseId);
+  }, [selectedCourseId, teacherCourses]);
 
   const studentsInClass = useMemo(() => {
-    if (!selectedClassId) return [];
-    const selectedClass = classesData.find(c => c.id === selectedClassId);
-    if (!selectedClass) return [];
+    if (!selectedCourse) return [];
+    const classInfo = classesData.find(c => c.id === selectedCourse.classId);
+    if (!classInfo) return [];
     return studentsData.filter(student =>
-      student.grade === selectedClass.grade &&
-      student.class === selectedClass.name.split('-')[1].trim()
+      student.grade === classInfo.grade &&
+      student.class === classInfo.name.split('-')[1].trim()
     );
-  }, [selectedClassId, classesData, studentsData]);
+  }, [selectedCourse, classesData, studentsData]);
 
   useEffect(() => {
     form.reset();
-    setSelectedSubject('');
-  }, [selectedClassId, form]);
-  
-  useEffect(() => {
-    form.reset(); 
-  }, [studentsInClass, selectedSubject, form]);
+  }, [selectedCourseId, form]);
 
   async function onSubmit(data: Record<string, string>) {
-    if (!selectedSubject) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Please select a subject.' });
+    if (!selectedCourse) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Please select a course.' });
         return;
     }
     setIsSubmitting(true);
@@ -78,7 +84,7 @@ export default function GradingPage() {
       if (grade) {
         addGrade({
           studentId,
-          subject: selectedSubject,
+          subject: selectedCourse.subject,
           grade,
         });
         gradesAdded++;
@@ -87,7 +93,7 @@ export default function GradingPage() {
     
     toast({
       title: 'Grades Saved',
-      description: `${gradesAdded} grade(s) for ${selectedSubject} have been successfully recorded.`,
+      description: `${gradesAdded} grade(s) for ${selectedCourse.subject} have been successfully recorded.`,
     });
     form.reset();
     setIsSubmitting(false);
@@ -97,49 +103,36 @@ export default function GradingPage() {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
-  const selectedClassName = classesData.find(c => c.id === selectedClassId)?.name;
-
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>
         <h2 className="text-3xl font-bold tracking-tight">Gradebook</h2>
-        <p className="text-muted-foreground">Select a class and subject to enter grades for your students.</p>
+        <p className="text-muted-foreground">Select a course to enter grades for your students.</p>
       </header>
 
       <Card>
         <CardHeader>
           <CardTitle>Enter Grades</CardTitle>
           <CardDescription>
-            {selectedClassName && selectedSubject 
-              ? `Entering grades for ${selectedClassName} - Subject: ${selectedSubject}`
-              : "Select a class and subject to begin."
+            {selectedCourse 
+              ? `Entering grades for ${selectedCourse.label}`
+              : "Select a course to begin."
             }
           </CardDescription>
           <div className="pt-4 flex flex-wrap gap-4">
-            <Select onValueChange={setSelectedClassId} value={selectedClassId}>
+            <Select onValueChange={setSelectedCourseId} value={selectedCourseId}>
               <SelectTrigger className="w-full md:w-[280px]">
-                <SelectValue placeholder="Select a class..." />
+                <SelectValue placeholder="Select a course..." />
               </SelectTrigger>
               <SelectContent>
-                {teacherClasses.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select onValueChange={setSelectedSubject} value={selectedSubject} disabled={!selectedClassId}>
-              <SelectTrigger className="w-full md:w-[280px]">
-                <SelectValue placeholder="Select a subject..." />
-              </SelectTrigger>
-              <SelectContent>
-                {subjects.map(s => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                {teacherCourses.map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
         </CardHeader>
-        {selectedClassId && selectedSubject && (
+        {selectedCourseId && (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <CardContent>
@@ -196,10 +189,10 @@ export default function GradingPage() {
             </form>
           </Form>
         )}
-        {(!selectedClassId || !selectedSubject) && (
+        {!selectedCourseId && (
           <CardContent className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground">
             <FileCheck className="h-10 w-10 mb-4" />
-            <p>Please select a class and a subject to view the gradebook.</p>
+            <p>Please select a course to view the gradebook.</p>
           </CardContent>
         )}
       </Card>
