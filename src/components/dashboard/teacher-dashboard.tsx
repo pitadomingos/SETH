@@ -3,7 +3,7 @@
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { PenSquare, BookMarked, Bell, BrainCircuit, Loader2, X, Mail, CalendarCheck, FileCheck, FlaskConical } from "lucide-react";
+import { PenSquare, BookMarked, Bell, BrainCircuit, Loader2, X, Mail, CalendarCheck, FileCheck, FlaskConical, TrendingUp } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData, NewMessageData } from "@/context/school-data-context";
 import { Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis } from 'recharts';
@@ -25,6 +25,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { formatGradeDisplay } from "@/lib/utils";
 
 const messageSchema = z.object({
   subject: z.string().min(3, "Subject is required."),
@@ -92,65 +93,67 @@ function ContactAdminDialog() {
 }
 
 
-function UpcomingDeadlinesChart({ teacherCourses }) {
-  const { events, deployedTests } = useSchoolData();
-  const today = new Date();
-  const nextWeek = Array.from({ length: 7 }, (_, i) => addDays(today, i));
+function ClassPerformanceTrendChart({ teacherCourses }) {
+  const { grades, studentsData, classesData, schoolProfile } = useSchoolData();
 
-  const relevantEvents = useMemo(() => {
+  const chartData = useMemo(() => {
     if (!teacherCourses || teacherCourses.length === 0) return [];
     
-    const teacherClassGrades = [...new Set(teacherCourses.map(c => c.grade))];
-    const audienceSubstrings = ['all student', 'whole school', ...teacherClassGrades.map(g => `grade ${g}`)];
+    const teacherStudentIds = new Set<string>();
+    teacherCourses.forEach(course => {
+      const classInfo = classesData.find(c => c.id === course.classId);
+      if (classInfo) {
+        studentsData
+          .filter(s => s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim())
+          .forEach(s => teacherStudentIds.add(s.id));
+      }
+    });
 
-    return events.filter(event => 
-      audienceSubstrings.some(sub => event.audience.toLowerCase().includes(sub))
-    );
-  }, [events, teacherCourses]);
+    const relevantGrades = grades.filter(g => teacherStudentIds.has(g.studentId));
+    
+    const gradesByMonth = relevantGrades.reduce((acc, grade) => {
+        const month = format(grade.date, 'yyyy-MM');
+        if (!acc[month]) {
+            acc[month] = [];
+        }
+        acc[month].push(parseFloat(grade.grade));
+        return acc;
+    }, {});
 
-  const relevantTests = useMemo(() => {
-    if (!teacherCourses || teacherCourses.length === 0) return [];
-    const teacherClassIds = teacherCourses.map(c => c.classId);
-    return deployedTests.filter(dt => teacherClassIds.includes(dt.classId));
-  }, [deployedTests, teacherCourses]);
+    return Object.entries(gradesByMonth)
+        .map(([month, monthGrades]) => ({
+            month: format(new Date(month), 'MMM yy'),
+            avgGrade: (monthGrades as number[]).reduce((sum, g) => sum + g, 0) / (monthGrades as number[]).length,
+        }))
+        .sort((a, b) => new Date(a.month).getTime() - b.month.getTime());
 
-  
-  const chartData = nextWeek.map(day => {
-    const formattedDay = format(day, 'yyyy-MM-dd');
-    const eventCount = relevantEvents.filter(e => format(e.date, 'yyyy-MM-dd') === formattedDay).length;
-    const testCount = relevantTests.filter(t => format(t.deadline, 'yyyy-MM-dd') === formattedDay).length;
-    return {
-      date: format(day, 'MMM d'),
-      count: eventCount + testCount,
-    };
-  });
+  }, [teacherCourses, grades, studentsData, classesData]);
 
   const chartConfig = {
-    count: {
-      label: 'Deadlines',
-      color: "hsl(var(--chart-2))",
-    },
+    avgGrade: { label: 'Average Grade', color: 'hsl(var(--chart-1))' },
   } satisfies ChartConfig;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Upcoming Deadlines</CardTitle>
-        <CardDescription>Tests and events relevant to your classes</CardDescription>
+        <CardTitle className="flex items-center gap-2"><TrendingUp /> Class Performance Trend</CardTitle>
+        <CardDescription>Average grade of your students over time.</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-          <RechartsLineChart accessibilityLayer data={chartData}>
+        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+           <RechartsLineChart accessibilityLayer data={chartData}>
             <CartesianGrid vertical={false} />
-            <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
-            <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
-            <Line type="monotone" dataKey="count" stroke="var(--color-count)" strokeWidth={2} dot={false} />
+            <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+            <YAxis domain={[10, 20]} />
+            <ChartTooltip content={<ChartTooltipContent formatter={(value, name) => `${formatGradeDisplay(value, schoolProfile?.gradingSystem)}`}/>} />
+            <Line type="monotone" dataKey="avgGrade" stroke="var(--color-avgGrade)" strokeWidth={2} dot={false} />
           </RechartsLineChart>
         </ChartContainer>
       </CardContent>
     </Card>
   );
 }
+
 
 function AIClassPerformanceAnalyzer() {
   const { user } = useAuth();
@@ -188,13 +191,11 @@ function AIClassPerformanceAnalyzer() {
         throw new Error('Could not find class or teacher information.');
       }
 
-      // Find students in the selected class
       const studentsInClass = studentsData.filter(s => 
         s.grade === selectedClass.grade &&
         s.class === selectedClass.name.split('-')[1].trim()
       ).map(s => s.id);
       
-      // Get grades for those students in the teacher's subject
       const relevantGrades = grades
         .filter(g => studentsInClass.includes(g.studentId) && g.subject === teacherInfo.subject)
         .map(g => g.grade);
@@ -378,7 +379,7 @@ export default function TeacherDashboard() {
       </div>
       <AIClassPerformanceAnalyzer />
       <div className="grid gap-6 lg:grid-cols-2">
-        <UpcomingDeadlinesChart teacherCourses={teacherCourses} />
+        <ClassPerformanceTrendChart teacherCourses={teacherCourses} />
       </div>
     </div>
   );
