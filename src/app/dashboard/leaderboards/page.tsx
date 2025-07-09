@@ -67,8 +67,9 @@ const LeaderboardTable = ({ students, gradingSystem }) => {
 };
 
 
-const ParentLeaderboardView = () => {
-  const { studentsData: parentChildren } = useSchoolData();
+const IndividualRankingView = () => {
+  const { role } = useAuth();
+  const { studentsData } = useSchoolData();
 
   const allStudentsWithScoreBySchool = useMemo(() => {
     const data = {};
@@ -107,15 +108,21 @@ const ParentLeaderboardView = () => {
           return { subject, ...rankInfo };
       }).sort((a, b) => a.rank - b.rank);
   };
+  
+  const headerTitle = role === 'Parent' ? "My Children's Rankings" : "My Academic Rankings";
+  const headerDescription = role === 'Parent'
+    ? "A detailed look at your children's academic performance for the 2024-2025 year."
+    : "A detailed look at your academic performance for the 2024-2025 year.";
+
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>
-        <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2"><Trophy /> My Children's Rankings</h2>
-        <p className="text-muted-foreground">A detailed look at your children's academic performance for the 2024-2025 year.</p>
+        <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2"><Trophy /> {headerTitle}</h2>
+        <p className="text-muted-foreground">{headerDescription}</p>
       </header>
       <div className="space-y-6">
-        {parentChildren.map(child => {
+        {studentsData.map(child => {
           const schoolRanks = allStudentsWithScoreBySchool[child.schoolId]?.students || [];
           const classRanks = schoolRanks.filter(s => s.grade === child.grade && s.class === child.class);
           
@@ -171,8 +178,8 @@ export default function LeaderboardsPage() {
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
     const gradingSystem = schoolProfile?.gradingSystem;
 
-    if (role === 'Parent') {
-        return <ParentLeaderboardView />;
+    if (role === 'Parent' || role === 'Student') {
+        return <IndividualRankingView />;
     }
 
     const allStudentsWithScore = useMemo(() => studentsData.map(student => ({

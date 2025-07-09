@@ -278,7 +278,14 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       schoolId = user.schoolId;
       const data = allSchoolData[schoolId];
       setSchoolProfile(data.profile);
-      setStudentsData(data.students || []);
+
+      if (role === 'Student' && user.email) {
+        const studentProfile = data.students.find(s => s.email === user.email);
+        setStudentsData(studentProfile ? [studentProfile] : []);
+      } else {
+        setStudentsData(data.students || []);
+      }
+      
       setTeachersData(data.teachers || []);
       setClassesData(data.classes || []);
       setAdmissionsData(data.admissions || []);
