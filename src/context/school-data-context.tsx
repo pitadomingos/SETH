@@ -273,6 +273,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setCompetitionsData(allCompetitions);
       setMessages(allMessagesForParent);
       setTeachersData(Object.values(allSchoolData).flatMap(s => s.teachers));
+      setClassesData(Object.values(allSchoolData).flatMap(s => s.classes));
+      setCoursesData(Object.values(allSchoolData).flatMap(s => s.courses));
       setIsLoading(false);
     } else if (user?.schoolId && allSchoolData[user.schoolId]) {
       schoolId = user.schoolId;

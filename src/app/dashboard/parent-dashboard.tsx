@@ -44,7 +44,7 @@ const applicationSchema = z.object({
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 function NewApplicationDialog() {
-  const { addAdmission, allSchoolData } = useSchoolData();
+  const { addAdmission, allSchoolData } from useSchoolData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -88,7 +88,13 @@ function NewApplicationDialog() {
       title: 'Application Submitted',
       description: `The application for ${values.name} has been sent to the school for review.`,
     });
-    form.reset();
+    form.reset({
+      schoolId: '',
+      name: '',
+      appliedFor: '',
+      formerSchool: '',
+      gradesSummary: '',
+    });
     setIsDialogOpen(false);
   }
 
@@ -219,7 +225,7 @@ function AIGeneratedAdvice({ child, childGrades, childAttendanceSummary }) {
   )
 }
 
-function GradeDistribution({ grades }) {
+function GradeDistribution({ grades, schoolProfile }) {
   const chartData = useMemo(() => {
     return grades.map(grade => ({
       subject: grade.subject,
@@ -230,7 +236,7 @@ function GradeDistribution({ grades }) {
   const chartConfig = {
     gpa: {
       label: 'GPA',
-      color: 'hsl(var(--chart-1))',
+      color: 'hsl(var(--chart-2))',
     },
   } satisfies ChartConfig;
 
@@ -335,6 +341,12 @@ export default function ParentDashboard() {
   }, [studentsData, selectedChildId]);
 
   const selectedChild = useMemo(() => studentsData.find(c => c.id === selectedChildId), [selectedChildId, studentsData]);
+  const selectedChildSchoolProfile = useMemo(() => {
+    if (!selectedChild?.schoolId) return schoolProfile;
+    // In a real app with better data structure, we'd fetch the specific school profile.
+    // Here we find it from the context if needed, defaulting to the general one.
+    return schoolProfile; // Simplification for mock data
+  }, [selectedChild, schoolProfile]);
 
   const childGrades = useMemo(() => {
     if (!selectedChildId) return [];
@@ -441,7 +453,7 @@ export default function ParentDashboard() {
                     {childFinanceSummary ? (
                         <div className="flex justify-between items-center">
                             <div>
-                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid, schoolProfile?.currency)}</span></p>
+                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid, selectedChildSchoolProfile?.currency)}</span></p>
                                 <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
                             </div>
                             <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>
@@ -462,7 +474,7 @@ export default function ParentDashboard() {
                               return (
                                 <li key={index} className="flex justify-between items-center text-sm">
                                     <span className="font-medium">{grade.subject}</span>
-                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
+                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, selectedChildSchoolProfile?.gradingSystem)}</Badge>
                                 </li>
                               )
                             }) : <p className="text-muted-foreground text-sm">No recent grades.</p>}
@@ -472,7 +484,7 @@ export default function ParentDashboard() {
               </div>
           </div>
           <div className="grid gap-6 md:grid-cols-2">
-            <GradeDistribution grades={childGrades} />
+            <GradeDistribution grades={childGrades} schoolProfile={selectedChildSchoolProfile} />
             <ParentSportsActivities />
           </div>
         </div>
