@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -87,7 +88,7 @@ export interface NewSchoolData {
 
 interface SchoolDataContextType {
   schoolProfile: SchoolProfile | null;
-  updateSchoolProfile: (data: Partial<SchoolProfile>) => void;
+  updateSchoolProfile: (data: Partial<SchoolProfile>, schoolId?: string) => void;
   allSchoolData: typeof initialSchoolData | null;
   schoolGroups: typeof initialSchoolGroups | null;
   addSchool: (data: NewSchoolData, groupId?: string) => void;
@@ -455,23 +456,23 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     toast({ title: 'Teacher Status Updated' });
   };
 
-  const updateSchoolProfile = (data: Partial<SchoolProfile>) => {
-    setSchoolProfile(prev => {
-        if (!prev) return null;
-        const updatedProfile = { ...prev, ...data };
-        
-        if (user?.schoolId) {
-            setAllSchoolData(prevAllData => ({
-                ...prevAllData,
-                [user.schoolId!]: {
-                    ...prevAllData[user.schoolId!],
-                    profile: updatedProfile,
-                }
-            }));
-        }
-        
-        return updatedProfile;
-    });
+  const updateSchoolProfile = (data: Partial<SchoolProfile>, schoolIdToUpdate?: string) => {
+    const targetSchoolId = schoolIdToUpdate || user?.schoolId;
+
+    if (targetSchoolId) {
+        setAllSchoolData(prevAllData => {
+            const newAllData = { ...prevAllData };
+            if (newAllData[targetSchoolId]) {
+                const currentProfile = newAllData[targetSchoolId].profile;
+                newAllData[targetSchoolId].profile = { ...currentProfile, ...data };
+            }
+            return newAllData;
+        });
+    }
+
+    if (!schoolIdToUpdate) {
+        setSchoolProfile(prev => prev ? { ...prev, ...data } : null);
+    }
   };
 
   const addSubject = (subject: string) => !subjects.includes(subject) && setSubjects(prev => [...prev, subject].sort());
