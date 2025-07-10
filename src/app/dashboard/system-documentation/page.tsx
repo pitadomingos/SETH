@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -161,3 +160,5 @@ export default function SystemDocumentationPage() {
     </div>
   );
 }
+
+  

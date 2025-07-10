@@ -1,21 +1,22 @@
-# EduManage: Multi-School Management System Prototype
 
-Welcome to EduManage, an advanced prototype for a multi-tenant, AI-powered School Management System built with Next.js, ShadCN UI, and Google's Genkit.
+# EduManage: AI-Powered Multi-School Management Prototype
+
+Welcome to EduManage, an advanced prototype for a multi-tenant, AI-powered School Management System built with Next.js, ShadCN UI, and Google's Genkit. This application is designed to showcase a powerful and scalable solution for modern educational institutions.
 
 ## About This Project
 
 This application simulates a comprehensive educational ecosystem designed to serve multiple user roles:
 
--   **Global Admins (Developers):** Oversee the entire network, manage schools, and access system-wide analytics.
+-   **Global Admins (Developers):** Oversee the entire network, manage schools and their subscription tiers, provision new schools, analyze system-wide performance with AI, and access detailed user management and documentation.
 -   **School Administrators:** Manage the operations of a single school, from admissions and finance to academic reporting.
--   **Premium Admins:** Manage a group of schools with consolidated views.
--   **Teachers:** Access AI tools for lesson planning, test generation, grading, and attendance.
--   **Students:** View their progress, take AI-graded tests, and access official documents.
--   **Parents:** Get a unified view of all their children's progress, even if they attend different schools in the network.
+-   **Premium Admins:** Manage a group of schools with consolidated views and management capabilities.
+-   **Teachers:** Access AI tools for lesson planning, ad-hoc test generation, automated grading, and detailed attendance tracking.
+-   **Students:** View their progress, take AI-graded tests, and access official documents like certificates and transcripts upon meeting academic and financial requirements.
+-   **Parents:** Get a unified view of all their children's progress (even across different schools), receive AI-powered advice, manage finances, and submit new applications.
 
 ## Key Features
 
--   **Role-Based Dashboards & Permissions:** Each user role has a unique interface and set of capabilities.
+-   **Role-Based Dashboards & Permissions:** Each user role has a unique interface and a tailored set of capabilities.
 -   **Multi-Tenancy Simulation:** The app dynamically loads data based on the logged-in user's school affiliation, simulating a real multi-school environment.
 -   **AI-Powered Workflows:** Genkit is used to power features like:
     -   Performance-aware lesson planning.
@@ -23,6 +24,7 @@ This application simulates a comprehensive educational ecosystem designed to ser
     -   In-depth academic reports for classes, teachers, and entire schools.
     -   Personalized advice for parents and struggling students.
 -   **Comprehensive Module Simulation:** Includes modules for Admissions, Finance, Academics, Sports, Events, and more.
+-   **Subscription Tiers:** Simulates a SaaS model with Starter, Pro, and Premium tiers, unlocking features like AI tools and multi-school management for higher tiers.
 
 ## Getting Started
 
@@ -35,8 +37,11 @@ To run this prototype:
 2.  Open your browser to `http://localhost:9002`.
 3.  Use the credentials provided on the login page to explore the different user roles.
     -   **Developer/Global Admin:** `developer` / `dev123`
-    -   **Northwood Admin:** `admin1` / `admin123`
-    -   **Northwood Teacher:** `teacher1` / `teacher123`
+    -   **Premium Admin (Maplewood):** Log in as `admin3`
+    -   **Northwood Admin:** `admin1`
+    -   **Northwood Teacher:** `teacher1`
     -   ...and more, as detailed on the login screen.
 
 This is a prototype environment. All data is mocked and will reset when the application is reloaded.
+
+  

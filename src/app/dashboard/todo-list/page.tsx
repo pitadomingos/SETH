@@ -12,8 +12,6 @@ const completedTasks = [
   'AI-powered academic reports suite for Admins (School, Class, Struggling Students, Teacher performance).',
   'AI-powered analysis and guidance for students who have not met graduation requirements.',
   'AI-powered test grading flow that calculates scores and updates student records.',
-  'Activated the Settings page for school-wide configuration (e.g., grading system).',
-  'Added a comparative performance chart to the developer dashboard to analyze subscription tiers.',
   'Automated student enrollment from the Admissions module.',
   'Centralized system data management (Fee Descriptions, Event Audiences, etc.) in the Admin Panel.',
   'Comprehensive admissions workflow from parent application to admin approval.',
@@ -39,6 +37,7 @@ const completedTasks = [
   'Upgraded Events page with an interactive calendar and event creation.',
   'Upgraded Finance module with partial payments, ad-hoc transaction creation, and expense tracking.',
   'User authentication with roles (Global Admin, Admin, Teacher, Student, Parent).',
+  'Configurable annual awards with prize management and system-wide announcements.'
 ];
 
 const upcomingFeatures = [
@@ -118,3 +117,5 @@ export default function TodoListPage() {
     </div>
   );
 }
+
+  

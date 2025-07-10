@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useAuth, Role } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +15,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
       'All Schools Management: View and provision all schools in the system. From here, you can manage a school\'s status (Active, Suspended) and switch context to manage a school directly using the "Log in as user" feature.',
       'Inbox: Receive, view, and track messages from School Administrators across the network.',
       'Global User Management: Access dedicated pages to view and manage every student and parent account across the entire network, including suspending access.',
+      'EduManage Awards: Configure prizes and announce the annual system-wide awards for top-performing schools, students, and teachers.',
       'Activity Logs: View a global feed of all significant actions taken by users across all schools for complete system oversight.',
       'Project Proposal: Review the high-level business and development proposal for EduManage.',
       'System Documentation: Access technical documentation about the application\'s architecture and technology stack.',
@@ -187,3 +187,5 @@ export default function UserManualPage() {
     </div>
   );
 }
+
+  
