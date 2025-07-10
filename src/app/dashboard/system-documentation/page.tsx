@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Code, GitBranch, LayoutTemplate, Palette, Rocket, Loader2, Database, Share2, Smartphone, Briefcase, Users, Cloud, Server, KeyRound, UploadCloud, BrainCircuit } from 'lucide-react';
+import { Code, GitBranch, LayoutTemplate, Palette, Rocket, Loader2, Database, Share2, Smartphone, Briefcase, Users, Cloud, Server, KeyRound, UploadCloud, BrainCircuit, MonitorPlay } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function SystemDocumentationPage() {
@@ -63,6 +63,10 @@ export default function SystemDocumentationPage() {
               <h3 className="font-semibold"><code>/src/app/dashboard</code></h3>
               <p className="text-sm text-muted-foreground">Contains all application routes, pages (including global admin routes), and layouts. Includes dynamic routes like <code>/test/[id]</code> for test-taking.</p>
             </div>
+             <div>
+              <h3 className="font-semibold"><code>/src/app/kiosk</code></h3>
+              <p className="text-sm text-muted-foreground">Contains the dynamic route and layout for the fullscreen, public-facing Kiosk Mode.</p>
+            </div>
             <div>
               <h3 className="font-semibold"><code>/src/components</code></h3>
               <p className="text-sm text-muted-foreground">Home to reusable React components, including UI elements from ShadCN and custom-built dashboard components.</p>
@@ -70,7 +74,7 @@ export default function SystemDocumentationPage() {
              <div>
               <h3 className="font-semibold flex items-center gap-2"><BrainCircuit /> src/ai/flows</code></h3>
               <p className="text-sm text-muted-foreground">Houses the Genkit flows and AI-related logic, including: <code>create-lesson-plan</code>, <code>generate-test</code>, <code>grade-student-test</code>, <code>analyze-schedule-conflicts</code>, <code>analyze-school-performance</code>, <code>identify-struggling-students</code>, and more.</p>
-            </div>
+             </div>
              <div>
               <h3 className="font-semibold"><code>/src/context</code></h3>
               <p className="text-sm text-muted-foreground">Contains React Context providers for managing global state like authentication (<code>AuthProvider</code>) and shared school data (<code>SchoolDataProvider</code>).</p>
@@ -101,21 +105,17 @@ export default function SystemDocumentationPage() {
                 <CardDescription>Core automated workflows and logic within the application.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+                 <div>
+                    <h3 className="font-semibold">Configurable Kiosk Mode</h3>
+                    <p className="text-sm text-muted-foreground">A dynamic route at `/kiosk/[schoolId]` provides a fullscreen, automated slideshow for public displays. Admins can configure which slides (Dashboard, Leaderboards, etc.) are visible for their school. A special `/kiosk/global` view includes marketing slides for corporate display.</p>
+                </div>
                 <div>
                     <h3 className="font-semibold">Global Admin Impersonation</h3>
                     <p className="text-sm text-muted-foreground">The Global Admin can "Log in as" any user in the system. This provides an exact view of what the user sees, enabling efficient troubleshooting and support.</p>
                 </div>
                 <div>
-                    <h3 className="font-semibold">Granular Attendance Tracking</h3>
-                    <p className="text-sm text-muted-foreground">The system supports lesson-specific attendance marking by teachers. This detailed data provides deeper insights into student behavior and feeds into various AI analyses, moving beyond simple daily check-ins.</p>
-                </div>
-                <div>
                     <h3 className="font-semibold">Automated Student Enrollment</h3>
                     <p className="text-sm text-muted-foreground">When an Administrator approves an application in the Admissions module, the system automatically creates a new student record and adds them to the school's roster. This streamlines the onboarding process.</p>
-                </div>
-                <div>
-                    <h3 className="font-semibold">Two-Way Messaging System</h3>
-                    <p className="text-sm text-muted-foreground">A role-based messaging system with Inbox/Sent views allows for communication between Admins and the Developer. The system supports attachments, and all messages are tracked in the global activity log.</p>
                 </div>
             </CardContent>
         </Card>
@@ -160,5 +160,3 @@ export default function SystemDocumentationPage() {
     </div>
   );
 }
-
-  
