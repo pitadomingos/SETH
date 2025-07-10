@@ -5,7 +5,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Award, School, GraduationCap, Presentation, Star, Medal, CheckCircle, Settings, FileText } from 'lucide-react';
+import { Loader2, Award, School, GraduationCap, Presentation, Star, Medal, CheckCircle, Settings, FileText as FileTextIcon } from 'lucide-react';
 import { useSchoolData, AwardConfig } from '@/context/school-data-context';
 import { useEffect, useMemo, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -287,7 +287,7 @@ export default function AwardsPage() {
                   <p className="font-semibold">Prize:</p>
                   <div className="flex justify-between w-full items-center">
                     <p className="text-muted-foreground">{prize.description}</p>
-                    {prize.hasCertificate && <Badge variant="outline"><FileText className="mr-1.5 h-3 w-3" />Certificate</Badge>}
+                    {prize.hasCertificate && <Badge variant="outline"><FileTextIcon className="mr-1.5 h-3 w-3" />Certificate</Badge>}
                   </div>
               </CardFooter>
             )}

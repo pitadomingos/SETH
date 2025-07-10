@@ -1,9 +1,8 @@
-
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Code, GitBranch, LayoutTemplate, Palette, Rocket, Loader2, Database, Share2, Smartphone, Briefcase, Users, Cloud, Server, KeyRound, UploadCloud, BrainCircuit, MonitorPlay } from 'lucide-react';
+import { Code, GitBranch, LayoutTemplate, Loader2, Database, Share2, BrainCircuit, MonitorPlay, Cloud, Server, KeyRound, UploadCloud, BookUser, ListTodo, Briefcase, FileText as FileTextIcon } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function SystemDocumentationPage() {
@@ -30,7 +29,7 @@ export default function SystemDocumentationPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Rocket /> Tech Stack</CardTitle>
+            <CardTitle className="flex items-center gap-2"><Code /> Tech Stack</CardTitle>
             <CardDescription>The core technologies used to build this application.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

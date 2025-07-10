@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { FileText, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse } from "lucide-react";
+import { FileText as FileTextIcon, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData } from "@/context/school-data-context";
 import { useToast } from '@/hooks/use-toast';
@@ -384,7 +384,7 @@ export default function StudentDashboard() {
                     <Dialog>
                         <DialogTrigger asChild>
                             <Button disabled={!isEligibleForCompletion} className="w-full">
-                                <FileText className="mr-2 h-4 w-4" />
+                                <FileTextIcon className="mr-2 h-4 w-4" />
                                 Preview Certificate
                             </Button>
                         </DialogTrigger>
@@ -420,7 +420,7 @@ export default function StudentDashboard() {
                     <Dialog>
                         <DialogTrigger asChild>
                             <Button variant="secondary" disabled={!isEligibleForCompletion} className="w-full">
-                                <FileText className="mr-2 h-4 w-4" />
+                                <FileTextIcon className="mr-2 h-4 w-4" />
                                 Preview Transcript
                             </Button>
                         </DialogTrigger>
