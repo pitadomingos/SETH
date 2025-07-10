@@ -114,7 +114,6 @@ export default function GlobalParentsPage() {
   };
   
   const handleImpersonate = (email: string) => {
-    // This needs to be adapted since mockUsers is gone.
     impersonateUser(email, 'Parent');
   }
 

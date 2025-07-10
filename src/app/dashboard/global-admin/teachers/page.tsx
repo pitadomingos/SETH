@@ -5,7 +5,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, MoreHorizontal, Search, Presentation, CheckCircle, XCircle, ChevronLeft, ChevronRight, Briefcase, LogIn } from 'lucide-react';
+import { Loader2, MoreHorizontal, Search, Presentation, CheckCircle, XCircle, Briefcase, ChevronLeft, ChevronRight, LogIn } from 'lucide-react';
 import { useSchoolData, Teacher } from '@/context/school-data-context';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
