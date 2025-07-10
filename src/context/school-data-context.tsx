@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { 
     schoolData as initialSchoolData, 
     schoolGroups as initialSchoolGroups,
@@ -189,7 +189,7 @@ const initialAwardConfig: AwardConfig = {
 };
 
 export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
-  const { user, role, originalUser } = useAuth();
+  const { user, role } = useAuth();
   const { toast } = useToast();
 
   const [allSchoolData, setAllSchoolData] = useState(() => JSON.parse(JSON.stringify(initialSchoolData)));
@@ -226,53 +226,57 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const loadDataForRole = useCallback(() => {
     setIsLoading(true);
 
-    const isPremiumAdmin = !originalUser && role === 'Admin' && user?.schoolId && Object.values(schoolGroups).some(g => g.includes(user.schoolId!));
+    const isPremiumAdmin = role === 'Admin' && user?.schoolId && Object.values(schoolGroups).some(g => g.includes(user.schoolId!));
 
     if (role === 'GlobalAdmin' || isPremiumAdmin) {
         setSchoolProfile(null);
-        const allLogs = Object.values(allSchoolData).flatMap(school => school.activityLogs?.map(log => ({ ...log, timestamp: new Date(log.timestamp) })) || []);
-        const allMessages = Object.values(allSchoolData).flatMap(school => school.messages?.map(msg => ({ ...msg, timestamp: new Date(msg.timestamp) })) || []);
-        setActivityLogs(allLogs);
-        setMessages(allMessages);
+        setActivityLogs(Object.values(allSchoolData).flatMap(s => s.activityLogs.map(log => ({ ...log, timestamp: new Date(log.timestamp) }))));
+        setMessages(Object.values(allSchoolData).flatMap(s => s.messages.map(msg => ({ ...msg, timestamp: new Date(msg.timestamp) }))));
     } else if (role === 'Parent' && user?.email) {
         const parentEmail = user.email;
         const childrenSchools = new Set<string>();
-        Object.values(allSchoolData).forEach(school => {
-            if (school.students.some(s => s.parentEmail === parentEmail)) {
+        const relevantStudents = Object.values(allSchoolData).flatMap(school => 
+            school.students.filter(s => s.parentEmail === parentEmail)
+            .map(s => {
                 childrenSchools.add(school.profile.id);
-            }
-        });
-
-        const relevantStudents = Object.values(allSchoolData).flatMap(school => school.students.filter(s => s.parentEmail === parentEmail).map(s => ({ ...s, schoolName: school.profile.name, schoolId: school.profile.id })));
+                return { ...s, schoolName: school.profile.name, schoolId: school.profile.id };
+            })
+        );
         const childrenIds = new Set(relevantStudents.map(s => s.id));
-        
-        const relevantGrades = Object.values(allSchoolData).flatMap(school => school.grades.filter(g => childrenIds.has(g.studentId)));
-        const relevantAttendance = Object.values(allSchoolData).flatMap(school => school.attendance.filter(a => childrenIds.has(a.studentId)));
-        const relevantFinance = Object.values(allSchoolData).flatMap(school => school.finance.filter(f => childrenIds.has(f.studentId)));
-        const relevantEvents = Object.values(allSchoolData).filter(s => childrenSchools.has(s.profile.id)).flatMap(s => s.events.map(e => ({ ...e, schoolName: s.profile.name, date: new Date(e.date) })));
-        const relevantTeams = Object.values(allSchoolData).filter(s => childrenSchools.has(s.profile.id)).flatMap(s => s.teams);
-        const relevantCompetitions = Object.values(allSchoolData).filter(s => childrenSchools.has(s.profile.id)).flatMap(s => s.competitions.map(c => ({ ...c, date: new Date(c.date) })));
-        const relevantMessages = Object.values(allSchoolData).flatMap(s => s.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
-        const relevantTeachers = Object.values(allSchoolData).flatMap(s => s.teachers);
-        const relevantClasses = Object.values(allSchoolData).flatMap(s => s.classes);
-        const relevantCourses = Object.values(allSchoolData).flatMap(s => s.courses);
-        
+
+        const schoolIdsArray = Array.from(childrenSchools);
+        const relevantData = schoolIdsArray.reduce((acc, schoolId) => {
+            const school = allSchoolData[schoolId];
+            acc.grades.push(...school.grades.filter(g => childrenIds.has(g.studentId)));
+            acc.attendance.push(...school.attendance.filter(a => childrenIds.has(a.studentId)));
+            acc.finance.push(...school.finance.filter(f => childrenIds.has(f.studentId)));
+            acc.events.push(...school.events.map(e => ({ ...e, schoolName: school.profile.name, date: new Date(e.date) })));
+            acc.teams.push(...school.teams);
+            acc.competitions.push(...school.competitions.map(c => ({ ...c, date: new Date(c.date) })));
+            acc.messages.push(...school.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
+            acc.teachers.push(...school.teachers);
+            acc.classes.push(...school.classes);
+            acc.courses.push(...school.courses);
+            return acc;
+        }, { grades: [] as Grade[], attendance: [] as Attendance[], finance: [] as FinanceRecord[], events: [] as SchoolEvent[], teams: [] as Team[], competitions: [] as Competition[], messages: [] as Message[], teachers: [] as Teacher[], classes: [] as Class[], courses: [] as Course[] });
+
         setStudentsData(relevantStudents);
-        setGrades(relevantGrades);
-        setAttendance(relevantAttendance);
-        setFinanceData(relevantFinance);
-        setEvents(relevantEvents);
-        setTeamsData(relevantTeams);
-        setCompetitionsData(relevantCompetitions);
-        setMessages(relevantMessages);
-        setTeachersData(relevantTeachers);
-        setClassesData(relevantClasses);
-        setCoursesData(relevantCourses);
-        if (relevantStudents.length > 0 && relevantStudents[0].schoolId) {
-            setSchoolProfile(allSchoolData[relevantStudents[0].schoolId].profile);
+        setGrades(relevantData.grades);
+        setAttendance(relevantData.attendance);
+        setFinanceData(relevantData.finance);
+        setEvents(relevantData.events);
+        setTeamsData(relevantData.teams);
+        setCompetitionsData(relevantData.competitions);
+        setMessages(relevantData.messages);
+        setTeachersData(relevantData.teachers);
+        setClassesData(relevantData.classes);
+        setCoursesData(relevantData.courses);
+        
+        if (relevantStudents.length > 0 && schoolIdsArray.length > 0) {
+            setSchoolProfile(allSchoolData[schoolIdsArray[0]].profile); // Set a default school profile for display
         } else {
             setSchoolProfile(null);
         }
@@ -309,7 +313,11 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setIsLoading(false);
-  }, [user, role, allSchoolData, schoolGroups, originalUser]);
+  }, [user, role, allSchoolData, schoolGroups]);
+
+  useEffect(() => {
+    loadDataForRole();
+  }, [loadDataForRole]);
 
   const addSchool = (data: NewSchoolData, groupId?: string) => {
     const schoolId = data.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15);
@@ -331,8 +339,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       savedTests: [], deployedTests: [], admissions: [], exams: [],
       finance: [], assets: [], assignments: [], grades: [], attendance: [],
       events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'],
-      audiences: ['All Students', 'Parents', 'Teachers'],
-      expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance'],
+      audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'],
+      expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
       expenses: [], teams: [], competitions: [], terms: [], holidays: [],
       activityLogs: [{
         id: `LOG${schoolId}${Date.now()}`,
@@ -620,7 +628,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     };
   
     setAllSchoolData(prevAllData => {
-        const newAllData = { ...prevAllData };
+        const newAllData = JSON.parse(JSON.stringify(prevAllData));
         Object.keys(newAllData).forEach(schoolId => {
             const school = newAllData[schoolId];
             const newSchoolEvent = {
@@ -628,13 +636,11 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
                 id: `EVT${Date.now()}-${schoolId}`,
                 date: new Date(),
             };
-            // Create a new array for events to ensure state update is detected
             school.events = [...school.events, newSchoolEvent];
         });
         return newAllData;
     });
 
-    // Add a single activity log entry for the global action
     setActivityLogs(prev => {
         const logEntry: ActivityLog = {
             id: `LOGG${Date.now()}`,
