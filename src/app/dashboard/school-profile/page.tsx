@@ -350,8 +350,8 @@ export default function SchoolProfilePage() {
         <p className="text-muted-foreground">Manage your school's official information and subscription plan.</p>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        <Card className="lg:col-span-3">
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-1">
             <CardHeader>
               <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex items-center gap-4">
@@ -370,7 +370,7 @@ export default function SchoolProfilePage() {
               </div>
             </CardHeader>
             <CardContent>
-                <div className="grid gap-6 md:grid-cols-2 text-sm">
+                <div className="space-y-4 text-sm">
                     <div className="flex items-start gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted shrink-0">
                             <User className="h-4 w-4 text-muted-foreground" />
@@ -415,45 +415,44 @@ export default function SchoolProfilePage() {
             </CardFooter>
         </Card>
         
-        <div className="lg:col-span-2 space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Certificate Template</CardTitle>
-                    <CardDescription>This template will be used for student completion certificates.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                     <div className="p-2 bg-muted rounded-md flex justify-center border">
-                        <Image
-                            src={schoolProfile.certificateTemplateUrl || "https://placehold.co/800x600.png"}
-                            alt="Certificate Template Preview"
-                            width={400}
-                            height={300}
-                            className="rounded-md shadow-lg object-contain"
-                            data-ai-hint="certificate document"
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Transcript Template</CardTitle>
-                    <CardDescription>This template will be used for official academic transcripts.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                     <div className="p-2 bg-muted rounded-md flex justify-center border">
-                        <Image
-                            src={schoolProfile.transcriptTemplateUrl || "https://placehold.co/600x800.png"}
-                            alt="Transcript Template Preview"
-                            width={300}
-                            height={400}
-                            className="rounded-md shadow-lg object-contain"
-                            data-ai-hint="transcript document"
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+        <Card className="lg:col-span-1">
+            <CardHeader>
+                <CardTitle>Certificate Template</CardTitle>
+                <CardDescription>This template will be used for student completion certificates.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <div className="p-2 bg-muted rounded-md flex justify-center border">
+                    <Image
+                        src={schoolProfile.certificateTemplateUrl || "https://placehold.co/800x600.png"}
+                        alt="Certificate Template Preview"
+                        width={400}
+                        height={300}
+                        className="rounded-md shadow-lg object-contain"
+                        data-ai-hint="certificate document"
+                    />
+                </div>
+            </CardContent>
+        </Card>
+         <Card className="lg:col-span-1">
+            <CardHeader>
+                <CardTitle>Transcript Template</CardTitle>
+                <CardDescription>This template will be used for official academic transcripts.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <div className="p-2 bg-muted rounded-md flex justify-center border">
+                    <Image
+                        src={schoolProfile.transcriptTemplateUrl || "https://placehold.co/600x800.png"}
+                        alt="Transcript Template Preview"
+                        width={300}
+                        height={400}
+                        className="rounded-md shadow-lg object-contain"
+                        data-ai-hint="transcript document"
+                    />
+                </div>
+            </CardContent>
+        </Card>
       </div>
     </div>
   );
 }
+
