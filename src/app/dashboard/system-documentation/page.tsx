@@ -1,8 +1,9 @@
+
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Code, GitBranch, LayoutTemplate, Loader2, Database, Share2, BrainCircuit, MonitorPlay, Cloud, Server, KeyRound, UploadCloud, BookUser, ListTodo, Briefcase, FileText as FileTextIcon } from 'lucide-react';
+import { Code, GitBranch, LayoutTemplate, Loader2, Database, Share2, BrainCircuit, MonitorPlay, Cloud, Server, KeyRound, UploadCloud, BookUser, ListTodo, Briefcase, BookCopy } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function SystemDocumentationPage() {
