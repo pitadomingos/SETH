@@ -82,7 +82,7 @@ export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/global-admin/inbox', label: 'Messaging', icon: Mail },
     { href: '/dashboard/global-admin/awards', label: 'Awards', icon: Award },
     { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
-    { href: '/dashboard/finance-proposal', label: 'Project Proposal', icon: Briefcase },
+    { href: '/dashboard/project-proposal', label: 'Project Proposal', icon: Briefcase },
     { href: '/dashboard/system-documentation', label: 'System Docs', icon: FileText },
     { href: '/dashboard/todo-list', label: 'To-Do List', icon: ListTodo },
   ],
