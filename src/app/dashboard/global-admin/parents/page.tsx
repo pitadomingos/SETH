@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useAuth, mockUsers } from '@/context/auth-context';
+import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -114,12 +114,8 @@ export default function GlobalParentsPage() {
   };
   
   const handleImpersonate = (email: string) => {
-    const username = Object.keys(mockUsers).find(key => mockUsers[key].user.email === email);
-    if (username) {
-        impersonateUser(username);
-    } else {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not find a login for this user.' });
-    }
+    // This needs to be adapted since mockUsers is gone.
+    impersonateUser(email, 'Parent');
   }
 
   const getStatusVariant = (status: 'Active' | 'Suspended') => {

@@ -1,9 +1,9 @@
+
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/context/auth-context';
 import { ThemeProvider } from '@/components/layout/theme-provider';
 import { cn } from '@/lib/utils';
-import { SchoolDataProvider } from '@/context/school-data-context';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -37,10 +37,8 @@ export default function RootLayout({
           enableSystem
         >
           <AuthProvider>
-            <SchoolDataProvider>
-              {children}
-              <Toaster />
-            </SchoolDataProvider>
+            {children}
+            <Toaster />
           </AuthProvider>
         </ThemeProvider>
       </body>

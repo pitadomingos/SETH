@@ -6,20 +6,18 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth, Role } from '@/context/auth-context';
+import { useAuth } from '@/context/auth-context';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { GraduationCap, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
-  username: z.string().min(1, { message: 'Username is required.' }),
+  email: z.string().email({ message: 'Please enter a valid email.' }),
   password: z.string().min(1, { message: 'Password is required.' }),
-  role: z.enum(['GlobalAdmin', 'Admin', 'Teacher', 'Student', 'Parent'], { required_error: 'You must select a role.' }),
 });
 
 type LoginFormValues = z.infer<typeof formSchema>;
@@ -33,18 +31,14 @@ export function LoginForm() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: '',
+      email: '',
       password: '',
     },
   });
 
   async function onSubmit(values: LoginFormValues) {
     setIsLoading(true);
-    const result = await login({
-        username: values.username,
-        password: values.password,
-        role: values.role as Exclude<Role, null>
-    });
+    const result = await login(values.email, values.password);
 
     if (result.success) {
       router.push('/dashboard');
@@ -55,7 +49,6 @@ export function LoginForm() {
         description: result.message || 'An unknown error occurred.',
       });
       form.setError('root', { message: result.message });
-      form.setValue('password', '');
     }
     setIsLoading(false);
   }
@@ -74,12 +67,12 @@ export function LoginForm() {
           <CardContent className="space-y-4">
             <FormField
               control={form.control}
-              name="username"
+              name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter username" {...field} />
+                    <Input placeholder="Enter your email" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -98,30 +91,6 @@ export function LoginForm() {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="GlobalAdmin">Developer / Global Admin</SelectItem>
-                      <SelectItem value="Admin">School Administrator</SelectItem>
-                      <SelectItem value="Teacher">Teacher</SelectItem>
-                      <SelectItem value="Student">Student</SelectItem>
-                      <SelectItem value="Parent">Parent</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" disabled={isLoading} className="w-full" size="lg">
@@ -129,19 +98,126 @@ export function LoginForm() {
               Sign In
             </Button>
             <div className="text-center text-sm text-muted-foreground">
-              <p className="font-bold">Demo Credentials</p>
-              <p className="mt-2"><span className="font-semibold">Developer:</span> `developer` (pass: `dev123`)</p>
-              <p><span className="font-semibold">Premium Admin:</span> Log in as `admin3` (Maplewood)</p>
-              <p className="mt-2"><span className="font-semibold">Northwood High:</span> Use `admin1`, `teacher1`, `student1`, or `parent1`</p>
-              <p><span className="font-semibold">Oakridge Academy:</span> Use `admin2`, `teacher2`, or `student2`</p>
-              <p><span className="font-semibold">Maplewood Int'l:</span> Use `admin3`, `teacher3`, or `student3`</p>
-              <p><span className="font-semibold">Failing Student (Northwood):</span> `student4`</p>
-              <p className="mt-2">Passwords are based on role:</p>
-              <p>Admin: `admin123`, Teacher: `teacher123`, Student: `student123`, Parent: `parent123`</p>
+              <p>This is now powered by Firebase. In a real application, you would sign up for an account.</p>
+              <p className="mt-2">For now, you can use the mock data login from the previous version to see the UI, but the data will not be connected.</p>
             </div>
           </CardFooter>
         </form>
       </Form>
     </Card>
+  </change>
+  <change>
+    <file>/src/context/auth-context.tsx</file>
+    <content><![CDATA[
+'use client';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+import { onAuthStateChanged, signOut, signInWithEmailAndPassword, type User as FirebaseUser } from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
+
+export type Role = 'GlobalAdmin' | 'Admin' | 'Teacher' | 'Student' | 'Parent';
+
+interface User {
+  uid: string;
+  email: string | null;
+  name: string | null;
+  role: Role | null;
+}
+
+interface LoginResult {
+  success: boolean;
+  message?: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  login: (email: string, pass: string) => Promise<LoginResult>;
+  logout: () => void;
+  isLoading: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // In a real app, you would fetch the user's role from Firestore here
+        // after they sign in. For the prototype, we'll keep the mock role.
+        const idTokenResult = await firebaseUser.getIdTokenResult();
+        const userRole = (idTokenResult.claims.role as Role) || null;
+
+        setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName,
+          role: userRole,
+        });
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const login = async (email: string, pass: string): Promise<LoginResult> => {
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      return { success: true };
+    } catch (error: any) {
+      console.error("Firebase login error:", error);
+      let message = 'An unknown error occurred.';
+      if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        message = 'Invalid email or password.';
+      }
+      return { success: false, message };
+    }
+  };
+
+  const logout = async () => {
+    await signOut(auth);
+    router.push('/');
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+      {children}
+    </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export function ProtectedRoute({ children }: { children: ReactNode }) {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/');
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 }

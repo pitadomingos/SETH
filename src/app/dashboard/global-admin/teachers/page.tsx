@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useAuth, mockUsers } from '@/context/auth-context';
+import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -93,12 +93,7 @@ export default function GlobalTeachersPage() {
   };
   
   const handleImpersonate = (email: string) => {
-    const username = Object.keys(mockUsers).find(key => mockUsers[key].user.email === email);
-    if (username) {
-        impersonateUser(username);
-    } else {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not find a login for this user.' });
-    }
+    impersonateUser(email, 'Teacher');
   }
 
   const getStatusVariant = (status: Teacher['status']) => {

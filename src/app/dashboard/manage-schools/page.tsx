@@ -1,6 +1,6 @@
 
 'use client';
-import { useAuth, mockUsers } from '@/context/auth-context';
+import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,11 +45,10 @@ export default function ManageSchoolsPage() {
   }, [schoolsToDisplay, searchTerm]);
   
   const handleManageSchool = (schoolId: string) => {
-    const adminRecord = Object.values(mockUsers).find(
-      (record) => record.user.schoolId === schoolId && record.role === 'Admin'
-    );
-    if (adminRecord) {
-        impersonateUser(adminRecord.user.username);
+    // This needs to be adapted since mockUsers is gone.
+    const school = allSchoolData?.[schoolId];
+    if (school) {
+        impersonateUser(school.profile.email, 'Admin');
     } else {
         toast({
             variant: 'destructive',

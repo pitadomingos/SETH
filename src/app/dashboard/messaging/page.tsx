@@ -1,6 +1,6 @@
 
 'use client';
-import { useAuth, mockUsers } from '@/context/auth-context';
+import { useAuth } from '@/context/auth-context';
 import { useSchoolData, Message, NewMessageData } from '@/context/school-data-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useRef } from 'react';
@@ -57,7 +57,8 @@ function ComposeMessageDialog({ open, onOpenChange, replyTo }: { open?: boolean,
     }
     
     if (role === 'Teacher') {
-        const admin = Object.values(mockUsers).find(u => u.user.schoolId === user.schoolId && u.role === 'Admin');
+        const adminEmail = schoolProfile?.email || '';
+        const adminName = schoolProfile?.head || 'Administrator';
         
         const parentSet = new Set<string>();
         const teacherId = teachersData.find(t => t.email === user.email)?.id;
@@ -79,12 +80,13 @@ function ComposeMessageDialog({ open, onOpenChange, replyTo }: { open?: boolean,
         });
 
         const recipients = [...parents];
-        if (admin) recipients.unshift({ value: admin.user.email, label: `${admin.user.name} (Admin)` });
+        if (adminEmail) recipients.unshift({ value: adminEmail, label: `${adminName} (Admin)` });
         return recipients;
     }
 
     if (role === 'Parent') {
-        const admin = Object.values(mockUsers).find(u => u.user.schoolId === schoolProfile?.id && u.role === 'Admin');
+        const adminEmail = schoolProfile?.email || '';
+        const adminName = schoolProfile?.head || 'Administrator';
         const children = studentsData.filter(s => s.parentEmail === user.email);
         const teacherSet = new Set<string>();
         children.forEach(child => {
@@ -104,7 +106,7 @@ function ComposeMessageDialog({ open, onOpenChange, replyTo }: { open?: boolean,
         });
 
         const recipients = [...teachers];
-        if(admin) recipients.unshift({ value: admin.user.email, label: `${admin.user.name} (Admin)` });
+        if(adminEmail) recipients.unshift({ value: adminEmail, label: `${adminName} (Admin)` });
         return recipients;
     }
 
@@ -226,7 +228,7 @@ export default function MessagingPage() {
   const { inboxMessages, sentMessages } = useMemo(() => {
     if (!user) return { inboxMessages: [], sentMessages: [] };
     
-    const userIdentifier = user.email; // Use email as the unique identifier
+    const userIdentifier = user.email;
 
     const inbox = messages
       .filter(m => m.recipientUsername === userIdentifier)

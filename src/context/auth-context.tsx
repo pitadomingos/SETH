@@ -1,23 +1,17 @@
-
 'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { schoolData, schoolGroups } from '@/lib/mock-data';
+import { onAuthStateChanged, signOut, signInWithEmailAndPassword, type User as FirebaseUser } from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
 
 export type Role = 'GlobalAdmin' | 'Admin' | 'Teacher' | 'Student' | 'Parent';
 
 interface User {
-  username: string;
-  name: string;
-  email: string;
-  schoolId?: string;
-}
-
-interface LoginCredentials {
-  username: string;
-  password: string;
-  role: Exclude<Role, null>;
+  uid: string;
+  email: string | null;
+  name: string | null;
+  role: Role | null;
 }
 
 interface LoginResult {
@@ -26,195 +20,63 @@ interface LoginResult {
 }
 
 interface AuthContextType {
-  role: Role | null;
   user: User | null;
-  originalUser: User | null;
-  originalRole: Role | null;
-  login: (credentials: LoginCredentials) => Promise<LoginResult>;
+  login: (email: string, pass: string) => Promise<LoginResult>;
   logout: () => void;
   isLoading: boolean;
-  impersonateUser: (username: string) => Promise<LoginResult>;
-  revertImpersonation: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const mockUsers: Record<string, { user: User, role: Role }> = {
-  developer: { user: { username: 'developer', name: 'App Developer', email: 'dev@edumanage.app' }, role: 'GlobalAdmin' },
-  admin1: { user: { username: 'admin1', name: 'Dr. Sarah Johnson', email: 's.johnson@northwood.edu', schoolId: 'northwood' }, role: 'Admin' },
-  teacher1: { user: { username: 'teacher1', name: 'Prof. Michael Chen', email: 'm.chen@edumanage.com', schoolId: 'northwood' }, role: 'Teacher' },
-  student1: { user: { username: 'student1', name: 'Emma Rodriguez', email: 'e.rodriguez@edumanage.com', schoolId: 'northwood' }, role: 'Student' },
-  parent1: { user: { username: 'parent1', name: 'Maria Rodriguez', email: 'm.rodriguez@family.com' }, role: 'Parent' },
-  admin2: { user: { username: 'admin2', name: 'Mr. James Maxwell', email: 'j.maxwell@oakridge.edu', schoolId: 'oakridge' }, role: 'Admin' },
-  teacher2: { user: { username: 'teacher2', name: 'Ms. Rachel Adams', email: 'r.adams@oakridge.edu', schoolId: 'oakridge' }, role: 'Teacher' },
-  student2: { user: { username: 'student2', name: 'Benjamin Carter', email: 'b.carter@oakridge.com', schoolId: 'oakridge' }, role: 'Student' },
-  admin3: { user: { username: 'admin3', name: 'Ms. Eleanor Vance', email: 'e.vance@maplewood.edu', schoolId: 'maplewood' }, role: 'Admin' },
-  teacher3: { user: { username: 'teacher3', name: 'Mr. David Lee', email: 'd.lee@maplewood.edu', schoolId: 'maplewood' }, role: 'Teacher' },
-  student3: { user: { username: 'student3', name: 'Chloe Dubois', email: 'c.dubois@maplewood.edu', schoolId: 'maplewood' }, role: 'Student' },
-  student4: { user: { username: 'student4', name: 'William Miller', email: 'w.miller@edumanage.com', schoolId: 'northwood' }, role: 'Student' },
-};
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [role, setRole] = useState<Role | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [originalUser, setOriginalUser] = useState<User | null>(null);
-  const [originalRole, setOriginalRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem('user');
-      const savedRole = localStorage.getItem('userRole') as Role;
-      const savedOriginalUser = localStorage.getItem('originalUser');
-      const savedOriginalRole = localStorage.getItem('originalRole') as Role;
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // In a real app, you would fetch the user's role from Firestore here
+        // after they sign in. For the prototype, we'll keep the mock role.
+        const idTokenResult = await firebaseUser.getIdTokenResult();
+        const userRole = (idTokenResult.claims.role as Role) || null;
 
-      if (savedUser && savedRole) {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        setRole(savedRole);
+        setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName,
+          role: userRole,
+        });
+      } else {
+        setUser(null);
       }
-       if (savedOriginalUser && savedOriginalRole) {
-        setOriginalUser(JSON.parse(savedOriginalUser));
-        setOriginalRole(savedOriginalRole);
-      }
-    } catch (e) {
-      console.error("Local storage is not available or data is corrupted.");
-    } finally {
       setIsLoading(false);
-    }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const login = async (creds: LoginCredentials): Promise<LoginResult> => {
-    const userRecord = mockUsers[creds.username.toLowerCase()];
-    
-    if (!userRecord || userRecord.role !== creds.role) {
-      return { success: false, message: 'Invalid credentials. Please check the demo credentials and try again.' };
-    }
-    
-    const schoolId = userRecord.user.schoolId;
-    if (schoolId && schoolData[schoolId]) {
-        const schoolStatus = schoolData[schoolId].profile.status;
-        if ((schoolStatus === 'Suspended' || schoolStatus === 'Inactive') && creds.role !== 'Admin' && creds.role !== 'GlobalAdmin') {
-            return { success: false, message: `Your school's account is ${schoolStatus}. Please contact your school administrator.` };
-        }
-    }
-
-
-    let correctPassword = '';
-    switch (creds.role) {
-      case 'GlobalAdmin': correctPassword = 'dev123'; break;
-      case 'Admin': correctPassword = 'admin123'; break;
-      case 'Teacher': correctPassword = 'teacher123'; break;
-      case 'Student': correctPassword = 'student123'; break;
-      case 'Parent': correctPassword = 'parent123'; break;
-    }
-
-    if (creds.password === correctPassword) {
-      const { user, role } = userRecord;
-      setUser(user);
-      setRole(role);
-      try {
-        localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('userRole', role);
-      } catch (e) {
-        console.error("Local storage is not available.");
-      }
+  const login = async (email: string, pass: string): Promise<LoginResult> => {
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
       return { success: true };
-    }
-    
-    return { success: false, message: 'Invalid credentials. Please check the demo credentials and try again.' };
-  };
-
-  const logout = () => {
-    setRole(null);
-    setUser(null);
-    setOriginalUser(null);
-    setOriginalRole(null);
-    try {
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('user');
-      localStorage.removeItem('originalUser');
-      localStorage.removeItem('originalRole');
-      window.location.href = '/';
-    } catch (e) {
-      console.error("Local storage is not available.");
-    }
-  };
-
-  const impersonateUser = async (username: string): Promise<LoginResult> => {
-    const impersonator = originalUser || user;
-    const impersonatorRole = originalRole || role;
-
-    if (!impersonator || !impersonatorRole) {
-      return { success: false, message: 'Could not identify the user initiating the action.' };
-    }
-
-    const targetUserRecord = mockUsers[username.toLowerCase()];
-    if (!targetUserRecord) {
-      return { success: false, message: 'User to impersonate not found.' };
-    }
-
-    const isPremiumAdmin = 
-      impersonatorRole === 'Admin' &&
-      impersonator.schoolId &&
-      Object.values(schoolGroups).some(group => group.includes(impersonator.schoolId!));
-
-    const canImpersonate = 
-      impersonatorRole === 'GlobalAdmin' || 
-      (isPremiumAdmin && 
-        targetUserRecord.user.schoolId && 
-        Object.values(schoolGroups).some(group => group.includes(targetUserRecord.user.schoolId!)));
-
-    if (!canImpersonate) {
-      return { success: false, message: 'You do not have permission to manage this user.' };
-    }
-    
-    // If this is the first impersonation, save the original user state.
-    if (!originalUser && user) {
-        setOriginalUser(user);
-        setOriginalRole(role);
-        try {
-            localStorage.setItem('originalUser', JSON.stringify(user));
-            localStorage.setItem('originalRole', role || '');
-        } catch (e) { console.error("Local storage is not available."); }
-    }
-
-    const { user: targetUser, role: targetRole } = targetUserRecord;
-    setUser(targetUser);
-    setRole(targetRole);
-    try {
-        localStorage.setItem('user', JSON.stringify(targetUser));
-        localStorage.setItem('userRole', targetRole);
-        // We push instead of replace to allow the back button to work as expected
-        router.push('/dashboard'); 
-    } catch (e) { console.error("Local storage is not available."); }
-
-    return { success: true };
-  };
-
-  const revertImpersonation = () => {
-    if (originalUser && originalRole) {
-      setUser(originalUser);
-      setRole(originalRole);
-      try {
-        localStorage.setItem('user', JSON.stringify(originalUser));
-        localStorage.setItem('userRole', originalRole);
-        localStorage.removeItem('originalUser');
-        localStorage.removeItem('originalRole');
-      } catch (e) {
-        console.error("Local storage is not available.");
+    } catch (error: any) {
+      console.error("Firebase login error:", error);
+      let message = 'An unknown error occurred.';
+      if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        message = 'Invalid email or password.';
       }
-
-      setOriginalUser(null);
-      setOriginalRole(null);
-      
-      router.push('/dashboard');
+      return { success: false, message };
     }
+  };
+
+  const logout = async () => {
+    await signOut(auth);
+    router.push('/');
   };
 
   return (
-    <AuthContext.Provider value={{ role, user, originalUser, originalRole, login, logout, isLoading, impersonateUser, revertImpersonation }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
@@ -229,16 +91,16 @@ export const useAuth = () => {
 };
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { role, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !role) {
+    if (!isLoading && !user) {
       router.push('/');
     }
-  }, [role, isLoading, router]);
+  }, [user, isLoading, router]);
 
-  if (isLoading || !role) {
+  if (isLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

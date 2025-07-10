@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -29,8 +28,9 @@ import {
     Attendance,
     SavedReport as InitialSavedReport,
     AwardConfig as InitialAwardConfig,
+    KioskMedia,
 } from '@/lib/mock-data';
-import { useAuth, Role, mockUsers } from './auth-context';
+import { useAuth, Role } from './auth-context';
 import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
 import { GenerateTestOutput } from '@/ai/flows/generate-test';
 import { useToast } from '@/hooks/use-toast';
@@ -44,7 +44,7 @@ export type Course = InitialCourse;
 export type Competition = InitialCompetition;
 export type SavedReport = InitialSavedReport;
 export type AwardConfig = InitialAwardConfig;
-export type { Team, Admission, Student, ActivityLog, Message, Teacher, Attendance, Holiday };
+export type { Team, Admission, Student, ActivityLog, Message, Teacher, Attendance, Holiday, KioskMedia };
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
 interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }
@@ -164,6 +164,9 @@ interface SchoolDataContextType {
   updateParentStatus: (email: string, status: 'Active' | 'Suspended') => void;
   savedReports: SavedReport[];
   addSavedReport: (report: Omit<SavedReport, 'id' | 'generatedAt'>) => void;
+  kioskMedia: KioskMedia[];
+  addKioskMedia: (media: Omit<KioskMedia, 'id' | 'createdAt'>) => void;
+  removeKioskMedia: (mediaId: string) => void;
   isLoading: boolean;
 }
 
@@ -223,15 +226,19 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [parentStatusOverrides, setParentStatusOverrides] = useState<Record<string, 'Active' | 'Suspended'>>({});
   const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
+  const [kioskMedia, setKioskMedia] = useState<KioskMedia[]>([]);
   const [awardConfig, setAwardConfig] = useState<AwardConfig>(() => JSON.parse(JSON.stringify(initialAwardConfig)));
   
   const [isLoading, setIsLoading] = useState(true);
 
   const loadDataForRole = useCallback(() => {
     setIsLoading(true);
-
-    const isPremiumAdmin = role === 'Admin' && user?.schoolId && Object.values(schoolGroups).some(g => g.includes(user.schoolId!));
-
+    
+    // This logic is complex because it simulates a multi-tenant environment with a single global data object.
+    // In a real app, you'd fetch only the data needed for the current user's school(s).
+    const schoolId = user?.schoolId;
+    const isPremiumAdmin = role === 'Admin' && schoolId && Object.values(schoolGroups).some(g => g.includes(schoolId));
+    
     if (role === 'GlobalAdmin' || isPremiumAdmin) {
         setSchoolProfile(null);
         setActivityLogs(Object.values(allSchoolData).flatMap(s => s.activityLogs.map(log => ({ ...log, timestamp: new Date(log.timestamp) }))));
@@ -249,8 +256,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         const childrenIds = new Set(relevantStudents.map(s => s.id));
 
         const schoolIdsArray = Array.from(childrenSchools);
-        const relevantData = schoolIdsArray.reduce((acc, schoolId) => {
-            const school = allSchoolData[schoolId];
+        const relevantData = schoolIdsArray.reduce((acc, currentSchoolId) => {
+            const school = allSchoolData[currentSchoolId];
             acc.grades.push(...school.grades.filter(g => childrenIds.has(g.studentId)));
             acc.attendance.push(...school.attendance.filter(a => childrenIds.has(a.studentId)));
             acc.finance.push(...school.finance.filter(f => childrenIds.has(f.studentId)));
@@ -281,8 +288,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         } else {
             setSchoolProfile(null);
         }
-    } else if (user?.schoolId && allSchoolData[user.schoolId]) {
-        const schoolId = user.schoolId;
+    } else if (schoolId && allSchoolData[schoolId]) {
         const data = allSchoolData[schoolId];
         setSchoolProfile(data.profile);
         setStudentsData(role === 'Student' ? data.students.filter(s => s.email === user.email) : data.students);
@@ -309,6 +315,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         setSubjects([...new Set(data.teachers.map(t => t.subject))].sort());
         setFeeDescriptions(data.feeDescriptions);
         setAudiences(data.audiences);
+        setKioskMedia(data.kioskMedia.map(km => ({...km, createdAt: new Date(km.createdAt)})));
     } else {
         setSchoolProfile(null);
     }
@@ -332,6 +339,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       currency: 'USD',
       status: 'Active',
       gradeCapacity: { "1": 30, "2": 30, "3": 30, "4": 30, "5": 30, "6": 35, "7": 35, "8": 35, "9": 40, "10": 40, "11": 40, "12": 40 },
+      kioskConfig: { showDashboard: true, showLeaderboard: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false },
     };
 
     const newSchoolData = {
@@ -343,6 +351,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'],
       expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
       expenses: [], teams: [], competitions: [], terms: [], holidays: [],
+      kioskMedia: [],
       activityLogs: [{
         id: `LOG${schoolId}${Date.now()}`,
         timestamp: new Date(),
@@ -374,7 +383,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     
     toast({
       title: 'School Created!',
-      description: `School "${data.name}" has been added. The default admin username is 'admin_${schoolId}' with password 'admin123'. An email would be sent in production.`,
+      description: `School "${data.name}" has been added. An admin account will need to be created in Firebase.`,
       duration: 10000,
     });
   };
@@ -526,7 +535,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addStudentFromAdmission = (admission: Admission) => {
-    if (!user?.schoolId) return;
+    const schoolId = user?.schoolId;
+    if (!schoolId) return;
 
     const newStudent: Student = {
         id: `S${Date.now()}`,
@@ -544,13 +554,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     };
     
     setAllSchoolData(prevAllData => {
-        const schoolId = user.schoolId!;
         const newAllData = { ...prevAllData };
         if (newAllData[schoolId]) {
-          newAllData[schoolId] = {
-              ...newAllData[schoolId],
-              students: [...newAllData[schoolId].students, newStudent]
-          }
+          newAllData[schoolId].students.push(newStudent);
         } else {
           console.error(`School with id ${schoolId} not found`);
         }
@@ -750,29 +756,28 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addMessage = (data: NewMessageData) => {
     if (!user || !role) return;
 
-    const recipient = Object.values(mockUsers).find(u => u.user.email === data.recipientUsername);
+    const allUsers = Object.values(allSchoolData).flatMap(s => [...s.teachers, ...s.students]).concat(Object.values(allSchoolData).flatMap(s => s.students.map(st => ({...st, email: st.parentEmail, name: st.parentName, role: 'Parent'}))));
+    const developerUser = { user: { name: 'Developer', email: 'developer@edumanage.com', role: 'GlobalAdmin' }};
+    const allPossibleRecipients = [...allUsers, developerUser.user];
+
+    const recipient = allPossibleRecipients.find(u => u.email === data.recipientUsername);
     if (!recipient) {
       toast({ variant: 'destructive', title: 'Recipient not found' });
       return;
     }
 
-    const schoolIdForMessage = recipient.user.schoolId || user.schoolId;
-
-    if (!schoolIdForMessage) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Cannot determine message destination.' });
-      return;
-    }
+    const schoolIdForMessage = (recipient as any).schoolId || user.schoolId || 'global';
     
     const newMessage: Message = {
       id: `MSG${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       timestamp: new Date(),
       schoolId: schoolIdForMessage,
-      senderUsername: user.email,
-      senderName: user.name,
+      senderUsername: user.email!,
+      senderName: user.name!,
       senderRole: role,
       recipientUsername: data.recipientUsername,
-      recipientName: recipient.user.name,
-      recipientRole: recipient.role,
+      recipientName: recipient.name,
+      recipientRole: (recipient as any).role as Role,
       subject: data.subject,
       body: data.body,
       isRead: false,
@@ -815,19 +820,17 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addLessonAttendance = (courseId: string, date: string, attendanceData: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => {
-    if (!user?.schoolId) return;
+    const schoolId = user?.schoolId;
+    if (!schoolId) return;
 
     setAllSchoolData(prevAllData => {
-      const schoolId = user.schoolId!;
       const newAllData = { ...prevAllData };
       const schoolData = { ...newAllData[schoolId] };
 
-      // Filter out existing records for this specific course and date
       const otherAttendance = schoolData.attendance.filter(
         rec => !(rec.courseId === courseId && rec.date === date)
       );
 
-      // Create new records
       const newRecords: Attendance[] = Object.entries(attendanceData).map(([studentId, status]) => ({
         id: `ATT${Date.now()}${studentId}`,
         studentId,
@@ -849,6 +852,21 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       ...report,
     };
     setSavedReports(prev => [newReport, ...prev]);
+  };
+  
+  const addKioskMedia = (media: Omit<KioskMedia, 'id' | 'createdAt'>) => {
+    const schoolId = user?.schoolId;
+    if (!schoolId) return;
+    const newMedia: KioskMedia = {
+      id: `K${Date.now()}`,
+      createdAt: new Date(),
+      ...media,
+    };
+    setKioskMedia(prev => [newMedia, ...prev]);
+  };
+
+  const removeKioskMedia = (mediaId: string) => {
+    setKioskMedia(prev => prev.filter(m => m.id !== mediaId));
   };
 
 
@@ -888,6 +906,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     updateParentStatus,
     savedReports,
     addSavedReport,
+    kioskMedia, addKioskMedia, removeKioskMedia,
     isLoading,
   };
 

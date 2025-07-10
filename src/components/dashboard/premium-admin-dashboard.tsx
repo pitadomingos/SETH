@@ -1,6 +1,6 @@
 
 'use client';
-import { useAuth, mockUsers } from '@/context/auth-context';
+import { useAuth } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Building, Users, Presentation, Settings, School, PlusCircle } from 'lucide-react';
@@ -40,11 +40,14 @@ export default function PremiumAdminDashboard() {
   }, [managedSchools]);
 
   const handleManageSchool = (schoolId: string) => {
-    const adminRecord = Object.values(mockUsers).find(
-      (record) => record.user.schoolId === schoolId && record.role === 'Admin'
-    );
-    if (adminRecord) {
-        impersonateUser(adminRecord.user.username);
+    // This needs to be adapted since mockUsers is gone.
+    // For now, we can assume a convention for admin emails.
+    const school = allSchoolData?.[schoolId];
+    if (school) {
+        const adminEmail = `admin@${schoolId}.com`; // This is a placeholder assumption
+        // In a real Firebase app, you would have a way to find the admin user for a school.
+        // We'll just impersonate with a dummy username for the prototype.
+        impersonateUser(adminEmail, 'Admin');
     } else {
         toast({
             variant: 'destructive',
