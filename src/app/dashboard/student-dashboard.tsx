@@ -433,7 +433,7 @@ export default function StudentDashboard() {
                             </DialogHeader>
                             <div className="p-4 bg-muted rounded-md flex justify-center max-h-[70vh] overflow-y-auto">
                                 <Image
-                                    src="https://placehold.co/600x800.png"
+                                    src={schoolProfile?.transcriptTemplateUrl || "https://placehold.co/600x800.png"}
                                     alt="Transcript Preview"
                                     width={600}
                                     height={800}

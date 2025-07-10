@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Building, User, Mail, Phone, MapPin, Edit, Star, ShieldCheck, Gem, CreditCard, Save, Upload } from 'lucide-react';
-import { useSchoolData } from '@/context/school-data-context';
+import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
 import { useEffect, useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose, DialogFooter } from '@/components/ui/dialog';
@@ -193,6 +193,7 @@ const profileSchema = z.object({
   motto: z.string().optional(),
   logoUrl: z.string().url("Please enter a valid URL.").optional(),
   certificateTemplateUrl: z.string().url("Please enter a valid URL.").optional(),
+  transcriptTemplateUrl: z.string().url("Please enter a valid URL.").optional(),
 });
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
@@ -203,6 +204,7 @@ function EditProfileDialog() {
   
   const logoInputRef = useRef<HTMLInputElement>(null);
   const certInputRef = useRef<HTMLInputElement>(null);
+  const transcriptInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -211,6 +213,7 @@ function EditProfileDialog() {
 
   const logoPreview = form.watch('logoUrl');
   const certPreview = form.watch('certificateTemplateUrl');
+  const transcriptPreview = form.watch('transcriptTemplateUrl');
 
   useEffect(() => {
     if (schoolProfile && isOpen) {
@@ -278,6 +281,21 @@ function EditProfileDialog() {
                   <Button type="button" variant="outline" onClick={() => certInputRef.current?.click()}><Upload className="mr-2 h-4 w-4" />Upload</Button>
                 </div>
                 <FormField control={form.control} name="certificateTemplateUrl" render={({ field }) => ( <FormItem><FormControl><Input type="hidden" {...field} /></FormControl><FormMessage /></FormItem> )} />
+              </div>
+
+               <div className="col-span-1 space-y-2">
+                <FormLabel>Transcript Template</FormLabel>
+                <div className="flex items-center gap-4">
+                  <Image src={transcriptPreview || 'https://placehold.co/100x100.png'} alt="transcript preview" width={48} height={48} className="rounded-md bg-muted object-cover" data-ai-hint="transcript document"/>
+                  <input type="file" ref={transcriptInputRef} className="hidden" accept="image/*"
+                    onChange={() => {
+                      const newTranscriptUrl = `https://placehold.co/600x800.png?v=${Date.now()}`;
+                      form.setValue('transcriptTemplateUrl', newTranscriptUrl, { shouldValidate: true, shouldDirty: true });
+                    }}
+                  />
+                  <Button type="button" variant="outline" onClick={() => transcriptInputRef.current?.click()}><Upload className="mr-2 h-4 w-4" />Upload</Button>
+                </div>
+                <FormField control={form.control} name="transcriptTemplateUrl" render={({ field }) => ( <FormItem><FormControl><Input type="hidden" {...field} /></FormControl><FormMessage /></FormItem> )} />
               </div>
 
             </div>
@@ -397,24 +415,44 @@ export default function SchoolProfilePage() {
             </CardFooter>
         </Card>
         
-        <Card className="lg:col-span-2">
-            <CardHeader>
-                <CardTitle>Certificate Template</CardTitle>
-                <CardDescription>This template will be used for all student completion certificates.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <div className="p-4 bg-muted rounded-md flex justify-center border">
-                    <Image
-                        src={schoolProfile.certificateTemplateUrl || "https://placehold.co/800x600.png"}
-                        alt="Certificate Template Preview"
-                        width={800}
-                        height={600}
-                        className="rounded-md shadow-lg"
-                        data-ai-hint="certificate document"
-                    />
-                </div>
-            </CardContent>
-        </Card>
+        <div className="lg:col-span-2 space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Certificate Template</CardTitle>
+                    <CardDescription>This template will be used for student completion certificates.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <div className="p-2 bg-muted rounded-md flex justify-center border">
+                        <Image
+                            src={schoolProfile.certificateTemplateUrl || "https://placehold.co/800x600.png"}
+                            alt="Certificate Template Preview"
+                            width={400}
+                            height={300}
+                            className="rounded-md shadow-lg object-contain"
+                            data-ai-hint="certificate document"
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Transcript Template</CardTitle>
+                    <CardDescription>This template will be used for official academic transcripts.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <div className="p-2 bg-muted rounded-md flex justify-center border">
+                        <Image
+                            src={schoolProfile.transcriptTemplateUrl || "https://placehold.co/600x800.png"}
+                            alt="Transcript Template Preview"
+                            width={300}
+                            height={400}
+                            className="rounded-md shadow-lg object-contain"
+                            data-ai-hint="transcript document"
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
       </div>
     </div>
   );
