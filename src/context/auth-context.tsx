@@ -3,7 +3,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { schoolData, schoolGroups } from '@/lib/mock-data';
+import { schoolData, schoolGroups, mockUsers } from '@/lib/mock-data';
+import { useSchoolData } from './school-data-context';
 
 export type Role = 'GlobalAdmin' | 'Admin' | 'Teacher' | 'Student' | 'Parent';
 
@@ -26,35 +27,11 @@ interface AuthContextType {
   login: (email: string, pass: string) => Promise<LoginResult>;
   logout: () => void;
   isLoading: boolean;
-  impersonateUser: (username: string, asRole?: Role) => void;
+  impersonateUser: (usernameOrEmail: string, asRole?: Role) => void;
   revertImpersonation: () => void;
   originalUser: User | null;
   originalRole: Role | null;
 }
-
-// Mock user data
-export const mockUsers: Record<string, { user: User; password?: string }> = {
-  // Global Admins
-  'developer': { user: { username: 'developer', name: 'Developer', email: 'developer@edumanage.com', role: 'GlobalAdmin' }, password: 'dev123' },
-  // School Admins
-  'admin1': { user: { username: 'admin1', name: 'Dr. Sarah Johnson', email: 's.johnson@northwood.edu', role: 'Admin', schoolId: 'northwood' }, password: 'admin' },
-  'admin2': { user: { username: 'admin2', name: 'Mr. James Maxwell', email: 'j.maxwell@oakridge.edu', role: 'Admin', schoolId: 'oakridge' }, password: 'admin' },
-  'admin3': { user: { username: 'admin3', name: 'Ms. Eleanor Vance', email: 'e.vance@maplewood.edu', role: 'Admin', schoolId: 'maplewood' }, password: 'admin' },
-  
-  // Teachers
-  'teacher1': { user: { username: 'teacher1', name: 'Prof. Michael Chen', email: 'm.chen@edumanage.com', role: 'Teacher', schoolId: 'northwood' }, password: 'teacher' },
-  'teacher2': { user: { username: 'teacher2', name: 'Ms. Rachel Adams', email: 'r.adams@oakridge.com', role: 'Teacher', schoolId: 'oakridge' }, password: 'teacher' },
-
-  // Students
-  'student1': { user: { username: 'student1', name: 'Emma Rodriguez', email: 'e.rodriguez@edumanage.com', role: 'Student', schoolId: 'northwood' }, password: 'student' },
-  'student2': { user: { username: 'student2', name: 'Benjamin Carter', email: 'b.carter@oakridge.com', role: 'Student', schoolId: 'oakridge' }, password: 'student' },
-  'student3': { user: { username: 'student3', name: 'William Miller', email: 'w.miller@edumanage.com', role: 'Student', schoolId: 'northwood' }, password: 'student' },
-
-  // Parents
-  'parent1': { user: { username: 'parent1', name: 'Maria Rodriguez', email: 'm.rodriguez@family.com', role: 'Parent' }, password: 'parent' },
-  'parent2': { user: { username: 'parent2', name: 'Daniel Kim', email: 'd.kim@family.com', role: 'Parent' }, password: 'parent' },
-};
-
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -92,29 +69,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (email: string, pass: string): Promise<LoginResult> => {
-    const userRecord = Object.values(mockUsers).find(
-      (record) => record.user.email.toLowerCase() === email.toLowerCase() && record.password === pass
-    );
+    const userRecord = Object.values(mockUsers).find(u => u.user.email.toLowerCase() === email.toLowerCase());
 
-    if (userRecord) {
-      const loggedInUser = userRecord.user;
-      setUser(loggedInUser);
-      setRole(loggedInUser.role);
-      sessionStorage.setItem('user', JSON.stringify(loggedInUser));
-      sessionStorage.setItem('role', loggedInUser.role);
-      return { success: true };
+    if (userRecord && userRecord.password === pass) {
+        const loggedInUser: User = {
+            ...userRecord.user,
+        };
+        setUser(loggedInUser);
+        setRole(loggedInUser.role);
+        sessionStorage.setItem('user', JSON.stringify(loggedInUser));
+        sessionStorage.setItem('role', loggedInUser.role);
+        return { success: true };
     }
     
     // Check if it's a valid parent email
-    const parentRecord = Object.values(schoolData)
+    const parentStudent = Object.values(schoolData)
       .flatMap(s => s.students)
       .find(s => s.parentEmail.toLowerCase() === email.toLowerCase());
 
-    if (parentRecord && pass === 'parent') {
+    if (parentStudent && pass === 'parent') {
         const parentUser: User = {
-          username: parentRecord.parentEmail,
-          name: parentRecord.parentName,
-          email: parentRecord.parentEmail,
+          username: parentStudent.parentEmail,
+          name: parentStudent.parentName,
+          email: parentStudent.parentEmail,
           role: 'Parent',
         };
         setUser(parentUser);
@@ -139,29 +116,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const impersonateUser = (usernameOrEmail: string, asRole?: Role) => {
     if (!user || !role) return;
 
-    // Find the target user in mockUsers by username or email
-    let targetRecord = Object.values(mockUsers).find(
-      (record) => record.user.username === usernameOrEmail || record.user.email === usernameOrEmail
+    // Use a temporary context to get school data, as we might not be in the provider yet
+    const allUsers = Object.values(schoolData).flatMap(s => 
+        [...s.students, ...s.teachers]
     );
 
-    // If not found, check if it's a parent email
-    if (!targetRecord) {
-        const parentStudent = Object.values(schoolData).flatMap(s => s.students).find(s => s.parentEmail === usernameOrEmail);
-        if (parentStudent) {
-            targetRecord = {
-                user: {
-                    username: parentStudent.parentEmail,
-                    name: parentStudent.parentName,
-                    email: parentStudent.parentEmail,
-                    role: 'Parent'
-                }
+    let targetUser: User | undefined;
+
+    // Find in students or teachers
+    const foundUser = allUsers.find(u => u.email.toLowerCase() === usernameOrEmail.toLowerCase());
+    if (foundUser) {
+        targetUser = { ...foundUser, role: 'status' in foundUser ? 'Teacher' : 'Student' };
+    }
+    
+    // Find in admins (from school profiles)
+    if (!targetUser) {
+        const foundSchool = Object.values(schoolData).find(s => s.profile.email.toLowerCase() === usernameOrEmail.toLowerCase());
+        if (foundSchool) {
+            targetUser = {
+                username: `admin@${foundSchool.profile.id}`,
+                name: foundSchool.profile.head,
+                email: foundSchool.profile.email,
+                role: 'Admin',
+                schoolId: foundSchool.profile.id,
             };
         }
     }
 
-    if (targetRecord) {
-      const targetUser = targetRecord.user;
-      
+    // Find in parents
+    if (!targetUser) {
+        const parentStudent = Object.values(schoolData).flatMap(s => s.students).find(s => s.parentEmail.toLowerCase() === usernameOrEmail.toLowerCase());
+        if (parentStudent) {
+            targetUser = {
+                username: parentStudent.parentEmail,
+                name: parentStudent.parentName,
+                email: parentStudent.parentEmail,
+                role: 'Parent',
+            };
+        }
+    }
+
+    if (targetUser) {
       // Save current user state as original
       setOriginalUser(user);
       setOriginalRole(role);
@@ -170,14 +165,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Set new impersonated user state
       const impersonatedRole = asRole || targetUser.role;
-      setUser({ ...targetUser, role: impersonatedRole });
+      const finalUser = { ...targetUser, role: impersonatedRole, username: targetUser.email };
+      setUser(finalUser);
       setRole(impersonatedRole);
-      sessionStorage.setItem('user', JSON.stringify({ ...targetUser, role: impersonatedRole }));
+      sessionStorage.setItem('user', JSON.stringify(finalUser));
       sessionStorage.setItem('role', impersonatedRole);
       
       router.push('/dashboard');
+      router.refresh();
     }
   };
+
 
   const revertImpersonation = () => {
     if (originalUser && originalRole) {
@@ -192,7 +190,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       sessionStorage.removeItem('originalUser');
       sessionStorage.removeItem('originalRole');
       
-      router.push('/dashboard/global-admin');
+      router.push('/dashboard');
+      router.refresh();
     }
   };
 

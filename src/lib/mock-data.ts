@@ -357,3 +357,43 @@ export const schoolData: Record<string, SchoolData> = {
 export const schoolGroups = {
   educorp: ['maplewood']
 };
+
+
+export const mockUsers = {
+  developer: {
+    user: { username: 'developer', name: 'Developer', role: 'GlobalAdmin' as Role, email: 'developer@edumanage.com' },
+    password: 'dev123'
+  },
+  admin1: {
+    user: { username: 'admin1', name: 'Dr. Sarah Johnson', role: 'Admin' as Role, email: 's.johnson@northwood.edu', schoolId: 'northwood' },
+    password: 'admin'
+  },
+  admin2: {
+    user: { username: 'admin2', name: 'Mr. James Maxwell', role: 'Admin' as Role, email: 'j.maxwell@oakridge.edu', schoolId: 'oakridge' },
+    password: 'admin'
+  },
+  admin3: {
+    user: { username: 'admin3', name: 'Ms. Eleanor Vance', role: 'Admin' as Role, email: 'e.vance@maplewood.edu', schoolId: 'maplewood' },
+    password: 'admin'
+  },
+  teacher1: {
+    user: { username: 'teacher1', name: 'Prof. Michael Chen', role: 'Teacher' as Role, email: 'm.chen@edumanage.com', schoolId: 'northwood' },
+    password: 'teacher'
+  },
+  teacher2: {
+    user: { username: 'teacher2', name: 'Ms. Rachel Adams', role: 'Teacher' as Role, email: 'r.adams@oakridge.com', schoolId: 'oakridge' },
+    password: 'teacher'
+  },
+  student1: {
+    user: { username: 'student1', name: 'Emma Rodriguez', role: 'Student' as Role, email: 'e.rodriguez@edumanage.com', schoolId: 'northwood' },
+    password: 'student'
+  },
+  student2: {
+    user: { username: 'student2', name: 'Benjamin Carter', role: 'Student' as Role, email: 'b.carter@oakridge.com', schoolId: 'oakridge' },
+    password: 'student'
+  },
+  student3: {
+    user: { username: 'student3', name: 'William Miller', role: 'Student' as Role, email: 'w.miller@edumanage.com', schoolId: 'northwood' },
+    password: 'student'
+  }
+};

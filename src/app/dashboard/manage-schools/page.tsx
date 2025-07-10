@@ -45,7 +45,6 @@ export default function ManageSchoolsPage() {
   }, [schoolsToDisplay, searchTerm]);
   
   const handleManageSchool = (schoolId: string) => {
-    // This needs to be adapted since mockUsers is gone.
     const school = allSchoolData?.[schoolId];
     if (school) {
         impersonateUser(school.profile.email, 'Admin');

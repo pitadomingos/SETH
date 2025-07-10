@@ -40,14 +40,9 @@ export default function PremiumAdminDashboard() {
   }, [managedSchools]);
 
   const handleManageSchool = (schoolId: string) => {
-    // This needs to be adapted since mockUsers is gone.
-    // For now, we can assume a convention for admin emails.
     const school = allSchoolData?.[schoolId];
     if (school) {
-        const adminEmail = `admin@${schoolId}.com`; // This is a placeholder assumption
-        // In a real Firebase app, you would have a way to find the admin user for a school.
-        // We'll just impersonate with a dummy username for the prototype.
-        impersonateUser(adminEmail, 'Admin');
+        impersonateUser(school.profile.email, 'Admin');
     } else {
         toast({
             variant: 'destructive',
