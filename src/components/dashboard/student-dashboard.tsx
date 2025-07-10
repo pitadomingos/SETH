@@ -1,12 +1,11 @@
 
-
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { FileText, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse } from "lucide-react";
+import { FileText as FileTextIcon, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData } from "@/context/school-data-context";
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +24,7 @@ import Image from 'next/image';
 import { analyzeStudentFailure, AnalyzeStudentFailureOutput } from '@/ai/flows/analyze-student-failure';
 import { formatGradeDisplay, calculateAge } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { EndOfTermReportDialog } from '@/components/dashboard/end-of-term-report';
 
 const calculateAverageNumericGrade = (studentId: string, grades: any[]) => {
     if (!studentId || !grades) return 0;
@@ -342,13 +342,13 @@ export default function StudentDashboard() {
         <p className="text-muted-foreground">Welcome back, {user?.name}</p>
       </header>
       
-       <CompletionStatusAlert 
+       {student && <CompletionStatusAlert 
           student={student}
           hasPassed={hasPassed}
           areAllFeesPaid={areAllFeesPaid} 
           grades={studentGrades}
           attendanceSummary={studentAttendanceSummary}
-       />
+       />}
       
        <div className="grid gap-6 lg:grid-cols-2">
           <RankCard studentId={studentId} />
@@ -369,6 +369,11 @@ export default function StudentDashboard() {
                 ))}
                 </ul>
             </CardContent>
+            {student && (
+                <CardFooter>
+                    <EndOfTermReportDialog student={student} />
+                </CardFooter>
+            )}
         </Card>
       </div>
 
@@ -384,7 +389,7 @@ export default function StudentDashboard() {
                     <Dialog>
                         <DialogTrigger asChild>
                             <Button disabled={!isEligibleForCompletion} className="w-full">
-                                <FileText className="mr-2 h-4 w-4" />
+                                <FileTextIcon className="mr-2 h-4 w-4" />
                                 Preview Certificate
                             </Button>
                         </DialogTrigger>
@@ -397,7 +402,7 @@ export default function StudentDashboard() {
                             </DialogHeader>
                             <div className="p-4 bg-muted rounded-md flex justify-center">
                                 <Image
-                                    src="https://placehold.co/800x600.png"
+                                    src={schoolProfile?.certificateTemplateUrl || "https://placehold.co/800x600.png"}
                                     alt="Certificate Preview"
                                     width={800}
                                     height={600}
@@ -420,7 +425,7 @@ export default function StudentDashboard() {
                     <Dialog>
                         <DialogTrigger asChild>
                             <Button variant="secondary" disabled={!isEligibleForCompletion} className="w-full">
-                                <FileText className="mr-2 h-4 w-4" />
+                                <FileTextIcon className="mr-2 h-4 w-4" />
                                 Preview Transcript
                             </Button>
                         </DialogTrigger>
@@ -433,7 +438,7 @@ export default function StudentDashboard() {
                             </DialogHeader>
                             <div className="p-4 bg-muted rounded-md flex justify-center max-h-[70vh] overflow-y-auto">
                                 <Image
-                                    src="https://placehold.co/600x800.png"
+                                    src={schoolProfile?.transcriptTemplateUrl || "https://placehold.co/600x800.png"}
                                     alt="Transcript Preview"
                                     width={600}
                                     height={800}

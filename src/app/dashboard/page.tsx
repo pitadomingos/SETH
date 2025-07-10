@@ -12,9 +12,11 @@ import { useSchoolData } from '@/context/school-data-context';
 import PremiumAdminDashboard from '@/components/dashboard/premium-admin-dashboard';
 
 export default function DashboardPage() {
-  const { role, user, isLoading, originalUser } = useAuth();
-  const { schoolGroups, isLoading: schoolDataIsLoading } = useSchoolData();
+  const { role, user, isLoading: isAuthLoading, originalUser } = useAuth();
+  const { schoolGroups, isLoading: isSchoolDataLoading } = useSchoolData();
   const router = useRouter();
+
+  const isLoading = isAuthLoading || isSchoolDataLoading;
 
   const isPremiumAdmin = useMemo(() => {
     // A user is a premium admin if their original role was Admin (not an impersonated one)
@@ -33,7 +35,7 @@ export default function DashboardPage() {
     }
   }, [role, isLoading, router]);
 
-  if (isLoading || schoolDataIsLoading || role === 'GlobalAdmin') {
+  if (isLoading || role === 'GlobalAdmin') {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 

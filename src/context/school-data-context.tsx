@@ -196,7 +196,7 @@ const initialAwardConfig: AwardConfig = {
 };
 
 export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
-  const { user, role } = useAuth();
+  const { user, role, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
 
   const [allSchoolData, setAllSchoolData] = useState<typeof initialSchoolData | null>(null);
@@ -232,12 +232,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [kioskMedia, setKioskMedia] = useState<KioskMedia[]>([]);
   const [awardConfig, setAwardConfig] = useState<AwardConfig>(() => JSON.parse(JSON.stringify(initialAwardConfig)));
   
-  const [isLoading, setIsLoading] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
   // Initial data fetch from Firestore
   useEffect(() => {
     const fetchData = async () => {
-        setIsLoading(true);
+        setIsDataLoading(true);
         try {
             const firestoreSchools = await getSchoolsFromFirestore();
             if (Object.keys(firestoreSchools).length === 0) {
@@ -253,21 +253,20 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             console.error("Error fetching or seeding school data:", error);
             setAllSchoolData(JSON.parse(JSON.stringify(initialSchoolData)));
         }
-        setIsLoading(false);
+        setIsDataLoading(false);
     };
     fetchData();
   }, []);
 
-
   // This effect runs whenever allSchoolData is populated or the user/role changes.
   useEffect(() => {
-    if (!allSchoolData) return;
+    if (isAuthLoading || !allSchoolData) return;
   
     const schoolId = user?.schoolId;
     const isPremiumAdmin = role === 'Admin' && schoolId && Object.values(schoolGroups).some(g => g.includes(schoolId));
   
     if (role === 'GlobalAdmin' || (role === 'Admin' && isPremiumAdmin)) {
-      setSchoolProfile(null); // No single school profile for these roles
+      setSchoolProfile(null); 
       setActivityLogs(Object.values(allSchoolData).flatMap(s => s.activityLogs.map(log => ({ ...log, timestamp: new Date(log.timestamp) }))));
       setMessages(Object.values(allSchoolData).flatMap(s => s.messages.map(msg => ({ ...msg, timestamp: new Date(msg.timestamp) }))));
     } else if (role === 'Parent' && user?.email) {
@@ -344,10 +343,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setFeeDescriptions(data.feeDescriptions);
       setAudiences(data.audiences);
       setKioskMedia(data.kioskMedia.map(km => ({...km, createdAt: new Date(km.createdAt)})));
-    } else {
+    } else if (!isAuthLoading) {
       setSchoolProfile(null);
     }
-  }, [user, role, allSchoolData, schoolGroups]);
+  }, [user, role, allSchoolData, schoolGroups, isAuthLoading]);
 
 
   const addSchool = async (data: NewSchoolData, groupId?: string) => {
@@ -943,7 +942,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     savedReports,
     addSavedReport,
     kioskMedia, addKioskMedia, removeKioskMedia,
-    isLoading,
+    isLoading: isDataLoading || isAuthLoading,
   };
 
   return (
@@ -960,5 +959,3 @@ export const useSchoolData = () => {
   }
   return context;
 };
-
-    

@@ -69,6 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (email: string, pass: string): Promise<LoginResult> => {
+    setIsLoading(true);
     const userRecord = Object.values(mockUsers).find(u => u.user.email.toLowerCase() === email.toLowerCase());
 
     if (userRecord && userRecord.password === pass) {
@@ -79,6 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setRole(loggedInUser.role);
         sessionStorage.setItem('user', JSON.stringify(loggedInUser));
         sessionStorage.setItem('role', loggedInUser.role);
+        setIsLoading(false);
         return { success: true };
     }
     
@@ -98,9 +100,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setRole('Parent');
         sessionStorage.setItem('user', JSON.stringify(parentUser));
         sessionStorage.setItem('role', 'Parent');
+        setIsLoading(false);
         return { success: true };
     }
-
+    
+    setIsLoading(false);
     return { success: false, message: 'Invalid username or password' };
   };
 

@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import { mockUsers } from "@/lib/mock-data";
 import { formatGradeDisplay } from "@/lib/utils";
 
@@ -301,7 +301,7 @@ function GradePerformanceChart() {
         return Object.entries(gradesByMonth)
             .map(([month, monthGrades]) => ({
                 month: format(new Date(month), 'MMM yy'),
-                avgGrade: monthGrades.reduce((sum, g) => sum + g, 0) / monthGrades.length,
+                avgGrade: (monthGrades as number[]).reduce((sum, g) => sum + g, 0) / (monthGrades as number[]).length,
             }))
             .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
 
