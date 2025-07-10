@@ -6,7 +6,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const AnalyzeTopSchoolInputSchema = z.object({
+const AnalyzeTopSchoolInputSchema = z.object({
   schoolName: z.string().describe("The name of the school."),
   studentCount: z.number().describe("The total number of students."),
   averageGpa: z.number().describe("The school-wide average GPA."),
@@ -14,13 +14,13 @@ export const AnalyzeTopSchoolInputSchema = z.object({
   overdueFees: z.number().describe("The total amount of overdue fees."),
   avgTeacherPerformanceScore: z.number().describe("The average performance score of teachers at the school."),
 });
-export type AnalyzeTopSchoolInput = z.infer<typeof AnalyzeTopSchoolInputSchema>;
+type AnalyzeTopSchoolInput = z.infer<typeof AnalyzeTopSchoolInputSchema>;
 
-export const AnalyzeTopSchoolOutputSchema = z.object({
+const AnalyzeTopSchoolOutputSchema = z.object({
   analysis: z.string().describe("A detailed, celebratory analysis explaining why this school excels. Mention specific metrics like high GPA, strong financial health (high fee collection), and teacher quality. Use a professional and congratulatory tone."),
   keyStrengths: z.array(z.string()).describe("A bulleted list of 3-4 key strengths that contributed to the school's success."),
 });
-export type AnalyzeTopSchoolOutput = z.infer<typeof AnalyzeTopSchoolOutputSchema>;
+type AnalyzeTopSchoolOutput = z.infer<typeof AnalyzeTopSchoolOutputSchema>;
 
 
 export async function analyzeTopSchool(input: AnalyzeTopSchoolInput): Promise<AnalyzeTopSchoolOutput> {

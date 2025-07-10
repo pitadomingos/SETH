@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/context/auth-context';
@@ -31,9 +30,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { analyzeTopSchool, AnalyzeTopSchoolOutput } from '@/ai/flows/analyze-top-school';
-import { analyzeTopStudent, AnalyzeTopStudentOutput } from '@/ai/flows/analyze-top-student';
-import { analyzeTopTeacher, AnalyzeTopTeacherOutput } from '@/ai/flows/analyze-top-teacher';
+import { analyzeTopSchool } from '@/ai/flows/analyze-top-school';
+import { analyzeTopStudent } from '@/ai/flows/analyze-top-student';
+import { analyzeTopTeacher } from '@/ai/flows/analyze-top-teacher';
 
 
 const prizeSchema = z.object({
@@ -196,7 +195,7 @@ function AnnounceWinnersButton({ onAnnounce, hasBeenAnnounced }) {
 function SchoolAnalysisDialog({ school }) {
   const { allSchoolData } = useSchoolData();
   const [isOpen, setIsOpen] = useState(false);
-  const [analysis, setAnalysis] = useState<AnalyzeTopSchoolOutput | null>(null);
+  const [analysis, setAnalysis] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRunAnalysis = async () => {
@@ -264,7 +263,7 @@ function SchoolAnalysisDialog({ school }) {
 function StudentAnalysisDialog({ student }) {
   const { allSchoolData } = useSchoolData();
   const [isOpen, setIsOpen] = useState(false);
-  const [analysis, setAnalysis] = useState<AnalyzeTopStudentOutput | null>(null);
+  const [analysis, setAnalysis] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRunAnalysis = async () => {
@@ -329,7 +328,7 @@ function StudentAnalysisDialog({ student }) {
 function TeacherAnalysisDialog({ teacher }) {
   const { allSchoolData } = useSchoolData();
   const [isOpen, setIsOpen] = useState(false);
-  const [analysis, setAnalysis] = useState<AnalyzeTopTeacherOutput | null>(null);
+  const [analysis, setAnalysis] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRunAnalysis = async () => {
