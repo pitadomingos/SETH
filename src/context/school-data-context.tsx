@@ -115,6 +115,7 @@ interface SchoolDataContextType {
   addLessonAttendance: (courseId: string, date: string, attendanceData: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => void;
   events: SchoolEvent[];
   addEvent: (data: NewEventData) => void;
+  announceAwards: () => void;
   coursesData: Course[];
   addCourse: (data: NewCourseData) => void;
   subjects: string[];
@@ -621,6 +622,41 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setEvents(prev => [...prev, newEvent].sort((a,b) => a.date.getTime() - b.date.getTime()));
   };
 
+  const announceAwards = () => {
+    const awardEvent: Omit<NewEventData, 'date'> = {
+      title: `EduManage Excellence Awards Announced!`,
+      location: 'Online',
+      organizer: 'EduManage Platform',
+      audience: 'Whole School Community',
+      type: 'Academic',
+    };
+    
+    setAllSchoolData(prevAllData => {
+        const newAllData = { ...prevAllData };
+        Object.keys(newAllData).forEach(schoolId => {
+            const newSchoolEvent = {
+                ...awardEvent,
+                id: `EVT${Date.now()}-${schoolId}`,
+                date: new Date(),
+            };
+            newAllData[schoolId].events.push(newSchoolEvent);
+        });
+        return newAllData;
+    });
+
+    const logEntry: ActivityLog = {
+      id: `LOGG${Date.now()}`,
+      timestamp: new Date(),
+      schoolId: 'global',
+      user: user?.name || 'Global Admin',
+      role: role || 'GlobalAdmin',
+      action: 'Update',
+      details: 'Announced winners for the EduManage Excellence Awards.'
+    };
+     // This assumes a global log can be added to one of the schools, or needs a different mechanism
+    setAllSchoolData(prev => ({...prev, northwood: {...prev.northwood, activityLogs: [logEntry, ...prev.northwood.activityLogs]}}));
+  };
+
   const addTerm = (data: NewTermData) => {
     const newTerm: AcademicTerm = { id: `TERM${Date.now()}`, ...data };
     setTerms(prev => [...prev, newTerm].sort((a,b) => a.startDate.getTime() - b.startDate.getTime()));
@@ -825,7 +861,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     assignments: [],
     grades, addGrade,
     attendance, addLessonAttendance,
-    events, addEvent,
+    events, addEvent, announceAwards,
     subjects, addSubject,
     examBoards, addExamBoard, deleteExamBoard,
     feeDescriptions, addFeeDescription, deleteFeeDescription,

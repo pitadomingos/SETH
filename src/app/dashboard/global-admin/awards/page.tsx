@@ -5,12 +5,24 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Award, School, GraduationCap, Presentation, Star, Medal } from 'lucide-react';
+import { Loader2, Award, School, GraduationCap, Presentation, Star, Medal, CheckCircle } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getGpaFromNumeric } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const calculateAverageGpaForSchool = (grades) => {
     if (!grades || grades.length === 0) return 0;
@@ -24,10 +36,55 @@ const rankingStyles = [
   { color: 'text-orange-600', size: 'h-6 w-6', label: '3rd Place' },
 ];
 
+function AnnounceWinnersButton({ onAnnounce, hasBeenAnnounced }) {
+  const { toast } = useToast();
+
+  const handleAnnounce = () => {
+    onAnnounce();
+    toast({
+      title: "Winners Announced!",
+      description: "An event has been created on every school's calendar.",
+    });
+  };
+
+  if (hasBeenAnnounced) {
+    return (
+      <div className="flex items-center gap-2 text-green-600 font-semibold p-2 bg-green-500/10 rounded-md">
+        <CheckCircle className="h-4 w-4" />
+        <span>Awards for {new Date().getFullYear()} have been announced.</span>
+      </div>
+    );
+  }
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button>
+          <Star className="mr-2 h-4 w-4" /> Announce Winners
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Confirm Announcement</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will create a public event on every school's calendar announcing the winners for this year. This action cannot be undone. Are you sure you want to proceed?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleAnnounce}>Confirm & Announce</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+
 export default function AwardsPage() {
   const { role, isLoading: authLoading } = useAuth();
-  const { allSchoolData, isLoading: schoolLoading } = useSchoolData();
+  const { allSchoolData, isLoading: schoolLoading, announceAwards } = useSchoolData();
   const router = useRouter();
+  const [hasAnnounced, setHasAnnounced] = useState(false);
 
   const isLoading = authLoading || schoolLoading;
 
@@ -97,9 +154,10 @@ export default function AwardsPage() {
   if (isLoading || !allSchoolData) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
-
+  
   const handleAnnounceWinners = () => {
-    console.log("Announcing winners... (Functionality to be connected to backend)");
+    announceAwards();
+    setHasAnnounced(true);
   };
   
   const AwardCard = ({ rank, children }) => {
@@ -126,9 +184,7 @@ export default function AwardsPage() {
             <h2 className="text-3xl font-bold tracking-tight">EduManage Excellence Awards</h2>
             <p className="text-muted-foreground">Manage and announce the annual awards for the top performers in the network.</p>
         </div>
-        <Button onClick={handleAnnounceWinners}>
-          <Star className="mr-2 h-4 w-4" /> Announce Winners
-        </Button>
+        <AnnounceWinnersButton onAnnounce={handleAnnounceWinners} hasBeenAnnounced={hasAnnounced} />
       </header>
       
       <div className="space-y-8">
