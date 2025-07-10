@@ -36,7 +36,7 @@ export default function SystemDocumentationPage() {
             <CardDescription>This page is under construction.</CardDescription>
         </CardHeader>
         <CardContent>
-            <p>The original content of this page was causing a build error. It has been backed up and can be restored later.</p>
+            <p>The original content of this page was causing a build error. It has been backed up to `page.tsx.BAK` and can be restored later.</p>
         </CardContent>
       </Card>
     </div>
