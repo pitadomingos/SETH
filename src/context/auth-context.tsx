@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { schoolData, schoolGroups, mockUsers } from '@/lib/mock-data';
+import { schoolData, mockUsers } from '@/lib/mock-data';
 import { useSchoolData } from './school-data-context';
 
 export type Role = 'GlobalAdmin' | 'Admin' | 'Teacher' | 'Student' | 'Parent';
@@ -70,6 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, pass: string): Promise<LoginResult> => {
     setIsLoading(true);
+    
     const userRecord = Object.values(mockUsers).find(u => u.user.email.toLowerCase() === email.toLowerCase());
 
     if (userRecord && userRecord.password === pass) {
@@ -81,13 +82,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         sessionStorage.setItem('user', JSON.stringify(loggedInUser));
         sessionStorage.setItem('role', loggedInUser.role);
         setIsLoading(false);
+        router.push('/dashboard');
         return { success: true };
     }
     
     // Check if it's a valid parent email
-    const parentStudent = Object.values(schoolData)
-      .flatMap(s => s.students)
-      .find(s => s.parentEmail.toLowerCase() === email.toLowerCase());
+    const allStudents = Object.values(schoolData).flatMap(s => s.students);
+    const parentStudent = allStudents.find(s => s.parentEmail.toLowerCase() === email.toLowerCase());
 
     if (parentStudent && pass === 'parent') {
         const parentUser: User = {
@@ -101,6 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         sessionStorage.setItem('user', JSON.stringify(parentUser));
         sessionStorage.setItem('role', 'Parent');
         setIsLoading(false);
+        router.push('/dashboard');
         return { success: true };
     }
     
@@ -120,36 +122,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const impersonateUser = (usernameOrEmail: string, asRole?: Role) => {
     if (!user || !role) return;
 
-    // Use a temporary context to get school data, as we might not be in the provider yet
-    const allUsers = Object.values(schoolData).flatMap(s => 
-        [...s.students, ...s.teachers]
-    );
-
     let targetUser: User | undefined;
 
-    // Find in students or teachers
-    const foundUser = allUsers.find(u => u.email.toLowerCase() === usernameOrEmail.toLowerCase());
-    if (foundUser) {
-        targetUser = { ...foundUser, role: 'status' in foundUser ? 'Teacher' : 'Student' };
-    }
+    // This is simplified as we know all user data is in mockUsers for login purposes
+    const allMockUsers = Object.values(mockUsers).map(u => u.user);
+    const foundUser = allMockUsers.find(u => u.email.toLowerCase() === usernameOrEmail.toLowerCase());
     
-    // Find in admins (from school profiles)
-    if (!targetUser) {
-        const foundSchool = Object.values(schoolData).find(s => s.profile.email.toLowerCase() === usernameOrEmail.toLowerCase());
-        if (foundSchool) {
-            targetUser = {
-                username: `admin@${foundSchool.profile.id}`,
-                name: foundSchool.profile.head,
-                email: foundSchool.profile.email,
-                role: 'Admin',
-                schoolId: foundSchool.profile.id,
-            };
-        }
-    }
-
-    // Find in parents
-    if (!targetUser) {
-        const parentStudent = Object.values(schoolData).flatMap(s => s.students).find(s => s.parentEmail.toLowerCase() === usernameOrEmail.toLowerCase());
+    if (foundUser) {
+        targetUser = foundUser;
+    } else {
+        // Fallback for parents not in mockUsers
+        const allStudents = Object.values(schoolData).flatMap(s => s.students);
+        const parentStudent = allStudents.find(s => s.parentEmail.toLowerCase() === usernameOrEmail.toLowerCase());
         if (parentStudent) {
             targetUser = {
                 username: parentStudent.parentEmail,
@@ -159,7 +143,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             };
         }
     }
-
+    
     if (targetUser) {
       // Save current user state as original
       setOriginalUser(user);
@@ -176,7 +160,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       sessionStorage.setItem('role', impersonatedRole);
       
       router.push('/dashboard');
-      router.refresh();
+      window.location.reload(); // Force a full reload to re-run all context providers
     }
   };
 
@@ -195,7 +179,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       sessionStorage.removeItem('originalRole');
       
       router.push('/dashboard');
-      router.refresh();
+      window.location.reload(); // Force a full reload
     }
   };
 

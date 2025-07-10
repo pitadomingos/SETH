@@ -94,7 +94,7 @@ interface SchoolDataContextType {
   updateSchoolProfile: (data: Partial<SchoolProfile>, schoolId?: string) => void;
   allSchoolData: typeof initialSchoolData | null;
   schoolGroups: typeof initialSchoolGroups | null;
-  addSchool: (data: NewSchoolData, groupId?: string) => void;
+  addSchool: (data: NewSchoolData, groupId?: string) => Promise<void>;
   updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
   studentsData: Student[];
   addStudentFromAdmission: (admission: Admission) => void;

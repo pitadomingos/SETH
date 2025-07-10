@@ -21,8 +21,9 @@ export default function DashboardPage() {
   const isPremiumAdmin = useMemo(() => {
     // A user is a premium admin if their original role was Admin (not an impersonated one)
     // and their school is part of any school group.
-    const effectiveRole = originalUser ? null : role; // Only consider the actual logged-in user, not impersonated ones
-    if (effectiveRole !== 'Admin' || !user?.schoolId || !schoolGroups) return false;
+    if (role !== 'Admin' || !user?.schoolId || !schoolGroups) return false;
+    // Check if the user is currently impersonating. If so, they are not a premium admin in this context.
+    if (originalUser) return false;
     return Object.values(schoolGroups).some(groupSchools => groupSchools.includes(user.schoolId!));
   }, [role, user, schoolGroups, originalUser]);
 
