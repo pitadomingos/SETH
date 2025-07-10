@@ -1,3 +1,4 @@
+
 'use client';
 import {
   SidebarHeader,
@@ -43,6 +44,7 @@ import {
     Lock,
     Gem,
     MonitorPlay,
+    Camera,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -104,6 +106,7 @@ export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
     { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Award },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+    { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: Camera },
     { href: '/dashboard/admin', label: 'Admin Panel', icon: ShieldCheck },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
     { href: '/dashboard/events', label: 'Events', icon: CalendarDays },

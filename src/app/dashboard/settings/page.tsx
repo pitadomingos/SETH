@@ -32,12 +32,13 @@ export default function SettingsPage() {
     showAwards: false,
     showPerformers: false,
     showAwardWinner: false,
+    showShowcase: false,
   });
 
   useEffect(() => {
     if (schoolProfile) {
         setGradeCapacities(schoolProfile.gradeCapacity || {});
-        setKioskConfig(schoolProfile.kioskConfig || { showDashboard: true, showLeaderboard: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false });
+        setKioskConfig(schoolProfile.kioskConfig || { showDashboard: true, showLeaderboard: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false });
     }
   }, [schoolProfile]);
 
@@ -199,6 +200,10 @@ export default function SettingsPage() {
              <div className="flex items-center space-x-2">
                 <Checkbox id="kiosk-award-winner" checked={kioskConfig.showAwardWinner} onCheckedChange={(checked) => handleKioskConfigChange('showAwardWinner', checked as boolean)} />
                 <Label htmlFor="kiosk-award-winner">Show Award Winner Announcement Slide</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+                <Checkbox id="kiosk-showcase" checked={kioskConfig.showShowcase} onCheckedChange={(checked) => handleKioskConfigChange('showShowcase', checked as boolean)} />
+                <Label htmlFor="kiosk-showcase">Show Media Showcase Slide</Label>
             </div>
             <Separator className="sm:col-span-2" />
             <div className="flex items-center space-x-2">

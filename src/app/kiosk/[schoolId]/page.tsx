@@ -4,7 +4,7 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSchoolData, Competition } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, School, Users, Presentation, TrendingUp, Trophy, Award, BarChart2, Briefcase, Lightbulb, Link as LinkIcon, Tv, Medal } from 'lucide-react';
+import { Loader2, School, Users, Presentation, TrendingUp, Trophy, Award, BarChart2, Briefcase, Lightbulb, Link as LinkIcon, Tv, Medal, Camera } from 'lucide-react';
 import Image from 'next/image';
 import {
   Carousel,
@@ -402,6 +402,49 @@ function KioskAwardWinnerSlide({ school, allSchoolData }) {
     );
 }
 
+function KioskShowcaseSlide({ school }) {
+  const [api, setApi] = React.useState<CarouselApi>()
+  const { kioskMedia } = school;
+
+  React.useEffect(() => {
+    if (!api) return;
+
+    const interval = setInterval(() => {
+        if (api.canScrollNext()) api.scrollNext();
+        else api.scrollTo(0);
+    }, 5000); // Cycle media every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [api]);
+
+  return (
+    <div className="p-8 h-full flex flex-col items-center justify-center text-center">
+      <h2 className="text-5xl font-bold flex items-center gap-4 mb-8"><Camera /> School Showcase</h2>
+      <Carousel setApi={setApi} className="w-full max-w-6xl mx-auto">
+        <CarouselContent>
+          {kioskMedia.map(media => (
+            <CarouselItem key={media.id}>
+              <div className="flex flex-col items-center justify-center">
+                 <div className="aspect-video w-full bg-muted rounded-lg overflow-hidden relative">
+                    {media.type === 'image' ? (
+                      <Image src={media.url} alt={media.title} layout="fill" objectFit="contain" data-ai-hint="event photo school"/>
+                    ) : (
+                      <video src={media.url} className="w-full h-full object-contain" controls muted autoPlay loop data-ai-hint="event video school"/>
+                    )}
+                  </div>
+                  <div className="mt-6 text-center">
+                    <h3 className="text-3xl font-semibold">{media.title}</h3>
+                    <p className="text-xl text-muted-foreground">{media.description}</p>
+                  </div>
+              </div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+      </Carousel>
+    </div>
+  )
+}
+
 
 // --- Main Page Component ---
 export default function KioskPage() {
@@ -437,6 +480,7 @@ export default function KioskPage() {
     allPossibleSlides.push({ id: 'performers', enabled: kioskConfig?.showPerformers, component: <KioskTopPerformersSlide school={school} /> });
     allPossibleSlides.push({ id: 'attendance', enabled: kioskConfig?.showAttendance, component: <KioskAttendanceSlide school={school} /> });
     allPossibleSlides.push({ id: 'academics', enabled: kioskConfig?.showAcademics, component: <KioskAcademicsSlide school={school} /> });
+    allPossibleSlides.push({ id: 'showcase', enabled: kioskConfig?.showShowcase, component: <KioskShowcaseSlide school={school} /> });
     allPossibleSlides.push({ id: 'awards', enabled: kioskConfig?.showAwards, component: <KioskAwardsSlide school={school} allSchoolData={allSchoolData} /> });
     
     const winnerSlide = <KioskAwardWinnerSlide school={school} allSchoolData={allSchoolData}/>;

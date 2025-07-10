@@ -108,6 +108,15 @@ export interface AwardConfig {
   topTeacher: AwardPrize[];
 }
 
+export interface KioskMedia {
+  id: string;
+  type: 'image' | 'video';
+  url: string;
+  title: string;
+  description: string;
+  createdAt: Date;
+}
+
 
 interface SchoolData {
     profile: SchoolProfile;
@@ -137,6 +146,7 @@ interface SchoolData {
     activityLogs: ActivityLog[];
     messages: Message[];
     savedReports: SavedReport[];
+    kioskMedia: KioskMedia[];
 }
 
 export interface KioskConfig {
@@ -147,6 +157,7 @@ export interface KioskConfig {
     showAwards: boolean;
     showPerformers: boolean;
     showAwardWinner: boolean;
+    showShowcase: boolean;
 }
 
 export interface SchoolProfile { id: string; name: string; head: string; address: string; phone: string; email: string; motto: string; logoUrl: string; certificateTemplateUrl?: string; transcriptTemplateUrl?: string; tier?: 'Premium' | 'Pro' | 'Starter'; gradingSystem: '20-Point' | 'GPA' | 'Letter'; currency: 'USD' | 'ZAR' | 'MZN'; status: 'Active' | 'Suspended' | 'Inactive'; gradeCapacity: Record<string, number>; kioskConfig: KioskConfig; }
@@ -174,6 +185,7 @@ const defaultKioskConfig: KioskConfig = {
     showAwards: false,
     showPerformers: true,
     showAwardWinner: true,
+    showShowcase: false,
 };
 
 // --- Data for School 1: Northwood High ---
@@ -209,7 +221,7 @@ const northwoodActivityLogs: ActivityLog[] = [
 const northwoodMessages: Message[] = [];
 
 // --- Data for School 2: Oakridge Academy ---
-const oakridgeProfile: SchoolProfile = { id: 'oakridge', name: 'Oakridge Academy', head: 'Mr. James Maxwell', address: '456 Knowledge Ave, Learnington, USA 54321', phone: '+1 (555) 987-6543', email: 'admin@oakridgeacademy.edu', motto: 'Wisdom and Integrity', logoUrl: 'https://placehold.co/100x100.png', transcriptTemplateUrl: 'https://placehold.co/600x800.png', tier: 'Pro', gradingSystem: 'GPA', currency: 'USD', status: 'Active', gradeCapacity: defaultGradeCapacity, kioskConfig: { ...defaultKioskConfig, showAcademics: true } };
+const oakridgeProfile: SchoolProfile = { id: 'oakridge', name: 'Oakridge Academy', head: 'Mr. James Maxwell', address: '456 Knowledge Ave, Learnington, USA 54321', phone: '+1 (555) 987-6543', email: 'admin@oakridgeacademy.edu', motto: 'Wisdom and Integrity', logoUrl: 'https://placehold.co/100x100.png', transcriptTemplateUrl: 'https://placehold.co/600x800.png', tier: 'Pro', gradingSystem: 'GPA', currency: 'USD', status: 'Active', gradeCapacity: defaultGradeCapacity, kioskConfig: { ...defaultKioskConfig, showAcademics: true, showShowcase: true } };
 const oakridgeStudents: Student[] = [ { id: 'S101', name: 'Benjamin Carter', grade: '10', class: 'A', email: 'b.carter@oakridge.com', phone: '+1 (555) 101-1010', address: '1 Apple St', parentName: 'Susan Carter', parentEmail: 's.carter@family.com', dateOfBirth: '2008-10-10', status: 'Active', sex: 'Male' }, { id: 'S102', name: 'Charlotte Lee', grade: '11', class: 'A', email: 'c.lee@oakridge.com', phone: '+1 (555) 102-1020', address: '2 Pear Ave', parentName: 'John Lee', parentEmail: 'j.lee@family.com', dateOfBirth: '2007-04-14', status: 'Active', sex: 'Female' }, { id: 'S103', name: 'Daniel Park', grade: '9', class: 'B', email: 'd.park@oakridge.com', phone: '+1 (555) 103-1030', address: '3 Cherry Ln', parentName: 'Grace Park', parentEmail: 'g.park@family.com', dateOfBirth: '2009-12-01', status: 'Transferred', sex: 'Male' }, { id: 'S104', name: 'Miguel Rodriguez', grade: '9', class: 'B', email: 'm.rodriguez.jr@oakridge.com', phone: '+1 (555) 104-1040', address: '123 Main St, Anytown', parentName: 'Maria Rodriguez', parentEmail: 'm.rodriguez@family.com', dateOfBirth: '2009-09-09', status: 'Active', sex: 'Male' }, ];
 const oakridgeTeachers: Teacher[] = [ { id: 'T101', name: 'Ms. Rachel Adams', subject: 'Biology', email: 'r.adams@oakridge.com', phone: '+1 (555) 201-2010', address: '10 Biology Rd', experience: '10 years', qualifications: 'Ph.D. in Biology', status: 'Active', sex: 'Female' }, { id: 'T102', name: 'Mr. Steven Shaw', subject: 'Geography', email: 's.shaw@oakridge.com', phone: '+1 (555) 202-2020', address: '20 Map Way', experience: '5 years', qualifications: 'M.A. in Geography', status: 'Active', sex: 'Male' }, ];
 const oakridgeClasses: Class[] = [ { id: 'C101', name: 'Class 9-B', grade: '9', teacher: 'Mr. Steven Shaw', students: 25, room: 'G1' }, { id: 'C102', name: 'Class 10-A', grade: '10', teacher: 'Ms. Rachel Adams', students: 30, room: 'L1' }, ];
@@ -230,9 +242,8 @@ const oakridgeActivityLogs: ActivityLog[] = [
 ];
 const oakridgeMessages: Message[] = [];
 
-
 // --- Data for School 3: Maplewood International School ---
-const maplewoodProfile: SchoolProfile = { id: 'maplewood', name: 'Maplewood International', head: 'Ms. Eleanor Vance', address: '789 Global St, Metropolis, USA 67890', phone: '+1 (555) 456-7890', email: 'info@maplewood.edu', motto: 'Globally Minded, Locally Rooted', logoUrl: 'https://placehold.co/100x100.png', transcriptTemplateUrl: 'https://placehold.co/600x800.png', tier: 'Premium', gradingSystem: 'Letter', currency: 'ZAR', status: 'Active', gradeCapacity: { ...defaultGradeCapacity, "10": 0 }, kioskConfig: { ...defaultKioskConfig, showAwards: true, showAttendance: true } };
+const maplewoodProfile: SchoolProfile = { id: 'maplewood', name: 'Maplewood International', head: 'Ms. Eleanor Vance', address: '789 Global St, Metropolis, USA 67890', phone: '+1 (555) 456-7890', email: 'info@maplewood.edu', motto: 'Globally Minded, Locally Rooted', logoUrl: 'https://placehold.co/100x100.png', transcriptTemplateUrl: 'https://placehold.co/600x800.png', tier: 'Premium', gradingSystem: 'Letter', currency: 'ZAR', status: 'Active', gradeCapacity: { ...defaultGradeCapacity, "10": 0 }, kioskConfig: { ...defaultKioskConfig, showAwards: true, showAttendance: true, showShowcase: true } };
 const maplewoodStudents: Student[] = [ { id: 'S201', name: 'Chloe Dubois', grade: '10', class: 'A', email: 'c.dubois@maplewood.com', phone: '+1 (555) 201-2010', address: '1 Eiffel Tower Rd', parentName: 'Amelie Dubois', parentEmail: 'a.dubois@family.com', dateOfBirth: '2008-02-02', status: 'Active', sex: 'Female' }, { id: 'S202', name: 'Kenji Tanaka', grade: '11', class: 'B', email: 'k.tanaka@maplewood.com', phone: '+1 (555) 202-2020', address: '2 Tokyo Skytree Ave', parentName: 'Haruto Tanaka', parentEmail: 'h.tanaka@family.com', dateOfBirth: '2007-06-19', status: 'Active', sex: 'Male' }, { id: 'S203', name: 'Priya Singh', grade: '9', class: 'C', email: 'p.singh@maplewood.com', phone: '+1 (555) 203-2030', address: '3 Taj Mahal Blvd', parentName: 'Aarav Singh', parentEmail: 'a.singh@family.com', dateOfBirth: '2009-04-29', status: 'Active', sex: 'Female' }, { id: 'S204', name: 'Lucas Martinez', grade: '10', class: 'B', email: 'l.martinez@maplewood.com', phone: '+1 (555) 204-2040', address: '4 Berlin Gate', parentName: 'Sofia Martinez', parentEmail: 's.martinez@family.com', dateOfBirth: '2008-11-11', status: 'Active', sex: 'Male' }, ];
 const maplewoodTeachers: Teacher[] = [ { id: 'T201', name: 'Mr. David Lee', subject: 'History', email: 'd.lee@maplewood.com', phone: '+1 (555) 301-3010', address: '10 History Lane', experience: '15 years', qualifications: 'M.Ed. in History', status: 'Active', sex: 'Male' }, ];
 const maplewoodClasses: Class[] = [ { id: 'C201', name: 'Class 9-C', grade: '9', teacher: 'Mr. David Lee', students: 22, room: 'H1' }, ];
@@ -275,6 +286,7 @@ export const schoolData: Record<string, SchoolData> = {
     activityLogs: northwoodActivityLogs,
     messages: northwoodMessages,
     savedReports: [],
+    kioskMedia: [],
     admissions: [ { id: 'ADM001', name: 'John Smith', appliedFor: 'Grade 9', date: '2024-05-10', status: 'Pending', formerSchool: 'Eastwood Elementary', grades: 'A average in all subjects.', parentName: 'Mary Smith', parentEmail: 'm.smith@family.com', dateOfBirth: '2009-03-12', sex: 'Male' }, { id: 'ADM002', name: 'Emily White', appliedFor: 'Grade 10', date: '2024-05-09', status: 'Approved', formerSchool: 'Westwood Middle', grades: 'Excellent academic record, especially in sciences.', parentName: 'David White', parentEmail: 'd.white@family.com', dateOfBirth: '2008-11-23', sex: 'Female' }, ],
     exams: [ { id: 'EXM001', title: 'Mid-term Mathematics', subject: 'Mathematics', grade: '10', date: new Date(new Date().setDate(new Date().getDate() + 10)), time: '09:00', duration: '2 hours', room: '201', board: 'Internal', invigilator: 'Prof. Michael Chen' }, { id: 'EXM004', title: 'IGCSE Physics Paper 4', subject: 'Physics', grade: '10', date: new Date(new Date().setDate(new Date().getDate() + 20)), time: '13:00', duration: '75 minutes', room: 'Hall A', board: 'Cambridge', invigilator: 'Dr. Lisa Anderson' }, ],
     assets: [ { id: 'ASSET001', name: 'Dell Latitude Laptop', category: 'IT Equipment', status: 'In Use', location: 'Room 201', assignedTo: 'Prof. Michael Chen' }, { id: 'ASSET002', name: 'Epson Projector', category: 'AV Equipment', status: 'Available', location: 'Storage', assignedTo: 'N/A' }, ],
@@ -304,6 +316,7 @@ export const schoolData: Record<string, SchoolData> = {
     activityLogs: oakridgeActivityLogs,
     messages: oakridgeMessages,
     savedReports: [],
+    kioskMedia: [],
     admissions: [ { id: 'OAK-ADM001', name: 'Alice Wonder', appliedFor: 'Grade 9', date: '2024-05-15', status: 'Approved', formerSchool: 'Wonderland Middle', grades: 'Top of class.', parentName: 'Charles Wonder', parentEmail: 'c.wonder@family.com', dateOfBirth: '2009-07-07', sex: 'Female' }, ],
     exams: [ { id: 'OAK-EXM001', title: 'Biology Entrance Exam', subject: 'Biology', grade: '9', date: new Date(new Date().setDate(new Date().getDate() + 10)), time: '09:00', duration: '2 hours', room: 'L1', board: 'Internal', invigilator: 'Ms. Rachel Adams' }, ],
     assets: [ { id: 'OAK-ASSET001', name: 'Microscope Array', category: 'Lab Equipment', status: 'In Use', location: 'Lab 1', assignedTo: 'Ms. Rachel Adams' }, ],
@@ -333,6 +346,7 @@ export const schoolData: Record<string, SchoolData> = {
     activityLogs: maplewoodActivityLogs,
     messages: maplewoodMessages,
     savedReports: [],
+    kioskMedia: [],
     admissions: [ { id: 'MAP-ADM001', name: 'Leo Tolstoy', appliedFor: 'Grade 9', date: '2024-06-01', status: 'Pending', formerSchool: 'Literary Prep', grades: 'Strong in humanities.', parentName: 'Sophia Tolstoy', parentEmail: 's.tolstoy@family.com', dateOfBirth: '2009-01-01', sex: 'Male' }, ],
     exams: [ { id: 'MAP-EXM001', title: 'World History Final', subject: 'History', grade: '9', date: new Date(new Date().setDate(new Date().getDate() + 15)), time: '10:00', duration: '90 minutes', room: 'H1', board: 'IB', invigilator: 'Mr. David Lee' }, ],
     assets: [ { id: 'MAP-ASSET001', name: 'Smart Board', category: 'AV Equipment', status: 'In Use', location: 'H1', assignedTo: 'Mr. David Lee' }, ],
