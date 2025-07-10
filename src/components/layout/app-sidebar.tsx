@@ -44,6 +44,7 @@ import {
     Mail,
     Lock,
     Gem,
+    MonitorPlay,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -82,6 +83,7 @@ export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/global-admin/inbox', label: 'Messaging', icon: Mail },
     { href: '/dashboard/global-admin/awards', label: 'Awards', icon: Award },
     { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
+    { href: '/kiosk/global', label: 'Public Kiosk', icon: MonitorPlay },
     { href: '/dashboard/project-proposal', label: 'Project Proposal', icon: Briefcase },
     { href: '/dashboard/system-documentation', label: 'System Docs', icon: FileText },
     { href: '/dashboard/todo-list', label: 'To-Do List', icon: ListTodo },
@@ -142,7 +144,16 @@ export function AppSidebar() {
     if (!role) return [];
     let links = [...(roleLinks[role] || [])];
     
-    if (role === 'Admin' && isPremiumAdmin) {
+    if (role === 'Admin') {
+      const kioskLink = { href: `/kiosk/${user?.schoolId}`, label: 'Public Kiosk', icon: MonitorPlay };
+      const settingsIndex = links.findIndex(l => l.href === '/dashboard/settings');
+      if (settingsIndex !== -1) {
+        links.splice(settingsIndex + 1, 0, kioskLink);
+      } else {
+        links.push(kioskLink);
+      }
+
+      if (isPremiumAdmin) {
         const manageLink = { href: '/dashboard/manage-schools', label: 'Manage Schools', icon: Building };
         const profileIndex = links.findIndex(l => l.href === '/dashboard/school-profile');
         if (profileIndex !== -1) {
@@ -150,6 +161,7 @@ export function AppSidebar() {
         } else {
             links.unshift(manageLink);
         }
+      }
     }
     return links;
   };
@@ -199,7 +211,7 @@ export function AppSidebar() {
 
             return (
               <SidebarMenuItem key={link.href}>
-                <Link href={isLinkDisabled ? '#' : link.href} passHref style={isLinkDisabled ? { pointerEvents: 'none', cursor: 'not-allowed' } : {}}>
+                <Link href={isLinkDisabled ? '#' : link.href} passHref style={isLinkDisabled ? { pointerEvents: 'none', cursor: 'not-allowed' } : {}} target={link.label === 'Public Kiosk' ? '_blank' : '_self'}>
                   <SidebarMenuButton asChild disabled={isLinkDisabled} isActive={pathname.startsWith(link.href) && (link.href !== '/dashboard' || pathname === '/dashboard')} tooltip={tooltipContent}>
                       <span>
                         <link.icon className="h-4 w-4" />
