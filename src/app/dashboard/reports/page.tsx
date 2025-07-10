@@ -35,6 +35,7 @@ function SchoolWideAnalysis() {
         classesData,
         savedReports,
         addSavedReport,
+        attendance,
     } = useSchoolData();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
@@ -60,6 +61,26 @@ function SchoolWideAnalysis() {
                 .filter(f => new Date(f.dueDate) < new Date() && f.totalAmount > f.amountPaid)
                 .reduce((sum, f) => sum + (f.totalAmount - f.amountPaid), 0);
             const financials = { totalFees, totalRevenue, collectionRate: parseFloat(collectionRate.toFixed(2)), overdueAmount };
+
+            // Attendance
+            const totalLessons = attendance.length;
+            const attendedLessons = attendance.filter(a => a.status === 'Present' || a.status === 'Late').length;
+            const overallAttendanceRate = totalLessons > 0 ? (attendedLessons / totalLessons) * 100 : 100;
+
+            const studentAttendance = studentsData.map(s => {
+                const studentLessons = attendance.filter(a => a.studentId === s.id);
+                const totalStudentLessons = studentLessons.length;
+                if (totalStudentLessons === 0) return { studentId: s.id, isChronic: false };
+                const absentLessons = studentLessons.filter(a => a.status === 'Absent').length;
+                return { studentId: s.id, isChronic: (absentLessons / totalStudentLessons) > 0.1 };
+            });
+            const chronicCount = studentAttendance.filter(s => s.isChronic).length;
+            const chronicAbsenteeismRate = studentsData.length > 0 ? (chronicCount / studentsData.length) * 100 : 0;
+            
+            const attendanceMetrics = {
+                overallAttendanceRate: parseFloat(overallAttendanceRate.toFixed(2)),
+                chronicAbsenteeismRate: parseFloat(chronicAbsenteeismRate.toFixed(2)),
+            };
 
             // Subjects
             const subjectMetrics = subjects.map(subject => {
@@ -108,6 +129,7 @@ function SchoolWideAnalysis() {
                 teachers: teacherMetrics,
                 subjects: subjectMetrics,
                 financials,
+                attendance: attendanceMetrics,
                 overallStudentCount: studentsData.length,
                 overallAverageGrade: parseFloat(overallAverageGrade.toFixed(2)),
                 previousAnalysis: previousAnalysis ? {

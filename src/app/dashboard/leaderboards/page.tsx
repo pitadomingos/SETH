@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { useSchoolData } from '@/context/school-data-context';
-import { Award, Trophy, BookOpen } from 'lucide-react';
+import { useSchoolData, Attendance } from '@/context/school-data-context';
+import { Award, Trophy, BookOpen, CalendarCheck } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { formatGradeDisplay } from '@/lib/utils';
 
@@ -21,10 +21,19 @@ const calculateAverageScore = (studentId: string, grades: any[]) => {
     return (totalPoints / studentGrades.length);
 };
 
+const getAttendanceSummary = (studentId: string, attendance: Attendance[]) => {
+  const studentAttendance = attendance.filter(a => a.studentId === studentId);
+  return studentAttendance.reduce((acc, record) => {
+    const status = record.status.toLowerCase();
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, { present: 0, late: 0, absent: 0, sick: 0 });
+};
+
 
 // --- Components ---
 
-const LeaderboardTable = ({ students, gradingSystem }) => {
+const LeaderboardTable = ({ students, attendance, gradingSystem }) => {
     if (!students || students.length === 0) {
         return <p className="text-center text-muted-foreground py-8">No data available for this selection.</p>;
     }
@@ -35,31 +44,43 @@ const LeaderboardTable = ({ students, gradingSystem }) => {
                 <TableRow>
                     <TableHead className="w-[80px]">Rank</TableHead>
                     <TableHead>Student</TableHead>
-                    <TableHead>Class</TableHead>
+                    <TableHead>Attendance</TableHead>
                     <TableHead className="text-right">Average Grade</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {students.slice(0, 10).map((student, index) => (
-                    <TableRow key={student.id}>
-                        <TableCell className="font-bold text-lg text-primary">{index + 1}</TableCell>
-                        <TableCell>
-                            <div className="flex items-center gap-3">
-                                <Avatar className="h-9 w-9">
-                                    <AvatarImage src={`https://placehold.co/100x100.png`} alt={student.name} data-ai-hint="profile picture" />
-                                    <AvatarFallback>{student.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                                </Avatar>
-                                <span className="font-medium">{student.name}</span>
-                            </div>
-                        </TableCell>
-                        <TableCell>Grade {student.grade} - {student.class}</TableCell>
-                        <TableCell className="text-right">
-                             <Badge variant="secondary" className="text-base">
-                                {formatGradeDisplay(student.averageScore, gradingSystem)}
-                            </Badge>
-                        </TableCell>
-                    </TableRow>
-                ))}
+                {students.slice(0, 10).map((student, index) => {
+                    const attendanceSummary = getAttendanceSummary(student.id, attendance);
+                    return (
+                        <TableRow key={student.id}>
+                            <TableCell className="font-bold text-lg text-primary">{index + 1}</TableCell>
+                            <TableCell>
+                                <div className="flex items-center gap-3">
+                                    <Avatar className="h-9 w-9">
+                                        <AvatarImage src={`https://placehold.co/100x100.png`} alt={student.name} data-ai-hint="profile picture" />
+                                        <AvatarFallback>{student.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p className="font-medium">{student.name}</p>
+                                        <p className="text-xs text-muted-foreground">Grade {student.grade} - {student.class}</p>
+                                    </div>
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span>P: <span className="font-semibold text-green-600">{attendanceSummary.present}</span></span>
+                                    <span>L: <span className="font-semibold text-orange-500">{attendanceSummary.late}</span></span>
+                                    <span>A: <span className="font-semibold text-red-500">{attendanceSummary.absent}</span></span>
+                                </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                                 <Badge variant="secondary" className="text-base">
+                                    {formatGradeDisplay(student.averageScore, gradingSystem)}
+                                </Badge>
+                            </TableCell>
+                        </TableRow>
+                    );
+                })}
             </TableBody>
         </Table>
     );
@@ -81,6 +102,7 @@ const IndividualRankingView = () => {
           averageScore: calculateAverageScore(student.id, school.grades),
         })).sort((a, b) => b.averageScore - a.averageScore),
         gradingSystem: school.profile.gradingSystem,
+        attendance: school.attendance,
       };
     }
     return data;
@@ -127,6 +149,7 @@ const IndividualRankingView = () => {
         {studentsData.map(child => {
           const schoolRanks = allStudentsWithScoreBySchool[child.schoolId!]?.students || [];
           const classRanks = schoolRanks.filter(s => s.grade === child.grade && s.class === child.class);
+          const attendanceSummary = getAttendanceSummary(child.id, allStudentsWithScoreBySchool[child.schoolId!]?.attendance || []);
           
           const overallRank = getRank(child.id, schoolRanks);
           const classRank = getRank(child.id, classRanks);
@@ -138,7 +161,7 @@ const IndividualRankingView = () => {
                 <CardTitle>{child.name}</CardTitle>
                 <CardDescription>{child.schoolName} - Grade {child.grade}, Class {child.class}</CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-6 md:grid-cols-2">
+              <CardContent className="grid gap-6 md:grid-cols-3">
                 <div className="space-y-4">
                   <h3 className="font-semibold flex items-center gap-2"><Trophy className="text-primary"/> Overall & Class Rank</h3>
                   <div className="p-4 bg-muted rounded-lg space-y-2">
@@ -163,6 +186,15 @@ const IndividualRankingView = () => {
                        )) : <p className="text-sm text-muted-foreground">No subject ranks available.</p>}
                     </div>
                 </div>
+                 <div className="space-y-4">
+                  <h3 className="font-semibold flex items-center gap-2"><CalendarCheck className="text-primary"/> Attendance Summary</h3>
+                    <div className="p-4 bg-muted rounded-lg space-y-2">
+                        <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Present</span><span className="font-bold text-green-600">{attendanceSummary.present}</span></div>
+                        <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Late</span><span className="font-bold text-orange-500">{attendanceSummary.late}</span></div>
+                        <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Absent</span><span className="font-bold text-red-500">{attendanceSummary.absent}</span></div>
+                        <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Sick</span><span className="font-bold text-blue-500">{attendanceSummary.sick}</span></div>
+                    </div>
+                </div>
               </CardContent>
             </Card>
           );
@@ -175,7 +207,7 @@ const IndividualRankingView = () => {
 
 export default function LeaderboardsPage() {
     const { role, user } = useAuth();
-    const { studentsData, classesData, grades, schoolProfile, coursesData, teachersData } = useSchoolData();
+    const { studentsData, classesData, grades, schoolProfile, coursesData, teachersData, attendance } = useSchoolData();
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
     
@@ -253,10 +285,10 @@ export default function LeaderboardsPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2"><Award /> Overall Academic Champions</CardTitle>
-                            <CardDescription>Top 10 students across all grades based on calculated average score.</CardDescription>
+                            <CardDescription>Top 10 students across all grades based on calculated average score and attendance.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <LeaderboardTable students={allStudentsWithScore} gradingSystem={gradingSystem} />
+                            <LeaderboardTable students={allStudentsWithScore} attendance={attendance} gradingSystem={gradingSystem} />
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -278,7 +310,7 @@ export default function LeaderboardsPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <LeaderboardTable students={topStudentsInClass} gradingSystem={gradingSystem}/>
+                            <LeaderboardTable students={topStudentsInClass} attendance={attendance} gradingSystem={gradingSystem}/>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -300,7 +332,7 @@ export default function LeaderboardsPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                           <LeaderboardTable students={topStudentsBySubject} gradingSystem={gradingSystem}/>
+                           <LeaderboardTable students={topStudentsBySubject} attendance={attendance} gradingSystem={gradingSystem}/>
                         </CardContent>
                     </Card>
                 </TabsContent>

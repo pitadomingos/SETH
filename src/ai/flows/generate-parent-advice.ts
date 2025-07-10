@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -18,11 +19,11 @@ const GenerateParentAdviceInputSchema = z.object({
     grade: z.string(),
   })).describe('A list of the student\'s recent grades.'),
   attendanceSummary: z.object({
-    present: z.number(),
-    late: z.number(),
-    absent: z.number(),
-    sick: z.number().optional(),
-  }).describe('A summary of the student\'s attendance.'),
+    present: z.number().describe("Total number of lessons marked 'Present'."),
+    late: z.number().describe("Total number of lessons marked 'Late'."),
+    absent: z.number().describe("Total number of lessons marked 'Absent'."),
+    sick: z.number().optional().describe("Total number of lessons marked 'Sick'."),
+  }).describe('A summary of the student\'s lesson attendance.'),
 });
 export type GenerateParentAdviceInput = z.infer<typeof GenerateParentAdviceInputSchema>;
 
@@ -50,20 +51,20 @@ const prompt = ai.definePrompt({
   - Subject: {{subject}}, Grade: {{grade}}
   {{/each}}
   
-  Attendance Summary:
-  - Present: {{attendanceSummary.present}} days
-  - Late: {{attendanceSummary.late}} days
-  - Absent: {{attendanceSummary.absent}} days
+  Lesson Attendance Summary:
+  - Present: {{attendanceSummary.present}} lessons
+  - Late: {{attendanceSummary.late}} lessons
+  - Absent: {{attendanceSummary.absent}} lessons
   {{#if attendanceSummary.sick}}
-  - Sick: {{attendanceSummary.sick}} days
+  - Sick: {{attendanceSummary.sick}} lessons
   {{/if}}
   
   Based on this data, provide a helpful, positive, and actionable report for the parent. Be encouraging and focus on constructive advice.
   
   Structure your response in three parts:
   1. A brief, encouraging overall summary.
-  2. A bulleted list of key strengths.
-  3. A bulleted list of actionable recommendations for the parent.
+  2. A bulleted list of key strengths. Consider academic performance in relation to attendance (e.g., "Maintains strong grades despite some absences, showing resilience.").
+  3. A bulleted list of actionable recommendations for the parent. If attendance is an issue, suggest ways to support regular lesson attendance.
   `,
 });
 
