@@ -17,7 +17,7 @@ export default function SystemDocumentationPage() {
   }, [role, isLoading, router]);
 
   if (isLoading || role !== 'GlobalAdmin') {
-    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return (<div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>);
   }
   
   return (
@@ -66,7 +66,7 @@ export default function SystemDocumentationPage() {
              <div>
               <h3 className="font-semibold"><code>/src/app/kiosk</code></h3>
               <p className="text-sm text-muted-foreground">Contains the dynamic route and layout for the fullscreen, public-facing Kiosk Mode.</p>
-            </div>
+             </div>
             <div>
               <h3 className="font-semibold"><code>/src/components</code></h3>
               <p className="text-sm text-muted-foreground">Home to reusable React components, including UI elements from ShadCN and custom-built dashboard components.</p>
