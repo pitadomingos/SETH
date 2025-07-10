@@ -513,7 +513,7 @@ export default function AwardsPage() {
         </div>
         <div className="flex items-center gap-2">
             <ConfigurePrizesDialog />
-            <AnnounceWinnersButton onAnnounce={handleAnnounceWinners} hasBeenAnnounced={hasAnnounced} />
+            <AnnounceWinnersButton onAnnounce={handleAnnounceWinners} hasBeenAnnounced={hasBeenAnnounced} />
         </div>
       </header>
       

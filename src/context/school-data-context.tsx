@@ -789,8 +789,11 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if (!user || !role) return;
 
     const allUsers = Object.values(allSchoolData).flatMap(s => [...s.teachers, ...s.students]).concat(Object.values(allSchoolData).flatMap(s => s.students.map(st => ({...st, email: st.parentEmail, name: st.parentName, role: 'Parent'}))));
-    const developerUser = { user: { name: 'Developer', email: 'developer@edumanage.com', role: 'GlobalAdmin' }};
-    const allPossibleRecipients = [...allUsers, developerUser.user];
+    const allAdmins = Object.values(allSchoolData).map(s => ({...s.profile, role: 'Admin', email: s.profile.email, name: s.profile.head}));
+
+    const developerUser = { name: 'Developer', email: 'developer@edumanage.com', role: 'GlobalAdmin' };
+    
+    const allPossibleRecipients = [...allUsers, ...allAdmins, developerUser];
 
     const recipient = allPossibleRecipients.find(u => u.email === data.recipientUsername);
     if (!recipient) {

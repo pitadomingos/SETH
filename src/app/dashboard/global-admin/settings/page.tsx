@@ -29,6 +29,7 @@ export default function GlobalSettingsPage() {
     showAwards: false,
     showPerformers: false,
     showAwardWinner: false,
+    showShowcase: false,
   });
 
   useEffect(() => {

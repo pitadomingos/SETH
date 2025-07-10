@@ -12,7 +12,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
     title: 'Developer / System Owner Guide',
     points: [
       'System Dashboard: Get a high-level overview of network-wide statistics and run AI-powered analyses across multiple schools.',
-      'All Schools Management: View and provision all schools in the system. From here, you can manage a school\'s status (Active, Suspended) and switch context to manage a school directly using the "Log in as user" feature.',
+      'All Schools Management: View and provision new schools in Firestore. From here, you can manage a school\'s status (Active, Suspended) and switch context to manage a school directly using the "Log in as user" feature.',
       'Inbox: Receive, view, and track messages from School Administrators across the network.',
       'Global User Management: Access dedicated pages to view and manage every student and parent account across the entire network, including suspending access.',
       'EduManage Awards: Configure prizes and announce the annual system-wide awards for top-performing schools, students, and teachers. Click on any winner to get a detailed AI analysis of their success.',

@@ -61,7 +61,7 @@ function ComposeMessageDialog() {
 
     const messageData: NewMessageData = {
       // The recipient username for a message to the school is the Admin's email
-      recipientUsername: school.teachers.find(t => t.name === school.profile.head)?.email || '',
+      recipientUsername: school.profile.email,
       subject: values.subject,
       body: values.body,
       attachmentUrl: values.attachmentUrl,
@@ -173,7 +173,7 @@ export default function GlobalMessagingPage() {
     if (!allSchoolData) return [];
     return Object.values(allSchoolData).flatMap(school => 
       school.messages.map(m => ({...m, schoolName: school.profile.name}))
-    ).sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
+    ).sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [allSchoolData]);
 
   const inboxMessages = allMessages.filter(m => m.recipientUsername === user?.email);
@@ -241,7 +241,7 @@ export default function GlobalMessagingPage() {
                             </div>
                             <p className="text-sm text-muted-foreground truncate max-w-xs">{msg.body}</p>
                           </TableCell>
-                          <TableCell className="text-muted-foreground text-xs">{formatDistanceToNow(msg.timestamp, { addSuffix: true })}</TableCell>
+                          <TableCell className="text-muted-foreground text-xs">{formatDistanceToNow(new Date(msg.timestamp), { addSuffix: true })}</TableCell>
                           <TableCell>
                             <Badge variant={getStatusVariant(msg.status)} className="flex items-center gap-2">
                               {getStatusIcon(msg.status)}
@@ -305,7 +305,7 @@ export default function GlobalMessagingPage() {
                                <p className="font-medium">{msg.subject}</p>
                             </div>
                           </TableCell>
-                          <TableCell className="text-muted-foreground text-xs">{formatDistanceToNow(msg.timestamp, { addSuffix: true })}</TableCell>
+                          <TableCell className="text-muted-foreground text-xs">{formatDistanceToNow(new Date(msg.timestamp), { addSuffix: true })}</TableCell>
                         </TableRow>
                       )) : (
                         <TableRow>
