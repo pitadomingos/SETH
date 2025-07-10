@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import type { NewSchoolData } from '@/context/school-data-context';
 
 const schoolSchema = z.object({
   name: z.string().min(3, "School name is required."),
@@ -22,10 +23,11 @@ const schoolSchema = z.object({
   motto: z.string().optional(),
   tier: z.enum(['Starter', 'Pro', 'Premium']),
 });
+
 type SchoolFormValues = z.infer<typeof schoolSchema>;
 
 export function NewSchoolDialog({ groupId }: { groupId?: string }) {
-  const { addSchool } = useSchoolData();
+  const { addSchool, isLoading } = useSchoolData();
   const [isOpen, setIsOpen] = useState(false);
 
   const form = useForm<SchoolFormValues>({
@@ -41,8 +43,8 @@ export function NewSchoolDialog({ groupId }: { groupId?: string }) {
     },
   });
 
-  function onSubmit(values: SchoolFormValues) {
-    addSchool(values, groupId);
+  async function onSubmit(values: SchoolFormValues) {
+    await addSchool(values, groupId);
     form.reset();
     setIsOpen(false);
   }
@@ -56,7 +58,7 @@ export function NewSchoolDialog({ groupId }: { groupId?: string }) {
         <DialogHeader>
           <DialogTitle>Provision New School</DialogTitle>
           <DialogDescription>
-            Enter the details to create a new school. An admin account will be simulated.
+            Enter the details to create a new school. This will be saved to Firestore.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
