@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from '@/context/auth-context';
+import { useAuth, mockUsers } from '@/context/auth-context';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { GraduationCap, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -97,10 +98,25 @@ export function LoginForm() {
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
-            <div className="text-center text-sm text-muted-foreground">
-              <p>This is now powered by Firebase. In a real application, you would sign up for an account.</p>
-              <p className="mt-2">For now, you can use the mock data login from the previous version to see the UI, but the data will not be connected.</p>
-            </div>
+            <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="item-1">
+                    <AccordionTrigger className="text-sm text-muted-foreground">View Demo Credentials</AccordionTrigger>
+                    <AccordionContent>
+                        <ul className="space-y-1 text-xs text-muted-foreground">
+                            {Object.values(mockUsers).map(({ user, password }) => (
+                                <li key={user.username} className="flex justify-between">
+                                    <span className="font-semibold">{user.role} ({user.name}):</span>
+                                    <span>{user.email} / {password}</span>
+                                </li>
+                            ))}
+                              <li className="flex justify-between">
+                                <span className="font-semibold">Parent (Maria Rodriguez):</span>
+                                <span>m.rodriguez@family.com / parent</span>
+                            </li>
+                        </ul>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
           </CardFooter>
         </form>
       </Form>
