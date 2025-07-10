@@ -5,18 +5,24 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Award, School, GraduationCap, Presentation, Star } from 'lucide-react';
+import { Loader2, Award, School, GraduationCap, Presentation, Star, Medal } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useEffect, useMemo } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getGpaFromNumeric, formatCurrency } from '@/lib/utils';
+import { getGpaFromNumeric } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 const calculateAverageGpaForSchool = (grades) => {
     if (!grades || grades.length === 0) return 0;
     const totalPoints = grades.reduce((acc, g) => acc + getGpaFromNumeric(parseFloat(g.grade)), 0);
     return parseFloat((totalPoints / grades.length).toFixed(2));
 };
+
+const rankingStyles = [
+  { color: 'text-yellow-500', size: 'h-8 w-8', label: '1st Place' },
+  { color: 'text-gray-400', size: 'h-6 w-6', label: '2nd Place' },
+  { color: 'text-orange-600', size: 'h-6 w-6', label: '3rd Place' },
+];
 
 export default function AwardsPage() {
   const { role, isLoading: authLoading } = useAuth();
@@ -37,10 +43,11 @@ export default function AwardsPage() {
       .map(school => ({
         id: school.profile.id,
         name: school.profile.name,
+        logoUrl: school.profile.logoUrl,
         avgGpa: calculateAverageGpaForSchool(school.grades),
       }))
       .sort((a, b) => b.avgGpa - a.avgGpa)
-      .slice(0, 5);
+      .slice(0, 3);
   }, [allSchoolData]);
 
   const topStudents = useMemo(() => {
@@ -54,7 +61,7 @@ export default function AwardsPage() {
         return { ...student, avgGrade };
     })
     .sort((a,b) => b.avgGrade - a.avgGrade)
-    .slice(0, 10);
+    .slice(0, 3);
   }, [allSchoolData]);
 
   const topTeachers = useMemo(() => {
@@ -84,7 +91,7 @@ export default function AwardsPage() {
       return { ...teacher, avgStudentGrade };
     })
     .sort((a, b) => b.avgStudentGrade - a.avgStudentGrade)
-    .slice(0, 10);
+    .slice(0, 3);
   }, [allSchoolData]);
 
   if (isLoading || !allSchoolData) {
@@ -94,9 +101,26 @@ export default function AwardsPage() {
   const handleAnnounceWinners = () => {
     console.log("Announcing winners... (Functionality to be connected to backend)");
   };
+  
+  const AwardCard = ({ rank, children }) => {
+    const isFirst = rank === 0;
+    return (
+        <Card className={cn(isFirst ? 'md:col-span-1' : '', 'flex flex-col')}>
+            <CardHeader className="flex-row items-center gap-4">
+                <Medal className={cn(rankingStyles[rank].color, rankingStyles[rank].size)} />
+                <div className="flex-1">
+                    <CardTitle>{rankingStyles[rank].label}</CardTitle>
+                </div>
+            </CardHeader>
+            <CardContent className="flex-grow">
+                {children}
+            </CardContent>
+        </Card>
+    );
+  };
 
   return (
-    <div className="space-y-6 animate-in fade-in-50">
+    <div className="space-y-8 animate-in fade-in-50">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
             <h2 className="text-3xl font-bold tracking-tight">EduManage Excellence Awards</h2>
@@ -107,82 +131,133 @@ export default function AwardsPage() {
         </Button>
       </header>
       
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><School /> Top Performing Schools</CardTitle>
-            <CardDescription>Ranked by overall student Grade Point Average (GPA).</CardDescription>
-          </CardHeader>
-          <CardContent>
-             <Table>
-                <TableHeader><TableRow><TableHead>Rank</TableHead><TableHead>School</TableHead><TableHead className="text-right">Avg. GPA</TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {topSchools.map((school, i) => ( 
-                    <TableRow key={school.id}>
-                        <TableCell className="font-bold text-lg">{i + 1}</TableCell>
-                        <TableCell>{school.name}</TableCell>
-                        <TableCell className="text-right font-medium">{school.avgGpa.toFixed(2)}</TableCell>
-                    </TableRow> 
-                  ))}
-                </TableBody>
-              </Table>
-          </CardContent>
-        </Card>
+      <div className="space-y-8">
+        <section>
+          <h3 className="text-2xl font-semibold flex items-center gap-3 mb-4"><School /> Top Performing Schools</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {topSchools[0] && (
+              <AwardCard rank={0}>
+                  <div className="flex flex-col items-center text-center">
+                    <Avatar className="h-24 w-24 mb-4 border-2 border-yellow-500">
+                        <AvatarImage src={topSchools[0].logoUrl} data-ai-hint="school logo"/>
+                        <AvatarFallback>{topSchools[0].name.substring(0, 2)}</AvatarFallback>
+                    </Avatar>
+                    <p className="text-xl font-bold">{topSchools[0].name}</p>
+                    <p className="text-3xl font-bold text-primary mt-2">{topSchools[0].avgGpa.toFixed(2)} GPA</p>
+                  </div>
+              </AwardCard>
+            )}
+            <div className="space-y-6">
+              {topSchools[1] && (
+                  <AwardCard rank={1}>
+                     <div className="flex items-center gap-4">
+                       <Avatar className="h-16 w-16 border-2 border-gray-400"><AvatarImage src={topSchools[1].logoUrl} data-ai-hint="school logo"/><AvatarFallback>{topSchools[1].name.substring(0, 2)}</AvatarFallback></Avatar>
+                       <div>
+                         <p className="font-bold">{topSchools[1].name}</p>
+                         <p className="text-xl font-bold text-primary mt-1">{topSchools[1].avgGpa.toFixed(2)} GPA</p>
+                       </div>
+                     </div>
+                  </AwardCard>
+              )}
+              {topSchools[2] && (
+                  <AwardCard rank={2}>
+                     <div className="flex items-center gap-4">
+                       <Avatar className="h-16 w-16 border-2 border-orange-600"><AvatarImage src={topSchools[2].logoUrl} data-ai-hint="school logo"/><AvatarFallback>{topSchools[2].name.substring(0, 2)}</AvatarFallback></Avatar>
+                       <div>
+                         <p className="font-bold">{topSchools[2].name}</p>
+                         <p className="text-xl font-bold text-primary mt-1">{topSchools[2].avgGpa.toFixed(2)} GPA</p>
+                       </div>
+                     </div>
+                  </AwardCard>
+              )}
+            </div>
+          </div>
+        </section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><GraduationCap /> Students of the Year</CardTitle>
-            <CardDescription>The highest-achieving students across the entire network.</CardDescription>
-          </CardHeader>
-          <CardContent>
-             <Table>
-                <TableHeader><TableRow><TableHead>Rank</TableHead><TableHead>Student</TableHead><TableHead>School</TableHead><TableHead className="text-right">Avg. Grade</TableHead></TableRow></TableHeader>
-                <TableBody>
-                    {topStudents.map((student, i) => (
-                    <TableRow key={student.id}>
-                        <TableCell className="font-bold text-lg">{i + 1}</TableCell>
-                        <TableCell>
-                            <div className="flex items-center gap-2">
-                                <Avatar className="h-6 w-6"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{student.name[0]}</AvatarFallback></Avatar>
-                                <span>{student.name}</span>
-                            </div>
-                        </TableCell>
-                        <TableCell>{student.schoolName}</TableCell>
-                        <TableCell className="text-right font-medium">{student.avgGrade.toFixed(2)}/20</TableCell>
-                    </TableRow> 
-                    ))}
-                </TableBody>
-              </Table>
-          </CardContent>
-        </Card>
+        <section>
+          <h3 className="text-2xl font-semibold flex items-center gap-3 mb-4"><GraduationCap /> Students of the Year</h3>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {topStudents[0] && (
+                <AwardCard rank={0}>
+                    <div className="flex flex-col items-center text-center">
+                      <Avatar className="h-24 w-24 mb-4 border-2 border-yellow-500"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topStudents[0].name[0]}</AvatarFallback></Avatar>
+                      <p className="text-xl font-bold">{topStudents[0].name}</p>
+                      <p className="text-sm text-muted-foreground">{topStudents[0].schoolName}</p>
+                      <p className="text-3xl font-bold text-primary mt-2">{topStudents[0].avgGrade.toFixed(2)}/20</p>
+                    </div>
+                </AwardCard>
+              )}
+               <div className="space-y-6">
+                {topStudents[1] && (
+                    <AwardCard rank={1}>
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-16 w-16 border-2 border-gray-400"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topStudents[1].name[0]}</AvatarFallback></Avatar>
+                          <div>
+                            <p className="font-bold">{topStudents[1].name}</p>
+                            <p className="text-xs text-muted-foreground">{topStudents[1].schoolName}</p>
+                            <p className="text-xl font-bold text-primary mt-1">{topStudents[1].avgGrade.toFixed(2)}/20</p>
+                          </div>
+                        </div>
+                    </AwardCard>
+                )}
+                 {topStudents[2] && (
+                    <AwardCard rank={2}>
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-16 w-16 border-2 border-orange-600"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topStudents[2].name[0]}</AvatarFallback></Avatar>
+                          <div>
+                            <p className="font-bold">{topStudents[2].name}</p>
+                            <p className="text-xs text-muted-foreground">{topStudents[2].schoolName}</p>
+                            <p className="text-xl font-bold text-primary mt-1">{topStudents[2].avgGrade.toFixed(2)}/20</p>
+                          </div>
+                        </div>
+                    </AwardCard>
+                )}
+               </div>
+           </div>
+        </section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Presentation /> Teachers of the Year</CardTitle>
-            <CardDescription>Teachers whose students demonstrated the highest average academic performance.</CardDescription>
-          </CardHeader>
-          <CardContent>
-             <Table>
-                <TableHeader><TableRow><TableHead>Rank</TableHead><TableHead>Teacher</TableHead><TableHead>School</TableHead><TableHead>Subject</TableHead><TableHead className="text-right">Avg. Student Grade</TableHead></TableRow></TableHeader>
-                <TableBody>
-                    {topTeachers.map((teacher, i) => (
-                    <TableRow key={teacher.id}>
-                        <TableCell className="font-bold text-lg">{i + 1}</TableCell>
-                        <TableCell>
-                            <div className="flex items-center gap-2">
-                                <Avatar className="h-6 w-6"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{teacher.name[0]}</AvatarFallback></Avatar>
-                                <span>{teacher.name}</span>
-                            </div>
-                        </TableCell>
-                        <TableCell>{teacher.schoolName}</TableCell>
-                        <TableCell>{teacher.subject}</TableCell>
-                        <TableCell className="text-right font-medium">{teacher.avgStudentGrade.toFixed(2)}/20</TableCell>
-                    </TableRow> 
-                    ))}
-                </TableBody>
-              </Table>
-          </CardContent>
-        </Card>
+        <section>
+          <h3 className="text-2xl font-semibold flex items-center gap-3 mb-4"><Presentation /> Teachers of the Year</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {topTeachers[0] && (
+                <AwardCard rank={0}>
+                    <div className="flex flex-col items-center text-center">
+                      <Avatar className="h-24 w-24 mb-4 border-2 border-yellow-500"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topTeachers[0].name[0]}</AvatarFallback></Avatar>
+                      <p className="text-xl font-bold">{topTeachers[0].name}</p>
+                      <p className="text-sm text-muted-foreground">{topTeachers[0].schoolName} - {topTeachers[0].subject}</p>
+                      <p className="text-3xl font-bold text-primary mt-2">{topTeachers[0].avgStudentGrade.toFixed(2)}/20</p>
+                      <p className="text-xs text-muted-foreground">Avg. Student Grade</p>
+                    </div>
+                </AwardCard>
+              )}
+               <div className="space-y-6">
+                {topTeachers[1] && (
+                    <AwardCard rank={1}>
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-16 w-16 border-2 border-gray-400"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topTeachers[1].name[0]}</AvatarFallback></Avatar>
+                          <div>
+                            <p className="font-bold">{topTeachers[1].name}</p>
+                             <p className="text-xs text-muted-foreground">{topTeachers[1].schoolName} - {topTeachers[1].subject}</p>
+                            <p className="text-xl font-bold text-primary mt-1">{topTeachers[1].avgStudentGrade.toFixed(2)}/20</p>
+                          </div>
+                        </div>
+                    </AwardCard>
+                )}
+                 {topTeachers[2] && (
+                    <AwardCard rank={2}>
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-16 w-16 border-2 border-orange-600"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topTeachers[2].name[0]}</AvatarFallback></Avatar>
+                          <div>
+                            <p className="font-bold">{topTeachers[2].name}</p>
+                            <p className="text-xs text-muted-foreground">{topTeachers[2].schoolName} - {topTeachers[2].subject}</p>
+                            <p className="text-xl font-bold text-primary mt-1">{topTeachers[2].avgStudentGrade.toFixed(2)}/20</p>
+                          </div>
+                        </div>
+                    </AwardCard>
+                )}
+               </div>
+           </div>
+        </section>
       </div>
     </div>
   );
