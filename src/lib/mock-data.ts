@@ -97,6 +97,18 @@ export interface SavedReport {
   result: any; // This will hold the output from the specific flow
 }
 
+export interface AwardPrize {
+  description: string;
+  hasCertificate: boolean;
+}
+
+export interface AwardConfig {
+  topSchool: AwardPrize[];
+  topStudent: AwardPrize[];
+  topTeacher: AwardPrize[];
+}
+
+
 interface SchoolData {
     profile: SchoolProfile;
     students: Student[];

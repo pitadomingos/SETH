@@ -27,6 +27,7 @@ import {
     Message,
     Attendance,
     SavedReport as InitialSavedReport,
+    AwardConfig as InitialAwardConfig,
 } from '@/lib/mock-data';
 import { useAuth, Role, mockUsers } from './auth-context';
 import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
@@ -41,6 +42,7 @@ export type Class = InitialClass;
 export type Course = InitialCourse;
 export type Competition = InitialCompetition;
 export type SavedReport = InitialSavedReport;
+export type AwardConfig = InitialAwardConfig;
 export type { Team, Admission, Student, ActivityLog, Message, Teacher, Attendance, Holiday };
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
@@ -116,6 +118,8 @@ interface SchoolDataContextType {
   events: SchoolEvent[];
   addEvent: (data: NewEventData) => void;
   announceAwards: () => void;
+  awardConfig: AwardConfig | null;
+  updateAwardConfig: (config: AwardConfig) => void;
   coursesData: Course[];
   addCourse: (data: NewCourseData) => void;
   subjects: string[];
@@ -166,6 +170,24 @@ const SchoolDataContext = createContext<SchoolDataContextType | undefined>(undef
 
 const initialExamBoards = ['Internal', 'Cambridge', 'IB', 'State Board', 'Advanced Placement'];
 
+const initialAwardConfig: AwardConfig = {
+    topSchool: [
+        { description: '$5,000 Technology Grant', hasCertificate: true },
+        { description: '$2,500 Library Fund', hasCertificate: true },
+        { description: 'Set of 20 New Laptops', hasCertificate: true },
+    ],
+    topStudent: [
+        { description: 'Full Scholarship for Next Year', hasCertificate: true },
+        { description: 'New MacBook Pro', hasCertificate: true },
+        { description: 'Summer Internship Opportunity', hasCertificate: true },
+    ],
+    topTeacher: [
+        { description: '$1,000 Professional Development Grant', hasCertificate: true },
+        { description: 'All-Expenses Paid Conference Trip', hasCertificate: true },
+        { description: 'Classroom Technology Upgrade', hasCertificate: true },
+    ],
+};
+
 export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { user, role, originalUser } = useAuth();
   const { toast } = useToast();
@@ -200,6 +222,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [parentStatusOverrides, setParentStatusOverrides] = useState<Record<string, 'Active' | 'Suspended'>>({});
   const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
+  const [awardConfig, setAwardConfig] = useState<AwardConfig>(() => JSON.parse(JSON.stringify(initialAwardConfig)));
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -656,6 +679,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
      // This assumes a global log can be added to one of the schools, or needs a different mechanism
     setAllSchoolData(prev => ({...prev, northwood: {...prev.northwood, activityLogs: [logEntry, ...prev.northwood.activityLogs]}}));
   };
+  
+  const updateAwardConfig = (config: AwardConfig) => {
+    setAwardConfig(config);
+    toast({ title: "Award prizes have been updated." });
+  };
+
 
   const addTerm = (data: NewTermData) => {
     const newTerm: AcademicTerm = { id: `TERM${Date.now()}`, ...data };
@@ -861,7 +890,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     assignments: [],
     grades, addGrade,
     attendance, addLessonAttendance,
-    events, addEvent, announceAwards,
+    events, addEvent, announceAwards, awardConfig, updateAwardConfig,
     subjects, addSubject,
     examBoards, addExamBoard, deleteExamBoard,
     feeDescriptions, addFeeDescription, deleteFeeDescription,
