@@ -2,9 +2,9 @@
 'use client';
 import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useSchoolData } from '@/context/school-data-context';
+import { useSchoolData, Competition } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, School, Users, Presentation, TrendingUp, Trophy, GraduationCap, BarChart2 } from 'lucide-react';
+import { Loader2, School, Users, Presentation, TrendingUp, Trophy, Award, BarChart2, Briefcase, Lightbulb, Link as LinkIcon, Tv } from 'lucide-react';
 import Image from 'next/image';
 import {
   Carousel,
@@ -13,7 +13,7 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import { getGpaFromNumeric, formatGradeDisplay } from '@/lib/utils';
-import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis, LabelList } from 'recharts';
+import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis, LabelList, Legend } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -23,8 +23,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format } from 'date-fns';
 
-// --- Kiosk-specific Components ---
+// --- Kiosk-specific Slides ---
 
 function KioskDashboardSlide({ school, allSchoolData }) {
     const isGlobal = school.profile.id === 'global';
@@ -194,28 +195,190 @@ function KioskLeaderboardSlide({ school, allSchoolData }) {
     );
 }
 
+function KioskAttendanceSlide({ school }) {
+    const { attendance, holidays } = school;
+
+    const chartData = useMemo(() => {
+        const attendanceByDate = attendance.reduce((acc, record) => {
+            const date = record.date;
+            if (!acc[date]) acc[date] = { present: 0, late: 0, absent: 0, sick: 0 };
+            if (record.status.toLowerCase() in acc[date]) acc[date][record.status.toLowerCase()]++;
+            return acc;
+        }, {});
+
+        const last30Days = Array.from({ length: 30 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - (29 - i)); return d; });
+        const holidayDateStrings = holidays.map(h => format(h.date, 'yyyy-MM-dd'));
+
+        return last30Days.map(d => {
+            const dateStr = format(d, 'yyyy-MM-dd');
+            const dayData = attendanceByDate[dateStr];
+            const total = dayData ? dayData.present + dayData.late + dayData.absent + dayData.sick : 0;
+            return {
+                date: format(d, 'MMM d'),
+                'Attendance Rate': total > 0 ? parseFloat((((dayData.present + dayData.late) / total) * 100).toFixed(1)) : 100,
+            };
+        });
+    }, [attendance, holidays]);
+
+    return (
+        <div className="p-8 h-full flex flex-col">
+            <h2 className="text-5xl font-bold text-center mb-8">Attendance Trends</h2>
+            <div className="flex-1">
+                 <ChartContainer config={{}} className="h-full w-full">
+                    <RechartsLineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" tick={{ fontSize: 16 }} />
+                        <YAxis domain={[0, 100]} tickFormatter={(value) => `${value}%`} tick={{ fontSize: 16 }} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Legend wrapperStyle={{ fontSize: "16px" }} />
+                        <Line type="monotone" dataKey="Attendance Rate" stroke="hsl(var(--chart-1))" strokeWidth={3} dot={{ r: 5 }} />
+                    </RechartsLineChart>
+                </ChartContainer>
+            </div>
+        </div>
+    );
+}
+
+function KioskAcademicsSlide({ school }) {
+    const { teachers, subjects, grades } = school;
+
+    const teacherData = useMemo(() => teachers.map(teacher => {
+        const teacherGrades = grades.filter(g => g.subject === teacher.subject).map(g => parseFloat(g.grade));
+        return {
+            name: teacher.name,
+            'Average Grade': teacherGrades.length ? parseFloat((teacherGrades.reduce((sum, g) => sum + g, 0) / teacherGrades.length).toFixed(2)) : 0,
+        };
+    }).sort((a,b) => b['Average Grade'] - a['Average Grade']).slice(0, 5), [teachers, grades]);
+
+    const subjectData = useMemo(() => subjects.map(subject => {
+        const subjectGrades = grades.filter(g => g.subject === subject).map(g => parseFloat(g.grade));
+        return {
+            name: subject,
+            'Average Grade': subjectGrades.length ? parseFloat((subjectGrades.reduce((sum, g) => sum + g, 0) / subjectGrades.length).toFixed(2)) : 0,
+        };
+    }).sort((a,b) => b['Average Grade'] - a['Average Grade']), [subjects, grades]);
+
+    return (
+        <div className="p-8 h-full flex flex-col gap-8">
+            <h2 className="text-5xl font-bold text-center">Academic Performance</h2>
+            <div className="flex-1 grid grid-cols-2 gap-8">
+                <Card>
+                    <CardHeader><CardTitle>Top Teacher Performance</CardTitle><CardDescription>By average student grade</CardDescription></CardHeader>
+                    <CardContent>
+                        <ChartContainer config={{}} className="h-[400px] w-full">
+                            <RechartsBarChart data={teacherData} layout="vertical" margin={{ left: 20, right: 40 }}>
+                                <CartesianGrid horizontal={false} />
+                                <YAxis dataKey="name" type="category" tick={{ fontSize: 14 }} width={120} />
+                                <XAxis type="number" domain={[10, 20]} hide />
+                                <Bar dataKey="Average Grade" fill="hsl(var(--chart-1))" radius={4}>
+                                    <LabelList dataKey="Average Grade" position="right" offset={8} className="fill-foreground" fontSize={16} />
+                                </Bar>
+                            </RechartsBarChart>
+                        </ChartContainer>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader><CardTitle>Subject Performance</CardTitle><CardDescription>Average grade by subject</CardDescription></CardHeader>
+                     <CardContent>
+                        <ChartContainer config={{}} className="h-[400px] w-full">
+                            <RechartsBarChart data={subjectData} layout="vertical" margin={{ left: 20, right: 40 }}>
+                                <CartesianGrid horizontal={false} />
+                                <YAxis dataKey="name" type="category" tick={{ fontSize: 14 }} width={120} />
+                                <XAxis type="number" domain={[10, 20]} hide />
+                                <Bar dataKey="Average Grade" fill="hsl(var(--chart-2))" radius={4}>
+                                    <LabelList dataKey="Average Grade" position="right" offset={8} className="fill-foreground" fontSize={16} />
+                                </Bar>
+                            </RechartsBarChart>
+                        </ChartContainer>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+}
+
+function KioskAwardsSlide({ school, allSchoolData }) {
+    const awards = allSchoolData['northwood'].events.find(e => e.title.includes('Excellence Awards'));
+    if (!awards) {
+        return <div className="p-8 h-full flex items-center justify-center text-3xl">Annual awards have not been announced yet.</div>;
+    }
+
+    return (
+        <div className="p-8 h-full flex flex-col gap-8 items-center justify-center text-center">
+            <Award className="h-32 w-32 text-yellow-500" />
+            <h2 className="text-6xl font-bold">EduManage Excellence Awards</h2>
+            <p className="text-3xl text-muted-foreground">Celebrating the best of {new Date().getFullYear()}!</p>
+            <p className="text-2xl mt-4">Winners will be announced on {format(new Date(awards.date), 'MMMM do')}.</p>
+        </div>
+    );
+}
+
+function KioskMarketingSlide({ title, description, icon: Icon, children }) {
+    return (
+        <div className="p-16 h-full flex flex-col items-center justify-center text-center bg-primary/5">
+            <Icon className="h-24 w-24 text-primary mb-8" />
+            <h2 className="text-6xl font-bold">{title}</h2>
+            <p className="text-3xl text-muted-foreground mt-4 max-w-4xl">{description}</p>
+            {children}
+        </div>
+    );
+}
+
 // --- Main Page Component ---
 export default function KioskPage() {
   const params = useParams();
   const schoolId = params.schoolId as string;
   const { allSchoolData, isLoading } = useSchoolData();
   const [api, setApi] = useState<CarouselApi>();
-  const [current, setCurrent] = useState(0);
 
   const school = useMemo(() => {
     if (!allSchoolData) return null;
     if (schoolId === 'global') {
-      return {
-        profile: { id: 'global', name: 'EduManage Network', motto: 'Showcasing Excellence Across All Schools', logoUrl: 'https://placehold.co/100x100.png', gradeCapacity: {} },
-      };
+      return { ...allSchoolData['northwood'], profile: { ...allSchoolData['northwood'].profile, id: 'global', name: 'EduManage Network', motto: 'Showcasing Excellence Across All Schools', logoUrl: 'https://placehold.co/100x100.png' } };
     }
     return allSchoolData[schoolId];
   }, [schoolId, allSchoolData]);
 
+  const slides = useMemo(() => {
+    if (!school) return [];
+    
+    const kioskConfig = school.profile.kioskConfig;
+    const availableSlides = [];
+    
+    const isGlobal = schoolId === 'global';
+
+    if (isGlobal) {
+        availableSlides.push({ id: 'marketing-who', component: <KioskMarketingSlide title="Who We Are" description="EduManage is a catalyst for educational transformation, empowering schools with AI-driven tools to reduce administrative overhead and elevate academic standards." icon={Lightbulb} /> });
+        availableSlides.push({ id: 'marketing-goal', component: <KioskMarketingSlide title="Our Goal & Mission" description="Our mission is to make modern educational technology accessible and affordable for institutions across Southern Africa, starting with Mozambique, fostering a new era of data-driven, efficient, and impactful education." icon={Briefcase} /> });
+    }
+
+    if (kioskConfig?.showDashboard || isGlobal) {
+        availableSlides.push({ id: 'dashboard', component: <KioskDashboardSlide school={school} allSchoolData={allSchoolData} /> });
+    }
+    if (kioskConfig?.showLeaderboard || isGlobal) {
+        availableSlides.push({ id: 'leaderboard', component: <KioskLeaderboardSlide school={school} allSchoolData={allSchoolData} /> });
+    }
+    if (kioskConfig?.showAttendance) {
+        availableSlides.push({ id: 'attendance', component: <KioskAttendanceSlide school={school} /> });
+    }
+    if (kioskConfig?.showAcademics) {
+        availableSlides.push({ id: 'academics', component: <KioskAcademicsSlide school={school} /> });
+    }
+    if (kioskConfig?.showAwards) {
+        availableSlides.push({ id: 'awards', component: <KioskAwardsSlide school={school} allSchoolData={allSchoolData} /> });
+    }
+
+    if (isGlobal) {
+         availableSlides.push({ id: 'marketing-connect', component: <KioskMarketingSlide title="Join the EduManage Family" description="Connect your school to a powerful, unified ecosystem. Boost efficiency, empower your teachers, and unlock data-driven insights for student success." icon={LinkIcon}>
+            <p className="text-2xl mt-8">Scan the QR code or visit <span className="font-semibold text-primary">edumanage.app/demo</span> to get started.</p>
+         </KioskMarketingSlide> });
+    }
+
+    return availableSlides;
+  }, [school, allSchoolData, schoolId]);
+
   useEffect(() => {
     if (!api) return;
-
-    setCurrent(api.selectedScrollSnap() + 1);
 
     const interval = setInterval(() => {
       if (api.canScrollNext()) {
@@ -223,11 +386,7 @@ export default function KioskPage() {
       } else {
         api.scrollTo(0);
       }
-    }, 20000); // Cycle every 20 seconds
-
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap() + 1);
-    });
+    }, 15000); // Cycle every 15 seconds
 
     return () => clearInterval(interval);
   }, [api]);
@@ -248,16 +407,30 @@ export default function KioskPage() {
       </div>
     );
   }
+  
+  if (slides.length === 0) {
+    return (
+        <div className="flex h-screen items-center justify-center p-8">
+            <Card className="w-full max-w-2xl text-center">
+                 <CardHeader>
+                    <Tv className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                    <CardTitle>Kiosk Mode is Not Configured</CardTitle>
+                    <CardDescription>The administrator for {school.profile.name} has not enabled any display slides for the public kiosk.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground">Please go to Dashboard &gt; Settings to configure the kiosk slides.</p>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
 
   return (
     <Carousel setApi={setApi} className="w-full h-screen">
       <CarouselContent>
-        <CarouselItem>
-          <KioskDashboardSlide school={school} allSchoolData={allSchoolData} />
-        </CarouselItem>
-        <CarouselItem>
-          <KioskLeaderboardSlide school={school} allSchoolData={allSchoolData} />
-        </CarouselItem>
+        {slides.map(slide => (
+            <CarouselItem key={slide.id}>{slide.component}</CarouselItem>
+        ))}
       </CarouselContent>
     </Carousel>
   );

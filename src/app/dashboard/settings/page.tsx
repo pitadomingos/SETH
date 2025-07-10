@@ -1,7 +1,7 @@
 
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, Tv } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 
 
 export default function SettingsPage() {
@@ -22,10 +24,18 @@ export default function SettingsPage() {
   const isLoading = authLoading || schoolLoading;
   
   const [gradeCapacities, setGradeCapacities] = useState<Record<string, number>>(schoolProfile?.gradeCapacity || {});
+  const [kioskConfig, setKioskConfig] = useState(schoolProfile?.kioskConfig || {
+    showDashboard: true,
+    showLeaderboard: true,
+    showAttendance: false,
+    showAcademics: false,
+    showAwards: false,
+  });
 
   useEffect(() => {
     if (schoolProfile) {
         setGradeCapacities(schoolProfile.gradeCapacity || {});
+        setKioskConfig(schoolProfile.kioskConfig || { showDashboard: true, showLeaderboard: true, showAttendance: false, showAcademics: false, showAwards: false });
     }
   }, [schoolProfile]);
 
@@ -68,6 +78,21 @@ export default function SettingsPage() {
         });
     }
   };
+
+  const handleKioskConfigChange = (key: keyof typeof kioskConfig, checked: boolean) => {
+    setKioskConfig(prev => ({ ...prev, [key]: checked }));
+  };
+
+  const handleSaveKioskConfig = () => {
+     if (schoolProfile) {
+        updateSchoolProfile({ kioskConfig });
+        toast({
+            title: "Kiosk Settings Updated",
+            description: "Your public kiosk display settings have been saved.",
+        });
+    }
+  };
+
 
   if (isLoading || role !== 'Admin') {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -148,6 +173,39 @@ export default function SettingsPage() {
         </CardContent>
         <CardFooter>
             <Button onClick={handleSaveCapacities}><Save className="mr-2 h-4 w-4" /> Save Capacities</Button>
+        </CardFooter>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Tv /> Kiosk Display Settings</CardTitle>
+            <CardDescription>Choose which information slides to display on your public kiosk screen. Changes will apply on the next cycle.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+            <div className="flex items-center space-x-2">
+                <Checkbox id="kiosk-dashboard" checked={kioskConfig.showDashboard} onCheckedChange={(checked) => handleKioskConfigChange('showDashboard', checked as boolean)} />
+                <Label htmlFor="kiosk-dashboard">Show Main Dashboard Slide</Label>
+            </div>
+             <div className="flex items-center space-x-2">
+                <Checkbox id="kiosk-leaderboard" checked={kioskConfig.showLeaderboard} onCheckedChange={(checked) => handleKioskConfigChange('showLeaderboard', checked as boolean)} />
+                <Label htmlFor="kiosk-leaderboard">Show Top Student Leaderboard Slide</Label>
+            </div>
+            <Separator />
+            <div className="flex items-center space-x-2">
+                <Checkbox id="kiosk-attendance" checked={kioskConfig.showAttendance} onCheckedChange={(checked) => handleKioskConfigChange('showAttendance', checked as boolean)} />
+                <Label htmlFor="kiosk-attendance">Show Attendance Trend Chart Slide</Label>
+            </div>
+             <div className="flex items-center space-x-2">
+                <Checkbox id="kiosk-academics" checked={kioskConfig.showAcademics} onCheckedChange={(checked) => handleKioskConfigChange('showAcademics', checked as boolean)} />
+                <Label htmlFor="kiosk-academics">Show Academic Performance Charts Slide</Label>
+            </div>
+             <div className="flex items-center space-x-2">
+                <Checkbox id="kiosk-awards" checked={kioskConfig.showAwards} onCheckedChange={(checked) => handleKioskConfigChange('showAwards', checked as boolean)} />
+                <Label htmlFor="kiosk-awards">Show Annual Award Announcements Slide</Label>
+            </div>
+        </CardContent>
+        <CardFooter>
+             <Button onClick={handleSaveKioskConfig}><Save className="mr-2 h-4 w-4" /> Save Kiosk Settings</Button>
         </CardFooter>
       </Card>
     </div>
