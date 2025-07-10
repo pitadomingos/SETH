@@ -1,9 +1,8 @@
-
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, FileText } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function SystemDocumentationPage() {
@@ -33,10 +32,10 @@ export default function SystemDocumentationPage() {
       <Card>
         <CardHeader>
             <CardTitle>Documentation</CardTitle>
-            <CardDescription>This page is under construction.</CardDescription>
+            <CardDescription>This page is a placeholder to confirm the build error is resolved.</CardDescription>
         </CardHeader>
         <CardContent>
-            <p>The original content of this page was causing a build error. It has been backed up and can be restored later.</p>
+            <p>Content for the system documentation will be added here.</p>
         </CardContent>
       </Card>
     </div>

@@ -1,5 +1,3 @@
-
-
 'use client';
 import {
   SidebarHeader,
@@ -71,6 +69,7 @@ const studentAndTeacherLinks: NavLink[] = [
 
 const documentationLinks: NavLink[] = [
     { href: '/dashboard/user-manual', label: 'User Manual', icon: BookUser },
+    { href: '/dashboard/system-documentation', label: 'System Docs', icon: FileText },
 ];
 
 export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
