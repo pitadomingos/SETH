@@ -32,7 +32,7 @@ const calculateAverageGpaForSchool = (grades) => {
 function AISystemAnalysis({ allSchoolData }) {
   const [analysis, setAnalysis] = useState<AnalyzeSchoolSystemOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const schoolList = useMemo(() => Object.values(allSchoolData), [allSchoolData]);
+  const schoolList = useMemo(() => allSchoolData ? Object.values(allSchoolData) : [], [allSchoolData]);
   const [selectedSchoolIds, setSelectedSchoolIds] = useState<string[]>(schoolList.map(s => s.profile.id));
 
   const handleToggleSchool = (schoolId: string) => {
@@ -161,6 +161,7 @@ function AISystemAnalysis({ allSchoolData }) {
 function GlobalLeaderboards({ allSchoolData }) {
   // Logic for Top Schools
   const topSchools = useMemo(() => {
+    if (!allSchoolData) return [];
     return Object.values(allSchoolData)
       .map(school => ({
         id: school.profile.id,
@@ -173,6 +174,7 @@ function GlobalLeaderboards({ allSchoolData }) {
 
   // Logic for Top Students
   const topStudents = useMemo(() => {
+    if (!allSchoolData) return [];
     const allStudents = Object.values(allSchoolData).flatMap(s => s.students.map(student => ({...student, schoolName: s.profile.name})));
     const allGrades = Object.values(allSchoolData).flatMap(s => s.grades);
     
@@ -187,10 +189,12 @@ function GlobalLeaderboards({ allSchoolData }) {
 
   // Logic for Top Teachers
   const topTeachers = useMemo(() => {
+    if (!allSchoolData) return [];
     const allTeachers = Object.values(allSchoolData).flatMap(s => s.teachers.map(teacher => ({...teacher, schoolName: s.profile.name, schoolId: s.profile.id})));
     
     return allTeachers.map(teacher => {
       const school = allSchoolData[teacher.schoolId];
+      if (!school) return { ...teacher, avgStudentGrade: 0 };
       const teacherCourses = school.courses.filter(c => c.teacherId === teacher.id);
       const studentIds = new Set<string>();
       teacherCourses.forEach(course => {
@@ -217,6 +221,7 @@ function GlobalLeaderboards({ allSchoolData }) {
 
   // Logic for Financial Health
   const topFinancial = useMemo(() => {
+    if (!allSchoolData) return [];
     return Object.values(allSchoolData).map(school => {
       const totalFees = school.finance.reduce((sum, f) => sum + f.totalAmount, 0);
       const totalRevenue = school.finance.reduce((sum, f) => sum + f.amountPaid, 0);
@@ -417,4 +422,5 @@ export default function GlobalAdminDashboard() {
   );
 }
 
+    
     
