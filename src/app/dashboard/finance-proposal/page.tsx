@@ -7,7 +7,7 @@ import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, 
 import { useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 
-export default function ProjectProposalPage() {
+export default function FinanceProposalPage() {
   const { role, isLoading } = useAuth();
   const router = useRouter();
 

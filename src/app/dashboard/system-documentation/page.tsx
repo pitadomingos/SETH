@@ -73,11 +73,11 @@ export default function SystemDocumentationPage() {
             </div>
              <div>
               <h3 className="font-semibold flex items-center gap-2"><BrainCircuit /> src/ai/flows</code></h3>
-              <p className="text-sm text-muted-foreground">Houses the Genkit flows and AI-related logic, including: <code>create-lesson-plan</code>, <code>generate-test</code>, <code>grade-student-test</code>, <code>analyze-schedule-conflicts</code>, <code>analyze-school-performance</code>, <code>identify-struggling-students</code>, and more.</p>
+              <p className="text-sm text-muted-foreground">Houses the Genkit flows and AI-related logic, including: create-lesson-plan, generate-test, grade-student-test, analyze-schedule-conflicts, analyze-school-performance, identify-struggling-students, and more.</p>
              </div>
              <div>
               <h3 className="font-semibold"><code>/src/context</code></h3>
-              <p className="text-sm text-muted-foreground">Contains React Context providers for managing global state like authentication (<code>AuthProvider</code>) and shared school data (<code>SchoolDataProvider</code>).</p>
+              <p className="text-sm text-muted-foreground">Contains React Context providers for managing global state like authentication (AuthProvider) and shared school data (SchoolDataProvider).</p>
              </div>
           </CardContent>
         </Card>
@@ -94,7 +94,7 @@ export default function SystemDocumentationPage() {
             </div>
             <div>
               <h3 className="font-semibold">Stateful Context Providers</h3>
-              <p className="text-sm text-muted-foreground">The <code>AuthProvider</code> and <code>SchoolDataProvider</code> contexts work together to create a dynamic, in-memory state. Based on the logged-in user, the system loads the correct slice of data, simulating a real multi-tenant backend and allowing actions to update the UI instantly.</p>
+              <p className="text-sm text-muted-foreground">The AuthProvider and SchoolDataProvider contexts work together to create a dynamic, in-memory state. Based on the logged-in user, the system loads the correct slice of data, simulating a real multi-tenant backend and allowing actions to update the UI instantly.</p>
             </div>
           </CardContent>
         </Card>
@@ -107,7 +107,7 @@ export default function SystemDocumentationPage() {
             <CardContent className="space-y-4">
                  <div>
                     <h3 className="font-semibold">Configurable Kiosk Mode</h3>
-                    <p className="text-sm text-muted-foreground">A dynamic route at `/kiosk/[schoolId]` provides a fullscreen, automated slideshow for public displays. Admins can configure which slides (Dashboard, Leaderboards, etc.) are visible for their school. A special `/kiosk/global` view includes marketing slides for corporate display.</p>
+                    <p className="text-sm text-muted-foreground">A dynamic route at /kiosk/[schoolId] provides a fullscreen, automated slideshow for public displays. Admins can configure which slides (Dashboard, Leaderboards, etc.) are visible for their school. A special /kiosk/global view includes marketing slides for corporate display.</p>
                 </div>
                 <div>
                     <h3 className="font-semibold">Global Admin Impersonation</h3>
@@ -151,7 +151,7 @@ export default function SystemDocumentationPage() {
                   <Database className="h-5 w-5 text-accent mt-1 shrink-0" />
                   <div>
                       <h4 className="font-semibold">4. Data Fetching & Mutation</h4>
-                      <p className="text-sm text-muted-foreground">Update the <code>SchoolDataProvider</code> to fetch data from the new API layer instead of local mock data. Wire up all forms and actions (e.g., adding a student, uploading a logo) to call the API for persistent changes.</p>
+                      <p className="text-sm text-muted-foreground">Update the SchoolDataProvider to fetch data from the new API layer instead of local mock data. Wire up all forms and actions (e.g., adding a student, uploading a logo) to call the API for persistent changes.</p>
                   </div>
               </div>
           </CardContent>
