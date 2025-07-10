@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Building, User, Mail, Phone, MapPin, Edit, Star, ShieldCheck, Gem, CreditCard, Save } from 'lucide-react';
+import { Loader2, Building, User, Mail, Phone, MapPin, Edit, Star, ShieldCheck, Gem, CreditCard, Save, Upload } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useEffect, useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -192,6 +192,7 @@ const profileSchema = z.object({
   email: z.string().email("A valid email is required."),
   motto: z.string().optional(),
   logoUrl: z.string().url("Please enter a valid URL.").optional(),
+  certificateTemplateUrl: z.string().url("Please enter a valid URL.").optional(),
 });
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
@@ -199,26 +200,21 @@ function EditProfileDialog() {
   const { schoolProfile, updateSchoolProfile } = useSchoolData();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [logoPreview, setLogoPreview] = useState(schoolProfile?.logoUrl || '');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const certInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: schoolProfile?.name || '',
-      head: schoolProfile?.head || '',
-      address: schoolProfile?.address || '',
-      phone: schoolProfile?.phone || '',
-      email: schoolProfile?.email || '',
-      motto: schoolProfile?.motto || '',
-      logoUrl: schoolProfile?.logoUrl || '',
-    }
+    defaultValues: { ...schoolProfile }
   });
+
+  const logoPreview = form.watch('logoUrl');
+  const certPreview = form.watch('certificateTemplateUrl');
 
   useEffect(() => {
     if (schoolProfile && isOpen) {
       form.reset(schoolProfile);
-      setLogoPreview(schoolProfile.logoUrl);
     }
   }, [schoolProfile, form, isOpen]);
 
@@ -237,7 +233,7 @@ function EditProfileDialog() {
       <DialogTrigger asChild>
         <Button variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit Details</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Edit School Profile</DialogTitle>
           <DialogDescription>
@@ -245,7 +241,7 @@ function EditProfileDialog() {
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>School Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="head" render={({ field }) => ( <FormItem><FormLabel>Head of School</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -254,37 +250,38 @@ function EditProfileDialog() {
               <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="motto" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>School Motto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
               
-              <div className="col-span-2 space-y-2">
+              <div className="col-span-1 space-y-2">
                 <FormLabel>School Logo</FormLabel>
                 <div className="flex items-center gap-4">
                   <Image src={logoPreview || 'https://placehold.co/100x100.png'} alt="logo preview" width={48} height={48} className="rounded-md bg-muted object-cover" data-ai-hint="school logo"/>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    accept="image/*"
+                  <input type="file" ref={logoInputRef} className="hidden" accept="image/*"
                     onChange={() => {
                       const newLogoUrl = `https://placehold.co/100x100.png?v=${Date.now()}`;
-                      setLogoPreview(newLogoUrl);
                       form.setValue('logoUrl', newLogoUrl, { shouldValidate: true, shouldDirty: true });
                     }}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Upload New Logo
-                  </Button>
+                  <Button type="button" variant="outline" onClick={() => logoInputRef.current?.click()}><Upload className="mr-2 h-4 w-4" />Upload</Button>
                 </div>
-                <FormDescription>
-                  Click to open the file explorer. A new placeholder logo will be generated on selection.
-                </FormDescription>
-                <FormField control={form.control} name="logoUrl" render={({ field }) => ( <FormItem><FormControl><Input type="hidden" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                 <FormField control={form.control} name="logoUrl" render={({ field }) => ( <FormItem><FormControl><Input type="hidden" {...field} /></FormControl><FormMessage /></FormItem> )} />
+              </div>
+              
+              <div className="col-span-1 space-y-2">
+                <FormLabel>Certificate Template</FormLabel>
+                <div className="flex items-center gap-4">
+                  <Image src={certPreview || 'https://placehold.co/100x100.png'} alt="certificate preview" width={48} height={48} className="rounded-md bg-muted object-cover" data-ai-hint="certificate document"/>
+                  <input type="file" ref={certInputRef} className="hidden" accept="image/*"
+                    onChange={() => {
+                      const newCertUrl = `https://placehold.co/800x600.png?v=${Date.now()}`;
+                      form.setValue('certificateTemplateUrl', newCertUrl, { shouldValidate: true, shouldDirty: true });
+                    }}
+                  />
+                  <Button type="button" variant="outline" onClick={() => certInputRef.current?.click()}><Upload className="mr-2 h-4 w-4" />Upload</Button>
+                </div>
+                <FormField control={form.control} name="certificateTemplateUrl" render={({ field }) => ( <FormItem><FormControl><Input type="hidden" {...field} /></FormControl><FormMessage /></FormItem> )} />
               </div>
 
             </div>
-            <DialogFooter>
+            <DialogFooter className="border-t pt-4">
               <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -335,69 +332,90 @@ export default function SchoolProfilePage() {
         <p className="text-muted-foreground">Manage your school's official information and subscription plan.</p>
       </header>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex items-center gap-4">
-                 <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted shrink-0 overflow-hidden">
-                    <Image src={schoolProfile.logoUrl} alt={`${schoolProfile.name} Logo`} width={64} height={64} className="object-cover" data-ai-hint="school logo" />
-                 </div>
-                 <div>
-                    <CardTitle className="text-3xl">{schoolProfile.name}</CardTitle>
-                    <CardDescription className="flex items-center gap-2 pt-1">"{schoolProfile.motto}"</CardDescription>
-                 </div>
+      <div className="grid gap-6 lg:grid-cols-5">
+        <Card className="lg:col-span-3">
+            <CardHeader>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted shrink-0 overflow-hidden">
+                        <Image src={schoolProfile.logoUrl} alt={`${schoolProfile.name} Logo`} width={64} height={64} className="object-cover" data-ai-hint="school logo" />
+                    </div>
+                    <div>
+                        <CardTitle className="text-3xl">{schoolProfile.name}</CardTitle>
+                        <CardDescription className="flex items-center gap-2 pt-1">"{schoolProfile.motto}"</CardDescription>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-base py-2 px-4">
+                    {getTierIcon()}
+                    <span className="ml-2">{schoolProfile.tier} Plan</span>
+                  </Badge>
               </div>
-              <Badge variant="outline" className="text-base py-2 px-4">
-                {getTierIcon()}
-                <span className="ml-2">{schoolProfile.tier} Plan</span>
-              </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-            <div className="grid gap-6 md:grid-cols-2 text-sm">
-                <div className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted shrink-0">
-                        <User className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="grid gap-6 md:grid-cols-2 text-sm">
+                    <div className="flex items-start gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted shrink-0">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                            <p className="text-muted-foreground">Head of School</p>
+                            <p className="font-medium">{schoolProfile.head}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-muted-foreground">Head of School</p>
-                        <p className="font-medium">{schoolProfile.head}</p>
+                    <div className="flex items-start gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted shrink-0">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                            <p className="text-muted-foreground">Contact Email</p>
+                            <p className="font-medium">{schoolProfile.email}</p>
+                        </div>
                     </div>
-                </div>
-                 <div className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted shrink-0">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-start gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted shrink-0">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                            <p className="text-muted-foreground">Contact Phone</p>
+                            <p className="font-medium">{schoolProfile.phone}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-muted-foreground">Contact Email</p>
-                        <p className="font-medium">{schoolProfile.email}</p>
-                    </div>
-                </div>
-                 <div className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted shrink-0">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                        <p className="text-muted-foreground">Contact Phone</p>
-                        <p className="font-medium">{schoolProfile.phone}</p>
-                    </div>
-                </div>
-                <div className="flex items-start gap-3">
-                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted shrink-0">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                        <p className="text-muted-foreground">Address</p>
-                        <p className="font-medium">{schoolProfile.address}</p>
+                    <div className="flex items-start gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted shrink-0">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                            <p className="text-muted-foreground">Address</p>
+                            <p className="font-medium">{schoolProfile.address}</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </CardContent>
-        <CardFooter className="border-t pt-6 flex justify-between">
-            <EditProfileDialog />
-            {schoolProfile.tier !== 'Premium' && <UpgradePlanDialog />}
-        </CardFooter>
-      </Card>
+            </CardContent>
+            <CardFooter className="border-t pt-6 flex justify-between">
+                <EditProfileDialog />
+                {schoolProfile.tier !== 'Premium' && <UpgradePlanDialog />}
+            </CardFooter>
+        </Card>
+        
+        <Card className="lg:col-span-2">
+            <CardHeader>
+                <CardTitle>Certificate Template</CardTitle>
+                <CardDescription>This template will be used for all student completion certificates.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <div className="p-4 bg-muted rounded-md flex justify-center border">
+                    <Image
+                        src={schoolProfile.certificateTemplateUrl || "https://placehold.co/800x600.png"}
+                        alt="Certificate Template Preview"
+                        width={800}
+                        height={600}
+                        className="rounded-md shadow-lg"
+                        data-ai-hint="certificate document"
+                    />
+                </div>
+            </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -397,7 +397,7 @@ export default function StudentDashboard() {
                             </DialogHeader>
                             <div className="p-4 bg-muted rounded-md flex justify-center">
                                 <Image
-                                    src="https://placehold.co/800x600.png"
+                                    src={schoolProfile?.certificateTemplateUrl || "https://placehold.co/800x600.png"}
                                     alt="Certificate Preview"
                                     width={800}
                                     height={600}
