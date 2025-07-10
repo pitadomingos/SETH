@@ -3,9 +3,11 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database } from 'lucide-react';
+import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch } from 'lucide-react';
 import { useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 
 export default function ProjectProposalPage() {
   const { role, isLoading } = useAuth();
@@ -181,6 +183,54 @@ export default function ProjectProposalPage() {
                 <h4 className="font-semibold">Phase 3 (Q1 2026): Pilot Program & Market Launch</h4>
                 <p className="text-sm text-muted-foreground">Launch a pilot program with a select group of schools in Mozambique to gather feedback and refine features. Initiate targeted marketing campaigns for a full market launch.</p>
               </div>
+            </div>
+            <div className="mt-6 flex justify-center">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="secondary">
+                    <GitBranch className="mr-2 h-4 w-4" /> View Firebase Integration Roadmap
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2"><Cloud /> Backend & Firebase Integration Roadmap</DialogTitle>
+                      <DialogDescription>A step-by-step plan to transition to a full Firebase backend.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
+                        <div className="flex items-start gap-3">
+                            <KeyRound className="h-5 w-5 text-accent mt-1 shrink-0" />
+                            <div>
+                                <h4 className="font-semibold">1. Firebase Authentication</h4>
+                                <p className="text-sm text-muted-foreground">Replace the mock login system with Firebase Authentication. Implement email/password sign-up and sign-in, and manage user sessions and roles securely.</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <Server className="h-5 w-5 text-accent mt-1 shrink-0" />
+                            <div>
+                                <h4 className="font-semibold">2. Firestore Database & Data Modeling</h4>
+                                <p className="text-sm text-muted-foreground">Design and create Firestore collections for schools, users, students, grades, etc. Structure the data for efficient queries and scalability, replacing the <code>mock-data.ts</code> file.</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <UploadCloud className="h-5 w-5 text-accent mt-1 shrink-0" />
+                            <div>
+                                <h4 className="font-semibold">3. Cloud Storage & API Layer</h4>
+                                <p className="text-sm text-muted-foreground">Implement Firebase Storage for file uploads (e.g., logos, expense receipts). Create a set of server-side functions (e.g., Server Actions) to handle all Create, Read, Update, and Delete (CRUD) operations with Firestore and Storage, governed by security rules.</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <Database className="h-5 w-5 text-accent mt-1 shrink-0" />
+                            <div>
+                                <h4 className="font-semibold">4. Data Fetching & Mutation</h4>
+                                <p className="text-sm text-muted-foreground">Update the <code>SchoolDataProvider</code> to fetch data from the new API layer instead of local mock data. Wire up all forms and actions (e.g., adding a student, uploading a logo) to call the API for persistent changes.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                      <DialogClose asChild><Button type="button">Close</Button></DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardContent>
         </Card>
