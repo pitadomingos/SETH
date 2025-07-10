@@ -30,12 +30,14 @@ export default function SettingsPage() {
     showAttendance: false,
     showAcademics: false,
     showAwards: false,
+    showPerformers: false,
+    showAwardWinner: false,
   });
 
   useEffect(() => {
     if (schoolProfile) {
         setGradeCapacities(schoolProfile.gradeCapacity || {});
-        setKioskConfig(schoolProfile.kioskConfig || { showDashboard: true, showLeaderboard: true, showAttendance: false, showAcademics: false, showAwards: false });
+        setKioskConfig(schoolProfile.kioskConfig || { showDashboard: true, showLeaderboard: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false });
     }
   }, [schoolProfile]);
 
@@ -181,7 +183,7 @@ export default function SettingsPage() {
             <CardTitle className="flex items-center gap-2"><Tv /> Kiosk Display Settings</CardTitle>
             <CardDescription>Choose which information slides to display on your public kiosk screen. Changes will apply on the next cycle.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="grid sm:grid-cols-2 gap-x-8 gap-y-4">
             <div className="flex items-center space-x-2">
                 <Checkbox id="kiosk-dashboard" checked={kioskConfig.showDashboard} onCheckedChange={(checked) => handleKioskConfigChange('showDashboard', checked as boolean)} />
                 <Label htmlFor="kiosk-dashboard">Show Main Dashboard Slide</Label>
@@ -190,7 +192,15 @@ export default function SettingsPage() {
                 <Checkbox id="kiosk-leaderboard" checked={kioskConfig.showLeaderboard} onCheckedChange={(checked) => handleKioskConfigChange('showLeaderboard', checked as boolean)} />
                 <Label htmlFor="kiosk-leaderboard">Show Top Student Leaderboard Slide</Label>
             </div>
-            <Separator />
+            <div className="flex items-center space-x-2">
+                <Checkbox id="kiosk-performers" checked={kioskConfig.showPerformers} onCheckedChange={(checked) => handleKioskConfigChange('showPerformers', checked as boolean)} />
+                <Label htmlFor="kiosk-performers">Show Top Performers & Staff Slide</Label>
+            </div>
+             <div className="flex items-center space-x-2">
+                <Checkbox id="kiosk-award-winner" checked={kioskConfig.showAwardWinner} onCheckedChange={(checked) => handleKioskConfigChange('showAwardWinner', checked as boolean)} />
+                <Label htmlFor="kiosk-award-winner">Show Award Winner Announcement Slide</Label>
+            </div>
+            <Separator className="sm:col-span-2" />
             <div className="flex items-center space-x-2">
                 <Checkbox id="kiosk-attendance" checked={kioskConfig.showAttendance} onCheckedChange={(checked) => handleKioskConfigChange('showAttendance', checked as boolean)} />
                 <Label htmlFor="kiosk-attendance">Show Attendance Trend Chart Slide</Label>

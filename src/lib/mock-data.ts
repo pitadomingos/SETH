@@ -145,6 +145,8 @@ export interface KioskConfig {
     showAttendance: boolean;
     showAcademics: boolean;
     showAwards: boolean;
+    showPerformers: boolean;
+    showAwardWinner: boolean;
 }
 
 export interface SchoolProfile { id: string; name: string; head: string; address: string; phone: string; email: string; motto: string; logoUrl: string; certificateTemplateUrl?: string; transcriptTemplateUrl?: string; tier?: 'Premium' | 'Pro' | 'Starter'; gradingSystem: '20-Point' | 'GPA' | 'Letter'; currency: 'USD' | 'ZAR' | 'MZN'; status: 'Active' | 'Suspended' | 'Inactive'; gradeCapacity: Record<string, number>; kioskConfig: KioskConfig; }
@@ -170,6 +172,8 @@ const defaultKioskConfig: KioskConfig = {
     showAttendance: false,
     showAcademics: false,
     showAwards: false,
+    showPerformers: true,
+    showAwardWinner: true,
 };
 
 // --- Data for School 1: Northwood High ---

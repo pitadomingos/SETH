@@ -4,7 +4,7 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSchoolData, Competition } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, School, Users, Presentation, TrendingUp, Trophy, Award, BarChart2, Briefcase, Lightbulb, Link as LinkIcon, Tv } from 'lucide-react';
+import { Loader2, School, Users, Presentation, TrendingUp, Trophy, Award, BarChart2, Briefcase, Lightbulb, Link as LinkIcon, Tv, Medal } from 'lucide-react';
 import Image from 'next/image';
 import {
   Carousel,
@@ -24,6 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 // --- Kiosk-specific Slides ---
 
@@ -324,6 +325,84 @@ function KioskMarketingSlide({ title, description, icon: Icon, children }) {
     );
 }
 
+function KioskTopPerformersSlide({ school }) {
+  const { students, teachers, grades } = school;
+
+  const topStudents = useMemo(() => students.map(student => {
+    const studentGrades = grades.filter(g => g.studentId === student.id).map(g => parseFloat(g.grade));
+    const avgGrade = studentGrades.length > 0 ? studentGrades.reduce((sum, g) => sum + g, 0) / studentGrades.length : 0;
+    return { ...student, avgGrade };
+  }).sort((a,b) => b.avgGrade - a.avgGrade).slice(0, 6), [students, grades]);
+
+  return (
+    <div className="p-8 h-full flex flex-col gap-8">
+      <h2 className="text-5xl font-bold text-center">Our Top Performers & Staff</h2>
+      <div className="flex-1 grid grid-cols-2 gap-8">
+        <div className="space-y-4">
+          <h3 className="text-3xl font-semibold text-center">Top Students</h3>
+          <div className="grid grid-cols-3 gap-6">
+            {topStudents.map(student => (
+              <div key={student.id} className="flex flex-col items-center gap-2">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage src={`https://placehold.co/100x100.png`} alt={student.name} data-ai-hint="profile picture" />
+                  <AvatarFallback>{student.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                </Avatar>
+                <p className="font-semibold text-lg">{student.name}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-4">
+          <h3 className="text-3xl font-semibold text-center">Our Dedicated Staff</h3>
+          <div className="grid grid-cols-3 gap-6">
+             {teachers.slice(0, 6).map(teacher => (
+              <div key={teacher.id} className="flex flex-col items-center gap-2">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage src={`https://placehold.co/100x100.png`} alt={teacher.name} data-ai-hint="profile picture" />
+                  <AvatarFallback>{teacher.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                </Avatar>
+                <p className="font-semibold text-lg">{teacher.name}</p>
+                <p className="text-sm text-muted-foreground">{teacher.subject}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const calculateAverageGpaForSchool = (grades) => {
+    if (!grades || grades.length === 0) return 0;
+    const totalPoints = grades.reduce((acc, g) => acc + getGpaFromNumeric(parseFloat(g.grade)), 0);
+    return parseFloat((totalPoints / grades.length).toFixed(2));
+};
+
+function KioskAwardWinnerSlide({ school, allSchoolData }) {
+    const topSchools = useMemo(() => Object.values(allSchoolData).map(s => ({
+        id: s.profile.id,
+        avgGpa: calculateAverageGpaForSchool(s.grades),
+    })).sort((a, b) => b.avgGpa - a.avgGpa).slice(0, 3), [allSchoolData]);
+
+    const schoolRank = topSchools.findIndex(s => s.id === school.profile.id);
+
+    if (schoolRank === -1) return null; // Not in top 3
+
+    const rankLabels = ['1st Place', '2nd Place', '3rd Place'];
+    const rankColors = ['text-yellow-500', 'text-gray-400', 'text-orange-600'];
+
+    return (
+         <div className="p-16 h-full flex flex-col items-center justify-center text-center bg-primary/5">
+            <Medal className={cn("h-32 w-32 mb-8", rankColors[schoolRank])} />
+            <h2 className="text-6xl font-bold">EduManage Excellence Award Winner!</h2>
+            <p className="text-4xl text-muted-foreground mt-4">{school.profile.name} has been awarded</p>
+            <p className="text-7xl font-bold mt-2" style={{color: `hsl(var(--chart-${schoolRank+2}))`}}>{rankLabels[schoolRank]}</p>
+            <p className="text-3xl text-muted-foreground mt-2">in the {new Date().getFullYear()} school rankings.</p>
+        </div>
+    );
+}
+
+
 // --- Main Page Component ---
 export default function KioskPage() {
   const params = useParams();
@@ -358,6 +437,9 @@ export default function KioskPage() {
     if (kioskConfig?.showLeaderboard || isGlobal) {
         availableSlides.push({ id: 'leaderboard', component: <KioskLeaderboardSlide school={school} allSchoolData={allSchoolData} /> });
     }
+     if (kioskConfig?.showPerformers) {
+        availableSlides.push({ id: 'performers', component: <KioskTopPerformersSlide school={school} /> });
+    }
     if (kioskConfig?.showAttendance) {
         availableSlides.push({ id: 'attendance', component: <KioskAttendanceSlide school={school} /> });
     }
@@ -367,10 +449,18 @@ export default function KioskPage() {
     if (kioskConfig?.showAwards) {
         availableSlides.push({ id: 'awards', component: <KioskAwardsSlide school={school} allSchoolData={allSchoolData} /> });
     }
+    if (kioskConfig?.showAwardWinner) {
+        const winnerSlide = <KioskAwardWinnerSlide school={school} allSchoolData={allSchoolData}/>;
+        // Only add the slide if the component doesn't return null
+        if (winnerSlide.props.school) {
+            availableSlides.push({ id: 'winner', component: winnerSlide });
+        }
+    }
+
 
     if (isGlobal) {
          availableSlides.push({ id: 'marketing-connect', component: <KioskMarketingSlide title="Join the EduManage Family" description="Connect your school to a powerful, unified ecosystem. Boost efficiency, empower your teachers, and unlock data-driven insights for student success." icon={LinkIcon}>
-            <p className="text-2xl mt-8">Scan the QR code or visit <span className="font-semibold text-primary">edumanage.app/demo</span> to get started.</p>
+            <p className="text-2xl mt-8">Contact us at +258 845479481 to request a demo.</p>
          </KioskMarketingSlide> });
     }
 
