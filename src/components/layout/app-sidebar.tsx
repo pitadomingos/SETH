@@ -45,6 +45,7 @@ import {
     Gem,
     MonitorPlay,
     Camera,
+    HeartPulse,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -116,6 +117,7 @@ export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     ...studentAndTeacherLinks,
     { href: '/dashboard/grading', label: 'Grading', icon: FileCheck },
     { href: '/dashboard/attendance', label: 'Attendance', icon: CalendarCheck },
+    { href: '/dashboard/behavioral', label: 'Behavioral', icon: HeartPulse },
     { href: '/dashboard/lesson-planner', label: 'Lesson Planner', icon: PenSquare },
     { href: '/dashboard/ai-testing', label: 'AI Test Generator', icon: FlaskConical },
     { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
@@ -180,7 +182,7 @@ export function AppSidebar() {
   const schoolTier = schoolProfile?.tier;
 
   const proFeaturesForAdmin = ['/dashboard/reports', '/dashboard/admissions'];
-  const proFeaturesForTeacher = ['/dashboard/lesson-planner', '/dashboard/ai-testing'];
+  const proFeaturesForTeacher = ['/dashboard/lesson-planner', '/dashboard/ai-testing', '/dashboard/behavioral'];
 
   return (
     <>

@@ -1,12 +1,11 @@
 
-
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { FileText as FileTextIcon, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse, FileText } from "lucide-react";
+import { FileText as FileTextIcon, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData } from "@/context/school-data-context";
 import { useToast } from '@/hooks/use-toast';
@@ -467,4 +466,3 @@ export default function StudentDashboard() {
     </div>
   );
 }
-

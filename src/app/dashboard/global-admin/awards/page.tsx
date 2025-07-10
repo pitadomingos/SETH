@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/context/auth-context';
@@ -5,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Award, School, GraduationCap, Presentation, Star, Medal, CheckCircle, Settings, BrainCircuit } from 'lucide-react';
-import { useSchoolData, AwardConfig } from '@/context/school-data-context';
+import { useSchoolData, AwardConfig, BehavioralAssessment } from '@/context/school-data-context';
 import { useEffect, useMemo, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getGpaFromNumeric } from '@/lib/utils';
@@ -284,6 +285,7 @@ function StudentAnalysisDialog({ student }) {
             averageGrade: student.avgGrade,
             grades: studentGrades,
             attendanceRate,
+            behavioralAssessments: student.behavioralAssessments
         });
         setAnalysis(result);
     } catch (e) {

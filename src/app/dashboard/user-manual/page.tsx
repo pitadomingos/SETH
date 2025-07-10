@@ -15,7 +15,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
       'All Schools Management: View and provision all schools in the system. From here, you can manage a school\'s status (Active, Suspended) and switch context to manage a school directly using the "Log in as user" feature.',
       'Inbox: Receive, view, and track messages from School Administrators across the network.',
       'Global User Management: Access dedicated pages to view and manage every student and parent account across the entire network, including suspending access.',
-      'EduManage Awards: Configure prizes and announce the annual system-wide awards for top-performing schools, students, and teachers.',
+      'EduManage Awards: Configure prizes and announce the annual system-wide awards for top-performing schools, students, and teachers. Click on any winner to get a detailed AI analysis of their success.',
       'Public Kiosk: Access and view the public-facing kiosk display for your corporate headquarters. This includes marketing slides and network-wide data.',
       'System Settings: A dedicated page to configure global settings, such as which slides are visible on the corporate kiosk display.',
       'Activity Logs: View a global feed of all significant actions taken by users across all schools for complete system oversight.',
@@ -56,6 +56,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
       'AI Lesson Planner: Generate performance-aware weekly lesson plans. Plans are automatically saved and can be printed for classroom use.',
       'AI Test Generator: Create, save, and delete ad-hoc tests. Deploy your saved tests to classes with specific deadlines.',
       'Grading: Access a dedicated gradebook to enter grades for students in your classes. These grades are instantly reflected throughout the app.',
+      'Behavioral Assessments: Periodically assess students on non-academic traits like respect, participation, social skills, and conduct. This data contributes to holistic student reports.',
       'Schedules: View your teaching schedule based on the courses assigned to you.',
       'Leaderboards: Check academic rankings to see how students are performing.',
       'Profile: View your personal information.',
@@ -66,6 +67,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
     title: 'Student Guide',
     points: [
       'Dashboard: See a summary of your academic progress, upcoming assignments, recent grades, an overview of your attendance, and your current school rank.',
+      'End of Term Report: Download a comprehensive report card that includes your grades, attendance summary, and behavioral assessments from your teachers.',
       'Take Assigned Tests: View tests assigned to you on your dashboard, complete them through a dedicated interface, and receive your AI-generated score immediately upon submission.',
       'Schedules: Check your course schedule, see your teachers, and track your progress in each class.',
       'Leaderboards: See where you rank among your peers in overall, class, and subject-specific leaderboards.',
@@ -80,6 +82,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
     title: 'Parent Guide',
     points: [
       'Dashboard: Get a complete overview of your children\'s school life. Click on a child\'s card to update the dashboard with their specific information.',
+      'End of Term Report: Download a comprehensive report card for your selected child, including their grades, attendance, and behavioral assessments.',
       'New Child Applications: Submit new admission applications for your other children. The form will show you available vacancies for the selected grade.',
       'AI-Powered Insights: Receive AI-generated advice based on grades and attendance data on how to support your selected child\'s learning, including their strengths and areas for improvement.',
       'Finance Portal: View detailed fee information for each child, including total amount, amount paid, and outstanding balance.',
