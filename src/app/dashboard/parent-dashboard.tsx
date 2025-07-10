@@ -84,6 +84,8 @@ function NewApplicationDialog() {
     form.reset({
       schoolId: '',
       name: '',
+      dateOfBirth: undefined,
+      sex: undefined,
       appliedFor: '',
       formerSchool: '',
       gradesSummary: '',
