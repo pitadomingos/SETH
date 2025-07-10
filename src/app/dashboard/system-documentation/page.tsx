@@ -19,7 +19,7 @@ export default function SystemDocumentationPage() {
   if (isLoading || role !== 'GlobalAdmin') {
     return (<div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>);
   }
-  
+
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>
