@@ -69,7 +69,7 @@ export default function SystemDocumentationPage() {
               <p className="text-sm text-muted-foreground">Home to reusable React components, including UI elements from ShadCN and custom-built dashboard components.</p>
             </div>
              <div>
-              <h3 className="font-semibold flex items-center gap-2"><BrainCircuit /> <code>src/ai/flows</code></h3>
+              <h3 className="font-semibold flex items-center gap-2"><BrainCircuit /> src/ai/flows</code></h3>
               <p className="text-sm text-muted-foreground">Houses the Genkit flows and AI-related logic, including: <code>create-lesson-plan</code>, <code>generate-test</code>, <code>grade-student-test</code>, <code>analyze-schedule-conflicts</code>, <code>analyze-school-performance</code>, <code>identify-struggling-students</code>, and more.</p>
             </div>
              <div>
