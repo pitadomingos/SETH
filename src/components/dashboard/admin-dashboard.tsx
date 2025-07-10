@@ -1,7 +1,7 @@
 
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
-import { Users, BookOpen, School, CalendarDays, TrendingUp, DollarSign, Hourglass, TrendingDown, BarChart2, AlertTriangle, Mail } from "lucide-react";
+import { Users, School, CalendarDays, TrendingUp, DollarSign, Hourglass, TrendingDown, BarChart2, AlertTriangle, Mail } from "lucide-react";
 import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis, LabelList, Legend, Dot } from 'recharts';
 import {
   ChartContainer,
@@ -23,6 +23,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useState, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
+import { mockUsers } from "@/lib/mock-data";
+import { formatGradeDisplay } from "@/lib/utils";
 
 
 const messageSchema = z.object({
@@ -42,9 +44,11 @@ function ContactDeveloperDialog() {
   });
 
   function onSubmit(values: MessageFormValues) {
+    const developerEmail = mockUsers.developer.user.email;
     const messageData: NewMessageData = {
-      to: 'Developer',
-      ...values,
+      recipientUsername: developerEmail,
+      subject: values.subject,
+      body: values.body,
     };
     addMessage(messageData);
     form.reset();
