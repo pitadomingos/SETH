@@ -1,6 +1,5 @@
 // src/lib/firebase/config.ts
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -20,7 +19,8 @@ if (!getApps().length) {
   app = getApps()[0];
 }
 
-const auth = getAuth(app);
+// Temporarily removing auth to focus on Firestore. We'll re-add this later.
+// const auth = getAuth(app); 
 const db = getFirestore(app);
 
-export { app, auth, db };
+export { app, db };
