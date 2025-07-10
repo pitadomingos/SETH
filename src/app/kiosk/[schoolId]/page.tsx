@@ -422,49 +422,36 @@ export default function KioskPage() {
     if (!school) return [];
     
     const kioskConfig = school.profile.kioskConfig;
-    const availableSlides = [];
-    
+    const allPossibleSlides = [];
     const isGlobal = schoolId === 'global';
 
+    // Define the full order of potential slides
     if (isGlobal) {
-        availableSlides.push({ id: 'marketing-who', component: <KioskMarketingSlide title="Who We Are" description="EduManage is a catalyst for educational transformation, empowering schools with AI-driven tools to reduce administrative overhead and elevate academic standards." icon={Lightbulb} /> });
-        availableSlides.push({ id: 'marketing-goal', component: <KioskMarketingSlide title="Our Goal & Mission" description="Our mission is to make modern educational technology accessible and affordable for institutions across Southern Africa, starting with Mozambique, fostering a new era of data-driven, efficient, and impactful education." icon={Briefcase} /> });
+        allPossibleSlides.push({ id: 'marketing-who', component: <KioskMarketingSlide title="Who We Are" description="EduManage is a catalyst for educational transformation, empowering schools with AI-driven tools to reduce administrative overhead and elevate academic standards." icon={Lightbulb} /> });
+        allPossibleSlides.push({ id: 'marketing-goal', component: <KioskMarketingSlide title="Our Goal & Mission" description="Our mission is to make modern educational technology accessible and affordable for institutions across Southern Africa, starting with Mozambique, fostering a new era of data-driven, efficient, and impactful education." icon={Briefcase} /> });
     }
-
-    if (kioskConfig?.showDashboard || isGlobal) {
-        availableSlides.push({ id: 'dashboard', component: <KioskDashboardSlide school={school} allSchoolData={allSchoolData} /> });
+    
+    // School Profile / Dashboard is always first if enabled
+    allPossibleSlides.push({ id: 'dashboard', enabled: kioskConfig?.showDashboard || isGlobal, component: <KioskDashboardSlide school={school} allSchoolData={allSchoolData} /> });
+    allPossibleSlides.push({ id: 'leaderboard', enabled: kioskConfig?.showLeaderboard || isGlobal, component: <KioskLeaderboardSlide school={school} allSchoolData={allSchoolData} /> });
+    allPossibleSlides.push({ id: 'performers', enabled: kioskConfig?.showPerformers, component: <KioskTopPerformersSlide school={school} /> });
+    allPossibleSlides.push({ id: 'attendance', enabled: kioskConfig?.showAttendance, component: <KioskAttendanceSlide school={school} /> });
+    allPossibleSlides.push({ id: 'academics', enabled: kioskConfig?.showAcademics, component: <KioskAcademicsSlide school={school} /> });
+    allPossibleSlides.push({ id: 'awards', enabled: kioskConfig?.showAwards, component: <KioskAwardsSlide school={school} allSchoolData={allSchoolData} /> });
+    
+    const winnerSlide = <KioskAwardWinnerSlide school={school} allSchoolData={allSchoolData}/>;
+    if (winnerSlide.props.school) { // Only consider adding if the school is a winner
+        allPossibleSlides.push({ id: 'winner', enabled: kioskConfig?.showAwardWinner, component: winnerSlide });
     }
-    if (kioskConfig?.showLeaderboard || isGlobal) {
-        availableSlides.push({ id: 'leaderboard', component: <KioskLeaderboardSlide school={school} allSchoolData={allSchoolData} /> });
-    }
-     if (kioskConfig?.showPerformers) {
-        availableSlides.push({ id: 'performers', component: <KioskTopPerformersSlide school={school} /> });
-    }
-    if (kioskConfig?.showAttendance) {
-        availableSlides.push({ id: 'attendance', component: <KioskAttendanceSlide school={school} /> });
-    }
-    if (kioskConfig?.showAcademics) {
-        availableSlides.push({ id: 'academics', component: <KioskAcademicsSlide school={school} /> });
-    }
-    if (kioskConfig?.showAwards) {
-        availableSlides.push({ id: 'awards', component: <KioskAwardsSlide school={school} allSchoolData={allSchoolData} /> });
-    }
-    if (kioskConfig?.showAwardWinner) {
-        const winnerSlide = <KioskAwardWinnerSlide school={school} allSchoolData={allSchoolData}/>;
-        // Only add the slide if the component doesn't return null
-        if (winnerSlide.props.school) {
-            availableSlides.push({ id: 'winner', component: winnerSlide });
-        }
-    }
-
-
+    
     if (isGlobal) {
-         availableSlides.push({ id: 'marketing-connect', component: <KioskMarketingSlide title="Join the EduManage Family" description="Connect your school to a powerful, unified ecosystem. Boost efficiency, empower your teachers, and unlock data-driven insights for student success." icon={LinkIcon}>
+         allPossibleSlides.push({ id: 'marketing-connect', enabled: true, component: <KioskMarketingSlide title="Join the EduManage Family" description="Connect your school to a powerful, unified ecosystem. Boost efficiency, empower your teachers, and unlock data-driven insights for student success." icon={LinkIcon}>
             <p className="text-2xl mt-8">Contact us at +258 845479481 to request a demo.</p>
          </KioskMarketingSlide> });
     }
 
-    return availableSlides;
+    // Filter to get only the enabled slides
+    return allPossibleSlides.filter(slide => slide.enabled);
   }, [school, allSchoolData, schoolId]);
 
   useEffect(() => {
