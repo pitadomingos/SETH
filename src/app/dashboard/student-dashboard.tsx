@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { FileText as FileTextIcon, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse } from "lucide-react";
+import { FileText as FileTextIcon, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse, FileText } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData } from "@/context/school-data-context";
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +25,7 @@ import Image from 'next/image';
 import { analyzeStudentFailure, AnalyzeStudentFailureOutput } from '@/ai/flows/analyze-student-failure';
 import { formatGradeDisplay, calculateAge } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { EndOfTermReportDialog } from '@/components/dashboard/end-of-term-report';
 
 const calculateAverageNumericGrade = (studentId: string, grades: any[]) => {
     if (!studentId || !grades) return 0;
@@ -369,6 +370,11 @@ export default function StudentDashboard() {
                 ))}
                 </ul>
             </CardContent>
+            {student && (
+                <CardFooter>
+                    <EndOfTermReportDialog student={student} />
+                </CardFooter>
+            )}
         </Card>
       </div>
 
@@ -461,3 +467,4 @@ export default function StudentDashboard() {
     </div>
   );
 }
+
