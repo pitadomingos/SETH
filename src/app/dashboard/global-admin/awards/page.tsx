@@ -5,7 +5,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Award, School, GraduationCap, Presentation, Star, Medal, CheckCircle, Settings, BookCopy } from 'lucide-react';
+import { Loader2, Award, School, GraduationCap, Presentation, Star, Medal, CheckCircle, Settings, BrainCircuit } from 'lucide-react';
 import { useSchoolData, AwardConfig } from '@/context/school-data-context';
 import { useEffect, useMemo, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -31,6 +31,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { analyzeTopSchool, AnalyzeTopSchoolOutput } from '@/ai/flows/analyze-top-school';
+import { analyzeTopStudent, AnalyzeTopStudentOutput } from '@/ai/flows/analyze-top-student';
+import { analyzeTopTeacher, AnalyzeTopTeacherOutput } from '@/ai/flows/analyze-top-teacher';
 
 
 const prizeSchema = z.object({
@@ -188,7 +191,212 @@ function AnnounceWinnersButton({ onAnnounce, hasBeenAnnounced }) {
   );
 }
 
+// --- Analysis Dialogs ---
 
+function SchoolAnalysisDialog({ school }) {
+  const { allSchoolData } = useSchoolData();
+  const [isOpen, setIsOpen] = useState(false);
+  const [analysis, setAnalysis] = useState<AnalyzeTopSchoolOutput | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleRunAnalysis = async () => {
+    setIsLoading(true);
+    setAnalysis(null);
+    try {
+        const schoolData = allSchoolData?.[school.id];
+        if (!schoolData) throw new Error("School data not found");
+        
+        const totalFees = schoolData.finance.reduce((sum, f) => sum + f.totalAmount, 0);
+        const totalRevenue = schoolData.finance.reduce((sum, f) => sum + f.amountPaid, 0);
+        const feeCollectionRate = totalFees > 0 ? (totalRevenue / totalFees) * 100 : 100;
+        const overdueFees = schoolData.finance.filter(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < new Date()).reduce((acc, f) => acc + (f.totalAmount - f.amountPaid), 0);
+        
+        const avgTeacherScore = schoolData.savedReports.filter(r => r.type === 'TeacherPerformance').reduce((acc, r, _, arr) => acc + r.result.performanceScore / arr.length, 50);
+
+        const result = await analyzeTopSchool({
+            schoolName: school.name,
+            studentCount: schoolData.students.length,
+            averageGpa: school.avgGpa,
+            feeCollectionRate,
+            overdueFees,
+            avgTeacherPerformanceScore: avgTeacherScore,
+        });
+        setAnalysis(result);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <div className="cursor-pointer">{/* Children will be passed here */}</div>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Why is {school.name} a Top School?</DialogTitle>
+          <DialogDescription>AI-powered analysis of the key metrics behind their success.</DialogDescription>
+        </DialogHeader>
+        <div className="py-4 space-y-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center p-8 text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin mr-2"/>Analyzing...</div>
+          ) : analysis ? (
+            <div className="text-sm space-y-3">
+              <p className="p-3 bg-muted rounded-md">{analysis.analysis}</p>
+              <div>
+                <h4 className="font-semibold mb-2">Key Strengths:</h4>
+                <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                  {analysis.keyStrengths.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+            </div>
+          ) : (
+             <Button onClick={handleRunAnalysis} className="w-full"><BrainCircuit className="mr-2 h-4 w-4" />Run AI Analysis</Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function StudentAnalysisDialog({ student }) {
+  const { allSchoolData } = useSchoolData();
+  const [isOpen, setIsOpen] = useState(false);
+  const [analysis, setAnalysis] = useState<AnalyzeTopStudentOutput | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleRunAnalysis = async () => {
+    setIsLoading(true);
+    setAnalysis(null);
+    try {
+        const schoolData = allSchoolData?.[student.schoolId];
+        if (!schoolData) throw new Error("School data not found");
+        const studentGrades = schoolData.grades.filter(g => g.studentId === student.id).map(g => ({ subject: g.subject, grade: g.grade }));
+        const studentAttendance = schoolData.attendance.filter(a => a.studentId === student.id);
+        const presentCount = studentAttendance.filter(a => ['Present', 'Late'].includes(a.status)).length;
+        const attendanceRate = studentAttendance.length > 0 ? (presentCount / studentAttendance.length) * 100 : 100;
+
+        const result = await analyzeTopStudent({
+            studentName: student.name,
+            schoolName: student.schoolName,
+            grade: `Grade ${student.grade}`,
+            averageGrade: student.avgGrade,
+            grades: studentGrades,
+            attendanceRate,
+        });
+        setAnalysis(result);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <div className="cursor-pointer"></div>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Why is {student.name} a Top Student?</DialogTitle>
+          <DialogDescription>AI-powered analysis of their academic record.</DialogDescription>
+        </DialogHeader>
+        <div className="py-4 space-y-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center p-8 text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin mr-2"/>Analyzing...</div>
+          ) : analysis ? (
+            <div className="text-sm space-y-3">
+              <p className="p-3 bg-muted rounded-md">{analysis.analysis}</p>
+              <div>
+                <h4 className="font-semibold mb-2">Key Strengths:</h4>
+                <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                  {analysis.keyStrengths.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+            </div>
+          ) : (
+             <Button onClick={handleRunAnalysis} className="w-full"><BrainCircuit className="mr-2 h-4 w-4" />Run AI Analysis</Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function TeacherAnalysisDialog({ teacher }) {
+  const { allSchoolData } = useSchoolData();
+  const [isOpen, setIsOpen] = useState(false);
+  const [analysis, setAnalysis] = useState<AnalyzeTopTeacherOutput | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleRunAnalysis = async () => {
+    setIsLoading(true);
+    setAnalysis(null);
+    try {
+        const schoolData = allSchoolData?.[teacher.schoolId];
+        if (!schoolData) throw new Error("School data not found");
+        
+        const classPerformances = schoolData.courses.filter(c => c.teacherId === teacher.id).map(course => {
+            const classInfo = schoolData.classes.find(c => c.id === course.classId);
+            if (!classInfo) return null;
+            const studentsInClass = schoolData.students.filter(s => s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim()).map(s => s.id);
+            const classGrades = schoolData.grades.filter(g => studentsInClass.includes(g.studentId) && g.subject === course.subject).map(g => parseFloat(g.grade));
+            const averageGrade = classGrades.length ? classGrades.reduce((sum, g) => sum + g, 0) / classGrades.length : 0;
+            const passingRate = classGrades.length ? (classGrades.filter(g => g >= 10).length / classGrades.length) * 100 : 0;
+            return { className: classInfo.name, averageGrade, passingRate };
+        }).filter(Boolean);
+
+        const result = await analyzeTopTeacher({
+            teacherName: teacher.name,
+            schoolName: teacher.schoolName,
+            subject: teacher.subject,
+            averageStudentGrade: teacher.avgStudentGrade,
+            classPerformances: classPerformances as any,
+        });
+        setAnalysis(result);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <div className="cursor-pointer"></div>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Why is {teacher.name} a Top Teacher?</DialogTitle>
+          <DialogDescription>AI-powered analysis of their performance metrics.</DialogDescription>
+        </DialogHeader>
+        <div className="py-4 space-y-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center p-8 text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin mr-2"/>Analyzing...</div>
+          ) : analysis ? (
+            <div className="text-sm space-y-3">
+              <p className="p-3 bg-muted rounded-md">{analysis.analysis}</p>
+              <div>
+                <h4 className="font-semibold mb-2">Key Metrics:</h4>
+                <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                  {analysis.keyMetrics.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+            </div>
+          ) : (
+             <Button onClick={handleRunAnalysis} className="w-full"><BrainCircuit className="mr-2 h-4 w-4" />Run AI Analysis</Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// --- Main Page Component ---
 export default function AwardsPage() {
   const { role, isLoading: authLoading } = useAuth();
   const { allSchoolData, isLoading: schoolLoading, announceAwards, awardConfig } = useSchoolData();
@@ -218,7 +426,7 @@ export default function AwardsPage() {
 
   const topStudents = useMemo(() => {
     if (!allSchoolData) return [];
-    const allStudents = Object.values(allSchoolData).flatMap(s => s.students.map(student => ({...student, schoolName: s.profile.name})));
+    const allStudents = Object.values(allSchoolData).flatMap(s => s.students.map(student => ({...student, schoolName: s.profile.name, schoolId: s.profile.id})));
     const allGrades = Object.values(allSchoolData).flatMap(s => s.grades);
     
     return allStudents.map(student => {
@@ -287,7 +495,7 @@ export default function AwardsPage() {
                   <p className="font-semibold">Prize:</p>
                   <div className="flex justify-between w-full items-center">
                     <p className="text-muted-foreground">{prize.description}</p>
-                    {prize.hasCertificate && <Badge variant="outline"><BookCopy className="mr-1.5 h-3 w-3" />Certificate</Badge>}
+                    {prize.hasCertificate && <Badge variant="outline"><Award className="mr-1.5 h-3 w-3" />Certificate</Badge>}
                   </div>
               </CardFooter>
             )}
@@ -314,6 +522,7 @@ export default function AwardsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {topSchools[0] && (
               <AwardCard rank={0} prize={awardConfig.topSchool[0]}>
+                <SchoolAnalysisDialog school={topSchools[0]}>
                   <div className="flex flex-col items-center text-center">
                     <Avatar className="h-24 w-24 mb-4 border-2 border-yellow-500">
                         <AvatarImage src={topSchools[0].logoUrl} data-ai-hint="school logo"/>
@@ -322,29 +531,34 @@ export default function AwardsPage() {
                     <p className="text-xl font-bold">{topSchools[0].name}</p>
                     <p className="text-3xl font-bold text-primary mt-2">{topSchools[0].avgGpa.toFixed(2)} GPA</p>
                   </div>
+                </SchoolAnalysisDialog>
               </AwardCard>
             )}
             <div className="space-y-6">
               {topSchools[1] && (
                   <AwardCard rank={1} prize={awardConfig.topSchool[1]}>
-                     <div className="flex items-center gap-4">
-                       <Avatar className="h-16 w-16 border-2 border-gray-400"><AvatarImage src={topSchools[1].logoUrl} data-ai-hint="school logo"/><AvatarFallback>{topSchools[1].name.substring(0, 2)}</AvatarFallback></Avatar>
-                       <div>
-                         <p className="font-bold">{topSchools[1].name}</p>
-                         <p className="text-xl font-bold text-primary mt-1">{topSchools[1].avgGpa.toFixed(2)} GPA</p>
-                       </div>
-                     </div>
+                    <SchoolAnalysisDialog school={topSchools[1]}>
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16 border-2 border-gray-400"><AvatarImage src={topSchools[1].logoUrl} data-ai-hint="school logo"/><AvatarFallback>{topSchools[1].name.substring(0, 2)}</AvatarFallback></Avatar>
+                        <div>
+                          <p className="font-bold">{topSchools[1].name}</p>
+                          <p className="text-xl font-bold text-primary mt-1">{topSchools[1].avgGpa.toFixed(2)} GPA</p>
+                        </div>
+                      </div>
+                    </SchoolAnalysisDialog>
                   </AwardCard>
               )}
               {topSchools[2] && (
                   <AwardCard rank={2} prize={awardConfig.topSchool[2]}>
-                     <div className="flex items-center gap-4">
-                       <Avatar className="h-16 w-16 border-2 border-orange-600"><AvatarImage src={topSchools[2].logoUrl} data-ai-hint="school logo"/><AvatarFallback>{topSchools[2].name.substring(0, 2)}</AvatarFallback></Avatar>
-                       <div>
-                         <p className="font-bold">{topSchools[2].name}</p>
-                         <p className="text-xl font-bold text-primary mt-1">{topSchools[2].avgGpa.toFixed(2)} GPA</p>
-                       </div>
-                     </div>
+                    <SchoolAnalysisDialog school={topSchools[2]}>
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16 border-2 border-orange-600"><AvatarImage src={topSchools[2].logoUrl} data-ai-hint="school logo"/><AvatarFallback>{topSchools[2].name.substring(0, 2)}</AvatarFallback></Avatar>
+                        <div>
+                          <p className="font-bold">{topSchools[2].name}</p>
+                          <p className="text-xl font-bold text-primary mt-1">{topSchools[2].avgGpa.toFixed(2)} GPA</p>
+                        </div>
+                      </div>
+                    </SchoolAnalysisDialog>
                   </AwardCard>
               )}
             </div>
@@ -356,17 +570,20 @@ export default function AwardsPage() {
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {topStudents[0] && (
                 <AwardCard rank={0} prize={awardConfig.topStudent[0]}>
+                  <StudentAnalysisDialog student={topStudents[0]}>
                     <div className="flex flex-col items-center text-center">
                       <Avatar className="h-24 w-24 mb-4 border-2 border-yellow-500"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topStudents[0].name[0]}</AvatarFallback></Avatar>
                       <p className="text-xl font-bold">{topStudents[0].name}</p>
                       <p className="text-sm text-muted-foreground">{topStudents[0].schoolName}</p>
                       <p className="text-3xl font-bold text-primary mt-2">{topStudents[0].avgGrade.toFixed(2)}/20</p>
                     </div>
+                  </StudentAnalysisDialog>
                 </AwardCard>
               )}
                <div className="space-y-6">
                 {topStudents[1] && (
                     <AwardCard rank={1} prize={awardConfig.topStudent[1]}>
+                      <StudentAnalysisDialog student={topStudents[1]}>
                         <div className="flex items-center gap-4">
                           <Avatar className="h-16 w-16 border-2 border-gray-400"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topStudents[1].name[0]}</AvatarFallback></Avatar>
                           <div>
@@ -375,10 +592,12 @@ export default function AwardsPage() {
                             <p className="text-xl font-bold text-primary mt-1">{topStudents[1].avgGrade.toFixed(2)}/20</p>
                           </div>
                         </div>
+                      </StudentAnalysisDialog>
                     </AwardCard>
                 )}
                  {topStudents[2] && (
                     <AwardCard rank={2} prize={awardConfig.topStudent[2]}>
+                      <StudentAnalysisDialog student={topStudents[2]}>
                         <div className="flex items-center gap-4">
                           <Avatar className="h-16 w-16 border-2 border-orange-600"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topStudents[2].name[0]}</AvatarFallback></Avatar>
                           <div>
@@ -387,6 +606,7 @@ export default function AwardsPage() {
                             <p className="text-xl font-bold text-primary mt-1">{topStudents[2].avgGrade.toFixed(2)}/20</p>
                           </div>
                         </div>
+                      </StudentAnalysisDialog>
                     </AwardCard>
                 )}
                </div>
@@ -398,6 +618,7 @@ export default function AwardsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {topTeachers[0] && (
                 <AwardCard rank={0} prize={awardConfig.topTeacher[0]}>
+                  <TeacherAnalysisDialog teacher={topTeachers[0]}>
                     <div className="flex flex-col items-center text-center">
                       <Avatar className="h-24 w-24 mb-4 border-2 border-yellow-500"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topTeachers[0].name[0]}</AvatarFallback></Avatar>
                       <p className="text-xl font-bold">{topTeachers[0].name}</p>
@@ -405,11 +626,13 @@ export default function AwardsPage() {
                       <p className="text-3xl font-bold text-primary mt-2">{topTeachers[0].avgStudentGrade.toFixed(2)}/20</p>
                       <p className="text-xs text-muted-foreground">Avg. Student Grade</p>
                     </div>
+                  </TeacherAnalysisDialog>
                 </AwardCard>
               )}
                <div className="space-y-6">
                 {topTeachers[1] && (
                     <AwardCard rank={1} prize={awardConfig.topTeacher[1]}>
+                      <TeacherAnalysisDialog teacher={topTeachers[1]}>
                         <div className="flex items-center gap-4">
                           <Avatar className="h-16 w-16 border-2 border-gray-400"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topTeachers[1].name[0]}</AvatarFallback></Avatar>
                           <div>
@@ -418,10 +641,12 @@ export default function AwardsPage() {
                             <p className="text-xl font-bold text-primary mt-1">{topTeachers[1].avgStudentGrade.toFixed(2)}/20</p>
                           </div>
                         </div>
+                      </TeacherAnalysisDialog>
                     </AwardCard>
                 )}
                  {topTeachers[2] && (
                     <AwardCard rank={2} prize={awardConfig.topTeacher[2]}>
+                      <TeacherAnalysisDialog teacher={topTeachers[2]}>
                         <div className="flex items-center gap-4">
                           <Avatar className="h-16 w-16 border-2 border-orange-600"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topTeachers[2].name[0]}</AvatarFallback></Avatar>
                           <div>
@@ -430,6 +655,7 @@ export default function AwardsPage() {
                             <p className="text-xl font-bold text-primary mt-1">{topTeachers[2].avgStudentGrade.toFixed(2)}/20</p>
                           </div>
                         </div>
+                      </TeacherAnalysisDialog>
                     </AwardCard>
                 )}
                </div>

@@ -14,4 +14,8 @@ import '@/ai/flows/analyze-school-performance.ts';
 import '@/ai/flows/grade-student-test.ts';
 import '@/ai/flows/analyze-schedule-conflicts.ts';
 import '@/ai/flows/analyze-test-results.ts';
+import '@/ai/flows/analyze-top-school.ts';
+import '@/ai/flows/analyze-top-student.ts';
+import '@/ai/flows/analyze-top-teacher.ts';
+
 
