@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import type { SchoolData } from '@/lib/mock-data';
+import { mockUsers, type SchoolData } from '@/lib/mock-data';
 
 export type Role = 'GlobalAdmin' | 'Admin' | 'Teacher' | 'Student' | 'Parent';
 
@@ -23,7 +23,7 @@ interface LoginResult {
 interface AuthContextType {
   user: User | null;
   role: Role | null;
-  login: (email: string, pass: string, allSchoolData: Record<string, SchoolData>) => Promise<LoginResult>;
+  login: (email: string, pass: string) => Promise<LoginResult>;
   logout: () => void;
   isLoading: boolean;
   isLoggingIn: boolean; 
@@ -70,76 +70,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
   
-  const login = async (email: string, pass: string, allSchoolData: Record<string, SchoolData>): Promise<LoginResult> => {
+  const login = async (email: string, pass: string): Promise<LoginResult> => {
     setIsLoggingIn(true);
     
-    // In a real app, this would be an API call. Here we check against mock data.
-    const allUsers: Record<string, { user: Omit<User, 'username'>, password?: string }> = {};
-    Object.values(allSchoolData).forEach(school => {
-        school.teachers.forEach(t => allUsers[t.email] = { user: { ...t, role: 'Teacher', schoolId: school.profile.id }});
-        school.students.forEach(s => allUsers[s.email] = { user: { ...s, role: 'Student', schoolId: school.profile.id }});
-        const admin = school.teachers.find(t => t.name === school.profile.head);
-        if (admin) {
-            allUsers[admin.email] = { user: { ...admin, role: 'Admin', schoolId: school.profile.id }};
-        }
-    });
+    const userRecord = Object.values(mockUsers).find(u => u.user.email.toLowerCase() === email.toLowerCase());
 
-    const userRecord = Object.values(allSchoolData).find(s => s.profile.email.toLowerCase() === email.toLowerCase());
-    if (userRecord && pass === 'admin') {
-      const loggedInUser: User = { username: userRecord.profile.email, name: userRecord.profile.head, role: 'Admin', email: userRecord.profile.email, schoolId: userRecord.profile.id };
-      setUser(loggedInUser);
-      setRole('Admin');
-      sessionStorage.setItem('user', JSON.stringify(loggedInUser));
-      sessionStorage.setItem('role', 'Admin');
-      setIsLoggingIn(false);
-      return { success: true };
-    }
-    
-    const devUser = { email: 'developer@edumanage.com', name: 'Developer', role: 'GlobalAdmin' };
-    if (devUser.email === email.toLowerCase() && pass === 'dev123') {
-       const loggedInUser: User = { username: devUser.email, ...devUser };
-       setUser(loggedInUser);
-       setRole('GlobalAdmin');
-       sessionStorage.setItem('user', JSON.stringify(loggedInUser));
-       sessionStorage.setItem('role', 'GlobalAdmin');
-       setIsLoggingIn(false);
-       return { success: true };
-    }
-
-    const allStudents = Object.values(allSchoolData).flatMap(school => school.students || []);
-    const teacherRecord = Object.values(allSchoolData).flatMap(s => s.teachers).find(t => t.email.toLowerCase() === email.toLowerCase());
-    const studentRecord = allStudents.find(s => s.email.toLowerCase() === email.toLowerCase());
-    const parentRecord = allStudents.find(s => s.parentEmail.toLowerCase() === email.toLowerCase());
-
-    if (teacherRecord && pass === 'teacher') {
-        const loggedInUser: User = { username: teacherRecord.email, name: teacherRecord.name, email: teacherRecord.email, role: 'Teacher', schoolId: Object.values(allSchoolData).find(s => s.teachers.some(t => t.id === teacherRecord.id))?.profile.id };
-        setUser(loggedInUser);
-        setRole('Teacher');
-        sessionStorage.setItem('user', JSON.stringify(loggedInUser));
-        sessionStorage.setItem('role', 'Teacher');
-        setIsLoggingIn(false);
-        return { success: true };
-    }
-    if (studentRecord && pass === 'student') {
-        const loggedInUser: User = { username: studentRecord.email, name: studentRecord.name, email: studentRecord.email, role: 'Student', schoolId: Object.values(allSchoolData).find(s => s.students.some(st => st.id === studentRecord.id))?.profile.id };
-        setUser(loggedInUser);
-        setRole('Student');
-        sessionStorage.setItem('user', JSON.stringify(loggedInUser));
-        sessionStorage.setItem('role', 'Student');
-        setIsLoggingIn(false);
-        return { success: true };
-    }
-     if (parentRecord && pass === 'parent') {
-        const parentUser: User = {
-          username: parentRecord.parentEmail,
-          name: parentRecord.parentName,
-          email: parentRecord.parentEmail,
-          role: 'Parent',
+    if (userRecord && userRecord.password === pass) {
+        const loggedInUser: User = { 
+            username: userRecord.user.email,
+            name: userRecord.user.name,
+            email: userRecord.user.email,
+            role: userRecord.user.role,
+            schoolId: userRecord.user.schoolId,
         };
-        setUser(parentUser);
-        setRole('Parent');
-        sessionStorage.setItem('user', JSON.stringify(parentUser));
-        sessionStorage.setItem('role', 'Parent');
+        setUser(loggedInUser);
+        setRole(userRecord.user.role);
+        sessionStorage.setItem('user', JSON.stringify(loggedInUser));
+        sessionStorage.setItem('role', userRecord.user.role);
         setIsLoggingIn(false);
         return { success: true };
     }

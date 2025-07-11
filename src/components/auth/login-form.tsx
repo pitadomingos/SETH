@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { GraduationCap, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useSchoolData } from '@/context/school-data-context';
+import { mockUsers } from '@/lib/mock-data';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -26,7 +26,6 @@ type LoginFormValues = z.infer<typeof formSchema>;
 
 export function LoginForm() {
   const { login, isLoggingIn } = useAuth();
-  const { allSchoolData, isLoading: isSchoolDataLoading } = useSchoolData();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -39,15 +38,7 @@ export function LoginForm() {
   });
 
   async function onSubmit(values: LoginFormValues) {
-    if (!allSchoolData) {
-        toast({
-            variant: 'destructive',
-            title: 'System not ready',
-            description: 'The school data is still loading. Please try again in a moment.',
-        });
-        return;
-    }
-    const result = await login(values.email, values.password, allSchoolData);
+    const result = await login(values.email, values.password);
 
     if (result.success) {
       router.push('/dashboard');
@@ -61,18 +52,7 @@ export function LoginForm() {
     }
   }
   
-  const adminUsers = allSchoolData ? Object.values(allSchoolData).map(s => ({
-    user: { name: s.profile.head, role: 'Admin', email: s.profile.email },
-    password: 'admin'
-  })) : [];
-  
-  const devUser = {
-      user: { name: 'Developer', role: 'GlobalAdmin', email: 'developer@edumanage.com' },
-      password: 'dev123'
-  };
-
-  const allDemoUsers = [devUser, ...adminUsers];
-
+  const demoUsers = Object.values(mockUsers);
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
@@ -114,34 +94,22 @@ export function LoginForm() {
             />
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" disabled={isLoggingIn || isSchoolDataLoading} className="w-full" size="lg">
-              {(isLoggingIn || isSchoolDataLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" disabled={isLoggingIn} className="w-full" size="lg">
+              {isLoggingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
-            {allDemoUsers.length > 0 && (
+            {demoUsers.length > 0 && (
               <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="item-1">
                       <AccordionTrigger className="text-sm text-muted-foreground">View Demo Credentials</AccordionTrigger>
                       <AccordionContent>
                           <ul className="space-y-1 text-xs text-muted-foreground">
-                              {allDemoUsers.map(({ user, password }) => (
+                              {demoUsers.map(({ user, password }) => (
                                   <li key={user.email} className="flex justify-between">
                                       <span className="font-semibold">{user.role} ({user.name}):</span>
                                       <span>{user.email} / {password}</span>
                                   </li>
                               ))}
-                                <li className="flex justify-between">
-                                  <span className="font-semibold">Parent (Maria Rodriguez):</span>
-                                  <span>m.rodriguez@family.com / parent</span>
-                              </li>
-                              <li className="flex justify-between">
-                                  <span className="font-semibold">Teacher (Northwood):</span>
-                                  <span>m.chen@edumanage.com / teacher</span>
-                              </li>
-                              <li className="flex justify-between">
-                                  <span className="font-semibold">Student (Northwood):</span>
-                                  <span>e.rodriguez@edumanage.com / student</span>
-                              </li>
                           </ul>
                       </AccordionContent>
                   </AccordionItem>
