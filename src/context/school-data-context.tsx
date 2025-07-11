@@ -31,7 +31,7 @@ import {
     KioskMedia,
     mockUsers as initialMockUsers
 } from '@/lib/mock-data';
-import { type User, type Role } from './auth-context';
+import { type User, type Role, useAuth } from './auth-context';
 import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
 import { GenerateTestOutput } from '@/ai/flows/generate-test';
 import { useToast } from '@/hooks/use-toast';
@@ -196,10 +196,9 @@ const initialAwardConfig: AwardConfig = {
     ],
 };
 
-export const SchoolDataProvider = ({ children, authUser }: { children: ReactNode, authUser: User | null }) => {
+export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
-  const user = authUser;
-  const role = user?.role;
+  const { user, role } = useAuth();
 
   const [allSchoolData, setAllSchoolData] = useState<typeof initialSchoolData | null>(null);
   const [mockUsers, setMockUsers] = useState(() => JSON.parse(JSON.stringify(initialMockUsers)));
@@ -261,12 +260,9 @@ export const SchoolDataProvider = ({ children, authUser }: { children: ReactNode
     fetchData();
   }, []);
 
-  // This effect runs whenever allSchoolData is populated or the user/role changes.
+  // This effect sets the user-specific slice of data once allSchoolData is loaded and the user is authenticated.
   useEffect(() => {
-    if (!user || !allSchoolData) {
-        if (!isDataLoading) { // only if initial fetch is done
-            // handle logged out state or loading state
-        }
+    if (isDataLoading || !user || !allSchoolData) {
         return;
     }
 
