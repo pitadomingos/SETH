@@ -93,7 +93,6 @@ interface SchoolDataContextType {
   schoolProfile: SchoolProfile | null;
   updateSchoolProfile: (data: Partial<SchoolProfile>, schoolId?: string) => void;
   allSchoolData: typeof initialSchoolData | null;
-  mockUsers: typeof initialMockUsers | null;
   schoolGroups: typeof initialSchoolGroups | null;
   addSchool: (data: NewSchoolData, groupId?: string) => Promise<void>;
   updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
@@ -176,8 +175,6 @@ interface SchoolDataContextType {
 
 const SchoolDataContext = createContext<SchoolDataContextType | undefined>(undefined);
 
-const initialExamBoards = ['Internal', 'Cambridge', 'IB', 'State Board', 'Advanced Placement'];
-
 const initialAwardConfig: AwardConfig = {
     topSchool: [
         { description: '$5,000 Technology Grant', hasCertificate: true },
@@ -198,16 +195,15 @@ const initialAwardConfig: AwardConfig = {
 
 export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
-  const { user, role } = useAuth();
+  const { user, role, isLoading: isAuthLoading } = useAuth();
 
   const [allSchoolData, setAllSchoolData] = useState<typeof initialSchoolData | null>(null);
-  const [mockUsers, setMockUsers] = useState(() => JSON.parse(JSON.stringify(initialMockUsers)));
   const [schoolGroups, setSchoolGroups] = useState(() => JSON.parse(JSON.stringify(initialSchoolGroups)));
   const [schoolProfile, setSchoolProfile] = useState<SchoolProfile | null>(null);
   const [financeData, setFinanceData] = useState<FinanceRecord[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [subjects, setSubjects] = useState<string[]>([]);
-  const [examBoards, setExamBoards] = useState<string[]>(initialExamBoards);
+  const [examBoards, setExamBoards] = useState<string[]>(['Internal', 'Cambridge', 'IB', 'State Board', 'Advanced Placement']);
   const [feeDescriptions, setFeeDescriptions] = useState<string[]>([]);
   const [audiences, setAudiences] = useState<string[]>([]);
   const [studentsData, setStudentsData] = useState<Student[]>([]);
@@ -236,7 +232,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   
   const [isDataLoading, setIsDataLoading] = useState(true);
 
-  // Initial data fetch from Firestore
+  // Effect 1: Fetch all data from Firestore once.
   useEffect(() => {
     const fetchData = async () => {
         setIsDataLoading(true);
@@ -261,9 +257,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     fetchData();
   }, []);
 
-  // This effect sets the user-specific slice of data once allSchoolData is loaded and the user is authenticated.
+  // Effect 2: Set the user-specific data slice when auth or data changes.
   useEffect(() => {
-    if (isDataLoading || !user || !allSchoolData) {
+    if (isAuthLoading || isDataLoading || !allSchoolData) {
         return;
     }
 
@@ -351,7 +347,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setSchoolProfile(null);
     }
-  }, [user, role, allSchoolData, schoolGroups, isDataLoading]);
+  }, [user, role, allSchoolData, schoolGroups, isDataLoading, isAuthLoading]);
 
 
   const addSchool = async (data: NewSchoolData, groupId?: string) => {
@@ -912,7 +908,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const value = {
     schoolProfile, updateSchoolProfile,
-    allSchoolData, schoolGroups, mockUsers, addSchool, updateSchoolStatus,
+    allSchoolData, schoolGroups, addSchool, updateSchoolStatus,
     studentsData, addStudentFromAdmission, updateStudentStatus,
     teachersData, addTeacher, updateTeacher, updateTeacherStatus,
     classesData, addClass,
@@ -947,7 +943,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     savedReports,
     addSavedReport,
     kioskMedia, addKioskMedia, removeKioskMedia,
-    isLoading: isDataLoading,
+    isLoading: isDataLoading || isAuthLoading,
   };
 
   return (
@@ -964,4 +960,3 @@ export const useSchoolData = () => {
   }
   return context;
 };
-

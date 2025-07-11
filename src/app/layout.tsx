@@ -4,11 +4,10 @@
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/context/auth-context';
+import { SchoolDataProvider } from '@/context/school-data-context';
 import { ThemeProvider } from '@/components/layout/theme-provider';
 import { cn } from '@/lib/utils';
 import './globals.css';
-import { AppProviders } from '@/components/layout/app-providers';
-
 
 // export const metadata: Metadata = {
 //   title: 'EduManage',
@@ -41,9 +40,9 @@ export default function RootLayout({
           enableSystem
         >
             <AuthProvider>
-                <AppProviders>
+                <SchoolDataProvider>
                     {children}
-                </AppProviders>
+                </SchoolDataProvider>
             </AuthProvider>
             <Toaster />
         </ThemeProvider>

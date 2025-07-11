@@ -88,11 +88,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: true };
     }
     
-    const allStudents = Object.values(mockUsers).filter(u => u.user.role === 'Student').map(u => u.user) as (User & { parentEmail: string, parentName: string })[];
+    // In a real app, you would fetch parent records. Here we simulate it.
+    const allStudents = Object.values(mockUsers).flatMap(school => school.students || []);
     const parentStudent = allStudents.find(s => s.parentEmail.toLowerCase() === email.toLowerCase());
-
-    // In a real app, you would fetch the parent record from the database.
-    // For this prototype, we'll create a parent user on the fly.
     if (parentStudent && pass === 'parent') {
         const parentUser: User = {
           username: parentStudent.parentEmail,
@@ -132,7 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (foundUser) {
         targetUser = foundUser;
     } else {
-        const allStudents = Object.values(mockUsers).filter(u => u.user.role === 'Student').map(u => u.user) as (User & { parentEmail: string, parentName: string })[];
+        const allStudents = Object.values(mockUsers).flatMap(school => school.students || []);
         const parentStudent = allStudents.find(s => s.parentEmail.toLowerCase() === usernameOrEmail.toLowerCase());
         if (parentStudent) {
             targetUser = {
@@ -198,13 +196,11 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   const router = useRouter();
   
   useEffect(() => {
-    // If auth is done loading and there's no user, redirect to login
     if (!isAuthLoading && !user) {
       router.push('/');
     }
   }, [user, isAuthLoading, router]);
 
-  // While auth is loading, show a spinner
   if (isAuthLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -213,11 +209,9 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     );
   }
 
-  // If there's a user, render the children
   if(user) {
     return <>{children}</>;
   }
 
-  // Fallback, should be redirected by useEffect
   return null;
 }

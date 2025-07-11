@@ -471,8 +471,8 @@ function KioskPage() {
 
     // Define the full order of potential slides
     if (isGlobal) {
-        allPossibleSlides.push({ id: 'marketing-who', component: <KioskMarketingSlide title="Who We Are" description="EduManage is a catalyst for educational transformation, empowering schools with AI-driven tools to reduce administrative overhead and elevate academic standards." icon={Lightbulb} /> });
-        allPossibleSlides.push({ id: 'marketing-goal', component: <KioskMarketingSlide title="Our Goal & Mission" description="Our mission is to make modern educational technology accessible and affordable for institutions across Southern Africa, starting with Mozambique, fostering a new era of data-driven, efficient, and impactful education." icon={Briefcase} /> });
+        allPossibleSlides.push({ id: 'marketing-who', enabled: true, component: <KioskMarketingSlide title="Who We Are" description="EduManage is a catalyst for educational transformation, empowering schools with AI-driven tools to reduce administrative overhead and elevate academic standards." icon={Lightbulb} /> });
+        allPossibleSlides.push({ id: 'marketing-goal', enabled: true, component: <KioskMarketingSlide title="Our Goal & Mission" description="Our mission is to make modern educational technology accessible and affordable for institutions across Southern Africa, starting with Mozambique, fostering a new era of data-driven, efficient, and impactful education." icon={Briefcase} /> });
     }
     
     // School Profile / Dashboard is always first if enabled
@@ -559,9 +559,11 @@ function KioskPage() {
 }
 
 export default function KioskPageWrapper() {
+  // The Kiosk page needs access to the SchoolDataProvider but not authentication.
+  // We can wrap it in a simplified provider setup.
   return (
-    <AuthProvider>
-      <KioskPage />
-    </AuthProvider>
+      <SchoolDataProvider>
+        <KioskPage />
+      </SchoolDataProvider>
   );
 }

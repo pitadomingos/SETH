@@ -52,7 +52,19 @@ export function LoginForm() {
     }
   }
   
-  const demoUsers = Object.values(mockUsers);
+  const demoUsers = Object.values(mockUsers).flatMap(school => {
+    return [
+      ...school.teachers.map(t => ({ user: { ...t, role: 'Teacher'}, password: 'teacher'})),
+      ...school.students.map(s => ({ user: { ...s, role: 'Student'}, password: 'student'}))
+    ]
+  });
+
+  const adminUsers = [
+    { user: { role: 'GlobalAdmin', name: 'Developer', email: 'developer@edumanage.com'}, password: 'dev123'},
+    { user: { role: 'Admin', name: 'Dr. Sarah Johnson', email: 's.johnson@northwood.edu'}, password: 'admin'},
+    { user: { role: 'Admin', name: 'Mr. James Maxwell', email: 'j.maxwell@oakridge.edu'}, password: 'admin'},
+    { user: { role: 'Admin', name: 'Ms. Eleanor Vance', email: 'e.vance@maplewood.edu'}, password: 'admin'},
+  ]
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
@@ -103,8 +115,8 @@ export function LoginForm() {
                     <AccordionTrigger className="text-sm text-muted-foreground">View Demo Credentials</AccordionTrigger>
                     <AccordionContent>
                         <ul className="space-y-1 text-xs text-muted-foreground">
-                            {demoUsers.map(({ user, password }) => (
-                                <li key={user.username} className="flex justify-between">
+                            {adminUsers.map(({ user, password }) => (
+                                <li key={user.email} className="flex justify-between">
                                     <span className="font-semibold">{user.role} ({user.name}):</span>
                                     <span>{user.email} / {password}</span>
                                 </li>
@@ -112,6 +124,14 @@ export function LoginForm() {
                               <li className="flex justify-between">
                                 <span className="font-semibold">Parent (Maria Rodriguez):</span>
                                 <span>m.rodriguez@family.com / parent</span>
+                            </li>
+                             <li className="flex justify-between">
+                                <span className="font-semibold">Teacher (Northwood):</span>
+                                <span>m.chen@edumanage.com / teacher</span>
+                            </li>
+                             <li className="flex justify-between">
+                                <span className="font-semibold">Student (Northwood):</span>
+                                <span>e.rodriguez@edumanage.com / student</span>
                             </li>
                         </ul>
                     </AccordionContent>
