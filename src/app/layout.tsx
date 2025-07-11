@@ -9,11 +9,6 @@ import { ThemeProvider } from '@/components/layout/theme-provider';
 import { cn } from '@/lib/utils';
 import './globals.css';
 
-// export const metadata: Metadata = {
-//   title: 'EduManage',
-//   description: 'School Management System',
-// };
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -39,12 +34,12 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
         >
-            <AuthProvider>
-                <SchoolDataProvider>
-                    {children}
-                </SchoolDataProvider>
-            </AuthProvider>
-            <Toaster />
+          <AuthProvider>
+            <SchoolDataProvider>
+              {children}
+            </SchoolDataProvider>
+          </AuthProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
