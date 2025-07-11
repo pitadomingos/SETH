@@ -7,7 +7,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/context/auth-context';
-import { mockUsers } from '@/lib/mock-data';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { GraduationCap, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useSchoolData } from '@/context/school-data-context';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -28,6 +28,7 @@ export function LoginForm() {
   const { login, isLoggingIn } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const { mockUsers } = useSchoolData();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
@@ -52,19 +53,7 @@ export function LoginForm() {
     }
   }
   
-  const demoUsers = Object.values(mockUsers).flatMap(school => {
-    return [
-      ...school.teachers.map(t => ({ user: { ...t, role: 'Teacher'}, password: 'teacher'})),
-      ...school.students.map(s => ({ user: { ...s, role: 'Student'}, password: 'student'}))
-    ]
-  });
-
-  const adminUsers = [
-    { user: { role: 'GlobalAdmin', name: 'Developer', email: 'developer@edumanage.com'}, password: 'dev123'},
-    { user: { role: 'Admin', name: 'Dr. Sarah Johnson', email: 's.johnson@northwood.edu'}, password: 'admin'},
-    { user: { role: 'Admin', name: 'Mr. James Maxwell', email: 'j.maxwell@oakridge.edu'}, password: 'admin'},
-    { user: { role: 'Admin', name: 'Ms. Eleanor Vance', email: 'e.vance@maplewood.edu'}, password: 'admin'},
-  ]
+  const adminUsers = Object.values(mockUsers).filter(u => u.user.role === 'GlobalAdmin' || u.user.role === 'Admin');
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
