@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/context/auth-context';
-import { useSchoolData } from '@/context/school-data-context';
+import { mockUsers } from '@/lib/mock-data';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,11 +25,9 @@ const formSchema = z.object({
 type LoginFormValues = z.infer<typeof formSchema>;
 
 export function LoginForm() {
-  const { login } = useAuth();
-  const { mockUsers } = useSchoolData();
+  const { login, isLoggingIn } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
@@ -40,7 +38,6 @@ export function LoginForm() {
   });
 
   async function onSubmit(values: LoginFormValues) {
-    setIsLoading(true);
     const result = await login(values.email, values.password);
 
     if (result.success) {
@@ -53,8 +50,9 @@ export function LoginForm() {
       });
       form.setError('root', { message: result.message });
     }
-    setIsLoading(false);
   }
+  
+  const demoUsers = Object.values(mockUsers);
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
@@ -96,8 +94,8 @@ export function LoginForm() {
             />
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" disabled={isLoading} className="w-full" size="lg">
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" disabled={isLoggingIn} className="w-full" size="lg">
+              {isLoggingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
             <Accordion type="single" collapsible className="w-full">
@@ -105,7 +103,7 @@ export function LoginForm() {
                     <AccordionTrigger className="text-sm text-muted-foreground">View Demo Credentials</AccordionTrigger>
                     <AccordionContent>
                         <ul className="space-y-1 text-xs text-muted-foreground">
-                            {mockUsers && Object.values(mockUsers).map(({ user, password }) => (
+                            {demoUsers.map(({ user, password }) => (
                                 <li key={user.username} className="flex justify-between">
                                     <span className="font-semibold">{user.role} ({user.name}):</span>
                                     <span>{user.email} / {password}</span>

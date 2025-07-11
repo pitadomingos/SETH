@@ -234,12 +234,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [kioskMedia, setKioskMedia] = useState<KioskMedia[]>([]);
   const [awardConfig, setAwardConfig] = useState<AwardConfig>(() => JSON.parse(JSON.stringify(initialAwardConfig)));
   
-  const [isLoading, setIsLoading] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
   // Initial data fetch from Firestore
   useEffect(() => {
     const fetchData = async () => {
-        setIsLoading(true);
+        setIsDataLoading(true);
         try {
             const firestoreSchools = await getSchoolsFromFirestore();
             if (Object.keys(firestoreSchools).length === 0) {
@@ -255,7 +255,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             console.error("Error fetching or seeding school data:", error);
             setAllSchoolData(JSON.parse(JSON.stringify(initialSchoolData)));
         } finally {
-            setIsLoading(false);
+            setIsDataLoading(false);
         }
     };
     fetchData();
@@ -263,7 +263,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   // This effect sets the user-specific slice of data once allSchoolData is loaded and the user is authenticated.
   useEffect(() => {
-    if (isLoading || !user || !allSchoolData) {
+    if (isDataLoading || !user || !allSchoolData) {
         return;
     }
 
@@ -351,7 +351,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setSchoolProfile(null);
     }
-  }, [user, role, allSchoolData, schoolGroups, isLoading]);
+  }, [user, role, allSchoolData, schoolGroups, isDataLoading]);
 
 
   const addSchool = async (data: NewSchoolData, groupId?: string) => {
@@ -947,7 +947,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     savedReports,
     addSavedReport,
     kioskMedia, addKioskMedia, removeKioskMedia,
-    isLoading,
+    isLoading: isDataLoading,
   };
 
   return (
@@ -964,3 +964,4 @@ export const useSchoolData = () => {
   }
   return context;
 };
+

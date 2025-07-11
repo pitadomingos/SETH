@@ -3,8 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { mockUsers as allMockUsers } from '@/lib/mock-data';
-import { getSchoolsFromFirestore } from '@/lib/firebase/firestore-service';
+import { mockUsers } from '@/lib/mock-data';
 
 
 export type Role = 'GlobalAdmin' | 'Admin' | 'Teacher' | 'Student' | 'Parent';
@@ -28,6 +27,7 @@ interface AuthContextType {
   login: (email: string, pass: string) => Promise<LoginResult>;
   logout: () => void;
   isLoading: boolean;
+  isLoggingIn: boolean; 
   impersonateUser: (usernameOrEmail: string, asRole?: Role) => void;
   revertImpersonation: () => void;
   originalUser: User | null;
@@ -40,6 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Impersonation state
   const [originalUser, setOriginalUser] = useState<User | null>(null);
@@ -48,6 +49,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
+    // This effect runs only once on mount to restore session
+    setIsLoading(true);
     try {
       const storedUser = sessionStorage.getItem('user');
       const storedRole = sessionStorage.getItem('role') as Role;
@@ -65,15 +68,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Failed to parse user from sessionStorage', error);
       sessionStorage.clear();
+    } finally {
+        setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
   
   const login = async (email: string, pass: string): Promise<LoginResult> => {
-    setIsLoading(true);
+    setIsLoggingIn(true);
     
-    // Check against predefined mock users first
-    const userRecord = Object.values(allMockUsers).find(u => u.user.email.toLowerCase() === email.toLowerCase());
+    const userRecord = Object.values(mockUsers).find(u => u.user.email.toLowerCase() === email.toLowerCase());
 
     if (userRecord && userRecord.password === pass) {
         const loggedInUser: User = { ...userRecord.user };
@@ -81,16 +84,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setRole(loggedInUser.role);
         sessionStorage.setItem('user', JSON.stringify(loggedInUser));
         sessionStorage.setItem('role', loggedInUser.role);
-        setIsLoading(false);
-        router.push('/dashboard');
+        setIsLoggingIn(false);
         return { success: true };
     }
     
-    // If not a predefined user, check if it's a valid parent email
-    const allSchoolData = await getSchoolsFromFirestore(); // Fetch fresh data for parent check
-    const allStudents = Object.values(allSchoolData).flatMap(s => s.students);
+    const allStudents = Object.values(mockUsers).filter(u => u.user.role === 'Student').map(u => u.user) as (User & { parentEmail: string, parentName: string })[];
     const parentStudent = allStudents.find(s => s.parentEmail.toLowerCase() === email.toLowerCase());
 
+    // In a real app, you would fetch the parent record from the database.
+    // For this prototype, we'll create a parent user on the fly.
     if (parentStudent && pass === 'parent') {
         const parentUser: User = {
           username: parentStudent.parentEmail,
@@ -102,12 +104,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setRole('Parent');
         sessionStorage.setItem('user', JSON.stringify(parentUser));
         sessionStorage.setItem('role', 'Parent');
-        setIsLoading(false);
-        router.push('/dashboard');
+        setIsLoggingIn(false);
         return { success: true };
     }
     
-    setIsLoading(false);
+    setIsLoggingIn(false);
     return { success: false, message: 'Invalid username or password' };
   };
 
@@ -125,14 +126,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     let targetUser: User | undefined;
     
-    const allSchoolData = await getSchoolsFromFirestore();
-    const allMockUsersList = Object.values(allMockUsers).map(u => u.user);
+    const allMockUsersList = Object.values(mockUsers).map(u => u.user);
     const foundUser = allMockUsersList.find(u => u.email.toLowerCase() === usernameOrEmail.toLowerCase());
     
     if (foundUser) {
         targetUser = foundUser;
     } else {
-        const allStudents = Object.values(allSchoolData).flatMap(s => s.students);
+        const allStudents = Object.values(mockUsers).filter(u => u.user.role === 'Student').map(u => u.user) as (User & { parentEmail: string, parentName: string })[];
         const parentStudent = allStudents.find(s => s.parentEmail.toLowerCase() === usernameOrEmail.toLowerCase());
         if (parentStudent) {
             targetUser = {
@@ -179,7 +179,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, login, logout, isLoading, impersonateUser, revertImpersonation, originalUser, originalRole }}>
+    <AuthContext.Provider value={{ user, role, login, logout, isLoading, isLoggingIn, impersonateUser, revertImpersonation, originalUser, originalRole }}>
       {children}
     </AuthContext.Provider>
   );
@@ -194,16 +194,18 @@ export const useAuth = () => {
 };
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
-
+  
   useEffect(() => {
-    if (!isLoading && !user) {
+    // If auth is done loading and there's no user, redirect to login
+    if (!isAuthLoading && !user) {
       router.push('/');
     }
-  }, [user, isLoading, router]);
+  }, [user, isAuthLoading, router]);
 
-  if (isLoading || !user) {
+  // While auth is loading, show a spinner
+  if (isAuthLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -211,5 +213,11 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  // If there's a user, render the children
+  if(user) {
+    return <>{children}</>;
+  }
+
+  // Fallback, should be redirected by useEffect
+  return null;
 }

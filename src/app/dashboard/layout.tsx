@@ -5,14 +5,12 @@ import { AppSidebar } from '@/components/layout/app-sidebar';
 import { AppHeader } from '@/components/layout/app-header';
 import { Sidebar, SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { useSchoolData } from '@/context/school-data-context';
-import { useAuth } from '@/context/auth-context';
 import { Loader2 } from 'lucide-react';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-    const { isLoading: isAuthLoading } = useAuth();
-    const { isLoading: isDataLoading } = useSchoolData();
+    const { isLoading } = useSchoolData();
 
-    if (isAuthLoading || isDataLoading) {
+    if (isLoading) {
         return (
             <div className="flex h-full items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />

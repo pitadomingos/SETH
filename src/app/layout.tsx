@@ -3,36 +3,17 @@
 
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider, useAuth } from '@/context/auth-context';
+import { AuthProvider } from '@/context/auth-context';
 import { ThemeProvider } from '@/components/layout/theme-provider';
 import { cn } from '@/lib/utils';
 import './globals.css';
-import { SchoolDataProvider } from '@/context/school-data-context';
-import { Loader2 } from 'lucide-react';
+import { AppProviders } from '@/components/layout/app-providers';
+
 
 // export const metadata: Metadata = {
 //   title: 'EduManage',
 //   description: 'School Management System',
 // };
-
-function AppProviders({ children }: { children: React.ReactNode }) {
-    const { isLoading, user } = useAuth();
-
-    if (isLoading) {
-        return (
-             <div className="flex h-screen w-full items-center justify-center bg-background">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        )
-    }
-
-    return (
-        <SchoolDataProvider authUser={user}>
-            {children}
-            <Toaster />
-        </SchoolDataProvider>
-    )
-}
 
 export default function RootLayout({
   children,
@@ -64,6 +45,7 @@ export default function RootLayout({
                     {children}
                 </AppProviders>
             </AuthProvider>
+            <Toaster />
         </ThemeProvider>
       </body>
     </html>
