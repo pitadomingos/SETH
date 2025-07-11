@@ -53,7 +53,7 @@ export function LoginForm() {
     }
   }
   
-  const adminUsers = Object.values(mockUsers).filter(u => u.user.role === 'GlobalAdmin' || u.user.role === 'Admin');
+  const adminUsers = mockUsers ? Object.values(mockUsers).filter(u => u.user.role === 'GlobalAdmin' || u.user.role === 'Admin') : [];
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
@@ -99,33 +99,35 @@ export function LoginForm() {
               {isLoggingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
-            <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="item-1">
-                    <AccordionTrigger className="text-sm text-muted-foreground">View Demo Credentials</AccordionTrigger>
-                    <AccordionContent>
-                        <ul className="space-y-1 text-xs text-muted-foreground">
-                            {adminUsers.map(({ user, password }) => (
-                                <li key={user.email} className="flex justify-between">
-                                    <span className="font-semibold">{user.role} ({user.name}):</span>
-                                    <span>{user.email} / {password}</span>
-                                </li>
-                            ))}
+            {adminUsers.length > 0 && (
+              <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="item-1">
+                      <AccordionTrigger className="text-sm text-muted-foreground">View Demo Credentials</AccordionTrigger>
+                      <AccordionContent>
+                          <ul className="space-y-1 text-xs text-muted-foreground">
+                              {adminUsers.map(({ user, password }) => (
+                                  <li key={user.email} className="flex justify-between">
+                                      <span className="font-semibold">{user.role} ({user.name}):</span>
+                                      <span>{user.email} / {password}</span>
+                                  </li>
+                              ))}
+                                <li className="flex justify-between">
+                                  <span className="font-semibold">Parent (Maria Rodriguez):</span>
+                                  <span>m.rodriguez@family.com / parent</span>
+                              </li>
                               <li className="flex justify-between">
-                                <span className="font-semibold">Parent (Maria Rodriguez):</span>
-                                <span>m.rodriguez@family.com / parent</span>
-                            </li>
-                             <li className="flex justify-between">
-                                <span className="font-semibold">Teacher (Northwood):</span>
-                                <span>m.chen@edumanage.com / teacher</span>
-                            </li>
-                             <li className="flex justify-between">
-                                <span className="font-semibold">Student (Northwood):</span>
-                                <span>e.rodriguez@edumanage.com / student</span>
-                            </li>
-                        </ul>
-                    </AccordionContent>
-                </AccordionItem>
-            </Accordion>
+                                  <span className="font-semibold">Teacher (Northwood):</span>
+                                  <span>m.chen@edumanage.com / teacher</span>
+                              </li>
+                              <li className="flex justify-between">
+                                  <span className="font-semibold">Student (Northwood):</span>
+                                  <span>e.rodriguez@edumanage.com / student</span>
+                              </li>
+                          </ul>
+                      </AccordionContent>
+                  </AccordionItem>
+              </Accordion>
+            )}
           </CardFooter>
         </form>
       </Form>
