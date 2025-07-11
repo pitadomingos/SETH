@@ -29,9 +29,9 @@ import {
     SavedReport as InitialSavedReport,
     AwardConfig as InitialAwardConfig,
     KioskMedia,
-    mockUsers
+    mockUsers as initialMockUsers
 } from '@/lib/mock-data';
-import { useAuth, Role } from './auth-context';
+import { type User, type Role } from './auth-context';
 import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
 import { GenerateTestOutput } from '@/ai/flows/generate-test';
 import { useToast } from '@/hooks/use-toast';
@@ -93,6 +93,7 @@ interface SchoolDataContextType {
   schoolProfile: SchoolProfile | null;
   updateSchoolProfile: (data: Partial<SchoolProfile>, schoolId?: string) => void;
   allSchoolData: typeof initialSchoolData | null;
+  mockUsers: typeof initialMockUsers | null;
   schoolGroups: typeof initialSchoolGroups | null;
   addSchool: (data: NewSchoolData, groupId?: string) => Promise<void>;
   updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
@@ -195,11 +196,13 @@ const initialAwardConfig: AwardConfig = {
     ],
 };
 
-export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
-  const { user, role, isLoading: isAuthLoading } = useAuth();
+export const SchoolDataProvider = ({ children, authUser }: { children: ReactNode, authUser: User | null }) => {
   const { toast } = useToast();
+  const user = authUser;
+  const role = user?.role;
 
   const [allSchoolData, setAllSchoolData] = useState<typeof initialSchoolData | null>(null);
+  const [mockUsers, setMockUsers] = useState(() => JSON.parse(JSON.stringify(initialMockUsers)));
   const [schoolGroups, setSchoolGroups] = useState(() => JSON.parse(JSON.stringify(initialSchoolGroups)));
   const [schoolProfile, setSchoolProfile] = useState<SchoolProfile | null>(null);
   const [financeData, setFinanceData] = useState<FinanceRecord[]>([]);
@@ -260,11 +263,16 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   // This effect runs whenever allSchoolData is populated or the user/role changes.
   useEffect(() => {
-    if (isAuthLoading || !allSchoolData) return;
-  
+    if (!user || !allSchoolData) {
+        if (!isDataLoading) { // only if initial fetch is done
+            // handle logged out state or loading state
+        }
+        return;
+    }
+
     const schoolId = user?.schoolId;
     const isPremiumAdmin = role === 'Admin' && schoolId && Object.values(schoolGroups).some(g => g.includes(schoolId));
-  
+
     if (role === 'GlobalAdmin' || (role === 'Admin' && isPremiumAdmin)) {
       setSchoolProfile(null); 
       setActivityLogs(Object.values(allSchoolData).flatMap(s => s.activityLogs.map(log => ({ ...log, timestamp: new Date(log.timestamp) }))));
@@ -343,10 +351,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       setFeeDescriptions(data.feeDescriptions);
       setAudiences(data.audiences);
       setKioskMedia(data.kioskMedia.map(km => ({...km, createdAt: new Date(km.createdAt)})));
-    } else if (!isAuthLoading) {
+    } else {
       setSchoolProfile(null);
     }
-  }, [user, role, allSchoolData, schoolGroups, isAuthLoading]);
+  }, [user, role, allSchoolData, schoolGroups, isDataLoading]);
 
 
   const addSchool = async (data: NewSchoolData, groupId?: string) => {
@@ -907,7 +915,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const value = {
     schoolProfile, updateSchoolProfile,
-    allSchoolData, schoolGroups, addSchool, updateSchoolStatus,
+    allSchoolData, schoolGroups, mockUsers, addSchool, updateSchoolStatus,
     studentsData, addStudentFromAdmission, updateStudentStatus,
     teachersData, addTeacher, updateTeacher, updateTeacherStatus,
     classesData, addClass,
@@ -942,7 +950,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     savedReports,
     addSavedReport,
     kioskMedia, addKioskMedia, removeKioskMedia,
-    isLoading: isDataLoading || isAuthLoading,
+    isLoading: isDataLoading,
   };
 
   return (

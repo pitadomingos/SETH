@@ -4,9 +4,8 @@ import { ProtectedRoute } from '@/context/auth-context';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { AppHeader } from '@/components/layout/app-header';
 import { Sidebar, SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { SchoolDataProvider } from '@/context/school-data-context';
-import { useAuth } from '@/context/auth-context';
 import { useSchoolData } from '@/context/school-data-context';
+import { useAuth } from '@/context/auth-context';
 import { Loader2 } from 'lucide-react';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
@@ -32,7 +31,6 @@ export default function DashboardLayout({
 }) {
   return (
     <ProtectedRoute>
-      <SchoolDataProvider>
         <SidebarProvider>
           <div className="flex min-h-screen w-full">
               <Sidebar className="print:hidden">
@@ -46,7 +44,6 @@ export default function DashboardLayout({
               </SidebarInset>
           </div>
         </SidebarProvider>
-      </SchoolDataProvider>
     </ProtectedRoute>
   );
 }

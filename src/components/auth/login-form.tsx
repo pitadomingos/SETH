@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/context/auth-context';
-import { mockUsers } from '@/lib/mock-data';
+import { useSchoolData } from '@/context/school-data-context';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +26,7 @@ type LoginFormValues = z.infer<typeof formSchema>;
 
 export function LoginForm() {
   const { login } = useAuth();
+  const { mockUsers } = useSchoolData();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -104,7 +105,7 @@ export function LoginForm() {
                     <AccordionTrigger className="text-sm text-muted-foreground">View Demo Credentials</AccordionTrigger>
                     <AccordionContent>
                         <ul className="space-y-1 text-xs text-muted-foreground">
-                            {Object.values(mockUsers).map(({ user, password }) => (
+                            {mockUsers && Object.values(mockUsers).map(({ user, password }) => (
                                 <li key={user.username} className="flex justify-between">
                                     <span className="font-semibold">{user.role} ({user.name}):</span>
                                     <span>{user.email} / {password}</span>

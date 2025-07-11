@@ -3,12 +3,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { schoolData, mockUsers } from '@/lib/mock-data';
-import { useSchoolData } from './school-data-context';
+import { mockUsers as allMockUsers } from '@/lib/mock-data';
+import { getSchoolsFromFirestore } from '@/lib/firebase/firestore-service';
+
 
 export type Role = 'GlobalAdmin' | 'Admin' | 'Teacher' | 'Student' | 'Parent';
 
-interface User {
+export interface User {
   username: string;
   name: string;
   email: string;
@@ -67,16 +68,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     setIsLoading(false);
   }, []);
-
+  
   const login = async (email: string, pass: string): Promise<LoginResult> => {
     setIsLoading(true);
     
-    const userRecord = Object.values(mockUsers).find(u => u.user.email.toLowerCase() === email.toLowerCase());
+    // Check against predefined mock users first
+    const userRecord = Object.values(allMockUsers).find(u => u.user.email.toLowerCase() === email.toLowerCase());
 
     if (userRecord && userRecord.password === pass) {
-        const loggedInUser: User = {
-            ...userRecord.user,
-        };
+        const loggedInUser: User = { ...userRecord.user };
         setUser(loggedInUser);
         setRole(loggedInUser.role);
         sessionStorage.setItem('user', JSON.stringify(loggedInUser));
@@ -86,8 +86,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: true };
     }
     
-    // Check if it's a valid parent email
-    const allStudents = Object.values(schoolData).flatMap(s => s.students);
+    // If not a predefined user, check if it's a valid parent email
+    const allSchoolData = await getSchoolsFromFirestore(); // Fetch fresh data for parent check
+    const allStudents = Object.values(allSchoolData).flatMap(s => s.students);
     const parentStudent = allStudents.find(s => s.parentEmail.toLowerCase() === email.toLowerCase());
 
     if (parentStudent && pass === 'parent') {
@@ -119,20 +120,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     router.push('/');
   };
 
-  const impersonateUser = (usernameOrEmail: string, asRole?: Role) => {
+  const impersonateUser = async (usernameOrEmail: string, asRole?: Role) => {
     if (!user || !role) return;
 
     let targetUser: User | undefined;
-
-    // This is simplified as we know all user data is in mockUsers for login purposes
-    const allMockUsers = Object.values(mockUsers).map(u => u.user);
-    const foundUser = allMockUsers.find(u => u.email.toLowerCase() === usernameOrEmail.toLowerCase());
+    
+    const allSchoolData = await getSchoolsFromFirestore();
+    const allMockUsersList = Object.values(allMockUsers).map(u => u.user);
+    const foundUser = allMockUsersList.find(u => u.email.toLowerCase() === usernameOrEmail.toLowerCase());
     
     if (foundUser) {
         targetUser = foundUser;
     } else {
-        // Fallback for parents not in mockUsers
-        const allStudents = Object.values(schoolData).flatMap(s => s.students);
+        const allStudents = Object.values(allSchoolData).flatMap(s => s.students);
         const parentStudent = allStudents.find(s => s.parentEmail.toLowerCase() === usernameOrEmail.toLowerCase());
         if (parentStudent) {
             targetUser = {
@@ -145,13 +145,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     
     if (targetUser) {
-      // Save current user state as original
       setOriginalUser(user);
       setOriginalRole(role);
       sessionStorage.setItem('originalUser', JSON.stringify(user));
       sessionStorage.setItem('originalRole', role);
       
-      // Set new impersonated user state
       const impersonatedRole = asRole || targetUser.role;
       const finalUser = { ...targetUser, role: impersonatedRole, username: targetUser.email };
       setUser(finalUser);
@@ -160,7 +158,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       sessionStorage.setItem('role', impersonatedRole);
       
       router.push('/dashboard');
-      window.location.reload(); // Force a full reload to re-run all context providers
     }
   };
 
@@ -172,14 +169,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       sessionStorage.setItem('user', JSON.stringify(originalUser));
       sessionStorage.setItem('role', originalRole);
       
-      // Clear original user state
       setOriginalUser(null);
       setOriginalRole(null);
       sessionStorage.removeItem('originalUser');
       sessionStorage.removeItem('originalRole');
       
       router.push('/dashboard');
-      window.location.reload(); // Force a full reload
     }
   };
 

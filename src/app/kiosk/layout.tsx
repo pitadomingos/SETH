@@ -1,16 +1,14 @@
 
-import { SchoolDataProvider } from '@/context/school-data-context';
+import { ReactNode } from "react";
 
 export default function KioskLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="bg-background text-foreground h-screen w-screen overflow-hidden">
-        <SchoolDataProvider>
-            {children}
-        </SchoolDataProvider>
+        {children}
     </div>
   );
 }

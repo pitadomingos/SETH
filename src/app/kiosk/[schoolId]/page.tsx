@@ -25,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { AuthProvider } from '@/context/auth-context';
 
 // --- Kiosk-specific Slides ---
 
@@ -447,7 +448,7 @@ function KioskShowcaseSlide({ school }) {
 
 
 // --- Main Page Component ---
-export default function KioskPage() {
+function KioskPage() {
   const params = useParams();
   const schoolId = params.schoolId as string;
   const { allSchoolData, isLoading } = useSchoolData();
@@ -554,5 +555,13 @@ export default function KioskPage() {
         ))}
       </CarouselContent>
     </Carousel>
+  );
+}
+
+export default function KioskPageWrapper() {
+  return (
+    <AuthProvider>
+      <KioskPage />
+    </AuthProvider>
   );
 }
