@@ -1,7 +1,6 @@
 
 'use client';
 
-import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/context/auth-context';
 import { SchoolDataProvider } from '@/context/school-data-context';
@@ -9,6 +8,8 @@ import { ThemeProvider } from '@/components/layout/theme-provider';
 import { cn } from '@/lib/utils';
 import './globals.css';
 
+// Even though we're using 'Inter' from tailwind.config.ts,
+// it's good practice to have a font pre-connection here.
 export default function RootLayout({
   children,
 }: Readonly<{
