@@ -24,7 +24,7 @@ const StudentSubmissionSchema = z.object({
   answers: z.record(z.string()).describe("A map of student's answers, where the key is the question index and the value is the selected option."),
 });
 
-export const AnalyzeTestResultsInputSchema = z.object({
+const AnalyzeTestResultsInputSchema = z.object({
   testTopic: z.string().describe("The topic of the test."),
   questions: z.array(TestQuestionSchema).describe("The array of test questions, including correct answers."),
   submissions: z.array(StudentSubmissionSchema).describe("An array of all student submissions for this test."),
@@ -43,7 +43,7 @@ const StrugglingStudentAnalysisSchema = z.object({
     revisionSuggestions: z.array(RevisionSuggestionSchema).describe("A list of personalized revision suggestions for the student."),
 });
 
-export const AnalyzeTestResultsOutputSchema = z.object({
+const AnalyzeTestResultsOutputSchema = z.object({
   overallSummary: z.string().describe("A brief, high-level summary of the class's performance on the test, including average score and general observations."),
   strugglingStudents: z.array(StrugglingStudentAnalysisSchema).describe("A list of students who performed poorly (score below 12/20) and their personalized revision advice."),
 });
