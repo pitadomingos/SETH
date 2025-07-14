@@ -2,7 +2,7 @@
 'use client';
 import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useSchoolData, Competition } from '@/context/school-data-context';
+import { useSchoolData, Competition, SchoolDataProvider } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, School, Users, Presentation, TrendingUp, Trophy, Award, BarChart2, Briefcase, Lightbulb, Link as LinkIcon, Tv, Medal, Camera } from 'lucide-react';
 import Image from 'next/image';
