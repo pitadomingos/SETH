@@ -12,7 +12,7 @@ export interface Competition {
   title: string;
   ourTeamId: string;
   opponent: string;
-  date: Date;
+  date: string;
   time: string;
   location: string;
   result?: {
@@ -21,8 +21,8 @@ export interface Competition {
     outcome: 'Win' | 'Loss' | 'Draw';
   };
 }
-export interface AcademicTerm { id: string; name: string; startDate: Date; endDate: Date; }
-export interface Holiday { id: string; name: string; date: Date; }
+export interface AcademicTerm { id: string; name: string; startDate: string; endDate: string; }
+export interface Holiday { id: string; name: string; date: string; }
 export interface Course {
   id: string;
   subject: string;
@@ -34,7 +34,7 @@ export interface LessonPlan extends CreateLessonPlanOutput {
   id: string;
   className: string;
   subject: string;
-  createdAt: Date;
+  createdAt: string;
   weeklySyllabus: string;
 }
 
@@ -43,26 +43,26 @@ export interface SavedTest extends GenerateTestOutput {
     subject: string;
     topic: string;
     gradeLevel: string;
-    createdAt: Date;
+    createdAt: string;
 }
 
 export interface DeployedTest {
   id: string;
   testId: string; // Corresponds to SavedTest id
   classId: string;
-  deadline: Date;
-  createdAt: Date;
+  deadline: string;
+  createdAt: string;
   submissions: Array<{
     studentId: string;
     answers: Record<number, string>; // question index -> selected option
     score: number; // Score out of 20
-    submittedAt: Date;
+    submittedAt: string;
   }>;
 }
 
 export interface ActivityLog {
   id: string;
-  timestamp: Date;
+  timestamp: string;
   schoolId: string;
   user: string;
   role: string;
@@ -72,7 +72,7 @@ export interface ActivityLog {
 
 export interface Message {
   id: string;
-  timestamp: Date;
+  timestamp: string;
   schoolId: string;
   senderUsername: string; // email
   senderName: string;
@@ -93,7 +93,7 @@ export interface SavedReport {
   type: 'ClassPerformance' | 'TeacherPerformance' | 'SchoolPerformance' | 'StrugglingStudents';
   targetId: string; // e.g., classId, teacherId, schoolId
   targetName: string; // e.g., "Class 10-A", "Prof. Michael Chen"
-  generatedAt: Date;
+  generatedAt: string;
   result: any; // This will hold the output from the specific flow
 }
 
@@ -114,7 +114,7 @@ export interface KioskMedia {
   url: string;
   title: string;
   description: string;
-  createdAt: Date;
+  createdAt: string;
 }
 
 interface SchoolData {
@@ -162,7 +162,7 @@ export interface KioskConfig {
 export interface BehavioralAssessment {
     id: string;
     studentId: string;
-    date: Date;
+    date: string;
     teacherId: string;
     respect: 1 | 2 | 3 | 4 | 5;
     participation: 1 | 2 | 3 | 4 | 5;
@@ -176,12 +176,12 @@ export interface Student { id: string; name: string; grade: string; class: strin
 export interface Teacher { id: string; name: string; subject: string; email: string; phone: string; address: string; experience: string; qualifications: string; status: 'Active' | 'Inactive' | 'Transferred'; sex: 'Male' | 'Female'; }
 export interface Class { id: string; name: string; grade: string; teacher: string; students: number; room: string; }
 export interface Admission { id: string; name: string; appliedFor: string; date: string; status: 'Pending' | 'Approved' | 'Rejected'; formerSchool: string; grades: string; parentName: string; parentEmail: string; dateOfBirth: string; sex: 'Male' | 'Female'; }
-interface Exam { id: string; title: string; subject: string; grade: string; date: Date; time: string; duration: string; room: string; board: string; invigilator: string; }
+interface Exam { id: string; title: string; subject: string; grade: string; date: string; time: string; duration: string; room: string; board: string; invigilator: string; }
 interface Asset { id: string; name: string; category: string; status: 'In Use' | 'Available' | 'Maintenance'; location: string; assignedTo: string; }
 interface Assignment { id: string; title: string; subject: string; grade: string; dueDate: string; status: 'pending' | 'submitted' | 'overdue'; }
-export interface Grade { studentId: string; subject: string; grade: string; date: Date; }
+export interface Grade { studentId: string; subject: string; grade: string; date: string; }
 export interface Attendance { id: string; studentId: string; date: string; courseId: string; status: 'Present' | 'Late' | 'Absent' | 'Sick'; }
-export interface SchoolEvent { id: string; date: Date; title: string; type: string; location: string; organizer: string; audience: string; schoolName?: string; }
+export interface SchoolEvent { id: string; date: string; title: string; type: string; location: string; organizer: string; audience: string; schoolName?: string; }
 
 const now = new Date();
 const currentYear = now.getFullYear();
@@ -205,8 +205,8 @@ const northwoodStudents: Student[] = [ { id: 'S001', name: 'Emma Rodriguez', gra
 const northwoodTeachers: Teacher[] = [ { id: 'T001', name: 'Prof. Michael Chen', subject: 'Mathematics', email: 'm.chen@edumanage.com', phone: '+1 (555) 111-2222', address: '123 Calculus Rd, Mathville', experience: '8 years', qualifications: 'Ph.D. in Mathematics', status: 'Active', sex: 'Male' }, { id: 'T002', name: 'Dr. Lisa Anderson', subject: 'Physics', email: 'l.anderson@edumanage.com', phone: '+1 (555) 222-3333', address: '456 Quantum Way, Physburg', experience: '12 years', qualifications: 'Ph.D. in Physics', status: 'Inactive', sex: 'Female' }, { id: 'T003', name: 'Ms. Jennifer Davis', subject: 'English', email: 'j.davis@northwood.edu', phone: '+1 (555) 111-3333', address: '101 Literature Lane', experience: '5 years', qualifications: 'M.A. in English', status: 'Active', sex: 'Female' }, ];
 const northwoodClasses: Class[] = [ { id: 'C001', name: 'Class 9-A', grade: '9', teacher: 'Ms. Jennifer Davis', students: 28, room: '101' }, { id: 'C002', name: 'Class 9-C', grade: '9', teacher: 'Prof. Michael Chen', students: 22, room: '103' }, { id: 'C003', name: 'Class 10-A', grade: '10', teacher: 'Prof. Michael Chen', students: 30, room: '201' }, { id: 'C004', name: 'Class 11-B', grade: '11', teacher: 'Dr. Lisa Anderson', students: 25, room: '301' }, ];
 const northwoodTeams: Team[] = [ { id: 'TEAM01', name: 'Basketball Varsity', coach: 'Prof. Michael Chen', playerIds: ['S002', 'S005', 'S008'], icon: '🏀' }, { id: 'TEAM02', name: 'Football Eagles', coach: 'Ms. Jennifer Davis', playerIds: ['S001', 'S004', 'S006', 'S007'], icon: '🏈' }, { id: 'TEAM03', name: 'Swim Team Sharks', coach: 'Dr. Lisa Anderson', playerIds: ['S003'], icon: '🏊' }, ];
-const northwoodCompetitions: Competition[] = [ { id: 'COMP01', title: 'Championship Game', ourTeamId: 'TEAM01', opponent: 'Southside Serpents', date: new Date(new Date().setDate(new Date().getDate() + 12)), time: '18:00', location: 'Home Gymnasium' }, { id: 'COMP02', title: 'Away Match', ourTeamId: 'TEAM02', opponent: 'Oakridge Oaks', date: new Date(new Date().setDate(new Date().getDate() + 25)), time: '15:30', location: 'Oakridge Academy Field' }, { id: 'COMP03', title: 'Friendly Match', ourTeamId: 'TEAM03', opponent: 'Riverdale High', date: new Date(new Date().setDate(new Date().getDate() - 7)), time: '16:00', location: 'Away Pool', result: { ourScore: 120, opponentScore: 98, outcome: 'Win' } }, { id: 'COMP04', title: 'Season Opener', ourTeamId: 'TEAM01', opponent: 'Maplewood Lions', date: new Date(new Date().setDate(new Date().getDate() - 14)), time: '19:00', location: 'Home Gymnasium' }, ];
-const northwoodGrades: Grade[] = [ { studentId: 'S001', subject: 'Mathematics', grade: '17', date: new Date(now.getFullYear(), now.getMonth() - 2) }, { studentId: 'S001', subject: 'Physics', grade: '16', date: new Date(now.getFullYear(), now.getMonth() - 2) }, { studentId: 'S001', subject: 'English', grade: '18', date: new Date(now.getFullYear(), now.getMonth() - 2) }, { studentId: 'S002', subject: 'Mathematics', grade: '14', date: new Date(now.getFullYear(), now.getMonth() - 1) }, { studentId: 'S002', subject: 'Physics', grade: '14', date: new Date(now.getFullYear(), now.getMonth() - 1) }, { studentId: 'S003', subject: 'English', grade: '20', date: new Date(now.getFullYear(), now.getMonth()) }, { studentId: 'S003', subject: 'Physics', grade: '19', date: new Date(now.getFullYear(), now.getMonth()) }, { studentId: 'S004', subject: 'English', grade: '15', date: new Date(now.getFullYear(), now.getMonth()) }, { studentId: 'S005', subject: 'Mathematics', grade: '20', date: new Date(now.getFullYear(), now.getMonth()) }, { studentId: 'S006', subject: 'English', grade: '12', date: new Date(now.getFullYear(), now.getMonth()) }, { studentId: 'S007', subject: 'Physics', grade: '17', date: new Date(now.getFullYear(), now.getMonth()) }, { studentId: 'S008', subject: 'Mathematics', grade: '15', date: new Date(now.getFullYear(), now.getMonth()) }, { studentId: 'S009', subject: 'English', grade: '18', date: new Date(now.getFullYear(), now.getMonth()) }, { studentId: 'S009', subject: 'Mathematics', grade: '18', date: new Date(now.getFullYear(), now.getMonth()) }, { studentId: 'S010', subject: 'Mathematics', grade: '5', date: new Date(now.getFullYear(), now.getMonth()) }, { studentId: 'S010', subject: 'Physics', grade: '8', date: new Date(now.getFullYear(), now.getMonth()) }, { studentId: 'S010', subject: 'English', grade: '8', date: new Date(now.getFullYear(), now.getMonth()) }, ];
+const northwoodCompetitions: Competition[] = [ { id: 'COMP01', title: 'Championship Game', ourTeamId: 'TEAM01', opponent: 'Southside Serpents', date: new Date(new Date().setDate(new Date().getDate() + 12)).toISOString(), time: '18:00', location: 'Home Gymnasium' }, { id: 'COMP02', title: 'Away Match', ourTeamId: 'TEAM02', opponent: 'Oakridge Oaks', date: new Date(new Date().setDate(new Date().getDate() + 25)).toISOString(), time: '15:30', location: 'Oakridge Academy Field' }, { id: 'COMP03', title: 'Friendly Match', ourTeamId: 'TEAM03', opponent: 'Riverdale High', date: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString(), time: '16:00', location: 'Away Pool', result: { ourScore: 120, opponentScore: 98, outcome: 'Win' } }, { id: 'COMP04', title: 'Season Opener', ourTeamId: 'TEAM01', opponent: 'Maplewood Lions', date: new Date(new Date().setDate(new Date().getDate() - 14)).toISOString(), time: '19:00', location: 'Home Gymnasium' }, ];
+const northwoodGrades: Grade[] = [ { studentId: 'S001', subject: 'Mathematics', grade: '17', date: new Date(now.getFullYear(), now.getMonth() - 2).toISOString() }, { studentId: 'S001', subject: 'Physics', grade: '16', date: new Date(now.getFullYear(), now.getMonth() - 2).toISOString() }, { studentId: 'S001', subject: 'English', grade: '18', date: new Date(now.getFullYear(), now.getMonth() - 2).toISOString() }, { studentId: 'S002', subject: 'Mathematics', grade: '14', date: new Date(now.getFullYear(), now.getMonth() - 1).toISOString() }, { studentId: 'S002', subject: 'Physics', grade: '14', date: new Date(now.getFullYear(), now.getMonth() - 1).toISOString() }, { studentId: 'S003', subject: 'English', grade: '20', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, { studentId: 'S003', subject: 'Physics', grade: '19', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, { studentId: 'S004', subject: 'English', grade: '15', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, { studentId: 'S005', subject: 'Mathematics', grade: '20', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, { studentId: 'S006', subject: 'English', grade: '12', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, { studentId: 'S007', subject: 'Physics', grade: '17', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, { studentId: 'S008', subject: 'Mathematics', grade: '15', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, { studentId: 'S009', subject: 'English', grade: '18', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, { studentId: 'S009', subject: 'Mathematics', grade: '18', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, { studentId: 'S010', subject: 'Mathematics', grade: '5', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, { studentId: 'S010', subject: 'Physics', grade: '8', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, { studentId: 'S010', subject: 'English', grade: '8', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, ];
 const northwoodAttendance: Attendance[] = [
     { id: 'ATT001', studentId: 'S001', date: now.toISOString().split('T')[0], courseId: 'CRS001', status: 'Present' },
     { id: 'ATT002', studentId: 'S002', date: now.toISOString().split('T')[0], courseId: 'CRS001', status: 'Present' },
@@ -215,19 +215,19 @@ const northwoodAttendance: Attendance[] = [
 ];
 const northwoodFinance: FinanceRecord[] = [ { id: 'FEE001', studentId: 'S001', studentName: 'Emma Rodriguez', description: 'Term 1 Tuition', totalAmount: 1200, amountPaid: 1200, dueDate: '2024-08-31' }, { id: 'FEE002', studentId: 'S002', studentName: 'James Wilson', description: 'Term 1 Tuition', totalAmount: 1200, amountPaid: 500, dueDate: '2024-08-31' }, { id: 'FEE003', studentId: 'S003', studentName: 'Sofia Kim', description: 'Term 1 Tuition', totalAmount: 1500, amountPaid: 0, dueDate: '2024-07-31' }, { id: 'FEE004', studentId: 'S009', studentName: 'Sophia Davis', description: 'Term 1 Tuition', totalAmount: 1200, amountPaid: 1200, dueDate: '2024-08-31' }, { id: 'FEE005', studentId: 'S001', studentName: 'Emma Rodriguez', description: 'Lab Fees', totalAmount: 150, amountPaid: 150, dueDate: '2024-09-15' }, { id: 'FEE006', studentId: 'S010', studentName: 'William Miller', description: 'Term 1 Tuition', totalAmount: 1200, amountPaid: 1200, dueDate: '2024-08-31' }, ];
 const northwoodExpenses: Expense[] = [ { id: 'EXP001', description: 'Teacher Salaries - August', category: 'Salaries', amount: 25000, date: '2024-08-31', proofUrl: 'https://placehold.co/400x200.png' }, { id: 'EXP002', description: 'Electricity Bill', category: 'Utilities', amount: 1500, date: '2024-08-25', proofUrl: 'https://placehold.co/400x200.png' }, { id: 'EXP003', description: 'New Textbooks', category: 'Supplies', amount: 3200, date: '2024-08-15', proofUrl: 'https://placehold.co/400x200.png' }, { id: 'EXP004', description: 'Internet Service', category: 'Utilities', amount: 500, date: '2024-08-30', proofUrl: 'https://placehold.co/400x200.png' }, ];
-const northwoodEvents: SchoolEvent[] = [ { id: 'EVT001', date: new Date(new Date().setDate(new Date().getDate() + 3)), title: 'Science Fair', type: 'Academic', location: 'Main Hall', organizer: 'Science Dept.', audience: 'All Students & Parents' }, { id: 'EVT002', date: new Date(new Date().setDate(new Date().getDate() + 10)), title: 'Mid-term Exams Start', type: 'Academic', location: 'Various Classrooms', organizer: 'Examinations Office', audience: 'Grades 9-12' }, ];
-const northwoodTerms: AcademicTerm[] = [ { id: 'TERM01', name: 'Term 1', startDate: new Date(currentYear, 8, 1), endDate: new Date(currentYear, 11, 20) }, { id: 'TERM02', name: 'Term 2', startDate: new Date(currentYear + 1, 0, 10), endDate: new Date(currentYear + 1, 5, 30) }, ];
-const northwoodHolidays: Holiday[] = [ { id: 'HOL01', name: 'Winter Break', date: new Date(currentYear, 11, 21) }, { id: 'HOL02', name: 'Spring Break', date: new Date(currentYear + 1, 2, 25) }, ];
+const northwoodEvents: SchoolEvent[] = [ { id: 'EVT001', date: new Date(new Date().setDate(new Date().getDate() + 3)).toISOString(), title: 'Science Fair', type: 'Academic', location: 'Main Hall', organizer: 'Science Dept.', audience: 'All Students & Parents' }, { id: 'EVT002', date: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(), title: 'Mid-term Exams Start', type: 'Academic', location: 'Various Classrooms', organizer: 'Examinations Office', audience: 'Grades 9-12' }, ];
+const northwoodTerms: AcademicTerm[] = [ { id: 'TERM01', name: 'Term 1', startDate: new Date(currentYear, 8, 1).toISOString(), endDate: new Date(currentYear, 11, 20).toISOString() }, { id: 'TERM02', name: 'Term 2', startDate: new Date(currentYear + 1, 0, 10).toISOString(), endDate: new Date(currentYear + 1, 5, 30).toISOString() }, ];
+const northwoodHolidays: Holiday[] = [ { id: 'HOL01', name: 'Winter Break', date: new Date(currentYear, 11, 21).toISOString() }, { id: 'HOL02', name: 'Spring Break', date: new Date(currentYear + 1, 2, 25).toISOString() }, ];
 const northwoodCourses: Course[] = [
     { id: 'CRS001', subject: 'Mathematics', teacherId: 'T001', classId: 'C003', schedule: [{ day: 'Monday', startTime: '09:00', endTime: '10:00', room: '201' }, { day: 'Wednesday', startTime: '09:00', endTime: '10:00', room: '201' }, { day: 'Friday', startTime: '09:00', endTime: '10:00', room: '201' }] },
     { id: 'CRS002', subject: 'English', teacherId: 'T003', classId: 'C001', schedule: [{ day: 'Tuesday', startTime: '10:00', endTime: '11:00', room: '101' }, { day: 'Thursday', startTime: '10:00', endTime: '11:00', room: '101' }] },
     { id: 'CRS003', subject: 'Physics', teacherId: 'T002', classId: 'C004', schedule: [{ day: 'Monday', startTime: '11:00', endTime: '12:00', room: '301' }, { day: 'Wednesday', startTime: '11:00', endTime: '12:00', room: '301' }] },
 ];
 const northwoodActivityLogs: ActivityLog[] = [
-    { id: 'LOGN001', timestamp: new Date(new Date().setHours(new Date().getHours() - 20)), schoolId: 'northwood', user: 'Dr. Sarah Johnson', role: 'Admin', action: 'Login', details: 'User logged in successfully.' },
-    { id: 'LOGN002', timestamp: new Date(new Date().setHours(new Date().getHours() - 5)), schoolId: 'northwood', user: 'Dr. Sarah Johnson', role: 'Admin', action: 'Create', details: 'Created course: Mathematics for Class 10-A.' },
-    { id: 'LOGN003', timestamp: new Date(new Date().setHours(new Date().getHours() - 2)), schoolId: 'northwood', user: 'Prof. Michael Chen', role: 'Teacher', action: 'Update', details: 'Entered 5 new grades for Mathematics.' },
-    { id: 'LOGN004', timestamp: new Date(new Date().setHours(new Date().getHours() - 1)), schoolId: 'northwood', user: 'Dr. Sarah Johnson', role: 'Admin', action: 'Analysis', details: 'Generated a school-wide performance report.' },
+    { id: 'LOGN001', timestamp: new Date(new Date().setHours(new Date().getHours() - 20)).toISOString(), schoolId: 'northwood', user: 'Dr. Sarah Johnson', role: 'Admin', action: 'Login', details: 'User logged in successfully.' },
+    { id: 'LOGN002', timestamp: new Date(new Date().setHours(new Date().getHours() - 5)).toISOString(), schoolId: 'northwood', user: 'Dr. Sarah Johnson', role: 'Admin', action: 'Create', details: 'Created course: Mathematics for Class 10-A.' },
+    { id: 'LOGN003', timestamp: new Date(new Date().setHours(new Date().getHours() - 2)).toISOString(), schoolId: 'northwood', user: 'Prof. Michael Chen', role: 'Teacher', action: 'Update', details: 'Entered 5 new grades for Mathematics.' },
+    { id: 'LOGN004', timestamp: new Date(new Date().setHours(new Date().getHours() - 1)).toISOString(), schoolId: 'northwood', user: 'Dr. Sarah Johnson', role: 'Admin', action: 'Analysis', details: 'Generated a school-wide performance report.' },
 ];
 const northwoodMessages: Message[] = [];
 
@@ -240,16 +240,16 @@ const oakridgeCourses: Course[] = [
     { id: 'CRS101', subject: 'Biology', teacherId: 'T101', classId: 'C102', schedule: [{ day: 'Tuesday', startTime: '09:00', endTime: '11:00', room: 'L1' }] },
     { id: 'CRS102', subject: 'Geography', teacherId: 'T102', classId: 'C101', schedule: [{ day: 'Monday', startTime: '13:00', endTime: '14:30', room: 'G1' }] },
 ];
-const oakridgeGrades: Grade[] = [ { studentId: 'S101', subject: 'Biology', grade: '18', date: new Date(now.getFullYear(), now.getMonth() - 1) }, { studentId: 'S102', subject: 'Geography', grade: '15', date: new Date(now.getFullYear(), now.getMonth() - 1) }, { studentId: 'S104', subject: 'Geography', grade: '14', date: new Date(now.getFullYear(), now.getMonth()) }, { studentId: 'S104', subject: 'Biology', grade: '12', date: new Date(now.getFullYear(), now.getMonth()) }, ];
+const oakridgeGrades: Grade[] = [ { studentId: 'S101', subject: 'Biology', grade: '18', date: new Date(now.getFullYear(), now.getMonth() - 1).toISOString() }, { studentId: 'S102', subject: 'Geography', grade: '15', date: new Date(now.getFullYear(), now.getMonth() - 1).toISOString() }, { studentId: 'S104', subject: 'Geography', grade: '14', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, { studentId: 'S104', subject: 'Biology', grade: '12', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, ];
 const oakridgeAttendance: Attendance[] = [];
 const oakridgeFinance: FinanceRecord[] = [ { id: 'FEE101', studentId: 'S101', studentName: 'Benjamin Carter', description: 'Annual Tuition', totalAmount: 2200, amountPaid: 2200, dueDate: '2024-08-31' }, { id: 'FEE102', studentId: 'S102', studentName: 'Charlotte Lee', description: 'Annual Tuition', totalAmount: 2200, amountPaid: 0, dueDate: '2024-08-31' }, { id: 'FEE103', studentId: 'S104', studentName: 'Miguel Rodriguez', description: 'Annual Tuition', totalAmount: 2200, amountPaid: 2200, dueDate: '2024-08-31' }, ];
 const oakridgeExpenses: Expense[] = [ { id: 'EXP101', description: 'Staff Salaries - August', category: 'Salaries', amount: 35000, date: '2024-08-31', proofUrl: 'https://placehold.co/400x200.png' }, { id: 'EXP102', description: 'Building Maintenance', category: 'Maintenance', amount: 2500, date: '2024-08-20', proofUrl: 'https://placehold.co/400x200.png' }, ];
-const oakridgeEvents: SchoolEvent[] = [ { id: 'EVT101', date: new Date(new Date().setDate(new Date().getDate() + 5)), title: 'Welcome Orientation', type: 'Meeting', location: 'Auditorium', organizer: 'Admin Office', audience: 'New Students & Parents' }, { id: 'EVT102', date: new Date(new Date().setDate(new Date().getDate() + 18)), title: 'Annual Sports Day', type: 'Sports', location: 'Sports Field', organizer: 'Sports Dept.', audience: 'Whole School' }, ];
+const oakridgeEvents: SchoolEvent[] = [ { id: 'EVT101', date: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(), title: 'Welcome Orientation', type: 'Meeting', location: 'Auditorium', organizer: 'Admin Office', audience: 'New Students & Parents' }, { id: 'EVT102', date: new Date(new Date().setDate(new Date().getDate() + 18)).toISOString(), title: 'Annual Sports Day', type: 'Sports', location: 'Sports Field', organizer: 'Sports Dept.', audience: 'Whole School' }, ];
 const oakridgeTerms: AcademicTerm[] = [];
-const oakridgeHolidays: Holiday[] = [ { id: 'HOL101', name: 'Thanksgiving', date: new Date(currentYear, 10, 28) }];
+const oakridgeHolidays: Holiday[] = [ { id: 'HOL101', name: 'Thanksgiving', date: new Date(currentYear, 10, 28).toISOString() }];
 const oakridgeActivityLogs: ActivityLog[] = [
-    { id: 'LOGO001', timestamp: new Date(new Date().setDate(new Date().getDate() - 2)), schoolId: 'oakridge', user: 'Mr. James Maxwell', role: 'Admin', action: 'Login', details: 'User logged in successfully.' },
-    { id: 'LOGO002', timestamp: new Date(new Date().setHours(new Date().getHours() - 8)), schoolId: 'oakridge', user: 'Mr. James Maxwell', role: 'Admin', action: 'Create', details: 'Approved application for Alice Wonder.' },
+    { id: 'LOGO001', timestamp: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(), schoolId: 'oakridge', user: 'Mr. James Maxwell', role: 'Admin', action: 'Login', details: 'User logged in successfully.' },
+    { id: 'LOGO002', timestamp: new Date(new Date().setHours(new Date().getHours() - 8)).toISOString(), schoolId: 'oakridge', user: 'Mr. James Maxwell', role: 'Admin', action: 'Create', details: 'Approved application for Alice Wonder.' },
 ];
 const oakridgeMessages: Message[] = [];
 
@@ -259,15 +259,15 @@ const maplewoodStudents: Student[] = [ { id: 'S201', name: 'Chloe Dubois', grade
 const maplewoodTeachers: Teacher[] = [ { id: 'T201', name: 'Mr. David Lee', subject: 'History', email: 'd.lee@maplewood.com', phone: '+1 (555) 301-3010', address: '10 History Lane', experience: '15 years', qualifications: 'M.Ed. in History', status: 'Active', sex: 'Male' }, ];
 const maplewoodClasses: Class[] = [ { id: 'C201', name: 'Class 9-C', grade: '9', teacher: 'Mr. David Lee', students: 22, room: 'H1' }, ];
 const maplewoodCourses: Course[] = [];
-const maplewoodGrades: Grade[] = [ { studentId: 'S201', subject: 'History', grade: '18', date: new Date(now.getFullYear(), now.getMonth() - 1) }, { studentId: 'S204', subject: 'History', grade: '15', date: new Date(now.getFullYear(), now.getMonth()) }, ];
+const maplewoodGrades: Grade[] = [ { studentId: 'S201', subject: 'History', grade: '18', date: new Date(now.getFullYear(), now.getMonth() - 1).toISOString() }, { studentId: 'S204', subject: 'History', grade: '15', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, ];
 const maplewoodAttendance: Attendance[] = [];
 const maplewoodFinance: FinanceRecord[] = [ { id: 'FEE201', studentId: 'S201', studentName: 'Chloe Dubois', description: 'Semester 1 Fees', totalAmount: 3500, amountPaid: 1000, dueDate: '2024-09-01' }, { id: 'FEE202', studentId: 'S204', studentName: 'Lucas Martinez', description: 'Semester 1 Fees', totalAmount: 3500, amountPaid: 3500, dueDate: '2024-07-01' }, ];
 const maplewoodExpenses: Expense[] = [ { id: 'EXP201', description: 'IB Program Fees', category: 'Academics', amount: 12000, date: '2024-08-10', proofUrl: 'https://placehold.co/400x200.png' }, { id: 'EXP202', description: 'Staff Salaries - August', category: 'Salaries', amount: 45000, date: '2024-08-31', proofUrl: 'https://placehold.co/400x200.png' }, ];
-const maplewoodEvents: SchoolEvent[] = [ { id: 'EVT201', date: new Date(new Date().setDate(new Date().getDate() + 20)), title: 'International Day', type: 'Cultural', location: 'School Grounds', organizer: 'Cultural Committee', audience: 'Whole School Community' }, ];
+const maplewoodEvents: SchoolEvent[] = [ { id: 'EVT201', date: new Date(new Date().setDate(new Date().getDate() + 20)).toISOString(), title: 'International Day', type: 'Cultural', location: 'School Grounds', organizer: 'Cultural Committee', audience: 'Whole School Community' }, ];
 const maplewoodTerms: AcademicTerm[] = [];
-const maplewoodHolidays: Holiday[] = [ { id: 'HOL201', name: 'Heritage Day', date: new Date(currentYear, 8, 24) }];
+const maplewoodHolidays: Holiday[] = [ { id: 'HOL201', name: 'Heritage Day', date: new Date(currentYear, 8, 24).toISOString() }];
 const maplewoodActivityLogs: ActivityLog[] = [
-    { id: 'LOGM001', timestamp: new Date(new Date().setDate(new Date().getDate() - 1)), schoolId: 'maplewood', user: 'Ms. Eleanor Vance', role: 'Admin', action: 'Login', details: 'User logged in successfully.' },
+    { id: 'LOGM001', timestamp: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(), schoolId: 'maplewood', user: 'Ms. Eleanor Vance', role: 'Admin', action: 'Login', details: 'User logged in successfully.' },
 ];
 const maplewoodMessages: Message[] = [];
 
@@ -299,7 +299,7 @@ export const schoolData: Record<string, SchoolData> = {
     savedReports: [],
     kioskMedia: [],
     admissions: [ { id: 'ADM001', name: 'John Smith', appliedFor: 'Grade 9', date: '2024-05-10', status: 'Pending', formerSchool: 'Eastwood Elementary', grades: 'A average in all subjects.', parentName: 'Mary Smith', parentEmail: 'm.smith@family.com', dateOfBirth: '2009-03-12', sex: 'Male' }, { id: 'ADM002', name: 'Emily White', appliedFor: 'Grade 10', date: '2024-05-09', status: 'Approved', formerSchool: 'Westwood Middle', grades: 'Excellent academic record, especially in sciences.', parentName: 'David White', parentEmail: 'd.white@family.com', dateOfBirth: '2008-11-23', sex: 'Female' }, ],
-    exams: [ { id: 'EXM001', title: 'Mid-term Mathematics', subject: 'Mathematics', grade: '10', date: new Date(new Date().setDate(new Date().getDate() + 10)), time: '09:00', duration: '2 hours', room: '201', board: 'Internal', invigilator: 'Prof. Michael Chen' }, { id: 'EXM004', title: 'IGCSE Physics Paper 4', subject: 'Physics', grade: '10', date: new Date(new Date().setDate(new Date().getDate() + 20)), time: '13:00', duration: '75 minutes', room: 'Hall A', board: 'Cambridge', invigilator: 'Dr. Lisa Anderson' }, ],
+    exams: [ { id: 'EXM001', title: 'Mid-term Mathematics', subject: 'Mathematics', grade: '10', date: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(), time: '09:00', duration: '2 hours', room: '201', board: 'Internal', invigilator: 'Prof. Michael Chen' }, { id: 'EXM004', title: 'IGCSE Physics Paper 4', subject: 'Physics', grade: '10', date: new Date(new Date().setDate(new Date().getDate() + 20)).toISOString(), time: '13:00', duration: '75 minutes', room: 'Hall A', board: 'Cambridge', invigilator: 'Dr. Lisa Anderson' }, ],
     assets: [ { id: 'ASSET001', name: 'Dell Latitude Laptop', category: 'IT Equipment', status: 'In Use', location: 'Room 201', assignedTo: 'Prof. Michael Chen' }, { id: 'ASSET002', name: 'Epson Projector', category: 'AV Equipment', status: 'Available', location: 'Storage', assignedTo: 'N/A' }, ],
     assignments: [ { id: 'A001', title: 'Math Problem Set 5', subject: 'Mathematics', grade: '10', dueDate: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString(), status: 'pending' }, { id: 'A002', title: 'Physics Lab Report', subject: 'Physics', grade: '11', dueDate: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(), status: 'submitted' }, ],
   },
@@ -329,7 +329,7 @@ export const schoolData: Record<string, SchoolData> = {
     savedReports: [],
     kioskMedia: [],
     admissions: [ { id: 'OAK-ADM001', name: 'Alice Wonder', appliedFor: 'Grade 9', date: '2024-05-15', status: 'Approved', formerSchool: 'Wonderland Middle', grades: 'Top of class.', parentName: 'Charles Wonder', parentEmail: 'c.wonder@family.com', dateOfBirth: '2009-07-07', sex: 'Female' }, ],
-    exams: [ { id: 'OAK-EXM001', title: 'Biology Entrance Exam', subject: 'Biology', grade: '9', date: new Date(new Date().setDate(new Date().getDate() + 10)), time: '09:00', duration: '2 hours', room: 'L1', board: 'Internal', invigilator: 'Ms. Rachel Adams' }, ],
+    exams: [ { id: 'OAK-EXM001', title: 'Biology Entrance Exam', subject: 'Biology', grade: '9', date: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(), time: '09:00', duration: '2 hours', room: 'L1', board: 'Internal', invigilator: 'Ms. Rachel Adams' }, ],
     assets: [ { id: 'OAK-ASSET001', name: 'Microscope Array', category: 'Lab Equipment', status: 'In Use', location: 'Lab 1', assignedTo: 'Ms. Rachel Adams' }, ],
     assignments: [ { id: 'OAK-A001', title: 'Geographic Survey Project', subject: 'Geography', grade: '9', dueDate: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(), status: 'pending' }, ],
   },
@@ -359,7 +359,7 @@ export const schoolData: Record<string, SchoolData> = {
     savedReports: [],
     kioskMedia: [],
     admissions: [ { id: 'MAP-ADM001', name: 'Leo Tolstoy', appliedFor: 'Grade 9', date: '2024-06-01', status: 'Pending', formerSchool: 'Literary Prep', grades: 'Strong in humanities.', parentName: 'Sophia Tolstoy', parentEmail: 's.tolstoy@family.com', dateOfBirth: '2009-01-01', sex: 'Male' }, ],
-    exams: [ { id: 'MAP-EXM001', title: 'World History Final', subject: 'History', grade: '9', date: new Date(new Date().setDate(new Date().getDate() + 15)), time: '10:00', duration: '90 minutes', room: 'H1', board: 'IB', invigilator: 'Mr. David Lee' }, ],
+    exams: [ { id: 'MAP-EXM001', title: 'World History Final', subject: 'History', grade: '9', date: new Date(new Date().setDate(new Date().getDate() + 15)).toISOString(), time: '10:00', duration: '90 minutes', room: 'H1', board: 'IB', invigilator: 'Mr. David Lee' }, ],
     assets: [ { id: 'MAP-ASSET001', name: 'Smart Board', category: 'AV Equipment', status: 'In Use', location: 'H1', assignedTo: 'Mr. David Lee' }, ],
     assignments: [ { id: 'MAP-A001', title: 'Essay on Renaissance Art', subject: 'History', grade: '9', dueDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(), status: 'pending' }, ],
   },

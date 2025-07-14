@@ -36,7 +36,7 @@ import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
 import { GenerateTestOutput } from '@/ai/flows/generate-test';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { addSchoolToFirestore, getSchoolsFromFirestore } from '@/lib/firebase/firestore-service';
+import { getDbInstance, addSchoolToFirestore, getSchoolsFromFirestore } from '@/lib/firebase/firestore-service';
 
 
 export type FinanceRecord = InitialFinanceRecord;
@@ -241,7 +241,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             if (Object.keys(firestoreSchools).length === 0) {
                 console.log("Firestore is empty, seeding with initial mock data...");
                 for (const schoolId in initialSchoolData) {
-                    await addSchoolToFirestore(initialSchoolData[schoolId].profile, schoolId, initialSchoolData[schoolId]);
+                    await addSchoolToFirestore(initialSchoolData[schoolId].profile, schoolId, JSON.parse(JSON.stringify(initialSchoolData[schoolId])));
                 }
                 setAllSchoolData(JSON.parse(JSON.stringify(initialSchoolData)));
             } else {
@@ -250,6 +250,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         } catch (error) {
             console.error("Error fetching or seeding school data:", error);
             setAllSchoolData(JSON.parse(JSON.stringify(initialSchoolData)));
+        } finally {
+            setIsLoading(false);
         }
     };
     fetchData();
@@ -257,12 +259,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   // Effect 2: Set the user-specific data slice once auth and data are ready.
   useEffect(() => {
-    if (!allSchoolData) {
+    if (!allSchoolData || isLoading) {
         return; // Wait for the initial fetch to complete
     }
     
-    // This is now safe to run after the first effect completes.
-    setIsLoading(true);
     try {
         const schoolId = user?.schoolId;
         const isPremiumAdmin = role === 'Admin' && schoolId && Object.values(schoolGroups).some(g => g.includes(schoolId));
@@ -287,9 +287,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           const relevantData = schoolIdsArray.reduce((acc, currentSchoolId) => {
               const school = allSchoolData[currentSchoolId];
               if (!school) return acc;
-              acc.grades.push(...school.grades.filter(g => childrenIds.has(g.studentId)));
-              acc.attendance.push(...school.attendance.filter(a => childrenIds.has(a.studentId)));
-              acc.finance.push(...school.finance.filter(f => childrenIds.has(f.studentId)));
+              acc.grades.push(...school.grades.map(g => ({ ...g, date: new Date(g.date) })));
+              acc.attendance.push(...school.attendance.map(a => ({...a})));
+              acc.finance.push(...school.finance);
               acc.events.push(...school.events.map(e => ({ ...e, schoolName: school.profile.name, date: new Date(e.date) })));
               acc.teams.push(...school.teams);
               acc.competitions.push(...school.competitions.map(c => ({ ...c, date: new Date(c.date) })));
@@ -300,7 +300,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
               return acc;
           }, { grades: [] as Grade[], attendance: [] as Attendance[], finance: [] as FinanceRecord[], events: [] as SchoolEvent[], teams: [] as Team[], competitions: [] as Competition[], messages: [] as Message[], teachers: [] as Teacher[], classes: [] as Class[], courses: [] as Course[] });
       
-          setStudentsData(relevantStudents);
+          setStudentsData(relevantStudents.map(s => ({...s, behavioralAssessments: s.behavioralAssessments.map(b => ({...b, date: new Date(b.date)}))})));
           setGrades(relevantData.grades);
           setAttendance(relevantData.attendance);
           setFinanceData(relevantData.finance);
@@ -320,13 +320,13 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         } else if (schoolId && allSchoolData[schoolId]) {
           const data = allSchoolData[schoolId];
           setSchoolProfile(data.profile);
-          setStudentsData(role === 'Student' ? data.students.filter(s => s.email === user.email) : data.students);
+          setStudentsData(data.students.map(s => ({ ...s, behavioralAssessments: s.behavioralAssessments.map(b => ({ ...b, date: new Date(b.date) })) })));
           setTeachersData(data.teachers);
           setClassesData(data.classes);
           setCoursesData(data.courses);
           setAdmissionsData(data.admissions);
           setFinanceData(data.finance);
-          setGrades(data.grades);
+          setGrades(data.grades.map(g => ({ ...g, date: new Date(g.date) })));
           setAttendance(data.attendance);
           setExpensesData(data.expenses);
           setExpenseCategories(data.expenseCategories);
@@ -337,7 +337,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           setHolidays(data.holidays.map(h => ({...h, date: new Date(h.date)})));
           setLessonPlans(data.lessonPlans.map(lp => ({...lp, createdAt: new Date(lp.createdAt)})));
           setSavedTests(data.savedTests.map(st => ({...st, createdAt: new Date(st.createdAt)})));
-          setDeployedTests(data.deployedTests.map(dt => ({...dt, createdAt: new Date(dt.createdAt), deadline: new Date(dt.deadline)})));
+          setDeployedTests(data.deployedTests.map(dt => ({...dt, createdAt: new Date(dt.createdAt), deadline: new Date(dt.deadline), submissions: dt.submissions.map(s => ({ ...s, submittedAt: new Date(s.submittedAt) })) })));
           setActivityLogs(data.activityLogs.map(log => ({...log, timestamp: new Date(log.timestamp)})));
           setMessages(data.messages.map(msg => ({...msg, timestamp: new Date(msg.timestamp)})));
           setSavedReports(data.savedReports.map(r => ({...r, generatedAt: new Date(r.generatedAt)})));
@@ -350,10 +350,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         }
     } catch (e) {
         console.error("Error slicing school data for user:", e);
-    } finally {
-        setIsLoading(false);
     }
-  }, [user, role, allSchoolData, schoolGroups]);
+  }, [user, role, allSchoolData, schoolGroups, isLoading]);
 
 
   const addSchool = async (data: NewSchoolData, groupId?: string) => {
