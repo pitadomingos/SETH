@@ -29,7 +29,7 @@ import {
     SavedReport as InitialSavedReport,
     AwardConfig as InitialAwardConfig,
     KioskMedia,
-    mockUsers as initialMockUsers
+    mockUsers
 } from '@/lib/mock-data';
 import { type User, type Role, useAuth } from './auth-context';
 import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
@@ -230,12 +230,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [kioskMedia, setKioskMedia] = useState<KioskMedia[]>([]);
   const [awardConfig, setAwardConfig] = useState<AwardConfig>(() => JSON.parse(JSON.stringify(initialAwardConfig)));
   
-  const [isDataLoading, setIsDataLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Effect 1: Fetch all data from Firestore once.
+  // Effect 1: Fetch all data from Firestore once on initial load.
   useEffect(() => {
     const fetchData = async () => {
-        setIsDataLoading(true);
+        setIsLoading(true);
         try {
             const firestoreSchools = await getSchoolsFromFirestore();
             if (Object.keys(firestoreSchools).length === 0) {
@@ -249,17 +249,18 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             }
         } catch (error) {
             console.error("Error fetching or seeding school data:", error);
+            // Fallback to mock data on error
             setAllSchoolData(JSON.parse(JSON.stringify(initialSchoolData)));
         } finally {
-            setIsDataLoading(false);
+            setIsLoading(false);
         }
     };
     fetchData();
   }, []);
 
-  // Effect 2: Set the user-specific data slice when auth or data changes.
+  // Effect 2: Set the user-specific data slice once auth and data are ready.
   useEffect(() => {
-    if (isAuthLoading || isDataLoading || !allSchoolData) {
+    if (isAuthLoading || isLoading || !allSchoolData) {
         return;
     }
 
@@ -347,7 +348,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setSchoolProfile(null);
     }
-  }, [user, role, allSchoolData, schoolGroups, isDataLoading, isAuthLoading]);
+  }, [user, role, allSchoolData, schoolGroups, isLoading, isAuthLoading]);
 
 
   const addSchool = async (data: NewSchoolData, groupId?: string) => {
@@ -943,7 +944,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     savedReports,
     addSavedReport,
     kioskMedia, addKioskMedia, removeKioskMedia,
-    isLoading: isDataLoading || isAuthLoading,
+    isLoading: isLoading || isAuthLoading,
   };
 
   return (

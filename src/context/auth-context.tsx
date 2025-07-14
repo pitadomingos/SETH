@@ -26,7 +26,6 @@ interface AuthContextType {
   login: (email: string, pass: string) => Promise<LoginResult>;
   logout: () => void;
   isLoading: boolean;
-  isLoggingIn: boolean; 
   impersonateUser: (usernameOrEmail: string, asRole?: Role) => void;
   revertImpersonation: () => void;
   originalUser: User | null;
@@ -39,7 +38,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [originalRole, setOriginalRole] = useState<Role | null>(null);
@@ -71,8 +69,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
   
   const login = async (email: string, pass: string): Promise<LoginResult> => {
-    setIsLoggingIn(true);
-    
     const userRecord = Object.values(mockUsers).find(u => u.user.email.toLowerCase() === email.toLowerCase());
 
     if (userRecord && userRecord.password === pass) {
@@ -87,11 +83,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setRole(userRecord.user.role);
         sessionStorage.setItem('user', JSON.stringify(loggedInUser));
         sessionStorage.setItem('role', userRecord.user.role);
-        setIsLoggingIn(false);
         return { success: true };
     }
     
-    setIsLoggingIn(false);
     return { success: false, message: 'Invalid username or password' };
   };
 
@@ -104,16 +98,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     router.push('/');
   };
 
-  const impersonateUser = async (usernameOrEmail: string, asRole?: Role) => {
-      // Impersonation logic remains the same
+  const impersonateUser = (usernameOrEmail: string, asRole?: Role) => {
+    const targetUserRecord = Object.values(mockUsers).find(u => u.user.email === usernameOrEmail);
+    if (targetUserRecord) {
+        if (!originalUser) {
+            setOriginalUser(user);
+            setOriginalRole(role);
+            sessionStorage.setItem('originalUser', JSON.stringify(user));
+            sessionStorage.setItem('originalRole', role!);
+        }
+        
+        const impersonatedUser: User = {
+            ...targetUserRecord.user
+        };
+        setUser(impersonatedUser);
+        setRole(impersonatedUser.role);
+        sessionStorage.setItem('user', JSON.stringify(impersonatedUser));
+        sessionStorage.setItem('role', impersonatedUser.role);
+        router.push('/dashboard');
+    }
   };
 
   const revertImpersonation = () => {
-    // Revert logic remains the same
+    if (originalUser && originalRole) {
+        setUser(originalUser);
+        setRole(originalRole);
+        sessionStorage.setItem('user', JSON.stringify(originalUser));
+        sessionStorage.setItem('role', originalRole);
+        setOriginalUser(null);
+        setOriginalRole(null);
+        sessionStorage.removeItem('originalUser');
+        sessionStorage.removeItem('originalRole');
+        router.push('/dashboard');
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, login, logout, isLoading, isLoggingIn, impersonateUser, revertImpersonation, originalUser, originalRole }}>
+    <AuthContext.Provider value={{ user, role, login, logout, isLoading, impersonateUser, revertImpersonation, originalUser, originalRole }}>
       {children}
     </AuthContext.Provider>
   );

@@ -25,9 +25,10 @@ const formSchema = z.object({
 type LoginFormValues = z.infer<typeof formSchema>;
 
 export function LoginForm() {
-  const { login, isLoggingIn } = useAuth();
+  const { login } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
@@ -38,6 +39,7 @@ export function LoginForm() {
   });
 
   async function onSubmit(values: LoginFormValues) {
+    setIsLoggingIn(true);
     const result = await login(values.email, values.password);
 
     if (result.success) {
@@ -49,6 +51,7 @@ export function LoginForm() {
         description: result.message || 'An unknown error occurred.',
       });
       form.setError('root', { message: result.message });
+      setIsLoggingIn(false);
     }
   }
   
