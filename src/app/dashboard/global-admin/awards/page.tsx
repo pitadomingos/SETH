@@ -402,7 +402,7 @@ export default function AwardsPage() {
   const { role, isLoading: authLoading } = useAuth();
   const { allSchoolData, isLoading: schoolLoading, announceAwards, awardConfig } = useSchoolData();
   const router = useRouter();
-  const [hasAnnounced, setHasAnnounced] = useState(false);
+  const [hasBeenAnnounced, setHasBeenAnnounced] = useState(false);
 
   const isLoading = authLoading || schoolLoading;
 
@@ -475,7 +475,7 @@ export default function AwardsPage() {
   
   const handleAnnounceWinners = () => {
     announceAwards();
-    setHasAnnounced(true);
+    setHasBeenAnnounced(true);
   };
   
   const AwardCard = ({ rank, children, prize }) => {
