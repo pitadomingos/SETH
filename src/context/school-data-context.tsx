@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -25,6 +26,7 @@ import {
     ActivityLog,
     Message,
     Attendance,
+    BehavioralAssessment as InitialBehavioralAssessment,
     SavedReport as InitialSavedReport,
     AwardConfig as InitialAwardConfig,
     KioskMedia,
@@ -45,6 +47,7 @@ export type Course = InitialCourse;
 export type Competition = InitialCompetition;
 export type SavedReport = InitialSavedReport;
 export type AwardConfig = InitialAwardConfig;
+export type BehavioralAssessment = InitialBehavioralAssessment;
 export type { Team, Admission, Student, ActivityLog, Message, Teacher, Attendance, Holiday, KioskMedia };
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
@@ -85,6 +88,15 @@ export interface NewSchoolData {
     motto?: string;
     tier: 'Starter' | 'Pro' | 'Premium';
 }
+export interface NewBehavioralAssessmentData {
+    studentId: string;
+    teacherId: string;
+    respect: number;
+    participation: number;
+    socialSkills: number;
+    conduct: number;
+    comment?: string;
+}
 
 
 interface SchoolDataContextType {
@@ -97,6 +109,7 @@ interface SchoolDataContextType {
   studentsData: Student[];
   addStudentFromAdmission: (admission: Admission) => void;
   updateStudentStatus: (schoolId: string, studentId: string, status: Student['status']) => void;
+  addBehavioralAssessment: (data: NewBehavioralAssessmentData) => void;
   teachersData: Teacher[];
   addTeacher: (teacher: Omit<Teacher, 'id' | 'status'>) => void;
   updateTeacher: (teacherId: string, data: Partial<Omit<Teacher, 'id' | 'status'>>) => void;
@@ -231,15 +244,17 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Stage 1: Load all data into memory from the mock file.
-    // This happens only once.
     setIsLoading(true);
+    // Simulate loading data from a persistent source like a database
+    // For the prototype, we load directly from the mock file
+    // The JSON stringify/parse is a deep copy to prevent mutations from affecting the original object
     setAllSchoolData(JSON.parse(JSON.stringify(initialSchoolData)));
     setIsLoading(false);
   }, []);
 
   useEffect(() => {
-    // Stage 2: When the user or the full dataset changes, slice the data for the current user.
+    // This effect runs whenever the logged-in user or the full dataset changes.
+    // It's responsible for slicing the data to only what the current user should see.
     if (!user || !allSchoolData) {
       return;
     }
@@ -250,10 +265,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         const isPremiumAdmin = role === 'Admin' && schoolId && Object.values(schoolGroups).some(g => g.includes(schoolId));
 
         if (role === 'GlobalAdmin' || (role === 'Admin' && isPremiumAdmin)) {
+          // Global Admins and Premium Admins see data from all schools or their group, so we set their specific slices.
           setSchoolProfile(null); 
           setActivityLogs(Object.values(allSchoolData).flatMap(s => s.activityLogs.map(log => ({ ...log, timestamp: new Date(log.timestamp) }))));
           setMessages(Object.values(allSchoolData).flatMap(s => s.messages.map(msg => ({ ...msg, timestamp: new Date(msg.timestamp) }))));
         } else if (role === 'Parent' && user?.email) {
+          // Parents see data aggregated from all schools their children attend.
           const parentEmail = user.email;
           const childrenSchools = new Set<string>();
           const relevantStudents = Object.values(allSchoolData).flatMap(school => 
@@ -263,12 +280,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
                   return { ...s, schoolName: school.profile.name, schoolId: school.profile.id };
               })
           );
-          const childrenIds = new Set(relevantStudents.map(s => s.id));
       
           const schoolIdsArray = Array.from(childrenSchools);
           const relevantData = schoolIdsArray.reduce((acc, currentSchoolId) => {
               const school = allSchoolData[currentSchoolId];
               if (!school) return acc;
+              // Aggregate data from each relevant school
               acc.grades.push(...school.grades.map(g => ({ ...g, date: new Date(g.date) })));
               acc.attendance.push(...school.attendance.map(a => ({...a})));
               acc.finance.push(...school.finance);
@@ -294,12 +311,14 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           setClassesData(relevantData.classes);
           setCoursesData(relevantData.courses);
           
+          // Set profile to the first child's school for context, can be enhanced later
           if (relevantStudents.length > 0 && schoolIdsArray.length > 0 && allSchoolData[schoolIdsArray[0]]) {
             setSchoolProfile(allSchoolData[schoolIdsArray[0]].profile);
           } else {
             setSchoolProfile(null);
           }
         } else if (schoolId && allSchoolData[schoolId]) {
+          // Regular users (Admin, Teacher, Student) see data for their specific school.
           const data = allSchoolData[schoolId];
           setSchoolProfile(data.profile);
           setStudentsData(data.students.map(s => ({ ...s, behavioralAssessments: s.behavioralAssessments.map(b => ({ ...b, date: new Date(b.date) })) })));
@@ -328,6 +347,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           setAudiences(data.audiences);
           setKioskMedia(data.kioskMedia.map(km => ({...km, createdAt: new Date(km.createdAt)})));
         } else {
+          // If no school ID is found, reset to empty state.
           setSchoolProfile(null);
         }
     } catch (e) {
@@ -883,12 +903,33 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const removeKioskMedia = (mediaId: string) => {
     setKioskMedia(prev => prev.filter(m => m.id !== mediaId));
   };
+  
+  const addBehavioralAssessment = (data: NewBehavioralAssessmentData) => {
+    const schoolId = user?.schoolId;
+    if (!schoolId) return;
 
+    const newAssessment: BehavioralAssessment = {
+        id: `BEH${Date.now()}`,
+        date: new Date().toISOString(),
+        ...data
+    };
+    
+    setAllSchoolData(prevAllData => {
+      const newAllData = { ...prevAllData };
+      if (newAllData[schoolId]) {
+        const studentIndex = newAllData[schoolId].students.findIndex(s => s.id === data.studentId);
+        if (studentIndex > -1) {
+          newAllData[schoolId].students[studentIndex].behavioralAssessments.push(newAssessment);
+        }
+      }
+      return newAllData;
+    });
+  };
 
   const value = {
     schoolProfile, updateSchoolProfile,
     allSchoolData, schoolGroups, addSchool, updateSchoolStatus,
-    studentsData, addStudentFromAdmission, updateStudentStatus,
+    studentsData, addStudentFromAdmission, updateStudentStatus, addBehavioralAssessment,
     teachersData, addTeacher, updateTeacher, updateTeacherStatus,
     classesData, addClass,
     coursesData, addCourse,
