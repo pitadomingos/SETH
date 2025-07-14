@@ -260,7 +260,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if (!allSchoolData) {
         return; // Wait for the initial fetch to complete
     }
-
+    
+    // This is now safe to run after the first effect completes.
+    setIsLoading(true);
     try {
         const schoolId = user?.schoolId;
         const isPremiumAdmin = role === 'Admin' && schoolId && Object.values(schoolGroups).some(g => g.includes(schoolId));
