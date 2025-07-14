@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -804,7 +805,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const schoolIdForMessage = (recipient as any).schoolId || user.schoolId || 'global';
     
     const newMessage: Message = {
-      id: `MSG${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      id: `MSG${Date.now()}-${data.recipientUsername}-${(Math.random() + 1).toString(36).substring(7)}`,
       timestamp: new Date().toISOString(),
       schoolId: schoolIdForMessage,
       senderUsername: user.email!,
