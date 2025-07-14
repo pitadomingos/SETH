@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { mockUsers, type SchoolData } from '@/lib/mock-data';
+import { mockUsers, type SchoolData, schoolData } from '@/lib/mock-data';
 
 export type Role = 'GlobalAdmin' | 'Admin' | 'Teacher' | 'Student' | 'Parent';
 
@@ -99,7 +99,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const impersonateUser = (usernameOrEmail: string, asRole?: Role) => {
-    const targetUserRecord = Object.values(mockUsers).find(u => u.user.email === usernameOrEmail);
+    let targetUserRecord = Object.values(mockUsers).find(u => u.user.email === usernameOrEmail);
+    
+    // Fallback for dynamically created school admins not in mockUsers
+    if (!targetUserRecord) {
+        const school = Object.values(schoolData).find(s => s.profile.email === usernameOrEmail);
+        if (school) {
+            targetUserRecord = {
+                user: {
+                    username: school.profile.email,
+                    name: school.profile.head,
+                    role: 'Admin',
+                    email: school.profile.email,
+                    schoolId: school.profile.id,
+                },
+                password: 'admin', // Dummy password
+            };
+        }
+    }
+
     if (targetUserRecord) {
         if (!originalUser) {
             setOriginalUser(user);
