@@ -2,7 +2,7 @@
 'use client';
 import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useSchoolData, Competition, SchoolDataProvider } from '@/context/school-data-context';
+import { useSchoolData, SchoolDataProvider } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, School, Users, Presentation, TrendingUp, Trophy, Award, BarChart2, Briefcase, Lightbulb, Link as LinkIcon, Tv, Medal, Camera } from 'lucide-react';
 import Image from 'next/image';
@@ -25,7 +25,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { AuthProvider } from '@/context/auth-context';
 
 // --- Kiosk-specific Slides ---
 
@@ -242,7 +241,8 @@ function KioskAttendanceSlide({ school }) {
 }
 
 function KioskAcademicsSlide({ school }) {
-    const { teachers, subjects, grades } = school;
+    const { teachers, grades } = school;
+    const subjects = [...new Set(teachers.map(t => t.subject))];
 
     const teacherData = useMemo(() => teachers.map(teacher => {
         const teacherGrades = grades.filter(g => g.subject === teacher.subject).map(g => parseFloat(g.grade));
