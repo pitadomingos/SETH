@@ -1,5 +1,3 @@
-
-
 import { type CreateLessonPlanOutput } from "@/ai/flows/create-lesson-plan";
 import { type GenerateTestOutput } from "@/ai/flows/generate-test";
 import { type Role } from "@/context/auth-context";
@@ -117,7 +115,7 @@ export interface KioskMedia {
   createdAt: string;
 }
 
-interface SchoolData {
+export interface SchoolData {
     profile: SchoolProfile;
     students: Student[];
     teachers: Teacher[];

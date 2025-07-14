@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -36,7 +35,6 @@ import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
 import { GenerateTestOutput } from '@/ai/flows/generate-test';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { getDbInstance, addSchoolToFirestore, getSchoolsFromFirestore } from '@/lib/firebase/firestore-service';
 
 
 export type FinanceRecord = InitialFinanceRecord;
@@ -232,37 +230,21 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   
   const [isLoading, setIsLoading] = useState(true);
 
-  // Effect 1: Fetch all data from Firestore once on initial load.
   useEffect(() => {
-    const fetchData = async () => {
-        setIsLoading(true);
-        try {
-            const firestoreSchools = await getSchoolsFromFirestore();
-            if (Object.keys(firestoreSchools).length === 0) {
-                console.log("Firestore is empty, seeding with initial mock data...");
-                for (const schoolId in initialSchoolData) {
-                    await addSchoolToFirestore(initialSchoolData[schoolId].profile, schoolId, JSON.parse(JSON.stringify(initialSchoolData[schoolId])));
-                }
-                setAllSchoolData(JSON.parse(JSON.stringify(initialSchoolData)));
-            } else {
-                setAllSchoolData(firestoreSchools);
-            }
-        } catch (error) {
-            console.error("Error fetching or seeding school data:", error);
-            setAllSchoolData(JSON.parse(JSON.stringify(initialSchoolData)));
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    fetchData();
+    // Stage 1: Load all data into memory from the mock file.
+    // This happens only once.
+    setIsLoading(true);
+    setAllSchoolData(JSON.parse(JSON.stringify(initialSchoolData)));
+    setIsLoading(false);
   }, []);
 
-  // Effect 2: Set the user-specific data slice once auth and data are ready.
   useEffect(() => {
-    if (!allSchoolData || isLoading) {
-        return; // Wait for the initial fetch to complete
+    // Stage 2: When the user or the full dataset changes, slice the data for the current user.
+    if (!user || !allSchoolData) {
+      return;
     }
     
+    setIsLoading(true);
     try {
         const schoolId = user?.schoolId;
         const isPremiumAdmin = role === 'Admin' && schoolId && Object.values(schoolGroups).some(g => g.includes(schoolId));
@@ -350,8 +332,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         }
     } catch (e) {
         console.error("Error slicing school data for user:", e);
+    } finally {
+        setIsLoading(false);
     }
-  }, [user, role, allSchoolData, schoolGroups, isLoading]);
+  }, [user, role, allSchoolData, schoolGroups]);
 
 
   const addSchool = async (data: NewSchoolData, groupId?: string) => {
@@ -381,7 +365,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       kioskMedia: [],
       activityLogs: [{
         id: `LOG${schoolId}${Date.now()}`,
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         schoolId: schoolId,
         user: user?.name || 'System Admin',
         role: role || 'GlobalAdmin',
@@ -391,37 +375,27 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       messages: [], savedReports: [],
     };
 
-    try {
-        await addSchoolToFirestore(newSchoolProfile, schoolId, newSchoolData);
-        setAllSchoolData(prev => ({
-          ...prev,
-          [schoolId]: newSchoolData,
-        }));
+    setAllSchoolData(prev => ({
+      ...prev,
+      [schoolId]: newSchoolData,
+    }));
 
-        if (groupId) {
-          setSchoolGroups(prev => {
-            const newGroups = { ...prev };
-            if (newGroups[groupId]) {
-              newGroups[groupId] = [...newGroups[groupId], schoolId];
-            } else {
-              newGroups[groupId] = [schoolId];
-            }
-            return newGroups;
-          });
+    if (groupId) {
+      setSchoolGroups(prev => {
+        const newGroups = { ...prev };
+        if (newGroups[groupId]) {
+          newGroups[groupId] = [...newGroups[groupId], schoolId];
+        } else {
+          newGroups[groupId] = [schoolId];
         }
-        
-        toast({
-          title: 'School Created!',
-          description: `School "${data.name}" has been added to Firestore.`,
-        });
-    } catch (e) {
-        console.error("Error adding school to Firestore: ", e);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Failed to create school in the database.",
-        });
+        return newGroups;
+      });
     }
+    
+    toast({
+      title: 'School Created!',
+      description: `School "${data.name}" has been added.`,
+    });
   };
 
   const updateSchoolStatus = (schoolId: string, status: SchoolProfile['status']) => {
@@ -451,7 +425,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     
     const logEntry: ActivityLog = {
       id: `LOGG${Date.now()}`,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
       schoolId: schoolId,
       user: user?.name || 'Global Admin',
       role: role || 'GlobalAdmin',
@@ -479,7 +453,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
     const logEntry: ActivityLog = {
       id: `LOGG${Date.now()}`,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
       schoolId: schoolId,
       user: user?.name || 'Global Admin',
       role: role || 'GlobalAdmin',
@@ -566,7 +540,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const addGrade = (data: NewGradeData) => {
-    const newGrade: Grade = { studentId: data.studentId, subject: data.subject, grade: data.grade as Grade['grade'], date: new Date() };
+    const newGrade: Grade = { studentId: data.studentId, subject: data.subject, grade: data.grade as Grade['grade'], date: new Date().toISOString() };
     setGrades(prev => [newGrade, ...prev]);
   };
 
@@ -644,8 +618,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const removePlayerFromTeam = (teamId: string, studentId: string) => { setTeamsData(prev => prev.map(team => team.id === teamId ? { ...team, playerIds: team.playerIds.filter(id => id !== studentId) } : team)); };
 
   const addCompetition = (data: NewCompetitionData) => {
-    const newCompetition: Competition = { id: `COMP${Date.now()}`, ...data, };
-    setCompetitionsData(prev => [...prev, newCompetition].sort((a,b) => a.date.getTime() - b.date.getTime()));
+    const newCompetition: Competition = { id: `COMP${Date.now()}`, date: data.date.toISOString(), ...data, };
+    setCompetitionsData(prev => [...prev, newCompetition].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
   };
 
   const addCompetitionResult = (competitionId: string, scores: { ourScore: number; opponentScore: number; }) => {
@@ -658,8 +632,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addEvent = (data: NewEventData) => {
-    const newEvent: SchoolEvent = { id: `EVT${Date.now()}`, ...data, };
-    setEvents(prev => [...prev, newEvent].sort((a,b) => a.date.getTime() - b.date.getTime()));
+    const newEvent: SchoolEvent = { id: `EVT${Date.now()}`, date: data.date.toISOString(), ...data, };
+    setEvents(prev => [...prev, newEvent].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
   };
 
   const announceAwards = () => {
@@ -678,7 +652,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             const newSchoolEvent = {
                 ...awardEvent,
                 id: `EVT${Date.now()}-${schoolId}`,
-                date: new Date(),
+                date: new Date().toISOString(),
             };
             school.events = [...school.events, newSchoolEvent];
         });
@@ -688,7 +662,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setActivityLogs(prev => {
         const logEntry: ActivityLog = {
             id: `LOGG${Date.now()}`,
-            timestamp: new Date(),
+            timestamp: new Date().toISOString(),
             schoolId: 'global',
             user: user?.name || 'Global Admin',
             role: role || 'GlobalAdmin',
@@ -706,13 +680,13 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
 
   const addTerm = (data: NewTermData) => {
-    const newTerm: AcademicTerm = { id: `TERM${Date.now()}`, ...data };
-    setTerms(prev => [...prev, newTerm].sort((a,b) => a.startDate.getTime() - b.startDate.getTime()));
+    const newTerm: AcademicTerm = { id: `TERM${Date.now()}`, startDate: data.startDate.toISOString(), endDate: data.endDate.toISOString(), name: data.name };
+    setTerms(prev => [...prev, newTerm].sort((a,b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()));
   }
 
   const addHoliday = (data: NewHolidayData) => {
-    const newHoliday: Holiday = { id: `HOL${Date.now()}`, ...data };
-    setHolidays(prev => [...prev, newHoliday].sort((a,b) => a.date.getTime() - b.date.getTime()));
+    const newHoliday: Holiday = { id: `HOL${Date.now()}`, date: data.date.toISOString(), name: data.name };
+    setHolidays(prev => [...prev, newHoliday].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
   }
 
   const addCourse = (data: NewCourseData) => {
@@ -723,7 +697,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addLessonPlan = (data: NewLessonPlanData) => {
     const newPlan: LessonPlan = {
         id: `LP${Date.now()}`,
-        createdAt: new Date(),
+        createdAt: new Date().toISOString(),
         ...data,
     };
     setLessonPlans(prev => [newPlan, ...prev]);
@@ -732,7 +706,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addSavedTest = (data: NewSavedTest) => {
     const newTest: SavedTest = {
       id: `TEST${Date.now()}`,
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
       ...data,
     };
     setSavedTests(prev => [newTest, ...prev]);
@@ -750,7 +724,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addDeployedTest = (data: NewDeployedTestData) => {
     const newTest: DeployedTest = {
         id: `DTEST${Date.now()}`,
-        createdAt: new Date(),
+        createdAt: new Date().toISOString(),
+        deadline: data.deadline.toISOString(),
         submissions: [],
         ...data,
     };
@@ -810,7 +785,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     
     const newMessage: Message = {
       id: `MSG${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
       schoolId: schoolIdForMessage,
       senderUsername: user.email!,
       senderName: user.name!,
@@ -888,7 +863,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addSavedReport = (report: Omit<SavedReport, 'id' | 'generatedAt'>) => {
     const newReport: SavedReport = {
       id: `REP${Date.now()}`,
-      generatedAt: new Date(),
+      generatedAt: new Date().toISOString(),
       ...report,
     };
     setSavedReports(prev => [newReport, ...prev]);
@@ -899,7 +874,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if (!schoolId) return;
     const newMedia: KioskMedia = {
       id: `K${Date.now()}`,
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
       ...media,
     };
     setKioskMedia(prev => [newMedia, ...prev]);
