@@ -38,24 +38,22 @@ const completedTasks = [
   'Upgraded Events page with an interactive calendar and event creation.',
   'Upgraded Finance module with partial payments, ad-hoc transaction creation, and expense tracking.',
   'User authentication with roles (Global Admin, Admin, Teacher, Student, Parent).',
-  'Configurable annual awards with prize management and system-wide announcements.'
+  'Configurable annual awards with prize management and system-wide announcements.',
+  'Added two new campuses to the MiniArte school group with full data.',
+  'Localized all names and locations to a Portuguese/Mozambican context.',
+  'Fixed parent impersonation logic for Global Admins.',
+  'Added "Download as PDF" functionality to all documentation pages.',
+  'Corrected and enhanced the multi-school "Manage Schools" dashboard for Premium Admins.'
 ];
 
 const upcomingFeatures = [
-  // Phase 1: Production Readiness
   'Connect mock data to a real database (e.g., Firestore) to enable persistence.',
   'Implement full CRUD (Create, Read, Update, Delete) on all management pages.',
-  'Develop a dedicated "Finance Proposal" page detailing payment gateway integration, automated invoicing, and billing cycles.',
-
-  // Phase 2: Core Feature Enhancement
   'Build out analytics for the student test-taking results for teachers.',
   'Implement a site-wide notification and communication hub.',
   'Enhance mobile-first responsive design for a seamless experience on phones and tablets.',
-
-  // Phase 3: Future Growth
   'Introduce student-centric features like goal setting and digital portfolios.',
   'Develop district, provincial, and national data views for higher-level administration.',
-  'Plan and scope development for native Android and iOS applications.',
 ];
 
 export default function TodoListPage() {

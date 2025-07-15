@@ -2,7 +2,7 @@
 'use client';
 import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useSchoolData, SchoolDataProvider } from '@/context/school-data-context';
+import { useSchoolData } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, School, Users, Presentation, TrendingUp, Trophy, Award, BarChart2, Briefcase, Lightbulb, Link as LinkIcon, Tv, Medal, Camera } from 'lucide-react';
 import Image from 'next/image';
@@ -25,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { SchoolDataProvider } from '@/context/school-data-context';
 
 // --- Kiosk-specific Slides ---
 
@@ -485,7 +486,7 @@ function KioskPage() {
     allPossibleSlides.push({ id: 'awards', enabled: kioskConfig?.showAwards, component: <KioskAwardsSlide school={school} allSchoolData={allSchoolData} /> });
     
     const winnerSlide = <KioskAwardWinnerSlide school={school} allSchoolData={allSchoolData}/>;
-    if (winnerSlide.props.school) { // Only consider adding if the school is a winner
+    if (winnerSlide.props.school && winnerSlide.props.allSchoolData) { // Only consider adding if the school is a winner
         allPossibleSlides.push({ id: 'winner', enabled: kioskConfig?.showAwardWinner, component: winnerSlide });
     }
     
