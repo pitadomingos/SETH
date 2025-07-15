@@ -265,8 +265,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         const schoolId = user?.schoolId;
         const isPremiumAdmin = role === 'Admin' && schoolId && Object.values(schoolGroups).some(g => g.includes(schoolId));
 
-        if (role === 'GlobalAdmin' || (role === 'Admin' && isPremiumAdmin)) {
-          // Global Admins and Premium Admins see data from all schools or their group, so we set their specific slices.
+        if (role === 'GlobalAdmin') {
+          // Global Admins see data from all schools or their group, so we set their specific slices.
           setSchoolProfile(null); 
           setActivityLogs(Object.values(allSchoolData).flatMap(s => s.activityLogs.map(log => ({ ...log, timestamp: new Date(log.timestamp) }))));
           setMessages(Object.values(allSchoolData).flatMap(s => s.messages.map(msg => ({ ...msg, timestamp: new Date(msg.timestamp) }))));
@@ -319,7 +319,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             setSchoolProfile(null);
           }
         } else if (schoolId && allSchoolData[schoolId]) {
-          // Regular users (Admin, Teacher, Student) see data for their specific school.
+          // Regular users (Admin, Teacher, Student) and Premium Admins for their own school context
           const data = allSchoolData[schoolId];
           setSchoolProfile(data.profile);
           setStudentsData(data.students.map(s => ({ ...s, behavioralAssessments: s.behavioralAssessments.map(b => ({ ...b, date: new Date(b.date) })) })));
@@ -805,7 +805,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const schoolIdForMessage = (recipient as any).schoolId || user.schoolId || 'global';
     
     const newMessage: Message = {
-      id: `MSG${Date.now()}-${data.recipientUsername}-${(Math.random() + 1).toString(36).substring(7)}`,
+      id: `MSG${Date.now()}${data.recipientUsername}${Math.random().toString(36).substring(2, 9)}`,
       timestamp: new Date().toISOString(),
       schoolId: schoolIdForMessage,
       senderUsername: user.email!,
