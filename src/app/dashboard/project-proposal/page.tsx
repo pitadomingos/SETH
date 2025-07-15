@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud } from 'lucide-react';
+import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download } from 'lucide-react';
 import { useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -23,9 +23,21 @@ export default function ProjectProposalPage() {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
   
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in-50">
-      <header className="text-center">
+      <header className="text-center print:hidden">
+        <h2 className="text-4xl font-bold tracking-tight text-primary">Project Proposal: EduManage</h2>
+        <p className="text-xl text-muted-foreground mt-2">A Catalyst for Educational Transformation in Southern Africa</p>
+         <div className="mt-4 flex justify-center">
+            <Button onClick={handlePrint}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+        </div>
+      </header>
+
+       <header className="text-center hidden print:block mb-8">
         <h2 className="text-4xl font-bold tracking-tight text-primary">Project Proposal: EduManage</h2>
         <p className="text-xl text-muted-foreground mt-2">A Catalyst for Educational Transformation in Southern Africa</p>
       </header>
@@ -184,7 +196,7 @@ export default function ProjectProposalPage() {
                 <p className="text-sm text-muted-foreground">Launch a pilot program with a select group of schools in Mozambique to gather feedback and refine features. Initiate targeted marketing campaigns for a full market launch.</p>
               </div>
             </div>
-            <div className="mt-6 flex justify-center">
+            <div className="mt-6 flex justify-center print:hidden">
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="secondary">

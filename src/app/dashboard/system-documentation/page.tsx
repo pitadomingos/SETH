@@ -3,8 +3,9 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Database, Layers, Cloud, KeyRound, Server, UploadCloud, GitBranch, FolderTree, Puzzle, UserCheck, BrainCircuit } from 'lucide-react';
+import { Loader2, Database, Layers, Cloud, KeyRound, Server, UploadCloud, GitBranch, FolderTree, Puzzle, UserCheck, BrainCircuit, Download } from 'lucide-react';
 import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 
 export default function SystemDocumentationPage() {
   const { role, isLoading } = useAuth();
@@ -16,6 +17,7 @@ export default function SystemDocumentationPage() {
     }
   }, [role, isLoading, router]);
 
+
   if (isLoading || role !== 'GlobalAdmin') {
     return (
       <div className="flex h-full items-center justify-center">
@@ -24,11 +26,18 @@ export default function SystemDocumentationPage() {
     );
   }
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in-50">
-      <header>
-        <h2 className="text-3xl font-bold tracking-tight">System Documentation</h2>
-        <p className="text-muted-foreground">A detailed technical overview of the EduManage application.</p>
+      <header className="flex flex-wrap items-center justify-between gap-2 print:hidden">
+        <div>
+            <h2 className="text-3xl font-bold tracking-tight">System Documentation</h2>
+            <p className="text-muted-foreground">A detailed technical overview of the EduManage application.</p>
+        </div>
+        <Button onClick={handlePrint}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
       </header>
       
       <Card>

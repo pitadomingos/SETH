@@ -3,8 +3,9 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2, Circle, Clock, Loader2 } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Loader2, Download } from 'lucide-react';
 import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 
 const completedTasks = [
   'AI Test Generator for teachers with a save/deploy workflow.',
@@ -72,11 +73,18 @@ export default function TodoListPage() {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in-50">
-      <header>
-        <h2 className="text-3xl font-bold tracking-tight">Project Progress & To-Do List</h2>
-        <p className="text-muted-foreground">A tracker for what's done and what's next for the EduManage app.</p>
+      <header className="flex flex-wrap items-center justify-between gap-2 print:hidden">
+        <div>
+            <h2 className="text-3xl font-bold tracking-tight">Project Progress & To-Do List</h2>
+            <p className="text-muted-foreground">A tracker for what's done and what's next for the EduManage app.</p>
+        </div>
+        <Button onClick={handlePrint}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
       </header>
       
       <div className="grid gap-6 lg:grid-cols-2">
@@ -117,5 +125,3 @@ export default function TodoListPage() {
     </div>
   );
 }
-
-  

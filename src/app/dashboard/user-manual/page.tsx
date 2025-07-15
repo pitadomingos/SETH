@@ -2,9 +2,10 @@
 'use client';
 import { useAuth, Role } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2, List, Gem, MonitorPlay } from 'lucide-react';
+import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2, List, Gem, MonitorPlay, Download } from 'lucide-react';
 import { type LucideIcon } from 'lucide-react';
 import { roleLinks, type NavLink } from '@/components/layout/app-sidebar';
+import { Button } from '@/components/ui/button';
 
 const userGuides: Record<string, { icon: LucideIcon, title: string, points: string[] }> = {
   GlobalAdmin: {
@@ -100,72 +101,71 @@ export default function UserManualPage() {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
   
-  if (role === 'GlobalAdmin') {
-    return (
-       <div className="space-y-6 animate-in fade-in-50">
-        <header>
-          <h2 className="text-3xl font-bold tracking-tight">System User Manuals</h2>
-          <p className="text-muted-foreground">A comprehensive guide for all user roles in the EduManage system.</p>
-        </header>
-        <div className="space-y-6">
-          {Object.entries(userGuides).map(([roleKey, guide]) => {
-            const GuideIcon = guide.icon;
-            const menuItems = roleLinks[roleKey as Role] || [];
-            const uniqueMenuItems = menuItems.filter((link, index, self) =>
-              index === self.findIndex((l) => l.href === link.href)
-            );
-
-            return (
-              <Card key={guide.title}>
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <GuideIcon className="h-6 w-6 text-primary" />
-                    <CardTitle className="text-2xl">{guide.title}</CardTitle>
-                  </div>
-                  <CardDescription>Key features and functionalities available to this role.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-8 md:grid-cols-2">
-                  <div>
-                    <h4 className="font-semibold mb-3">Core Features</h4>
-                    <ul className="list-disc space-y-3 pl-6 text-muted-foreground">
-                      {guide.points.map((point, index) => (
-                        <li key={index}>{point}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold mb-3 flex items-center gap-2"><List className="h-4 w-4"/> Sidebar Menu</h4>
-                    <div className="space-y-2 p-3 bg-muted rounded-md">
-                      {uniqueMenuItems.map((item, index) => {
-                        const ItemIcon = item.icon;
-                        return (
-                          <div key={index} className="flex items-center gap-3 text-sm">
-                            <ItemIcon className="h-4 w-4 text-muted-foreground" />
-                            <span>{item.label}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
+  const handlePrint = () => {
+    window.print();
+  };
 
   const guide = role ? userGuides[role] : null;
   const GuideIcon = guide?.icon;
   
   return (
     <div className="space-y-6 animate-in fade-in-50">
-      <header>
-        <h2 className="text-3xl font-bold tracking-tight">User Manual</h2>
-        <p className="text-muted-foreground">A guide on how to use EduManage, tailored for your role. The application is designed to be fully responsive on desktops, tablets, and mobile devices.</p>
+      <header className="flex flex-wrap items-center justify-between gap-2 print:hidden">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">User Manual</h2>
+          <p className="text-muted-foreground">A guide on how to use EduManage, tailored for your role.</p>
+        </div>
+        <Button onClick={handlePrint}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
       </header>
+      
+      {role === 'GlobalAdmin' ? (
+       <div className="space-y-6">
+        <p className="text-muted-foreground print:hidden">A comprehensive guide for all user roles in the EduManage system.</p>
+        {Object.entries(userGuides).map(([roleKey, guide]) => {
+          const GuideIcon = guide.icon;
+          const menuItems = roleLinks[roleKey as Role] || [];
+          const uniqueMenuItems = menuItems.filter((link, index, self) =>
+            index === self.findIndex((l) => l.href === link.href)
+          );
 
+          return (
+            <Card key={guide.title} className="break-inside-avoid">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <GuideIcon className="h-6 w-6 text-primary" />
+                  <CardTitle className="text-2xl">{guide.title}</CardTitle>
+                </div>
+                <CardDescription>Key features and functionalities available to this role.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-8 md:grid-cols-2">
+                <div>
+                  <h4 className="font-semibold mb-3">Core Features</h4>
+                  <ul className="list-disc space-y-3 pl-6 text-muted-foreground">
+                    {guide.points.map((point, index) => (
+                      <li key={index}>{point}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-3 flex items-center gap-2"><List className="h-4 w-4"/> Sidebar Menu</h4>
+                  <div className="space-y-2 p-3 bg-muted rounded-md">
+                    {uniqueMenuItems.map((item, index) => {
+                      const ItemIcon = item.icon;
+                      return (
+                        <div key={index} className="flex items-center gap-3 text-sm">
+                          <ItemIcon className="h-4 w-4 text-muted-foreground" />
+                          <span>{item.label}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    ) : (
       <Card>
         {guide && GuideIcon ? (
            <>
@@ -174,7 +174,7 @@ export default function UserManualPage() {
                   <GuideIcon className="h-6 w-6 text-primary" />
                   <CardTitle className="text-2xl">{guide.title}</CardTitle>
                 </div>
-                <CardDescription>Key features and functionalities available to you.</CardDescription>
+                <CardDescription>Key features and functionalities available to you. The application is designed to be fully responsive on desktops, tablets, and mobile devices.</CardDescription>
             </CardHeader>
             <CardContent>
                 <ul className="list-disc space-y-3 pl-6 text-muted-foreground">
@@ -190,6 +190,7 @@ export default function UserManualPage() {
             </CardContent>
         )}
       </Card>
+    )}
     </div>
   );
 }
