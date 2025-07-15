@@ -269,6 +269,36 @@ const miniarteActivityLogs: ActivityLog[] = [
 ];
 const miniarteMessages: Message[] = [];
 
+// --- Data for School 4: MiniArte Beira Campus ---
+const beiraProfile: SchoolProfile = { id: 'miniarte-beira', name: 'MiniArte - Beira Campus', head: 'Sra. Carolina Varela', address: 'Rua da Manga 123, Beira, Mozambique', phone: '+258 84 111 2233', email: 'c.varela@miniarte.edu.mz', motto: 'Criatividade sem Fronteiras', logoUrl: 'https://placehold.co/100x100.png', tier: 'Premium', gradingSystem: 'Letter', currency: 'ZAR', status: 'Active', gradeCapacity: defaultGradeCapacity, kioskConfig: defaultKioskConfig };
+const beiraStudents: Student[] = [
+    { id: 'S301', name: 'Lucas Mendes', grade: '8', class: 'A', email: 'l.mendes@miniarte.com', phone: '+258 84 301 3010', address: 'Bairro do Estoril', parentName: 'Fernanda Mendes', parentEmail: 'f.mendes@family.com', dateOfBirth: '2010-01-15', status: 'Active', sex: 'Male', behavioralAssessments: [] },
+    { id: 'S302', name: 'Beatriz Lima', grade: '7', class: 'B', email: 'b.lima@miniarte.com', phone: '+258 84 302 3020', address: 'Ponta Gea', parentName: 'Ricardo Lima', parentEmail: 'r.lima@family.com', dateOfBirth: '2011-03-22', status: 'Active', sex: 'Female', behavioralAssessments: [] },
+];
+const beiraTeachers: Teacher[] = [
+    { id: 'T301', name: 'Sr. Bruno Reis', subject: 'Artes', email: 'b.reis@miniarte.com', phone: '+258 82 401 4010', address: 'Rua das Artes 10', experience: '7 years', qualifications: 'Licenciatura em Belas Artes', status: 'Active', sex: 'Male' },
+    { id: 'T302', name: 'Sra. Diana Magalhães', subject: 'Música', email: 'd.magalhaes@miniarte.com', phone: '+258 82 402 4020', address: 'Av. da Harmonia 20', experience: '9 years', qualifications: 'Mestrado em Música', status: 'Active', sex: 'Female' },
+];
+const beiraGrades: Grade[] = [
+    { studentId: 'S301', subject: 'Artes', grade: '19', date: new Date(now.getFullYear(), now.getMonth() - 1).toISOString() },
+    { studentId: 'S302', subject: 'Música', grade: '17', date: new Date(now.getFullYear(), now.getMonth() - 1).toISOString() },
+];
+
+// --- Data for School 5: MiniArte Nampula Campus ---
+const nampulaProfile: SchoolProfile = { id: 'miniarte-nampula', name: 'MiniArte - Nampula Campus', head: 'Sr. Vicente Pinto', address: 'Av. do Trabalho 456, Nampula, Mozambique', phone: '+258 84 444 5566', email: 'v.pinto@miniarte.edu.mz', motto: 'Inovação e Expressão', logoUrl: 'https://placehold.co/100x100.png', tier: 'Premium', gradingSystem: 'Letter', currency: 'ZAR', status: 'Active', gradeCapacity: defaultGradeCapacity, kioskConfig: defaultKioskConfig };
+const nampulaStudents: Student[] = [
+    { id: 'S401', name: 'Rafael Costa', grade: '9', class: 'A', email: 'r.costa@miniarte.com', phone: '+258 84 401 4010', address: 'Bairro de Muatala', parentName: 'Júlia Costa', parentEmail: 'j.costa@family.com', dateOfBirth: '2009-05-30', status: 'Active', sex: 'Male', behavioralAssessments: [] },
+    { id: 'S402', name: 'Laura Azevedo', grade: '8', class: 'C', email: 'l.azevedo@miniarte.com', phone: '+258 84 402 4020', address: 'Rua dos Continuadores', parentName: 'Sérgio Azevedo', parentEmail: 's.azevedo@family.com', dateOfBirth: '2010-07-11', status: 'Active', sex: 'Female', behavioralAssessments: [] },
+];
+const nampulaTeachers: Teacher[] = [
+    { id: 'T401', name: 'Sra. Clara Furtado', subject: 'Dança', email: 'c.furtado@miniarte.com', phone: '+258 82 501 5010', address: 'Rua do Ritmo 30', experience: '12 years', qualifications: 'Licenciatura em Dança', status: 'Active', sex: 'Female' },
+    { id: 'T402', name: 'Sr. Matias Neves', subject: 'Teatro', email: 'm.neves@miniarte.com', phone: '+258 82 502 5020', address: 'Av. do Palco 40', experience: '10 years', qualifications: 'Mestrado em Artes Cénicas', status: 'Active', sex: 'Male' },
+];
+const nampulaGrades: Grade[] = [
+    { studentId: 'S401', subject: 'Teatro', grade: '16', date: new Date(now.getFullYear(), now.getMonth() - 1).toISOString() },
+    { studentId: 'S402', subject: 'Dança', grade: '18', date: new Date(now.getFullYear(), now.getMonth() - 1).toISOString() },
+];
+
 
 export const schoolData: Record<string, SchoolData> = {
   northwood: {
@@ -361,10 +391,36 @@ export const schoolData: Record<string, SchoolData> = {
     assets: [ { id: 'MAP-ASSET001', name: 'Quadro Inteligente', category: 'Equipamento AV', status: 'In Use', location: 'H1', assignedTo: 'Sr. David Lopes' }, ],
     assignments: [ { id: 'MAP-A001', title: 'Ensaio sobre Arte Renascentista', subject: 'História', grade: '9', dueDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(), status: 'pending' }, ],
   },
+  'miniarte-beira': {
+    profile: beiraProfile,
+    students: beiraStudents,
+    teachers: beiraTeachers,
+    classes: [], courses: [], lessonPlans: [], savedTests: [], deployedTests: [], teams: [],
+    grades: beiraGrades, attendance: [], finance: [], admissions: [], exams: [], assets: [],
+    assignments: [], events: [], terms: [], holidays: [], activityLogs: [], messages: [],
+    savedReports: [], kioskMedia: [],
+    feeDescriptions: ['Taxa de Inscrição', 'Mensalidade'],
+    audiences: ['Todos os Alunos', 'Pais', 'Professores'],
+    expenseCategories: ['Material de Arte', 'Salários', 'Serviços Públicos'],
+    expenses: [], competitions: [],
+  },
+  'miniarte-nampula': {
+    profile: nampulaProfile,
+    students: nampulaStudents,
+    teachers: nampulaTeachers,
+    classes: [], courses: [], lessonPlans: [], savedTests: [], deployedTests: [], teams: [],
+    grades: nampulaGrades, attendance: [], finance: [], admissions: [], exams: [], assets: [],
+    assignments: [], events: [], terms: [], holidays: [], activityLogs: [], messages: [],
+    savedReports: [], kioskMedia: [],
+    feeDescriptions: ['Taxa de Inscrição', 'Mensalidade'],
+    audiences: ['Todos os Alunos', 'Pais', 'Professores'],
+    expenseCategories: ['Figurinos', 'Salários', 'Serviços Públicos'],
+    expenses: [], competitions: [],
+  },
 };
 
 export const schoolGroups = {
-  educorp: ['maplewood']
+  educorp: ['maplewood', 'miniarte-beira', 'miniarte-nampula']
 };
 
 
@@ -383,6 +439,14 @@ export const mockUsers = {
   },
   admin3: {
     user: { username: 'admin3', name: 'Sra. Eleonor Dias', role: 'Admin' as Role, email: 'e.dias@miniarte.edu.mz', schoolId: 'maplewood' },
+    password: 'admin'
+  },
+  admin4: {
+    user: { username: 'admin4', name: 'Sra. Carolina Varela', role: 'Admin' as Role, email: 'c.varela@miniarte.edu.mz', schoolId: 'miniarte-beira' },
+    password: 'admin'
+  },
+  admin5: {
+    user: { username: 'admin5', name: 'Sr. Vicente Pinto', role: 'Admin' as Role, email: 'v.pinto@miniarte.edu.mz', schoolId: 'miniarte-nampula' },
     password: 'admin'
   },
   teacher1: {
@@ -408,5 +472,13 @@ export const mockUsers = {
   student3: {
     user: { username: 'student3', name: 'Diogo Ribeiro', role: 'Student' as Role, email: 'd.ribeiro@edumanage.com', schoolId: 'northwood' },
     password: 'student'
+  },
+  parent1: {
+    user: { username: 'parent1', name: 'Maria Silva', role: 'Parent' as Role, email: 'm.silva@family.com' },
+    password: 'parent',
+  },
+  parent2: {
+    user: { username: 'parent2', name: 'Amélia Martins', role: 'Parent' as Role, email: 'a.martins@family.com' },
+    password: 'parent',
   }
 };
