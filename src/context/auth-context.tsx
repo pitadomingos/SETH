@@ -102,7 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let targetUserRecord = Object.values(mockUsers).find(u => u.user.email === usernameOrEmail);
     
     // Fallback for dynamically created school admins not in mockUsers
-    if (!targetUserRecord) {
+    if (!targetUserRecord && asRole === 'Admin') {
         const school = Object.values(schoolData).find(s => s.profile.email === usernameOrEmail);
         if (school) {
             targetUserRecord = {
@@ -114,6 +114,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     schoolId: school.profile.id,
                 },
                 password: 'admin', // Dummy password
+            };
+        }
+    }
+
+    // Fallback for parent users who are not in mockUsers
+    if (!targetUserRecord && asRole === 'Parent') {
+        const parentStudent = Object.values(schoolData)
+            .flatMap(s => s.students)
+            .find(s => s.parentEmail === usernameOrEmail);
+        
+        if (parentStudent) {
+             targetUserRecord = {
+                user: {
+                    username: parentStudent.parentEmail,
+                    name: parentStudent.parentName,
+                    role: 'Parent',
+                    email: parentStudent.parentEmail,
+                    schoolId: undefined, // Parents are not tied to a single school
+                },
+                password: 'parent', // Dummy password
             };
         }
     }
