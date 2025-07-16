@@ -3,10 +3,21 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gem } from 'lucide-react';
-import Link from 'next/link';
+import { Gem, MessageSquare } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export function FeatureLock({ featureName }: { featureName: string }) {
+  const router = useRouter();
+
+  const handleContactAdmin = () => {
+    const prefillData = {
+      subject: `Inquiry About Upgrading to Pro Plan`,
+      body: `Hello,\n\nI am interested in using the "${featureName}" feature and would like to inquire about upgrading our school's subscription to the Pro plan.\n\nPlease provide me with more information on the benefits and pricing.\n\nThank you.`
+    };
+    sessionStorage.setItem('prefillMessage', JSON.stringify(prefillData));
+    router.push('/dashboard/messaging');
+  };
+
   return (
     <div className="flex items-center justify-center h-full">
         <Card className="w-full max-w-md text-center">
@@ -20,9 +31,10 @@ export function FeatureLock({ featureName }: { featureName: string }) {
                 </CardDescription>
             </CardHeader>
             <CardFooter>
-                <Link href="/dashboard/school-profile" className="w-full">
-                    <Button className="w-full">Upgrade Your Plan</Button>
-                </Link>
+                 <Button className="w-full" onClick={handleContactAdmin}>
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Contact Admin to Upgrade
+                </Button>
             </CardFooter>
         </Card>
     </div>

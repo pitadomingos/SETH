@@ -30,7 +30,13 @@ const messageSchema = z.object({
 });
 type MessageFormValues = z.infer<typeof messageSchema>;
 
-function ComposeMessageDialog({ open, onOpenChange, replyTo }: { open?: boolean, onOpenChange?: (open: boolean) => void, replyTo?: Message }) {
+interface PrefillData {
+  recipientUsername?: string;
+  subject?: string;
+  body?: string;
+}
+
+function ComposeMessageDialog({ open, onOpenChange, replyTo, prefillData }: { open?: boolean, onOpenChange?: (open: boolean) => void, replyTo?: Message, prefillData?: PrefillData }) {
   const { addMessage, teachersData, studentsData, schoolProfile, coursesData, classesData } = useSchoolData();
   const { user, role } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -40,14 +46,18 @@ function ComposeMessageDialog({ open, onOpenChange, replyTo }: { open?: boolean,
   });
   
   useEffect(() => {
-    form.reset({
-      recipientUsername: replyTo ? replyTo.senderUsername : '',
-      subject: replyTo ? `Re: ${replyTo.subject}` : '',
-      body: '',
-      attachmentName: '',
-      attachmentUrl: '',
-    });
-  }, [replyTo, open, form]);
+    let defaultValues: Partial<MessageFormValues> = { body: '', attachmentName: '', attachmentUrl: '' };
+
+    if (replyTo) {
+      defaultValues.recipientUsername = replyTo.senderUsername;
+      defaultValues.subject = `Re: ${replyTo.subject}`;
+    } else if (prefillData) {
+      defaultValues.recipientUsername = prefillData.recipientUsername;
+      defaultValues.subject = prefillData.subject;
+      defaultValues.body = prefillData.body;
+    }
+    form.reset(defaultValues);
+  }, [replyTo, prefillData, open, form]);
 
   const recipientList = useMemo(() => {
     if (!user || !role) return [];
@@ -151,7 +161,7 @@ function ComposeMessageDialog({ open, onOpenChange, replyTo }: { open?: boolean,
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Recipient</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!!replyTo}>
+                  <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value} disabled={!!replyTo || !!prefillData?.recipientUsername}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select a recipient..." /></SelectTrigger></FormControl>
                     <SelectContent>{recipientList.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
                   </Select>
@@ -212,10 +222,11 @@ function ViewMessageDialog({ message, onReply }: { message: Message, onReply: (m
 
 export default function MessagingPage() {
   const { role, user, isLoading: authLoading } = useAuth();
-  const { messages, isLoading: dataLoading } = useSchoolData();
+  const { messages, schoolProfile, isLoading: dataLoading } = useSchoolData();
   const router = useRouter();
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const [replyToMessage, setReplyToMessage] = useState<Message | undefined>(undefined);
+  const [prefillData, setPrefillData] = useState<PrefillData | undefined>(undefined);
 
   const isLoading = authLoading || dataLoading;
 
@@ -224,6 +235,22 @@ export default function MessagingPage() {
       router.push('/dashboard');
     }
   }, [role, isLoading, router]);
+
+  useEffect(() => {
+    const storedPrefill = sessionStorage.getItem('prefillMessage');
+    if (storedPrefill) {
+      try {
+        const parsedData = JSON.parse(storedPrefill);
+        const adminEmail = schoolProfile?.email || '';
+        setPrefillData({ ...parsedData, recipientUsername: adminEmail });
+        setIsComposeOpen(true);
+      } catch (e) {
+        console.error("Failed to parse prefill data", e);
+      } finally {
+        sessionStorage.removeItem('prefillMessage');
+      }
+    }
+  }, [schoolProfile]);
 
   const { inboxMessages, sentMessages } = useMemo(() => {
     if (!user) return { inboxMessages: [], sentMessages: [] };
@@ -243,13 +270,24 @@ export default function MessagingPage() {
   
   const handleReply = (message: Message) => {
     setReplyToMessage(message);
+    setPrefillData(undefined);
     setIsComposeOpen(true);
   };
   
   const handleOpenCompose = () => {
     setReplyToMessage(undefined);
+    setPrefillData(undefined);
     setIsComposeOpen(true);
   };
+
+  const handleDialogChange = (open: boolean) => {
+    if (!open) {
+      // Clear any state when dialog is closed
+      setReplyToMessage(undefined);
+      setPrefillData(undefined);
+    }
+    setIsComposeOpen(open);
+  }
 
   if (isLoading) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -263,7 +301,7 @@ export default function MessagingPage() {
             <p className="text-muted-foreground">Communicate with staff and parents.</p>
         </div>
         <Button onClick={handleOpenCompose}><PlusCircle className="mr-2 h-4 w-4" /> Compose Message</Button>
-        <ComposeMessageDialog open={isComposeOpen} onOpenChange={setIsComposeOpen} replyTo={replyToMessage} />
+        <ComposeMessageDialog open={isComposeOpen} onOpenChange={handleDialogChange} replyTo={replyToMessage} prefillData={prefillData} />
       </header>
 
       <Tabs defaultValue="inbox">
