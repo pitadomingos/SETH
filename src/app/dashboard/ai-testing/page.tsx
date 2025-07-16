@@ -420,7 +420,7 @@ export default function AiTestingPage() {
   const { role, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const { addSavedTest, schoolProfile, isLoading: schoolLoading } = useSchoolData();
+  const { addSavedTest, schoolProfile, isLoading: schoolLoading, syllabi, subjects } = useSchoolData();
   const [generatedTest, setGeneratedTest] = useState<GenerateTestOutput | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSubmission, setLastSubmission] = useState<GenerateTestFormValues | null>(null);
@@ -443,6 +443,16 @@ export default function AiTestingPage() {
     },
   });
   
+  const selectedSubject = form.watch('subject');
+  const selectedGrade = form.watch('gradeLevel').replace(' Grade', '');
+  
+  const availableTopics = useMemo(() => {
+    if (!selectedSubject || !selectedGrade) return [];
+    const syllabus = syllabi.find(s => s.subject === selectedSubject && s.grade === selectedGrade);
+    return syllabus ? syllabus.topics.map(t => t.topic) : [];
+  }, [selectedSubject, selectedGrade, syllabi]);
+
+
   if (isLoading) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
@@ -509,7 +519,7 @@ export default function AiTestingPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2"><BookOpen /> Test Parameters</CardTitle>
-                  <CardDescription>Define the test you want to create.</CardDescription>
+                  <CardDescription>Define the test you want to create based on the school syllabus.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
@@ -518,22 +528,10 @@ export default function AiTestingPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Subject</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Biology" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="topic"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Topic</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Cell Mitosis" {...field} />
-                        </FormControl>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select Subject" /></SelectTrigger></FormControl>
+                            <SelectContent>{subjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -544,9 +542,24 @@ export default function AiTestingPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Grade Level</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., 10th Grade" {...field} />
-                        </FormControl>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedSubject}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select Grade" /></SelectTrigger></FormControl>
+                            <SelectContent>{[...Array(12)].map((_, i) => <SelectItem key={i + 1} value={`Grade ${i+1}`}>Grade {i+1}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="topic"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Topic</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={availableTopics.length === 0}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select Topic" /></SelectTrigger></FormControl>
+                            <SelectContent>{availableTopics.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}

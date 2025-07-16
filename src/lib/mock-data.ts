@@ -1,3 +1,4 @@
+
 import { type CreateLessonPlanOutput } from "@/ai/flows/create-lesson-plan";
 import { type GenerateTestOutput } from "@/ai/flows/generate-test";
 import { type Role } from "@/context/auth-context";
@@ -35,6 +36,20 @@ export interface LessonPlan extends CreateLessonPlanOutput {
   createdAt: string;
   weeklySyllabus: string;
 }
+
+export interface SyllabusTopic {
+  id: string;
+  topic: string;
+  subtopics: string[];
+  week: number;
+}
+
+export interface Syllabus {
+  subject: string;
+  grade: string;
+  topics: SyllabusTopic[];
+}
+
 
 export interface SavedTest extends GenerateTestOutput {
     id: string;
@@ -122,6 +137,7 @@ export interface SchoolData {
     classes: Class[];
     courses: Course[];
     lessonPlans: LessonPlan[];
+    syllabi: Syllabus[];
     savedTests: SavedTest[];
     deployedTests: DeployedTest[];
     admissions: Admission[];
@@ -197,6 +213,26 @@ const defaultKioskConfig: KioskConfig = {
     showShowcase: false,
 };
 
+const teteSyllabi: Syllabus[] = [
+  {
+    subject: 'Matemática',
+    grade: '10',
+    topics: [
+      { id: 'M10-1', topic: 'Álgebra Linear', subtopics: ['Sistemas de Equações', 'Matrizes', 'Determinantes'], week: 35 },
+      { id: 'M10-2', topic: 'Funções Quadráticas', subtopics: ['Gráficos de Parábolas', 'Vértice e Eixo de Simetria', 'Aplicações'], week: 36 },
+      { id: 'M10-3', topic: 'Trigonometria', subtopics: ['Seno, Cosseno, Tangente', 'Círculo Trigonométrico', 'Equações Trigonométricas'], week: 37 },
+    ],
+  },
+  {
+    subject: 'Português',
+    grade: '9',
+    topics: [
+      { id: 'P9-1', topic: 'Análise Sintática', subtopics: ['Sujeito e Predicado', 'Tipos de Sujeito', 'Complementos Verbais'], week: 35 },
+      { id: 'P9-2', topic: 'Figuras de Linguagem', subtopics: ['Metáfora', 'Metonímia', 'Hipérbole'], week: 36 },
+    ],
+  },
+];
+
 // --- Data for School 1: Tete Junior Primary School ---
 const teteProfile: SchoolProfile = { id: 'northwood', name: 'Tete Junior Primary School', head: 'Dra. Sara João', address: 'Av. da Independência, Tete, Mozambique', phone: '+258 84 123 4567', email: 's.joao@tetejunior.edu.mz', motto: 'Educação de Excelência', logoUrl: 'https://placehold.co/100x100.png', certificateTemplateUrl: 'https://placehold.co/800x600.png', transcriptTemplateUrl: 'https://placehold.co/600x800.png', tier: 'Starter', gradingSystem: '20-Point', currency: 'MZN', status: 'Active', gradeCapacity: defaultGradeCapacity, kioskConfig: defaultKioskConfig };
 const teteStudents: Student[] = [ { id: 'S001', name: 'Joana Silva', grade: '10', class: 'A', email: 'j.silva@edumanage.com', phone: '+258 84 555 1234', address: 'Rua das Acácias 123, Tete', parentName: 'Maria Silva', parentEmail: 'm.silva@family.com', dateOfBirth: '2008-05-21', status: 'Active', sex: 'Female', behavioralAssessments: [] }, { id: 'S002', name: 'Pedro Santos', grade: '10', class: 'A', email: 'p.santos@edumanage.com', phone: '+258 84 555 5678', address: 'Av. 25 de Setembro 456, Tete', parentName: 'Roberto Santos', parentEmail: 'r.santos@family.com', dateOfBirth: '2008-03-15', status: 'Active', sex: 'Male', behavioralAssessments: [] }, { id: 'S003', name: 'Sofia Costa', grade: '11', class: 'B', email: 's.costa@edumanage.com', phone: '+258 84 555 9012', address: 'Bairro da Matema 789, Tete', parentName: 'Daniel Costa', parentEmail: 'd.costa@family.com', dateOfBirth: '2007-11-30', status: 'Active', sex: 'Female', behavioralAssessments: [] }, { id: 'S004', name: 'Miguel Pereira', grade: '9', class: 'C', email: 'm.pereira@edumanage.com', phone: '+258 84 555 3456', address: 'Av. Julius Nyerere 321, Tete', parentName: 'Jéssica Pereira', parentEmail: 'j.pereira@family.com', dateOfBirth: '2009-08-10', status: 'Active', sex: 'Male', behavioralAssessments: [] }, { id: 'S005', name: 'Beatriz Fernandes', grade: '12', class: 'A', email: 'b.fernandes@edumanage.com', phone: '+258 84 555 7890', address: 'Rua do Comércio 159, Tete', parentName: 'Carlos Fernandes', parentEmail: 'c.fernandes@family.com', dateOfBirth: '2006-01-25', status: 'Active', sex: 'Female', behavioralAssessments: [] }, { id: 'S006', name: 'Tiago Gonçalves', grade: '9', class: 'A', email: 't.goncalves@edumanage.com', phone: '+258 84 555 1122', address: 'Rua da Mesquita 753, Tete', parentName: 'Isabela Gonçalves', parentEmail: 'i.goncalves@family.com', dateOfBirth: '2009-06-12', status: 'Active', sex: 'Male', behavioralAssessments: [] }, { id: 'S007', name: 'Leonor Rodrigues', grade: '11', class: 'A', email: 'l.rodrigues@edumanage.com', phone: '+258 84 555 3344', address: 'Av. da Liberdade 951, Tete', parentName: 'David Rodrigues', parentEmail: 'd.rodrigues@family.com', dateOfBirth: '2007-09-05', status: 'Active', sex: 'Female', behavioralAssessments: [] }, { id: 'S008', name: 'Francisco Alves', grade: '10', class: 'B', email: 'f.alves@edumanage.com', phone: '+258 84 555 5566', address: 'Rua dos Desportistas 852, Tete', parentName: 'Linda Alves', parentEmail: 'l.alves@family.com', dateOfBirth: '2008-07-22', status: 'Active', sex: 'Male', behavioralAssessments: [] }, { id: 'S009', name: 'Mariana Almeida', grade: '9', class: 'B', email: 'm.almeida@edumanage.com', phone: '+258 84 555 7788', address: 'Rua do Rio 147, Tete', parentName: 'Paulo Almeida', parentEmail: 'p.almeida@family.com', dateOfBirth: '2009-02-18', status: 'Active', sex: 'Female', behavioralAssessments: [] }, { id: 'S010', name: 'Diogo Ribeiro', grade: '12', class: 'C', email: 'd.ribeiro@edumanage.com', phone: '+258 84 555 9999', address: 'Av. Marginal 456, Tete', parentName: 'Jorge Ribeiro', parentEmail: 'j.ribeiro@family.com', dateOfBirth: '2006-04-01', status: 'Active', sex: 'Male', behavioralAssessments: [] }, ];
@@ -259,8 +295,8 @@ const miniarteClasses: Class[] = [ { id: 'C201', name: 'Turma 9-C', grade: '9', 
 const miniarteCourses: Course[] = [];
 const miniarteGrades: Grade[] = [ { studentId: 'S201', subject: 'História', grade: '18', date: new Date(now.getFullYear(), now.getMonth() - 1).toISOString() }, { studentId: 'S204', subject: 'História', grade: '15', date: new Date(now.getFullYear(), now.getMonth()).toISOString() }, ];
 const miniarteAttendance: Attendance[] = [];
-const miniarteFinance: FinanceRecord[] = [ { id: 'FEE201', studentId: 'S201', studentName: 'Gabriel Martins', description: 'Propinas do 1º Semestre', totalAmount: 946000, amountPaid: 301000, dueDate: '2024-09-01' }, { id: 'FEE202', studentId: 'S204', studentName: 'Maria Carvalho', description: 'Propinas do 1º Semestre', totalAmount: 946000, amountPaid: 946000, dueDate: '2024-07-01' }, ];
-const miniarteExpenses: Expense[] = [ { id: 'EXP201', description: 'Taxas do Programa IB', category: 'Académicos', amount: 3225000, date: '2024-08-10', proofUrl: 'https://placehold.co/400x200.png' }, { id: 'EXP202', description: 'Salários dos Funcionários - Agosto', category: 'Salários', amount: 12040000, date: '2024-08-31', proofUrl: 'https://placehold.co/400x200.png' }, ];
+const miniarteFinance: FinanceRecord[] = [ { id: 'FEE201', studentId: 'S201', studentName: 'Gabriel Martins', description: 'Propinas do 1º Semestre', totalAmount: 4067800, amountPaid: 1294300, dueDate: '2024-09-01' }, { id: 'FEE202', studentId: 'S204', studentName: 'Maria Carvalho', description: 'Propinas do 1º Semestre', totalAmount: 4067800, amountPaid: 4067800, dueDate: '2024-07-01' }, ];
+const miniarteExpenses: Expense[] = [ { id: 'EXP201', description: 'Taxas do Programa IB', category: 'Académicos', amount: 13867500, date: '2024-08-10', proofUrl: 'https://placehold.co/400x200.png' }, { id: 'EXP202', description: 'Salários dos Funcionários - Agosto', category: 'Salários', amount: 51772000, date: '2024-08-31', proofUrl: 'https://placehold.co/400x200.png' }, ];
 const miniarteEvents: SchoolEvent[] = [ { id: 'EVT201', date: new Date(new Date().setDate(new Date().getDate() + 20)).toISOString(), title: 'Dia Internacional', type: 'Cultural', location: 'Recinto Escolar', organizer: 'Comité Cultural', audience: 'Toda a Comunidade Escolar' }, ];
 const miniarteTerms: AcademicTerm[] = [];
 const miniarteHolidays: Holiday[] = [ { id: 'HOL201', name: 'Dia da Herança', date: new Date(currentYear, 8, 24).toISOString() }];
@@ -307,6 +343,7 @@ export const schoolData: Record<string, SchoolData> = {
     teachers: teteTeachers,
     classes: teteClasses,
     courses: teteCourses,
+    syllabi: teteSyllabi,
     lessonPlans: [],
     savedTests: [],
     deployedTests: [],
@@ -337,6 +374,7 @@ export const schoolData: Record<string, SchoolData> = {
     teachers: championTeachers,
     classes: championClasses,
     courses: championCourses,
+    syllabi: [],
     lessonPlans: [],
     savedTests: [],
     deployedTests: [],
@@ -367,6 +405,7 @@ export const schoolData: Record<string, SchoolData> = {
     teachers: miniarteTeachers,
     classes: miniarteClasses,
     courses: miniarteCourses,
+    syllabi: [],
     lessonPlans: [],
     savedTests: [],
     deployedTests: [],
@@ -395,7 +434,7 @@ export const schoolData: Record<string, SchoolData> = {
     profile: beiraProfile,
     students: beiraStudents,
     teachers: beiraTeachers,
-    classes: [], courses: [], lessonPlans: [], savedTests: [], deployedTests: [], teams: [],
+    classes: [], courses: [], lessonPlans: [], syllabi: [], savedTests: [], deployedTests: [], teams: [],
     grades: beiraGrades, attendance: [], finance: [], admissions: [], exams: [], assets: [],
     assignments: [], events: [], terms: [], holidays: [], activityLogs: [], messages: [],
     savedReports: [], kioskMedia: [],
@@ -408,7 +447,7 @@ export const schoolData: Record<string, SchoolData> = {
     profile: nampulaProfile,
     students: nampulaStudents,
     teachers: nampulaTeachers,
-    classes: [], courses: [], lessonPlans: [], savedTests: [], deployedTests: [], teams: [],
+    classes: [], courses: [], lessonPlans: [], syllabi: [], savedTests: [], deployedTests: [], teams: [],
     grades: nampulaGrades, attendance: [], finance: [], admissions: [], exams: [], assets: [],
     assignments: [], events: [], terms: [], holidays: [], activityLogs: [], messages: [],
     savedReports: [], kioskMedia: [],

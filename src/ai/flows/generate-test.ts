@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -13,7 +14,7 @@ import {z} from 'genkit';
 
 const GenerateTestInputSchema = z.object({
   subject: z.string().describe('The subject of the test.'),
-  topic: z.string().describe('The specific topic within the subject for the test.'),
+  topic: z.string().describe('The specific topic within the subject for the test, based on the official school syllabus.'),
   gradeLevel: z.string().describe('The grade level for which the test is intended.'),
   numQuestions: z.coerce.number().int().min(1).max(10).describe('The number of questions to generate (1-10).'),
 });
@@ -39,15 +40,21 @@ const prompt = ai.definePrompt({
   name: 'generateTestPrompt',
   input: {schema: GenerateTestInputSchema},
   output: {schema: GenerateTestOutputSchema},
-  prompt: `You are an expert curriculum designer and teacher. Your task is to generate a multiple-choice test based on the user's specifications.
+  prompt: `You are an expert curriculum designer and teacher. Your task is to generate a multiple-choice test based on the user's specifications, using the school's official syllabus as a guide for the question content.
 
   Subject: {{{subject}}}
-  Topic: {{{topic}}}
+  Topic (from syllabus): {{{topic}}}
   Grade Level: {{{gradeLevel}}}
   Number of Questions: {{{numQuestions}}}
 
-  Generate a test with exactly {{{numQuestions}}} questions. Each question must have exactly four options and you must clearly identify the single correct answer.
-  The questions should be appropriate for the specified grade level and test the student's understanding of the topic.
+  Generate a test with exactly {{{numQuestions}}} questions. The questions should be about the specified 'Topic'.
+  
+  Each question must:
+  1. Have exactly four plausible options.
+  2. Have a single, unambiguously correct answer.
+  3. Be appropriate for the specified grade level.
+  4. Test the student's understanding of the topic based on a standard curriculum.
+
   Ensure the 'correctAnswer' field's value is an exact match to one of the strings in the 'options' array.
   `,
 });

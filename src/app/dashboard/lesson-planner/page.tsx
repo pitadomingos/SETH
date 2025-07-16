@@ -17,12 +17,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { format, getWeek } from 'date-fns';
 import { FeatureLock } from '@/components/layout/feature-lock';
 
 const formSchema = z.object({
   courseId: z.string().min(1, { message: 'Please select a course.' }),
-  weeklySyllabus: z.string().min(10, { message: 'Syllabus must be at least 10 characters long.' }),
+  weekNumber: z.coerce.number().min(1, 'Please select a week.'),
+  overrideSyllabus: z.string().optional(),
 });
 
 function DailyPlanView({ plan }) {
@@ -64,7 +65,7 @@ export default function LessonPlannerPage() {
   const { role, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const { classesData, teachersData, studentsData, grades, lessonPlans, addLessonPlan, schoolProfile, isLoading: dataLoading, coursesData } = useSchoolData();
+  const { classesData, teachersData, studentsData, grades, lessonPlans, addLessonPlan, schoolProfile, isLoading: dataLoading, coursesData, syllabi } = useSchoolData();
 
   const [generatedPlan, setGeneratedPlan] = useState<CreateLessonPlanOutput | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -98,7 +99,8 @@ export default function LessonPlannerPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       courseId: '',
-      weeklySyllabus: '',
+      weekNumber: getWeek(new Date()),
+      overrideSyllabus: '',
     },
   });
   
@@ -136,6 +138,20 @@ export default function LessonPlannerPage() {
       return;
     }
     
+    // Determine the weekly syllabus
+    let weeklySyllabus = values.overrideSyllabus || '';
+    if (!weeklySyllabus) {
+      const syllabusForCourse = syllabi.find(s => s.grade === selectedClass.grade && s.subject === selectedCourse.subject);
+      const topicForWeek = syllabusForCourse?.topics.find(t => t.week === values.weekNumber);
+      if (topicForWeek) {
+        weeklySyllabus = `Topic: ${topicForWeek.topic}. Subtopics: ${topicForWeek.subtopics.join(', ')}.`;
+      } else {
+        toast({ variant: 'destructive', title: 'Syllabus Topic Not Found', description: `No topic found for week ${values.weekNumber}. Please specify a topic manually.` });
+        setIsSubmitting(false);
+        return;
+      }
+    }
+    
     const studentsInClass = studentsData.filter(s =>
       s.grade === selectedClass.grade &&
       s.class === selectedClass.name.split('-')[1].trim()
@@ -150,7 +166,7 @@ export default function LessonPlannerPage() {
         className: selectedClass.name,
         gradeLevel: `Grade ${selectedClass.grade}`,
         subject: selectedCourse.subject,
-        weeklySyllabus: values.weeklySyllabus,
+        weeklySyllabus: weeklySyllabus,
         recentGrades: relevantGrades,
       });
       setGeneratedPlan(result);
@@ -158,7 +174,7 @@ export default function LessonPlannerPage() {
       addLessonPlan({
         className: selectedClass.name,
         subject: selectedCourse.subject,
-        weeklySyllabus: values.weeklySyllabus,
+        weeklySyllabus: weeklySyllabus,
         weeklyPlan: result.weeklyPlan
       });
 
@@ -182,6 +198,11 @@ export default function LessonPlannerPage() {
     window.print();
   }
 
+  const selectedCourseId = form.watch('courseId');
+  const selectedCourseInfo = teacherCourses.find(c => c.id === selectedCourseId);
+  const selectedClassInfo = selectedCourseInfo ? classesData.find(c => c.id === selectedCourseInfo.classId) : null;
+  const hasSyllabusForCourse = selectedClassInfo && selectedCourseInfo ? syllabi.some(s => s.grade === selectedClassInfo.grade && s.subject === selectedCourseInfo.subject) : false;
+
   return (
     <div className="space-y-6 animate-in fade-in-50">
        <header>
@@ -195,7 +216,7 @@ export default function LessonPlannerPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Create a New Plan</CardTitle>
-                  <CardDescription>The AI will analyze recent grades for the selected class to tailor the plan.</CardDescription>
+                  <CardDescription>The AI will use the official syllabus and recent student grades to tailor the plan.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
@@ -222,17 +243,42 @@ export default function LessonPlannerPage() {
                   />
                   <FormField
                     control={form.control}
-                    name="weeklySyllabus"
+                    name="weekNumber"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Weekly Syllabus / Topics</FormLabel>
-                        <FormControl>
-                          <Textarea rows={4} placeholder="e.g., Chapter 5: The Circulatory System, Blood Types, The Heart as a Pump" {...field} />
-                        </FormControl>
+                        <FormLabel>Week of the Year</FormLabel>
+                         <Select onValueChange={(val) => field.onChange(parseInt(val))} defaultValue={String(field.value)}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select week" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {Array.from({ length: 52 }, (_, i) => i + 1).map(week => (
+                              <SelectItem key={week} value={String(week)}>Week {week}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  {!hasSyllabusForCourse && selectedCourseId && (
+                    <FormField
+                      control={form.control}
+                      name="overrideSyllabus"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Weekly Syllabus / Topics</FormLabel>
+                          <FormDescription>No official syllabus found. Please specify topics manually.</FormDescription>
+                          <FormControl>
+                            <Textarea rows={4} placeholder="e.g., Chapter 5: The Circulatory System, Blood Types, The Heart as a Pump" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </CardContent>
                 <CardFooter>
                   <Button type="submit" disabled={isSubmitting} className="w-full">

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -22,6 +21,7 @@ import {
     Holiday,
     Course as InitialCourse,
     LessonPlan,
+    Syllabus,
     SavedTest,
     DeployedTest,
     ActivityLog,
@@ -49,7 +49,7 @@ export type Competition = InitialCompetition;
 export type SavedReport = InitialSavedReport;
 export type AwardConfig = InitialAwardConfig;
 export type BehavioralAssessment = InitialBehavioralAssessment;
-export type { Team, Admission, Student, ActivityLog, Message, Teacher, Attendance, Holiday, KioskMedia };
+export type { Team, Admission, Student, ActivityLog, Message, Teacher, Attendance, Holiday, KioskMedia, Syllabus };
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
 interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }
@@ -138,6 +138,7 @@ interface SchoolDataContextType {
   updateAwardConfig: (config: AwardConfig) => void;
   coursesData: Course[];
   addCourse: (data: NewCourseData) => void;
+  syllabi: Syllabus[];
   subjects: string[];
   addSubject: (subject: string) => void;
   examBoards: string[];
@@ -232,6 +233,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [coursesData, setCoursesData] = useState<Course[]>([]);
   const [lessonPlans, setLessonPlans] = useState<LessonPlan[]>([]);
+  const [syllabi, setSyllabi] = useState<Syllabus[]>([]);
   const [savedTests, setSavedTests] = useState<SavedTest[]>([]);
   const [deployedTests, setDeployedTests] = useState<DeployedTest[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
@@ -338,6 +340,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           setTerms(data.terms.map(t => ({...t, startDate: new Date(t.startDate), endDate: new Date(t.endDate)})));
           setHolidays(data.holidays.map(h => ({...h, date: new Date(h.date)})));
           setLessonPlans(data.lessonPlans.map(lp => ({...lp, createdAt: new Date(lp.createdAt)})));
+          setSyllabi(data.syllabi);
           setSavedTests(data.savedTests.map(st => ({...st, createdAt: new Date(st.createdAt)})));
           setDeployedTests(data.deployedTests.map(dt => ({...dt, createdAt: new Date(dt.createdAt), deadline: new Date(dt.deadline), submissions: dt.submissions.map(s => ({ ...s, submittedAt: new Date(s.submittedAt) })) })));
           setActivityLogs(data.activityLogs.map(log => ({...log, timestamp: new Date(log.timestamp)})));
@@ -376,7 +379,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
     const newSchoolData = {
       profile: newSchoolProfile,
-      students: [], teachers: [], classes: [], courses: [], lessonPlans: [],
+      students: [], teachers: [], classes: [], courses: [], lessonPlans: [], syllabi: [],
       savedTests: [], deployedTests: [], admissions: [], exams: [],
       finance: [], assets: [], assignments: [], grades: [], attendance: [],
       events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'],
@@ -942,6 +945,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     grades, addGrade,
     attendance, addLessonAttendance,
     events, addEvent, announceAwards, awardConfig, updateAwardConfig,
+    syllabi,
     subjects, addSubject,
     examBoards, addExamBoard, deleteExamBoard,
     feeDescriptions, addFeeDescription, deleteFeeDescription,

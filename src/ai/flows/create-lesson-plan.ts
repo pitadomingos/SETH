@@ -16,7 +16,7 @@ const CreateLessonPlanInputSchema = z.object({
   className: z.string().describe('The name of the class for which the plan is being created (e.g., "Class 10-A").'),
   gradeLevel: z.string().describe('The grade level for the lesson plan.'),
   subject: z.string().describe('The subject for the lesson plan (e.g., "Mathematics").'),
-  weeklySyllabus: z.string().describe('A summary of the topics to be covered during the week.'),
+  weeklySyllabus: z.string().describe('A summary of the topics to be covered during the week, based on the official curriculum.'),
   recentGrades: z.array(z.string()).describe('An array of recent student grades for this subject to gauge understanding (e.g., ["18", "12", "9", "20"]). The grading scale is 0-20, where <10 is failing.'),
 });
 export type CreateLessonPlanInput = z.infer<typeof CreateLessonPlanInputSchema>;
