@@ -104,6 +104,11 @@ export default function LessonPlannerPage() {
     },
   });
   
+  const selectedCourseId = form.watch('courseId');
+  const selectedCourseInfo = teacherCourses.find(c => c.id === selectedCourseId);
+  const selectedClassInfo = selectedCourseInfo ? classesData.find(c => c.id === selectedCourseInfo.classId) : null;
+  const hasSyllabusForCourse = selectedClassInfo && selectedCourseInfo ? syllabi.some(s => s.grade === selectedClassInfo.grade && s.subject === selectedCourseInfo.subject) : false;
+  
   if (isLoading) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
@@ -197,11 +202,6 @@ export default function LessonPlannerPage() {
   function handlePrint() {
     window.print();
   }
-
-  const selectedCourseId = form.watch('courseId');
-  const selectedCourseInfo = teacherCourses.find(c => c.id === selectedCourseId);
-  const selectedClassInfo = selectedCourseInfo ? classesData.find(c => c.id === selectedCourseInfo.classId) : null;
-  const hasSyllabusForCourse = selectedClassInfo && selectedCourseInfo ? syllabi.some(s => s.grade === selectedClassInfo.grade && s.subject === selectedCourseInfo.subject) : false;
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
