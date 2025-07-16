@@ -30,7 +30,7 @@ const courseSchema = z.object({
   schedule: z.array(z.object({
     day: z.string().min(1, "Day is required."),
     startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use HH:MM format."),
-    endTime: z.string().regex(/^([01]\d|2[0-5]\d)$/, "Use HH:MM format."),
+    endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use HH:MM format."),
     room: z.string().min(1, "Room is required."),
   })).min(1, "At least one schedule slot is required."),
 });
@@ -159,14 +159,14 @@ function TopicDialog({ syllabus, topic, children }: { syllabus: Syllabus, topic?
   const form = useForm<TopicFormValues>({
     resolver: zodResolver(topicSchema),
     defaultValues: topic
-      ? { ...topic, subtopics: topic.subtopics.join('\n') }
+      ? { ...topic, subtopics: topic.subtopics.join('\\n') }
       : { topic: '', week: 1, subtopics: '' }
   });
 
   const onSubmit = (values: TopicFormValues) => {
     const topicData = {
       ...values,
-      subtopics: values.subtopics.split('\n').filter(s => s.trim() !== ''),
+      subtopics: values.subtopics.split('\\n').filter(s => s.trim() !== ''),
       id: topic?.id || `T${Date.now()}`
     };
     updateSyllabusTopic(syllabus.subject, syllabus.grade, topicData);
@@ -212,7 +212,8 @@ function DeleteTopicDialog({ syllabus, topic, children }: { syllabus: Syllabus, 
                     <AlertDialogAction onClick={() => deleteSyllabusTopic(syllabus.subject, syllabus.grade, topic.id)}>Delete</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
-    )
+        </AlertDialog>
+    );
 }
 
 function AnalyzeScheduleDialog() {
