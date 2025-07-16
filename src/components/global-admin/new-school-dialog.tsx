@@ -13,6 +13,7 @@ import { Loader2, PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { createSchool } from '@/app/actions/school-actions';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolData } from '@/context/school-data-context';
 
 const schoolSchema = z.object({
   name: z.string().min(3, "School name is required."),
@@ -29,6 +30,7 @@ type SchoolFormValues = z.infer<typeof schoolSchema>;
 export function NewSchoolDialog({ groupId }: { groupId?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
+  const { addSchool } = useSchoolData();
 
   const form = useForm<SchoolFormValues>({
     resolver: zodResolver(schoolSchema),
@@ -47,6 +49,7 @@ export function NewSchoolDialog({ groupId }: { groupId?: string }) {
     const result = await createSchool(values, groupId);
 
     if (result) {
+        addSchool(result); // Update the context with the new school data
         toast({
             title: 'School Created!',
             description: `School "${values.name}" has been added to the system.`,

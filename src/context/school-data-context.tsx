@@ -32,7 +32,8 @@ import {
     SavedReport as InitialSavedReport,
     AwardConfig as InitialAwardConfig,
     KioskMedia,
-    mockUsers
+    mockUsers,
+    SchoolData,
 } from '@/lib/mock-data';
 import { type User, type Role, useAuth } from './auth-context';
 import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
@@ -50,7 +51,7 @@ export type SavedReport = InitialSavedReport;
 export type AwardConfig = InitialAwardConfig;
 export type BehavioralAssessment = InitialBehavioralAssessment;
 export type Syllabus = InitialSyllabus;
-export type { Team, Admission, Student, ActivityLog, Message, Teacher, Attendance, Holiday, KioskMedia };
+export type { Team, Admission, Student, ActivityLog, Message, Teacher, Attendance, Holiday, KioskMedia, SchoolData };
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
 interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }
@@ -106,6 +107,7 @@ interface SchoolDataContextType {
   schoolProfile: SchoolProfile | null;
   updateSchoolProfile: (data: Partial<SchoolProfile>, schoolId?: string) => void;
   allSchoolData: typeof initialSchoolData | null;
+  addSchool: (school: SchoolData) => void;
   schoolGroups: typeof initialSchoolGroups | null;
   updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
   studentsData: Student[];
@@ -369,6 +371,15 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, role, allSchoolData, schoolGroups]);
 
+  const addSchool = (school: SchoolData) => {
+    setAllSchoolData(prevData => {
+        if (!prevData) return { [school.profile.id]: school };
+        return {
+            ...prevData,
+            [school.profile.id]: school,
+        };
+    });
+  };
 
   const updateSchoolStatus = (schoolId: string, status: SchoolProfile['status']) => {
     setAllSchoolData(prevData => {
@@ -917,7 +928,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const value = {
     schoolProfile, updateSchoolProfile,
-    allSchoolData, schoolGroups,
+    allSchoolData, addSchool, schoolGroups,
     updateSchoolStatus,
     studentsData, addStudentFromAdmission, updateStudentStatus, addBehavioralAssessment,
     teachersData, addTeacher, updateTeacher, updateTeacherStatus,
