@@ -12,6 +12,8 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         ...data,
         tier: groupId ? 'Premium' : data.tier,
         logoUrl: 'https://placehold.co/100x100.png',
+        certificateTemplateUrl: 'https://placehold.co/800x600.png',
+        transcriptTemplateUrl: 'https://placehold.co/600x800.png',
         gradingSystem: '20-Point',
         currency: 'USD',
         status: 'Active',
@@ -55,11 +57,10 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         messages: [], savedReports: [],
     };
     
-    // In a real app, this is where you would write to Firestore
-    // For now, this is a placeholder. Uncomment the line below when ready to connect to Firebase.
-    // await setDoc(doc(db, 'schools', schoolId), newSchoolData);
+    // Write to the actual Firestore database
+    await setDoc(doc(db, 'schools', schoolId), newSchoolData);
     
-    console.log(`Simulating Firestore write for school: ${schoolId}. Data:`, newSchoolData);
+    console.log(`Successfully wrote school to Firestore: ${schoolId}.`);
 
     // Return the created school data structure
     return newSchoolData;

@@ -32,7 +32,7 @@ import {
     SavedReport as InitialSavedReport,
     AwardConfig as InitialAwardConfig,
     KioskMedia,
-    mockUsers,
+    mockUsers as initialMockUsers,
     SchoolData,
 } from '@/lib/mock-data';
 import { type User, type Role, useAuth } from './auth-context';
@@ -40,6 +40,8 @@ import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
 import { GenerateTestOutput } from '@/ai/flows/generate-test';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { getDocs, collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 
 export type FinanceRecord = InitialFinanceRecord;
 export type Grade = InitialGrade;
@@ -214,7 +216,7 @@ const initialAwardConfig: AwardConfig = {
 
 export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
-  const { user, role } = useAuth();
+  const { user, role, mockUsers } = useAuth();
 
   const [allSchoolData, setAllSchoolData] = useState<typeof initialSchoolData | null>(null);
   const [schoolGroups, setSchoolGroups] = useState(() => JSON.parse(JSON.stringify(initialSchoolGroups)));
@@ -253,12 +255,33 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
-    // Simulate loading data from a persistent source like a database
-    // For the prototype, we load directly from the mock file
-    // The JSON stringify/parse is a deep copy to prevent mutations from affecting the original object
-    setAllSchoolData(JSON.parse(JSON.stringify(initialSchoolData)));
-    setIsLoading(false);
+    const fetchSchoolData = async () => {
+        setIsLoading(true);
+        try {
+            const querySnapshot = await getDocs(collection(db, "schools"));
+            const schools: Record<string, SchoolData> = {};
+            if (querySnapshot.empty) {
+                console.log("No schools found in Firestore, loading initial mock data.");
+                // If the database is empty, seed it with the mock data.
+                for (const schoolId in initialSchoolData) {
+                    schools[schoolId] = JSON.parse(JSON.stringify(initialSchoolData[schoolId]));
+                }
+            } else {
+                querySnapshot.forEach((doc) => {
+                    schools[doc.id] = doc.data() as SchoolData;
+                });
+            }
+            setAllSchoolData(schools);
+        } catch (error) {
+            console.error("Error fetching school data from Firestore:", error);
+            // Fallback to mock data if Firestore fetch fails
+            setAllSchoolData(JSON.parse(JSON.stringify(initialSchoolData)));
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    fetchSchoolData();
   }, []);
 
   useEffect(() => {

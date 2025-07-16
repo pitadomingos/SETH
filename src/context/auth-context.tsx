@@ -30,6 +30,7 @@ interface AuthContextType {
   revertImpersonation: () => void;
   originalUser: User | null;
   originalRole: Role | null;
+  mockUsers: typeof mockUsers;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,6 +39,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Use a state that can be updated when new schools are created
+  const [dynamicMockUsers, setDynamicMockUsers] = useState(() => JSON.parse(JSON.stringify(mockUsers)));
 
   const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [originalRole, setOriginalRole] = useState<Role | null>(null);
@@ -51,6 +55,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const storedRole = sessionStorage.getItem('role') as Role;
       const storedOriginalUser = sessionStorage.getItem('originalUser');
       const storedOriginalRole = sessionStorage.getItem('originalRole') as Role;
+      
+      // Load dynamic users from session storage to persist across refreshes
+      const storedDynamicUsers = sessionStorage.getItem('dynamicMockUsers');
 
       if (storedUser && storedRole) {
         setUser(JSON.parse(storedUser));
@@ -59,6 +66,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (storedOriginalUser && storedOriginalRole) {
         setOriginalUser(JSON.parse(storedOriginalUser));
         setOriginalRole(storedOriginalRole);
+      }
+      if (storedDynamicUsers) {
+        setDynamicMockUsers(JSON.parse(storedDynamicUsers));
+      } else {
+        // If not in session storage, initialize it
+        sessionStorage.setItem('dynamicMockUsers', JSON.stringify(dynamicMockUsers));
       }
     } catch (error) {
       console.error('Failed to parse user from sessionStorage', error);
@@ -69,7 +82,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
   
   const login = async (email: string, pass: string): Promise<LoginResult> => {
-    const userRecord = Object.values(mockUsers).find(u => u.user.email.toLowerCase() === email.toLowerCase());
+    // Use the dynamic state for login checks
+    const userRecord = Object.values(dynamicMockUsers).find(u => u.user.email.toLowerCase() === email.toLowerCase());
 
     if (userRecord && userRecord.password === pass) {
         const loggedInUser: User = { 
@@ -83,6 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setRole(userRecord.user.role);
         sessionStorage.setItem('user', JSON.stringify(loggedInUser));
         sessionStorage.setItem('role', userRecord.user.role);
+        sessionStorage.setItem('dynamicMockUsers', JSON.stringify(dynamicMockUsers));
         return { success: true };
     }
     
@@ -100,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const impersonateUser = (usernameOrEmail: string, asRole?: Role) => {
     // This now correctly checks the dynamically updated mockUsers object
-    let targetUserRecord = Object.values(mockUsers).find(u => u.user.email === usernameOrEmail);
+    let targetUserRecord = Object.values(dynamicMockUsers).find(u => u.user.email === usernameOrEmail);
     
     // Fallback for parent users who are not in mockUsers
     if (!targetUserRecord && asRole === 'Parent') {
@@ -156,7 +171,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, login, logout, isLoading, impersonateUser, revertImpersonation, originalUser, originalRole }}>
+    <AuthContext.Provider value={{ user, role, login, logout, isLoading, impersonateUser, revertImpersonation, originalUser, originalRole, mockUsers: dynamicMockUsers }}>
       {children}
     </AuthContext.Provider>
   );
