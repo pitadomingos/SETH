@@ -356,6 +356,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           setFeeDescriptions(data.feeDescriptions);
           setAudiences(data.audiences);
           setKioskMedia(data.kioskMedia.map(km => ({...km, createdAt: new Date(km.createdAt)})));
+        } else if (isPremiumAdmin && schoolId && allSchoolData[schoolId]) {
+          // Special handling for premium admin dashboard, loading their own school's profile
+          const data = allSchoolData[schoolId];
+          setSchoolProfile(data.profile);
         } else {
           // If no school ID is found, reset to empty state.
           setSchoolProfile(null);
@@ -851,7 +855,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const schoolIdForMessage = (recipient as any).schoolId || user.schoolId || 'global';
     
     const newMessage: Message = {
-      id: `MSG${Date.now()}${data.recipientUsername}${Math.random().toString(36).substring(2, 9)}`,
+      id: `MSG${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       timestamp: new Date().toISOString(),
       schoolId: schoolIdForMessage,
       senderUsername: user.email!,
