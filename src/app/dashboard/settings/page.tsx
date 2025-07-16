@@ -4,98 +4,90 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Loader2, Save, Tv } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
+import { MoreHorizontal, PlusCircle, CalendarDays, Calendar as CalendarIcon, Trash2, Settings } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+const boardSchema = z.object({ name: z.string().min(2, "Board name must be at least 2 characters."), });
+type BoardFormValues = z.infer<typeof boardSchema>;
+
+const descriptionSchema = z.object({ name: z.string().min(3, "Description must be at least 3 characters."), });
+type DescriptionFormValues = z.infer<typeof descriptionSchema>;
+
+const audienceSchema = z.object({ name: z.string().min(3, "Audience name must be at least 3 characters."), });
+type AudienceFormValues = z.infer<typeof audienceSchema>;
+
+const termSchema = z.object({ name: z.string().min(3, "Term name is required."), startDate: z.date({ required_error: "Start date is required." }), endDate: z.date({ required_error: "End date is required." }), });
+type TermFormValues = z.infer<typeof termSchema>;
+
+const holidaySchema = z.object({ name: z.string().min(3, "Holiday name is required."), date: z.date({ required_error: "Date is required." }), });
+type HolidayFormValues = z.infer<typeof holidaySchema>;
 
 
 export default function SettingsPage() {
   const { role, isLoading: authLoading } = useAuth();
-  const { schoolProfile, updateSchoolProfile, isLoading: schoolLoading } = useSchoolData();
+  const { 
+      schoolProfile, updateSchoolProfile, isLoading: schoolLoading,
+      examBoards, addExamBoard, deleteExamBoard, studentsData, teachersData, 
+      feeDescriptions, addFeeDescription, deleteFeeDescription,
+      audiences, addAudience, deleteAudience,
+      terms, addTerm, holidays, addHoliday
+  } = useSchoolData();
   const router = useRouter();
   const { toast } = useToast();
   
   const isLoading = authLoading || schoolLoading;
   
   const [gradeCapacities, setGradeCapacities] = useState<Record<string, number>>(schoolProfile?.gradeCapacity || {});
-  const [kioskConfig, setKioskConfig] = useState(schoolProfile?.kioskConfig || {
-    showDashboard: true,
-    showLeaderboard: true,
-    showAttendance: false,
-    showAcademics: false,
-    showAwards: false,
-    showPerformers: false,
-    showAwardWinner: false,
-    showShowcase: false,
-  });
+  const [isBoardDialogOpen, setIsBoardDialogOpen] = useState(false);
+  const [isDescriptionDialogOpen, setIsDescriptionDialogOpen] = useState(false);
+  const [isAudienceDialogOpen, setIsAudienceDialogOpen] = useState(false);
+  const [isTermDialogOpen, setIsTermDialogOpen] = useState(false);
+  const [isHolidayDialogOpen, setIsHolidayDialogOpen] = useState(false);
 
-  useEffect(() => {
-    if (schoolProfile) {
-        setGradeCapacities(schoolProfile.gradeCapacity || {});
-        setKioskConfig(schoolProfile.kioskConfig || { showDashboard: true, showLeaderboard: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false });
-    }
-  }, [schoolProfile]);
+  useEffect(() => { if (schoolProfile) { setGradeCapacities(schoolProfile.gradeCapacity || {}); } }, [schoolProfile]);
+  useEffect(() => { if (!isLoading && role !== 'Admin') { router.push('/dashboard'); } }, [role, isLoading, router]);
 
-  useEffect(() => {
-    if (!isLoading && role !== 'Admin') {
-      router.push('/dashboard');
-    }
-  }, [role, isLoading, router]);
+  const users = useMemo(() => {
+    const studentUsers = studentsData.map(s => ({ id: s.id, name: s.name, email: s.email, role: 'Student' as const, status: s.status, }));
+    const teacherUsers = teachersData.map(t => ({ id: t.id, name: t.name, email: t.email, role: 'Teacher' as const, status: t.status, }));
+    return [...teacherUsers, ...studentUsers];
+  }, [studentsData, teachersData]);
 
-  function handleGradingSystemChange(value: SchoolProfile['gradingSystem']) {
-    if (schoolProfile) {
-        updateSchoolProfile({ gradingSystem: value });
-        toast({
-            title: "Grading System Updated",
-            description: `The school now uses the ${value} system for displaying grades.`,
-        });
-    }
-  }
+  const boardForm = useForm<BoardFormValues>({ resolver: zodResolver(boardSchema), defaultValues: { name: '' } });
+  const descriptionForm = useForm<DescriptionFormValues>({ resolver: zodResolver(descriptionSchema), defaultValues: { name: '' } });
+  const audienceForm = useForm<AudienceFormValues>({ resolver: zodResolver(audienceSchema), defaultValues: { name: '' } });
+  const termForm = useForm<TermFormValues>({ resolver: zodResolver(termSchema), defaultValues: { name: '' } });
+  const holidayForm = useForm<HolidayFormValues>({ resolver: zodResolver(holidaySchema), defaultValues: { name: '' } });
 
-  function handleCurrencyChange(value: SchoolProfile['currency']) {
-    if (schoolProfile) {
-        updateSchoolProfile({ currency: value });
-        toast({
-            title: "Currency Updated",
-            description: `The school currency has been set to ${value}.`,
-        });
-    }
-  }
-  
-  const handleCapacityChange = (grade: string, value: string) => {
-    setGradeCapacities(prev => ({ ...prev, [grade]: Number(value) >= 0 ? Number(value) : 0 }));
-  };
+  function onBoardSubmit(values: BoardFormValues) { addExamBoard(values.name); boardForm.reset(); setIsBoardDialogOpen(false); }
+  function onDescriptionSubmit(values: DescriptionFormValues) { addFeeDescription(values.name); descriptionForm.reset(); setIsDescriptionDialogOpen(false); }
+  function onAudienceSubmit(values: AudienceFormValues) { addAudience(values.name); audienceForm.reset(); setIsAudienceDialogOpen(false); }
+  function onTermSubmit(values: TermFormValues) { addTerm(values); termForm.reset(); setIsTermDialogOpen(false); }
+  function onHolidaySubmit(values: HolidayFormValues) { addHoliday(values); holidayForm.reset(); setIsHolidayDialogOpen(false); }
 
-  const handleSaveCapacities = () => {
-    if (schoolProfile) {
-        updateSchoolProfile({ gradeCapacity: gradeCapacities });
-        toast({
-            title: "Capacities Updated",
-            description: "Grade level capacities have been saved.",
-        });
-    }
-  };
-
-  const handleKioskConfigChange = (key: keyof typeof kioskConfig, checked: boolean) => {
-    setKioskConfig(prev => ({ ...prev, [key]: checked }));
-  };
-
-  const handleSaveKioskConfig = () => {
-     if (schoolProfile) {
-        updateSchoolProfile({ kioskConfig });
-        toast({
-            title: "Kiosk Settings Updated",
-            description: "Your public kiosk display settings have been saved.",
-        });
-    }
-  };
-
+  function handleGradingSystemChange(value: SchoolProfile['gradingSystem']) { if (schoolProfile) { updateSchoolProfile({ gradingSystem: value }); toast({ title: "Grading System Updated", description: `The school now uses the ${value} system for displaying grades.`, }); } }
+  function handleCurrencyChange(value: SchoolProfile['currency']) { if (schoolProfile) { updateSchoolProfile({ currency: value }); toast({ title: "Currency Updated", description: `The school currency has been set to ${value}.` }); } }
+  const handleCapacityChange = (grade: string, value: string) => { setGradeCapacities(prev => ({ ...prev, [grade]: Number(value) >= 0 ? Number(value) : 0 })); };
+  const handleSaveCapacities = () => { if (schoolProfile) { updateSchoolProfile({ gradeCapacity: gradeCapacities }); toast({ title: "Capacities Updated", description: "Grade level capacities have been saved." }); } };
+  const getStatusVariant = (status: 'Active' | 'Inactive' | 'Transferred') => { switch (status) { case 'Active': return 'secondary'; case 'Inactive': return 'destructive'; case 'Transferred': return 'outline'; default: return 'default'; } };
 
   if (isLoading || role !== 'Admin') {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -104,125 +96,73 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header>
-        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground">Manage system settings and preferences for your school.</p>
+        <h2 className="text-3xl font-bold tracking-tight">Settings & Administration</h2>
+        <p className="text-muted-foreground">Manage system settings, users, and academic configurations.</p>
       </header>
+      
       <Card>
-        <CardHeader>
-            <CardTitle>System Preferences</CardTitle>
-            <CardDescription>Configure how the application behaves for your school.</CardDescription>
-        </CardHeader>
+        <CardHeader><CardTitle>System Preferences</CardTitle><CardDescription>Configure how the application behaves for your school.</CardDescription></CardHeader>
         <CardContent className="space-y-6">
              <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4 border rounded-lg">
-                <div>
-                    <Label>Grade Display Format</Label>
-                    <p className="text-xs text-muted-foreground">Choose how grades are displayed across the app (e.g., in reports, on dashboards).</p>
-                </div>
-                <Select
-                    value={schoolProfile?.gradingSystem}
-                    onValueChange={handleGradingSystemChange}
-                >
-                    <SelectTrigger className="w-full md:w-[220px] mt-2 md:mt-0">
-                        <SelectValue placeholder="Select a system" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="20-Point">20-Point Scale (e.g., 18.5/20)</SelectItem>
-                        <SelectItem value="Letter">Letter Grades (e.g., A+, B-)</SelectItem>
-                        <SelectItem value="GPA">GPA Scale (e.g., 3.8)</SelectItem>
-                    </SelectContent>
-                </Select>
+                <div><Label>Grade Display Format</Label><p className="text-xs text-muted-foreground">Choose how grades are displayed across the app (e.g., in reports, on dashboards).</p></div>
+                <Select value={schoolProfile?.gradingSystem} onValueChange={handleGradingSystemChange}><SelectTrigger className="w-full md:w-[220px] mt-2 md:mt-0"><SelectValue placeholder="Select a system" /></SelectTrigger><SelectContent><SelectItem value="20-Point">20-Point Scale (e.g., 18.5/20)</SelectItem><SelectItem value="Letter">Letter Grades (e.g., A+, B-)</SelectItem><SelectItem value="GPA">GPA Scale (e.g., 3.8)</SelectItem></SelectContent></Select>
             </div>
              <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4 border rounded-lg">
-                <div>
-                    <Label>School Currency</Label>
-                    <p className="text-xs text-muted-foreground">Select the primary currency for all financial transactions and reports.</p>
-                </div>
-                <Select
-                    value={schoolProfile?.currency}
-                    onValueChange={handleCurrencyChange}
-                >
-                    <SelectTrigger className="w-full md:w-[220px] mt-2 md:mt-0">
-                        <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="USD">USD ($)</SelectItem>
-                        <SelectItem value="ZAR">ZAR (R)</SelectItem>
-                        <SelectItem value="MZN">MZN (MT)</SelectItem>
-                    </SelectContent>
-                </Select>
+                <div><Label>School Currency</Label><p className="text-xs text-muted-foreground">Select the primary currency for all financial transactions and reports.</p></div>
+                <Select value={schoolProfile?.currency} onValueChange={handleCurrencyChange}><SelectTrigger className="w-full md:w-[220px] mt-2 md:mt-0"><SelectValue placeholder="Select currency" /></SelectTrigger><SelectContent><SelectItem value="USD">USD ($)</SelectItem><SelectItem value="ZAR">ZAR (R)</SelectItem><SelectItem value="MZN">MZN (MT)</SelectItem></SelectContent></Select>
             </div>
         </CardContent>
-      </Card>
-       <Card>
-        <CardHeader>
-            <CardTitle>Grade Capacity Management</CardTitle>
-            <CardDescription>Set the maximum number of students for each grade level to manage admissions and resource planning.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {Array.from({ length: 12 }, (_, i) => String(i + 1)).map(grade => (
-                    <div key={grade} className="space-y-2">
-                        <Label htmlFor={`grade-capacity-${grade}`}>Grade {grade}</Label>
-                        <Input
-                            id={`grade-capacity-${grade}`}
-                            type="number"
-                            value={gradeCapacities[grade] || ''}
-                            onChange={(e) => handleCapacityChange(grade, e.target.value)}
-                            placeholder="0"
-                        />
-                    </div>
-                ))}
-            </div>
-        </CardContent>
-        <CardFooter>
-            <Button onClick={handleSaveCapacities}><Save className="mr-2 h-4 w-4" /> Save Capacities</Button>
-        </CardFooter>
       </Card>
       
       <Card>
-        <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Tv /> Kiosk Display Settings</CardTitle>
-            <CardDescription>Choose which information slides to display on your public kiosk screen. Changes will apply on the next cycle.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid sm:grid-cols-2 gap-x-8 gap-y-4">
-            <div className="flex items-center space-x-2">
-                <Checkbox id="kiosk-dashboard" checked={kioskConfig.showDashboard} onCheckedChange={(checked) => handleKioskConfigChange('showDashboard', checked as boolean)} />
-                <Label htmlFor="kiosk-dashboard">Show Main Dashboard Slide</Label>
-            </div>
-             <div className="flex items-center space-x-2">
-                <Checkbox id="kiosk-leaderboard" checked={kioskConfig.showLeaderboard} onCheckedChange={(checked) => handleKioskConfigChange('showLeaderboard', checked as boolean)} />
-                <Label htmlFor="kiosk-leaderboard">Show Top Student Leaderboard Slide</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-                <Checkbox id="kiosk-performers" checked={kioskConfig.showPerformers} onCheckedChange={(checked) => handleKioskConfigChange('showPerformers', checked as boolean)} />
-                <Label htmlFor="kiosk-performers">Show Top Performers & Staff Slide</Label>
-            </div>
-             <div className="flex items-center space-x-2">
-                <Checkbox id="kiosk-award-winner" checked={kioskConfig.showAwardWinner} onCheckedChange={(checked) => handleKioskConfigChange('showAwardWinner', checked as boolean)} />
-                <Label htmlFor="kiosk-award-winner">Show Award Winner Announcement Slide</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-                <Checkbox id="kiosk-showcase" checked={kioskConfig.showShowcase} onCheckedChange={(checked) => handleKioskConfigChange('showShowcase', checked as boolean)} />
-                <Label htmlFor="kiosk-showcase">Show Media Showcase Slide</Label>
-            </div>
-            <Separator className="sm:col-span-2" />
-            <div className="flex items-center space-x-2">
-                <Checkbox id="kiosk-attendance" checked={kioskConfig.showAttendance} onCheckedChange={(checked) => handleKioskConfigChange('showAttendance', checked as boolean)} />
-                <Label htmlFor="kiosk-attendance">Show Attendance Trend Chart Slide</Label>
-            </div>
-             <div className="flex items-center space-x-2">
-                <Checkbox id="kiosk-academics" checked={kioskConfig.showAcademics} onCheckedChange={(checked) => handleKioskConfigChange('showAcademics', checked as boolean)} />
-                <Label htmlFor="kiosk-academics">Show Academic Performance Charts Slide</Label>
-            </div>
-             <div className="flex items-center space-x-2">
-                <Checkbox id="kiosk-awards" checked={kioskConfig.showAwards} onCheckedChange={(checked) => handleKioskConfigChange('showAwards', checked as boolean)} />
-                <Label htmlFor="kiosk-awards">Show Annual Award Announcements Slide</Label>
-            </div>
-        </CardContent>
-        <CardFooter>
-             <Button onClick={handleSaveKioskConfig}><Save className="mr-2 h-4 w-4" /> Save Kiosk Settings</Button>
-        </CardFooter>
+        <CardHeader><CardTitle>Grade Capacity Management</CardTitle><CardDescription>Set the maximum number of students for each grade level to manage admissions and resource planning.</CardDescription></CardHeader>
+        <CardContent><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">{Array.from({ length: 12 }, (_, i) => String(i + 1)).map(grade => (<div key={grade} className="space-y-2"><Label htmlFor={`grade-capacity-${grade}`}>Grade {grade}</Label><Input id={`grade-capacity-${grade}`} type="number" value={gradeCapacities[grade] || ''} onChange={(e) => handleCapacityChange(grade, e.target.value)} placeholder="0" /></div>))}</div></CardContent>
+        <CardFooter><Button onClick={handleSaveCapacities}><Save className="mr-2 h-4 w-4" /> Save Capacities</Button></CardFooter>
       </Card>
+
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+          <Card className="xl:col-span-1">
+              <CardHeader className="flex flex-row items-center justify-between"><div><CardTitle>User Management</CardTitle><CardDescription>View and manage all users in the system.</CardDescription></div></CardHeader>
+              <CardContent>
+                  <Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Role</TableHead><TableHead>Status</TableHead><TableHead><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
+                      <TableBody>{users.slice(0, 5).map((user) => (<TableRow key={user.id}><TableCell className="font-medium">{user.name}</TableCell><TableCell>{user.email}</TableCell><TableCell><Badge variant="outline">{user.role}</Badge></TableCell><TableCell><Badge variant={getStatusVariant(user.status)}>{user.status}</Badge></TableCell><TableCell className="text-right"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><span className="sr-only">Open menu</span><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem>Edit</DropdownMenuItem><DropdownMenuItem>View Profile</DropdownMenuItem><DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem></DropdownMenuContent></DropdownMenu></TableCell></TableRow>))}</TableBody>
+                  </Table>
+              </CardContent>
+          </Card>
+
+           <Card className="xl:col-span-1">
+              <CardHeader><CardTitle className="flex items-center gap-2"><CalendarDays /> Academic Year</CardTitle><CardDescription>Configure terms and holidays for the school year.</CardDescription></CardHeader>
+              <CardContent className="space-y-6">
+                  <div>
+                      <div className="flex items-center justify-between"><h4 className="font-semibold">Academic Terms</h4><Dialog open={isTermDialogOpen} onOpenChange={setIsTermDialogOpen}><DialogTrigger asChild><Button variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4" /> Add Term</Button></DialogTrigger><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Add New Term</DialogTitle><DialogDescription>Define a new academic term.</DialogDescription></DialogHeader><Form {...termForm}><form onSubmit={termForm.handleSubmit(onTermSubmit)} className="space-y-4 py-4"><FormField control={termForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Term Name</FormLabel><FormControl><Input placeholder="e.g., Term 1" {...field} /></FormControl><FormMessage /></FormItem> )}/><FormField control={termForm.control} name="startDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Start Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/><FormField control={termForm.control} name="endDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>End Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/><DialogFooter><DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose><Button type="submit">Save Term</Button></DialogFooter></form></Form></DialogContent></Dialog></div>
+                       <ul className="mt-3 space-y-2">{terms.map(term => ( <li key={term.id} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"><span>{term.name}</span> <span className="text-muted-foreground">{format(term.startDate, 'MMM d')} - {format(term.endDate, 'MMM d, yyyy')}</span></li> ))}</ul>
+                  </div>
+                  <div>
+                      <div className="flex items-center justify-between"><h4 className="font-semibold">Holidays</h4><Dialog open={isHolidayDialogOpen} onOpenChange={setIsHolidayDialogOpen}><DialogTrigger asChild><Button variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4" /> Add Holiday</Button></DialogTrigger><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Add New Holiday</DialogTitle><DialogDescription>Schedule an official school holiday.</DialogDescription></DialogHeader><Form {...holidayForm}><form onSubmit={holidayForm.handleSubmit(onHolidaySubmit)} className="space-y-4 py-4"><FormField control={holidayForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Holiday Name</FormLabel><FormControl><Input placeholder="e.g., Winter Break" {...field} /></FormControl><FormMessage /></FormItem> )}/><FormField control={holidayForm.control} name="date" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/><DialogFooter><DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose><Button type="submit">Save Holiday</Button></DialogFooter></form></Form></DialogContent></Dialog></div>
+                      <ul className="mt-3 space-y-2">{holidays.map(holiday => ( <li key={holiday.id} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"><span>{holiday.name}</span><span className="text-muted-foreground">{format(holiday.date, 'PPP')}</span></li> ))}</ul>
+                  </div>
+              </CardContent>
+          </Card>
+
+           <Card className="xl:col-span-1">
+              <CardHeader><CardTitle className="flex items-center gap-2"><Settings /> System Data Lists</CardTitle><CardDescription>Manage data used in dropdowns across the app.</CardDescription></CardHeader>
+              <CardContent className="space-y-6">
+                  <div>
+                      <div className="flex items-center justify-between"><h4 className="font-semibold">Examination Boards</h4><Dialog open={isBoardDialogOpen} onOpenChange={setIsBoardDialogOpen}><DialogTrigger asChild><Button variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4" /> Add Board</Button></DialogTrigger><DialogContent className="sm:max-w-[425px]"><DialogHeader><DialogTitle>Add New Exam Board</DialogTitle><DialogDescription>Enter the name of the new exam board.</DialogDescription></DialogHeader><Form {...boardForm}><form onSubmit={boardForm.handleSubmit(onBoardSubmit)} className="space-y-4 py-4"><FormField control={boardForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Board Name</FormLabel><FormControl><Input placeholder="e.g., Advanced Placement" {...field} /></FormControl><FormMessage /></FormItem> )}/><DialogFooter><DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose><Button type="submit" disabled={boardForm.formState.isSubmitting}>{boardForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Board</Button></DialogFooter></form></Form></DialogContent></Dialog></div>
+                      <ul className="mt-3 space-y-2">{examBoards.map(board => (<li key={board} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"><span>{board}</span>{board !== 'Internal' && (<Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteExamBoard(board)}><Trash2 className="h-4 w-4 text-destructive" /></Button>)}</li>))}</ul>
+                  </div>
+                   <div>
+                      <div className="flex items-center justify-between"><h4 className="font-semibold">Fee Descriptions</h4><Dialog open={isDescriptionDialogOpen} onOpenChange={setIsDescriptionDialogOpen}><DialogTrigger asChild><Button variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4" /> Add Description</Button></DialogTrigger><DialogContent className="sm:max-w-[425px]"><DialogHeader><DialogTitle>Add New Fee Description</DialogTitle><DialogDescription>Enter a new fee description to be used in transactions.</DialogDescription></DialogHeader><Form {...descriptionForm}><form onSubmit={descriptionForm.handleSubmit(onDescriptionSubmit)} className="space-y-4 py-4"><FormField control={descriptionForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder="e.g., Field Trip" {...field} /></FormControl><FormMessage /></FormItem> )}/><DialogFooter><DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose><Button type="submit" disabled={descriptionForm.formState.isSubmitting}>{descriptionForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Description</Button></DialogFooter></form></Form></DialogContent></Dialog></div>
+                      <ul className="mt-3 space-y-2">{feeDescriptions.map(desc => (<li key={desc} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"><span>{desc}</span><Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteFeeDescription(desc)}><Trash2 className="h-4 w-4 text-destructive" /></Button></li>))}</ul>
+                  </div>
+                  <div>
+                      <div className="flex items-center justify-between"><h4 className="font-semibold">Event Audiences</h4><Dialog open={isAudienceDialogOpen} onOpenChange={setIsAudienceDialogOpen}><DialogTrigger asChild><Button variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4" /> Add Audience</Button></DialogTrigger><DialogContent className="sm:max-w-[425px]"><DialogHeader><DialogTitle>Add New Event Audience</DialogTitle><DialogDescription>Enter a new audience type to be used when creating events.</DialogDescription></DialogHeader><Form {...audienceForm}><form onSubmit={audienceForm.handleSubmit(onAudienceSubmit)} className="space-y-4 py-4"><FormField control={audienceForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Audience Name</FormLabel><FormControl><Input placeholder="e.g., All Staff" {...field} /></FormControl><FormMessage /></FormItem> )}/><DialogFooter><DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose><Button type="submit" disabled={audienceForm.formState.isSubmitting}>{audienceForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Audience</Button></DialogFooter></form></Form></DialogContent></Dialog></div>
+                      <ul className="mt-3 space-y-2">{audiences.map(aud => (<li key={aud} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"><span>{aud}</span><Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteAudience(aud)}><Trash2 className="h-4 w-4 text-destructive" /></Button></li>))}</ul>
+                  </div>
+              </CardContent>
+          </Card>
+      </div>
+
     </div>
   );
 }

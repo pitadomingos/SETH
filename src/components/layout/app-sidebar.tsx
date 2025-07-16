@@ -92,35 +92,33 @@ export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
   ],
   Admin: [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/dashboard/school-profile', label: 'School Profile', icon: Building },
     { href: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
+    { href: '/dashboard/admissions', label: 'Admissions', icon: UserPlus },
     { href: '/dashboard/students', label: 'Students', icon: GraduationCap },
     { href: '/dashboard/teachers', label: 'Teachers', icon: Presentation },
     { href: '/dashboard/classes', label: 'Classes', icon: School },
-    { href: '/dashboard/admissions', label: 'Admissions', icon: UserPlus },
-    { href: '/dashboard/syllabus', label: 'Syllabus', icon: BookMarked },
     { href: '/dashboard/academics', label: 'Academics', icon: BookOpen },
     { href: '/dashboard/examinations', label: 'Examinations', icon: ClipboardList },
     { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
     { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
     { href: '/dashboard/assets', label: 'Assets', icon: Package },
     { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
+    { href: '/dashboard/events', label: 'Events', icon: CalendarDays },
     { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
     { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Award },
+    { href: '/dashboard/school-profile', label: 'School Profile', icon: Building },
+    { href: '/dashboard/kiosk-showcase', label: 'Kiosk', icon: Camera },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
-    { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: Camera },
-    { href: '/dashboard/admin', label: 'Admin Panel', icon: ShieldCheck },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
-    { href: '/dashboard/events', label: 'Events', icon: CalendarDays },
   ],
   Teacher: [
     ...commonLinks,
     ...studentAndTeacherLinks,
-    { href: '/dashboard/grading', label: 'Grading', icon: FileCheck },
-    { href: '/dashboard/attendance', label: 'Attendance', icon: CalendarCheck },
-    { href: '/dashboard/behavioral', label: 'Behavioral', icon: HeartPulse },
     { href: '/dashboard/lesson-planner', label: 'Lesson Planner', icon: PenSquare },
     { href: '/dashboard/ai-testing', label: 'AI Test Generator', icon: FlaskConical },
+    { href: '/dashboard/grading', label: 'Gradebook', icon: FileCheck },
+    { href: '/dashboard/attendance', label: 'Attendance', icon: CalendarCheck },
+    { href: '/dashboard/behavioral', label: 'Behavioral', icon: HeartPulse },
     { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
   ],
   Student: [
@@ -153,7 +151,7 @@ export function AppSidebar() {
       const kioskLink = { href: `/kiosk/${user?.schoolId}`, label: 'Public Kiosk', icon: MonitorPlay };
       const settingsIndex = links.findIndex(l => l.href === '/dashboard/settings');
       if (settingsIndex !== -1) {
-        links.splice(settingsIndex + 1, 0, kioskLink);
+        links.splice(settingsIndex, 0, kioskLink);
       } else {
         links.push(kioskLink);
       }
@@ -162,7 +160,7 @@ export function AppSidebar() {
         const manageLink = { href: '/dashboard/manage-schools', label: 'Manage Schools', icon: Building };
         const profileIndex = links.findIndex(l => l.href === '/dashboard/school-profile');
         if (profileIndex !== -1) {
-            links.splice(profileIndex + 1, 0, manageLink);
+            links.splice(profileIndex, 0, manageLink);
         } else {
             links.unshift(manageLink);
         }

@@ -4,7 +4,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Film, Image as ImageIcon, PlusCircle, Trash2, Video } from 'lucide-react';
+import { Loader2, Film, Image as ImageIcon, PlusCircle, Trash2, Video, Tv, Save } from 'lucide-react';
 import { useSchoolData, KioskMedia } from '@/context/school-data-context';
 import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -18,6 +18,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { format } from 'date-fns';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 const mediaSchema = z.object({
   title: z.string().min(3, "A title is required."),
@@ -48,12 +51,10 @@ function NewMediaDialog() {
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      // In a real app, this would upload the file and return a URL.
-      // Here, we'll just use a placeholder.
       const mediaType = form.getValues('type');
       const placeholderUrl = mediaType === 'image'
         ? `https://placehold.co/1280x720.png?text=${encodeURIComponent(form.getValues('title'))}`
-        : 'https://www.w3schools.com/html/mov_bbb.mp4'; // Placeholder video
+        : 'https://www.w3schools.com/html/mov_bbb.mp4'; 
       form.setValue('url', placeholderUrl, { shouldValidate: true });
     }
   };
@@ -93,85 +94,113 @@ function NewMediaDialog() {
 
 export default function KioskShowcasePage() {
   const { role, isLoading: authLoading } = useAuth();
-  const { schoolProfile, isLoading: schoolLoading, kioskMedia, removeKioskMedia } = useSchoolData();
+  const { schoolProfile, isLoading: schoolLoading, kioskMedia, removeKioskMedia, updateSchoolProfile } = useSchoolData();
   const router = useRouter();
+  const { toast } = useToast();
   
   const isLoading = authLoading || schoolLoading;
+  
+  const [kioskConfig, setKioskConfig] = useState(schoolProfile?.kioskConfig || {
+    showDashboard: true,
+    showLeaderboard: true,
+    showAttendance: false,
+    showAcademics: false,
+    showAwards: false,
+    showPerformers: false,
+    showAwardWinner: false,
+    showShowcase: false,
+  });
 
   useEffect(() => {
-    if (!isLoading && role !== 'Admin') {
-      router.push('/dashboard');
+    if (schoolProfile) {
+        setKioskConfig(schoolProfile.kioskConfig || { showDashboard: true, showLeaderboard: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false });
     }
-  }, [role, isLoading, router]);
+  }, [schoolProfile]);
+
+  useEffect(() => { if (!isLoading && role !== 'Admin') router.push('/dashboard'); }, [role, isLoading, router]);
   
-  if (isLoading) {
-    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  }
-  
-  if (role !== 'Admin') {
-     return <div className="flex h-full items-center justify-center"><p>Access Denied</p></div>;
-  }
+  if (isLoading) return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (role !== 'Admin') return <div className="flex h-full items-center justify-center"><p>Access Denied</p></div>;
 
   const sortedMedia = [...kioskMedia].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+  const handleKioskConfigChange = (key: keyof typeof kioskConfig, checked: boolean) => {
+    setKioskConfig(prev => ({ ...prev, [key]: checked }));
+  };
+
+  const handleSaveKioskConfig = () => {
+     if (schoolProfile) {
+        updateSchoolProfile({ kioskConfig });
+        toast({ title: "Kiosk Settings Updated", description: "Your public kiosk display settings have been saved." });
+    }
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Kiosk Showcase</h2>
-          <p className="text-muted-foreground">Manage the images and videos displayed on your school's public kiosk.</p>
+          <h2 className="text-3xl font-bold tracking-tight">Kiosk Management</h2>
+          <p className="text-muted-foreground">Manage media and display settings for your school's public kiosk.</p>
         </div>
         <NewMediaDialog />
       </header>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Showcase Gallery</CardTitle>
-          <CardDescription>
-            {sortedMedia.length > 0 
-              ? `You have ${sortedMedia.length} item(s) in your showcase. Ensure the showcase slide is enabled in Settings.`
-              : "No media uploaded yet. Add images or videos to display on your kiosk."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {sortedMedia.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {sortedMedia.map((media) => (
-                <Card key={media.id} className="overflow-hidden">
-                  <div className="aspect-video bg-muted relative">
-                    {media.type === 'image' ? (
-                      <Image src={media.url} alt={media.title} layout="fill" objectFit="cover" data-ai-hint="event photo school"/>
-                    ) : (
-                      <video src={media.url} className="w-full h-full object-cover" controls muted loop data-ai-hint="event video school"/>
-                    )}
-                    <div className="absolute top-2 left-2 p-1.5 bg-black/50 rounded-full text-white">
-                      {media.type === 'image' ? <ImageIcon className="h-4 w-4" /> : <Video className="h-4 w-4" />}
-                    </div>
-                  </div>
-                  <CardContent className="p-4 space-y-2">
-                      <CardTitle className="text-lg">{media.title}</CardTitle>
-                      <CardDescription>{media.description}</CardDescription>
-                  </CardContent>
-                  <CardFooter className="flex justify-between items-center bg-muted p-3">
-                      <p className="text-xs text-muted-foreground">
-                        Uploaded: {format(media.createdAt, 'PPP')}
-                      </p>
-                      <Button variant="destructive" size="sm" onClick={() => removeKioskMedia(media.id)}>
-                        <Trash2 className="mr-2 h-4 w-4" /> Delete
-                      </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16 text-muted-foreground">
-              <p>Your showcase is empty.</p>
-              <p>Click "Add Media" to get started.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Showcase Gallery</CardTitle>
+              <CardDescription>
+                {sortedMedia.length > 0 ? `You have ${sortedMedia.length} item(s) in your showcase.` : "No media uploaded yet. Add images or videos to display."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {sortedMedia.length > 0 ? (
+                <div className="grid gap-6 md:grid-cols-2">
+                  {sortedMedia.map((media) => (
+                    <Card key={media.id} className="overflow-hidden">
+                      <div className="aspect-video bg-muted relative">
+                        {media.type === 'image' ? ( <Image src={media.url} alt={media.title} layout="fill" objectFit="cover" data-ai-hint="event photo school"/>
+                        ) : ( <video src={media.url} className="w-full h-full object-cover" controls muted loop data-ai-hint="event video school"/> )}
+                        <div className="absolute top-2 left-2 p-1.5 bg-black/50 rounded-full text-white">
+                          {media.type === 'image' ? <ImageIcon className="h-4 w-4" /> : <Video className="h-4 w-4" />}
+                        </div>
+                      </div>
+                      <CardContent className="p-4 space-y-2">
+                          <CardTitle className="text-lg">{media.title}</CardTitle>
+                          <CardDescription>{media.description}</CardDescription>
+                      </CardContent>
+                      <CardFooter className="flex justify-between items-center bg-muted p-3">
+                          <p className="text-xs text-muted-foreground">Uploaded: {format(media.createdAt, 'PPP')}</p>
+                          <Button variant="destructive" size="sm" onClick={() => removeKioskMedia(media.id)}><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16 text-muted-foreground"><p>Your showcase is empty.</p><p>Click "Add Media" to get started.</p></div>
+              )}
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Tv /> Kiosk Display Settings</CardTitle>
+                <CardDescription>Choose which slides to display. Changes apply on the next cycle.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid sm:grid-cols-1 gap-4">
+                <div className="flex items-center space-x-2"><Checkbox id="kiosk-dashboard" checked={kioskConfig.showDashboard} onCheckedChange={(checked) => handleKioskConfigChange('showDashboard', checked as boolean)} /><Label htmlFor="kiosk-dashboard">Show Main Dashboard Slide</Label></div>
+                <div className="flex items-center space-x-2"><Checkbox id="kiosk-leaderboard" checked={kioskConfig.showLeaderboard} onCheckedChange={(checked) => handleKioskConfigChange('showLeaderboard', checked as boolean)} /><Label htmlFor="kiosk-leaderboard">Show Top Student Leaderboard</Label></div>
+                <div className="flex items-center space-x-2"><Checkbox id="kiosk-performers" checked={kioskConfig.showPerformers} onCheckedChange={(checked) => handleKioskConfigChange('showPerformers', checked as boolean)} /><Label htmlFor="kiosk-performers">Show Top Performers & Staff</Label></div>
+                <div className="flex items-center space-x-2"><Checkbox id="kiosk-award-winner" checked={kioskConfig.showAwardWinner} onCheckedChange={(checked) => handleKioskConfigChange('showAwardWinner', checked as boolean)} /><Label htmlFor="kiosk-award-winner">Show Award Winner Announcement</Label></div>
+                <div className="flex items-center space-x-2"><Checkbox id="kiosk-showcase" checked={kioskConfig.showShowcase} onCheckedChange={(checked) => handleKioskConfigChange('showShowcase', checked as boolean)} /><Label htmlFor="kiosk-showcase">Show Media Showcase</Label></div>
+                <Separator />
+                <div className="flex items-center space-x-2"><Checkbox id="kiosk-attendance" checked={kioskConfig.showAttendance} onCheckedChange={(checked) => handleKioskConfigChange('showAttendance', checked as boolean)} /><Label htmlFor="kiosk-attendance">Show Attendance Trend Chart</Label></div>
+                <div className="flex items-center space-x-2"><Checkbox id="kiosk-academics" checked={kioskConfig.showAcademics} onCheckedChange={(checked) => handleKioskConfigChange('showAcademics', checked as boolean)} /><Label htmlFor="kiosk-academics">Show Academic Performance Charts</Label></div>
+                <div className="flex items-center space-x-2"><Checkbox id="kiosk-awards" checked={kioskConfig.showAwards} onCheckedChange={(checked) => handleKioskConfigChange('showAwards', checked as boolean)} /><Label htmlFor="kiosk-awards">Show Annual Award Announcements</Label></div>
+            </CardContent>
+            <CardFooter><Button onClick={handleSaveKioskConfig}><Save className="mr-2 h-4 w-4" /> Save Kiosk Settings</Button></CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }
-
