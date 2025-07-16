@@ -21,7 +21,8 @@ import {
     Holiday,
     Course as InitialCourse,
     LessonPlan,
-    Syllabus,
+    Syllabus as InitialSyllabus,
+    SyllabusTopic,
     SavedTest,
     DeployedTest,
     ActivityLog,
@@ -49,7 +50,8 @@ export type Competition = InitialCompetition;
 export type SavedReport = InitialSavedReport;
 export type AwardConfig = InitialAwardConfig;
 export type BehavioralAssessment = InitialBehavioralAssessment;
-export type { Team, Admission, Student, ActivityLog, Message, Teacher, Attendance, Holiday, KioskMedia, Syllabus };
+export type Syllabus = InitialSyllabus;
+export type { Team, Admission, Student, ActivityLog, Message, Teacher, Attendance, Holiday, KioskMedia };
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
 interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }
@@ -98,6 +100,7 @@ export interface NewBehavioralAssessmentData {
     conduct: number;
     comment?: string;
 }
+export interface NewSyllabusData { subject: string; grade: string; }
 
 
 interface SchoolDataContextType {
@@ -139,6 +142,9 @@ interface SchoolDataContextType {
   coursesData: Course[];
   addCourse: (data: NewCourseData) => void;
   syllabi: Syllabus[];
+  addSyllabus: (data: NewSyllabusData) => void;
+  updateSyllabusTopic: (subject: string, grade: string, topic: SyllabusTopic) => void;
+  deleteSyllabusTopic: (subject: string, grade: string, topicId: string) => void;
   subjects: string[];
   addSubject: (subject: string) => void;
   examBoards: string[];
@@ -727,6 +733,43 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setLessonPlans(prev => [newPlan, ...prev]);
   };
 
+  const addSyllabus = (data: NewSyllabusData) => {
+    const newSyllabus: Syllabus = { ...data, topics: [] };
+    setSyllabi(prev => [...prev, newSyllabus]);
+    toast({ title: 'Syllabus Created', description: `A new syllabus for ${data.subject} - Grade ${data.grade} is ready.` });
+  };
+  
+  const updateSyllabusTopic = (subject: string, grade: string, topic: SyllabusTopic) => {
+    setSyllabi(prevSyllabi =>
+      prevSyllabi.map(syllabus => {
+        if (syllabus.subject === subject && syllabus.grade === grade) {
+          const topicIndex = syllabus.topics.findIndex(t => t.id === topic.id);
+          const newTopics = [...syllabus.topics];
+          if (topicIndex > -1) {
+            newTopics[topicIndex] = topic;
+          } else {
+            newTopics.push(topic);
+          }
+          return { ...syllabus, topics: newTopics };
+        }
+        return syllabus;
+      })
+    );
+    toast({ title: 'Syllabus Updated', description: `Topic "${topic.topic}" has been saved.` });
+  };
+  
+  const deleteSyllabusTopic = (subject: string, grade: string, topicId: string) => {
+    setSyllabi(prevSyllabi =>
+      prevSyllabi.map(syllabus => {
+        if (syllabus.subject === subject && syllabus.grade === grade) {
+          return { ...syllabus, topics: syllabus.topics.filter(t => t.id !== topicId) };
+        }
+        return syllabus;
+      })
+    );
+    toast({ title: 'Topic Deleted' });
+  };
+
   const addSavedTest = (data: NewSavedTest) => {
     const newTest: SavedTest = {
       id: `TEST${Date.now()}`,
@@ -945,7 +988,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     grades, addGrade,
     attendance, addLessonAttendance,
     events, addEvent, announceAwards, awardConfig, updateAwardConfig,
-    syllabi,
+    syllabi, addSyllabus, updateSyllabusTopic, deleteSyllabusTopic,
     subjects, addSubject,
     examBoards, addExamBoard, deleteExamBoard,
     feeDescriptions, addFeeDescription, deleteFeeDescription,
