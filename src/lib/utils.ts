@@ -53,6 +53,20 @@ export const formatCurrency = (amount: number, currency?: SchoolProfile['currenc
       return `R ${formattedAmount}`;
     case 'MZN':
       return `${formattedAmount} MT`;
+    case 'ZWL':
+        return `Z$ ${formattedAmount}`;
+    case 'BWP':
+        return `P ${formattedAmount}`;
+    case 'NAD':
+        return `N$ ${formattedAmount}`;
+    case 'ZMW':
+        return `K ${formattedAmount}`;
+    case 'MWK':
+        return `MK ${formattedAmount}`;
+    case 'AOA':
+        return `${formattedAmount} Kz`;
+    case 'TZS':
+        return `${formattedAmount} TSh`;
     default:
       // Fallback to USD if currency is not set
       return `$${formattedAmount}`;

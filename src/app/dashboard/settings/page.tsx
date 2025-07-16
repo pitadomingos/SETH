@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Loader2, Save, Tv } from 'lucide-react';
@@ -116,7 +117,20 @@ export default function SettingsPage() {
             </div>
              <div className="flex flex-col md:flex-row md:items-center md:justify-between p-4 border rounded-lg">
                 <div><Label>School Currency</Label><p className="text-xs text-muted-foreground">Select the primary currency for all financial transactions and reports.</p></div>
-                <Select value={schoolProfile?.currency} onValueChange={handleCurrencyChange}><SelectTrigger className="w-full md:w-[220px] mt-2 md:mt-0"><SelectValue placeholder="Select currency" /></SelectTrigger><SelectContent><SelectItem value="USD">USD ($)</SelectItem><SelectItem value="ZAR">ZAR (R)</SelectItem><SelectItem value="MZN">MZN (MT)</SelectItem></SelectContent></Select>
+                <Select value={schoolProfile?.currency} onValueChange={handleCurrencyChange}><SelectTrigger className="w-full md:w-[220px] mt-2 md:mt-0"><SelectValue placeholder="Select currency" /></SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="USD">USD ($)</SelectItem>
+                      <SelectItem value="ZAR">ZAR (R)</SelectItem>
+                      <SelectItem value="MZN">MZN (MT)</SelectItem>
+                      <SelectItem value="BWP">BWP (P)</SelectItem>
+                      <SelectItem value="NAD">NAD (N$)</SelectItem>
+                      <SelectItem value="ZMW">ZMW (K)</SelectItem>
+                      <SelectItem value="MWK">MWK (MK)</SelectItem>
+                      <SelectItem value="AOA">AOA (Kz)</SelectItem>
+                      <SelectItem value="TZS">TZS (TSh)</SelectItem>
+                      <SelectItem value="ZWL">ZWL (Z$)</SelectItem>
+                  </SelectContent>
+                </Select>
             </div>
         </CardContent>
       </Card>
