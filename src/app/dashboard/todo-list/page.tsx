@@ -9,12 +9,12 @@ import { Button } from '@/components/ui/button';
 
 const completedTasks = [
   'AI Test Generator for teachers with a save/deploy workflow.',
-  'AI-powered Lesson Planner for Teachers with auto-saving.',
+  'AI-powered Lesson Planner for Teachers with auto-saving and syllabus integration.',
   'AI-powered academic reports suite for Admins (School, Class, Struggling Students, Teacher performance).',
   'AI-powered analysis and guidance for students who have not met graduation requirements.',
   'AI-powered test grading flow that calculates scores and updates student records.',
   'Automated student enrollment from the Admissions module.',
-  'Centralized system data management (Fee Descriptions, Event Audiences, etc.) in the Admin Panel.',
+  'Centralized system data management (Fee Descriptions, Event Audiences, etc.) in the Settings page.',
   'Comprehensive admissions workflow from parent application to admin approval.',
   'Comprehensive, subject-specific Gradebook for teachers.',
   'Created a system-wide AI analysis tool for developers to get strategic insights.',
@@ -23,17 +23,17 @@ const completedTasks = [
   'Enabled interactive profile and picture updates on the Profile page.',
   'Enhanced the Sports page with dynamic team and competition management.',
   'Global Admin dashboard for viewing all schools and managing their status.',
-  'Implemented Academics, Examinations, and Attendance pages.',
+  'Implemented Academics (with Syllabus), Examinations, and Attendance pages.',
   'Implemented academically and financially-gated student certificate and transcript downloads.',
   'Implemented grade-level capacity management and vacancy display on application forms.',
   'Multi-school simulation with dynamic data loading based on user role.',
   'Personalized leaderboards view for parents and school-wide view for staff.',
   'Personalized login loading screen with school and user details.',
   'Project Proposal page for developers outlining vision, roadmap, and funding needs.',
-  'Role-based dashboards and side navigation.',
+  'Role-based dashboards and side navigation with logical reordering.',
   'Role-based Activity Logs page for Admins (school-specific) and Developers (global).',
   'School status management (Active, Suspended, Inactive) for system owners.',
-  'School-wide currency configuration (USD, ZAR, MZN) for financial management.',
+  'School-wide currency configuration for all Southern African currencies.',
   'Student test-taking interface with automated submission for AI grading.',
   'Upgraded Events page with an interactive calendar and event creation.',
   'Upgraded Finance module with partial payments, ad-hoc transaction creation, and expense tracking.',
@@ -43,7 +43,10 @@ const completedTasks = [
   'Localized all names and locations to a Portuguese/Mozambican context.',
   'Fixed parent impersonation logic for Global Admins.',
   'Added "Download as PDF" functionality to all documentation pages.',
-  'Corrected and enhanced the multi-school "Manage Schools" dashboard for Premium Admins.'
+  'Corrected and enhanced the multi-school "Manage Schools" dashboard for Premium Admins.',
+  'Merged Syllabus management into Academics and Admin Panel into Settings.',
+  'Moved Kiosk configuration to the Kiosk Showcase page.',
+  'Fixed numerous bugs related to component imports, state management, and JSX syntax.',
 ];
 
 const upcomingFeatures = [
