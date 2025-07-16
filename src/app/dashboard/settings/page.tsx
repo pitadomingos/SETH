@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, PlusCircle, CalendarDays, Calendar as CalendarIcon, Trash2, Settings } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, CalendarDays, Calendar as CalendarIcon, Trash2, Settings, Users } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -140,18 +140,22 @@ export default function SettingsPage() {
         <CardContent><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">{gradesToDisplay.map(grade => (<div key={grade} className="space-y-2"><Label htmlFor={`grade-capacity-${grade}`}>Grade {grade}</Label><Input id={`grade-capacity-${grade}`} type="number" value={gradeCapacities[grade] || ''} onChange={(e) => handleCapacityChange(grade, e.target.value)} placeholder="0" /></div>))}</div></CardContent>
         <CardFooter><Button onClick={handleSaveCapacities}><Save className="mr-2 h-4 w-4" /> Save Capacities</Button></CardFooter>
       </Card>
+      
+      <Card>
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Users /> User Management</CardTitle>
+            <CardDescription>View and manage all teachers and students in the system.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Table>
+                <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Role</TableHead><TableHead>Status</TableHead><TableHead><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
+                <TableBody>{users.slice(0, 10).map((user) => (<TableRow key={user.id}><TableCell className="font-medium">{user.name}</TableCell><TableCell>{user.email}</TableCell><TableCell><Badge variant="outline">{user.role}</Badge></TableCell><TableCell><Badge variant={getStatusVariant(user.status)}>{user.status}</Badge></TableCell><TableCell className="text-right"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><span className="sr-only">Open menu</span><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem>Edit</DropdownMenuItem><DropdownMenuItem>View Profile</DropdownMenuItem><DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem></DropdownMenuContent></DropdownMenu></TableCell></TableRow>))}</TableBody>
+            </Table>
+        </CardContent>
+    </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-          <Card className="xl:col-span-1">
-              <CardHeader className="flex flex-row items-center justify-between"><div><CardTitle>User Management</CardTitle><CardDescription>View and manage all users in the system.</CardDescription></div></CardHeader>
-              <CardContent>
-                  <Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Role</TableHead><TableHead>Status</TableHead><TableHead><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
-                      <TableBody>{users.slice(0, 5).map((user) => (<TableRow key={user.id}><TableCell className="font-medium">{user.name}</TableCell><TableCell>{user.email}</TableCell><TableCell><Badge variant="outline">{user.role}</Badge></TableCell><TableCell><Badge variant={getStatusVariant(user.status)}>{user.status}</Badge></TableCell><TableCell className="text-right"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><span className="sr-only">Open menu</span><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem>Edit</DropdownMenuItem><DropdownMenuItem>View Profile</DropdownMenuItem><DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem></DropdownMenuContent></DropdownMenu></TableCell></TableRow>))}</TableBody>
-                  </Table>
-              </CardContent>
-          </Card>
-
-           <Card className="xl:col-span-1">
+      <div className="grid gap-6 lg:grid-cols-2">
+           <Card>
               <CardHeader><CardTitle className="flex items-center gap-2"><CalendarDays /> Academic Year</CardTitle><CardDescription>Configure terms and holidays for the school year.</CardDescription></CardHeader>
               <CardContent className="space-y-6">
                   <div>
@@ -164,8 +168,7 @@ export default function SettingsPage() {
                   </div>
               </CardContent>
           </Card>
-
-           <Card className="xl:col-span-1">
+           <Card>
               <CardHeader><CardTitle className="flex items-center gap-2"><Settings /> System Data Lists</CardTitle><CardDescription>Manage data used in dropdowns across the app.</CardDescription></CardHeader>
               <CardContent className="space-y-6">
                   <div>
