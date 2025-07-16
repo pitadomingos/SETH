@@ -228,9 +228,17 @@ function SchoolAnalysisDialog({ school }) {
       setIsLoading(false);
     }
   };
+  
+  const handleOpenChange = (open) => {
+      setIsOpen(open);
+      if (!open) {
+          setIsLoading(false);
+          setAnalysis(null);
+      }
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <div className="cursor-pointer">{/* Children will be passed here */}</div>
       </DialogTrigger>
@@ -294,9 +302,18 @@ function StudentAnalysisDialog({ student }) {
       setIsLoading(false);
     }
   };
+  
+  const handleOpenChange = (open) => {
+      setIsOpen(open);
+      if (!open) {
+          setIsLoading(false);
+          setAnalysis(null);
+      }
+  }
+
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <div className="cursor-pointer"></div>
       </DialogTrigger>
@@ -364,9 +381,17 @@ function TeacherAnalysisDialog({ teacher }) {
       setIsLoading(false);
     }
   };
+  
+  const handleOpenChange = (open) => {
+      setIsOpen(open);
+      if (!open) {
+          setIsLoading(false);
+          setAnalysis(null);
+      }
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <div className="cursor-pointer"></div>
       </DialogTrigger>
@@ -442,21 +467,22 @@ export default function AwardsPage() {
   const topTeachers = useMemo(() => {
     if (!allSchoolData) return [];
     const allTeachers = Object.values(allSchoolData).flatMap(s => s.teachers.map(teacher => ({...teacher, schoolName: s.profile.name, schoolId: s.profile.id})));
-    
+    const allGrades = Object.values(allSchoolData).flatMap(s => s.grades);
+
     return allTeachers.map(teacher => {
-      const school = allSchoolData[teacher.schoolId];
-      if (!school) return { ...teacher, avgStudentGrade: 0 };
-      const teacherCourses = school.courses.filter(c => c.teacherId === teacher.id);
+      const teacherCourses = allSchoolData[teacher.schoolId]?.courses.filter(c => c.teacherId === teacher.id) || [];
       const studentIds = new Set<string>();
+      
       teacherCourses.forEach(course => {
-          const classInfo = school.classes.find(c => c.id === course.classId);
+          const classInfo = allSchoolData[teacher.schoolId]?.classes.find(c => c.id === course.classId);
           if(classInfo) {
-              school.students
+              allSchoolData[teacher.schoolId]?.students
                   .filter(s => s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim())
                   .forEach(s => studentIds.add(s.id));
           }
       });
-      const teacherGrades = school.grades
+
+      const teacherGrades = allGrades
           .filter(g => studentIds.has(g.studentId) && g.subject === teacher.subject)
           .map(g => parseFloat(g.grade));
       
@@ -522,145 +548,151 @@ export default function AwardsPage() {
         <section>
           <h3 className="text-2xl font-semibold flex items-center gap-3 mb-4"><School /> Top Performing Schools</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {topSchools[0] && (
-              <AwardCard rank={0} prize={awardConfig.topSchool[0]}>
-                <SchoolAnalysisDialog school={topSchools[0]}>
-                  <div className="flex flex-col items-center text-center">
-                    <Avatar className="h-24 w-24 mb-4 border-2 border-yellow-500">
-                        <AvatarImage src={topSchools[0].logoUrl} data-ai-hint="school logo"/>
-                        <AvatarFallback>{topSchools[0].name.substring(0, 2)}</AvatarFallback>
-                    </Avatar>
-                    <p className="text-xl font-bold">{topSchools[0].name}</p>
-                    <p className="text-3xl font-bold text-primary mt-2">{topSchools[0].avgGpa.toFixed(2)} GPA</p>
-                  </div>
-                </SchoolAnalysisDialog>
-              </AwardCard>
-            )}
-            <div className="space-y-6">
-              {topSchools[1] && (
-                  <AwardCard rank={1} prize={awardConfig.topSchool[1]}>
-                    <SchoolAnalysisDialog school={topSchools[1]}>
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-16 w-16 border-2 border-gray-400"><AvatarImage src={topSchools[1].logoUrl} data-ai-hint="school logo"/><AvatarFallback>{topSchools[1].name.substring(0, 2)}</AvatarFallback></Avatar>
-                        <div>
-                          <p className="font-bold">{topSchools[1].name}</p>
-                          <p className="text-xl font-bold text-primary mt-1">{topSchools[1].avgGpa.toFixed(2)} GPA</p>
-                        </div>
-                      </div>
+            {topSchools.length > 0 ? (
+              <>
+                <AwardCard rank={0} prize={awardConfig.topSchool[0]}>
+                    <SchoolAnalysisDialog school={topSchools[0]}>
+                    <div className="flex flex-col items-center text-center">
+                        <Avatar className="h-24 w-24 mb-4 border-2 border-yellow-500">
+                            <AvatarImage src={topSchools[0].logoUrl} data-ai-hint="school logo"/>
+                            <AvatarFallback>{topSchools[0].name.substring(0, 2)}</AvatarFallback>
+                        </Avatar>
+                        <p className="text-xl font-bold">{topSchools[0].name}</p>
+                        <p className="text-3xl font-bold text-primary mt-2">{topSchools[0].avgGpa.toFixed(2)} GPA</p>
+                    </div>
                     </SchoolAnalysisDialog>
-                  </AwardCard>
-              )}
-              {topSchools[2] && (
-                  <AwardCard rank={2} prize={awardConfig.topSchool[2]}>
-                    <SchoolAnalysisDialog school={topSchools[2]}>
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-16 w-16 border-2 border-orange-600"><AvatarImage src={topSchools[2].logoUrl} data-ai-hint="school logo"/><AvatarFallback>{topSchools[2].name.substring(0, 2)}</AvatarFallback></Avatar>
-                        <div>
-                          <p className="font-bold">{topSchools[2].name}</p>
-                          <p className="text-xl font-bold text-primary mt-1">{topSchools[2].avgGpa.toFixed(2)} GPA</p>
-                        </div>
-                      </div>
-                    </SchoolAnalysisDialog>
-                  </AwardCard>
-              )}
-            </div>
+                </AwardCard>
+                <div className="space-y-6">
+                  {topSchools[1] && (
+                      <AwardCard rank={1} prize={awardConfig.topSchool[1]}>
+                        <SchoolAnalysisDialog school={topSchools[1]}>
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-16 w-16 border-2 border-gray-400"><AvatarImage src={topSchools[1].logoUrl} data-ai-hint="school logo"/><AvatarFallback>{topSchools[1].name.substring(0, 2)}</AvatarFallback></Avatar>
+                            <div>
+                              <p className="font-bold">{topSchools[1].name}</p>
+                              <p className="text-xl font-bold text-primary mt-1">{topSchools[1].avgGpa.toFixed(2)} GPA</p>
+                            </div>
+                          </div>
+                        </SchoolAnalysisDialog>
+                      </AwardCard>
+                  )}
+                  {topSchools[2] && (
+                      <AwardCard rank={2} prize={awardConfig.topSchool[2]}>
+                        <SchoolAnalysisDialog school={topSchools[2]}>
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-16 w-16 border-2 border-orange-600"><AvatarImage src={topSchools[2].logoUrl} data-ai-hint="school logo"/><AvatarFallback>{topSchools[2].name.substring(0, 2)}</AvatarFallback></Avatar>
+                            <div>
+                              <p className="font-bold">{topSchools[2].name}</p>
+                              <p className="text-xl font-bold text-primary mt-1">{topSchools[2].avgGpa.toFixed(2)} GPA</p>
+                            </div>
+                          </div>
+                        </SchoolAnalysisDialog>
+                      </AwardCard>
+                  )}
+                </div>
+              </>
+            ) : <p className="text-muted-foreground text-center col-span-2">No school data available for ranking.</p>}
           </div>
         </section>
 
         <section>
           <h3 className="text-2xl font-semibold flex items-center gap-3 mb-4"><GraduationCap /> Students of the Year</h3>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {topStudents[0] && (
-                <AwardCard rank={0} prize={awardConfig.topStudent[0]}>
-                  <StudentAnalysisDialog student={topStudents[0]}>
-                    <div className="flex flex-col items-center text-center">
-                      <Avatar className="h-24 w-24 mb-4 border-2 border-yellow-500"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topStudents[0].name[0]}</AvatarFallback></Avatar>
-                      <p className="text-xl font-bold">{topStudents[0].name}</p>
-                      <p className="text-sm text-muted-foreground">{topStudents[0].schoolName}</p>
-                      <p className="text-3xl font-bold text-primary mt-2">{topStudents[0].avgGrade.toFixed(2)}/20</p>
-                    </div>
-                  </StudentAnalysisDialog>
-                </AwardCard>
-              )}
-               <div className="space-y-6">
-                {topStudents[1] && (
-                    <AwardCard rank={1} prize={awardConfig.topStudent[1]}>
-                      <StudentAnalysisDialog student={topStudents[1]}>
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-16 w-16 border-2 border-gray-400"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topStudents[1].name[0]}</AvatarFallback></Avatar>
-                          <div>
-                            <p className="font-bold">{topStudents[1].name}</p>
-                            <p className="text-xs text-muted-foreground">{topStudents[1].schoolName}</p>
-                            <p className="text-xl font-bold text-primary mt-1">{topStudents[1].avgGrade.toFixed(2)}/20</p>
+              {topStudents.length > 0 ? (
+                <>
+                  <AwardCard rank={0} prize={awardConfig.topStudent[0]}>
+                    <StudentAnalysisDialog student={topStudents[0]}>
+                      <div className="flex flex-col items-center text-center">
+                        <Avatar className="h-24 w-24 mb-4 border-2 border-yellow-500"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topStudents[0].name[0]}</AvatarFallback></Avatar>
+                        <p className="text-xl font-bold">{topStudents[0].name}</p>
+                        <p className="text-sm text-muted-foreground">{topStudents[0].schoolName}</p>
+                        <p className="text-3xl font-bold text-primary mt-2">{topStudents[0].avgGrade.toFixed(2)}/20</p>
+                      </div>
+                    </StudentAnalysisDialog>
+                  </AwardCard>
+                  <div className="space-y-6">
+                  {topStudents[1] && (
+                      <AwardCard rank={1} prize={awardConfig.topStudent[1]}>
+                        <StudentAnalysisDialog student={topStudents[1]}>
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-16 w-16 border-2 border-gray-400"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topStudents[1].name[0]}</AvatarFallback></Avatar>
+                            <div>
+                              <p className="font-bold">{topStudents[1].name}</p>
+                              <p className="text-xs text-muted-foreground">{topStudents[1].schoolName}</p>
+                              <p className="text-xl font-bold text-primary mt-1">{topStudents[1].avgGrade.toFixed(2)}/20</p>
+                            </div>
                           </div>
-                        </div>
-                      </StudentAnalysisDialog>
-                    </AwardCard>
-                )}
-                 {topStudents[2] && (
-                    <AwardCard rank={2} prize={awardConfig.topStudent[2]}>
-                      <StudentAnalysisDialog student={topStudents[2]}>
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-16 w-16 border-2 border-orange-600"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topStudents[2].name[0]}</AvatarFallback></Avatar>
-                          <div>
-                            <p className="font-bold">{topStudents[2].name}</p>
-                            <p className="text-xs text-muted-foreground">{topStudents[2].schoolName}</p>
-                            <p className="text-xl font-bold text-primary mt-1">{topStudents[2].avgGrade.toFixed(2)}/20</p>
+                        </StudentAnalysisDialog>
+                      </AwardCard>
+                  )}
+                  {topStudents[2] && (
+                      <AwardCard rank={2} prize={awardConfig.topStudent[2]}>
+                        <StudentAnalysisDialog student={topStudents[2]}>
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-16 w-16 border-2 border-orange-600"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topStudents[2].name[0]}</AvatarFallback></Avatar>
+                            <div>
+                              <p className="font-bold">{topStudents[2].name}</p>
+                              <p className="text-xs text-muted-foreground">{topStudents[2].schoolName}</p>
+                              <p className="text-xl font-bold text-primary mt-1">{topStudents[2].avgGrade.toFixed(2)}/20</p>
+                            </div>
                           </div>
-                        </div>
-                      </StudentAnalysisDialog>
-                    </AwardCard>
-                )}
-               </div>
+                        </StudentAnalysisDialog>
+                      </AwardCard>
+                  )}
+                  </div>
+                </>
+              ) : <p className="text-muted-foreground text-center col-span-2">No student data available for ranking.</p>}
            </div>
         </section>
 
         <section>
           <h3 className="text-2xl font-semibold flex items-center gap-3 mb-4"><Presentation /> Teachers of the Year</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {topTeachers[0] && (
-                <AwardCard rank={0} prize={awardConfig.topTeacher[0]}>
-                  <TeacherAnalysisDialog teacher={topTeachers[0]}>
-                    <div className="flex flex-col items-center text-center">
-                      <Avatar className="h-24 w-24 mb-4 border-2 border-yellow-500"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topTeachers[0].name[0]}</AvatarFallback></Avatar>
-                      <p className="text-xl font-bold">{topTeachers[0].name}</p>
-                      <p className="text-sm text-muted-foreground">{topTeachers[0].schoolName} - {topTeachers[0].subject}</p>
-                      <p className="text-3xl font-bold text-primary mt-2">{topTeachers[0].avgStudentGrade.toFixed(2)}/20</p>
-                      <p className="text-xs text-muted-foreground">Avg. Student Grade</p>
-                    </div>
-                  </TeacherAnalysisDialog>
-                </AwardCard>
-              )}
-               <div className="space-y-6">
-                {topTeachers[1] && (
-                    <AwardCard rank={1} prize={awardConfig.topTeacher[1]}>
-                      <TeacherAnalysisDialog teacher={topTeachers[1]}>
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-16 w-16 border-2 border-gray-400"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topTeachers[1].name[0]}</AvatarFallback></Avatar>
-                          <div>
-                            <p className="font-bold">{topTeachers[1].name}</p>
-                             <p className="text-xs text-muted-foreground">{topTeachers[1].schoolName} - {topTeachers[1].subject}</p>
-                            <p className="text-xl font-bold text-primary mt-1">{topTeachers[1].avgStudentGrade.toFixed(2)}/20</p>
+              {topTeachers.length > 0 ? (
+                <>
+                  <AwardCard rank={0} prize={awardConfig.topTeacher[0]}>
+                    <TeacherAnalysisDialog teacher={topTeachers[0]}>
+                      <div className="flex flex-col items-center text-center">
+                        <Avatar className="h-24 w-24 mb-4 border-2 border-yellow-500"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topTeachers[0].name[0]}</AvatarFallback></Avatar>
+                        <p className="text-xl font-bold">{topTeachers[0].name}</p>
+                        <p className="text-sm text-muted-foreground">{topTeachers[0].schoolName} - {topTeachers[0].subject}</p>
+                        <p className="text-3xl font-bold text-primary mt-2">{topTeachers[0].avgStudentGrade.toFixed(2)}/20</p>
+                        <p className="text-xs text-muted-foreground">Avg. Student Grade</p>
+                      </div>
+                    </TeacherAnalysisDialog>
+                  </AwardCard>
+                  <div className="space-y-6">
+                  {topTeachers[1] && (
+                      <AwardCard rank={1} prize={awardConfig.topTeacher[1]}>
+                        <TeacherAnalysisDialog teacher={topTeachers[1]}>
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-16 w-16 border-2 border-gray-400"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topTeachers[1].name[0]}</AvatarFallback></Avatar>
+                            <div>
+                              <p className="font-bold">{topTeachers[1].name}</p>
+                              <p className="text-xs text-muted-foreground">{topTeachers[1].schoolName} - {topTeachers[1].subject}</p>
+                              <p className="text-xl font-bold text-primary mt-1">{topTeachers[1].avgStudentGrade.toFixed(2)}/20</p>
+                            </div>
                           </div>
-                        </div>
-                      </TeacherAnalysisDialog>
-                    </AwardCard>
-                )}
-                 {topTeachers[2] && (
-                    <AwardCard rank={2} prize={awardConfig.topTeacher[2]}>
-                      <TeacherAnalysisDialog teacher={topTeachers[2]}>
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-16 w-16 border-2 border-orange-600"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topTeachers[2].name[0]}</AvatarFallback></Avatar>
-                          <div>
-                            <p className="font-bold">{topTeachers[2].name}</p>
-                            <p className="text-xs text-muted-foreground">{topTeachers[2].schoolName} - {topTeachers[2].subject}</p>
-                            <p className="text-xl font-bold text-primary mt-1">{topTeachers[2].avgStudentGrade.toFixed(2)}/20</p>
+                        </TeacherAnalysisDialog>
+                      </AwardCard>
+                  )}
+                  {topTeachers[2] && (
+                      <AwardCard rank={2} prize={awardConfig.topTeacher[2]}>
+                        <TeacherAnalysisDialog teacher={topTeachers[2]}>
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-16 w-16 border-2 border-orange-600"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topTeachers[2].name[0]}</AvatarFallback></Avatar>
+                            <div>
+                              <p className="font-bold">{topTeachers[2].name}</p>
+                              <p className="text-xs text-muted-foreground">{topTeachers[2].schoolName} - {topTeachers[2].subject}</p>
+                              <p className="text-xl font-bold text-primary mt-1">{topTeachers[2].avgStudentGrade.toFixed(2)}/20</p>
+                            </div>
                           </div>
-                        </div>
-                      </TeacherAnalysisDialog>
-                    </AwardCard>
-                )}
-               </div>
+                        </TeacherAnalysisDialog>
+                      </AwardCard>
+                  )}
+                  </div>
+                </>
+              ) : <p className="text-muted-foreground text-center col-span-2">No teacher data available for ranking.</p>}
            </div>
         </section>
       </div>
