@@ -1,5 +1,6 @@
 
 // src/lib/firebase/config.ts
+import 'dotenv/config';
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";

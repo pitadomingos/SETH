@@ -40,7 +40,7 @@ import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
 import { GenerateTestOutput } from '@/ai/flows/generate-test';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { getDocs, collection } from 'firebase/firestore';
+import { onSnapshot, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 
 export type FinanceRecord = InitialFinanceRecord;
@@ -255,33 +255,29 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchSchoolData = async () => {
+    const schoolsRef = collection(db, "schools");
+    const unsubscribe = onSnapshot(schoolsRef, (querySnapshot) => {
         setIsLoading(true);
-        try {
-            const querySnapshot = await getDocs(collection(db, "schools"));
-            const schools: Record<string, SchoolData> = {};
-            if (querySnapshot.empty) {
-                console.log("No schools found in Firestore, loading initial mock data.");
-                // If the database is empty, seed it with the mock data.
-                for (const schoolId in initialSchoolData) {
-                    schools[schoolId] = JSON.parse(JSON.stringify(initialSchoolData[schoolId]));
-                }
-            } else {
-                querySnapshot.forEach((doc) => {
-                    schools[doc.id] = doc.data() as SchoolData;
-                });
+        const schools: Record<string, SchoolData> = {};
+        if (querySnapshot.empty) {
+            console.log("No schools found in Firestore, loading initial mock data.");
+            for (const schoolId in initialSchoolData) {
+                schools[schoolId] = JSON.parse(JSON.stringify(initialSchoolData[schoolId]));
             }
-            setAllSchoolData(schools);
-        } catch (error) {
-            console.error("Error fetching school data from Firestore:", error);
-            // Fallback to mock data if Firestore fetch fails
-            setAllSchoolData(JSON.parse(JSON.stringify(initialSchoolData)));
-        } finally {
-            setIsLoading(false);
+        } else {
+            querySnapshot.forEach((doc) => {
+                schools[doc.id] = doc.data() as SchoolData;
+            });
         }
-    };
+        setAllSchoolData(schools);
+        setIsLoading(false);
+    }, (error) => {
+        console.error("Error fetching school data from Firestore:", error);
+        setAllSchoolData(JSON.parse(JSON.stringify(initialSchoolData)));
+        setIsLoading(false);
+    });
 
-    fetchSchoolData();
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {

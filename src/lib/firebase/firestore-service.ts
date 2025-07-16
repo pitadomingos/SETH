@@ -1,8 +1,8 @@
 
+import 'dotenv/config';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from './config';
 import { type SchoolData, type NewSchoolData, type SchoolProfile } from '@/context/school-data-context';
-import { mockUsers } from '../mock-data';
 
 export async function createSchoolInFirestore(data: NewSchoolData, groupId?: string): Promise<SchoolData> {
     const schoolId = data.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15);
@@ -22,9 +22,8 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         schoolLevel: 'Full'
     };
     
-    // Add the new admin user to the mock users so they can log in during the session
-    const adminUserKey = `admin_${schoolId}`;
-    mockUsers[adminUserKey] = {
+    // NOTE: In a real app, user creation would happen via Firebase Auth, not a mock object.
+    const adminUser = {
       user: {
         username: data.email,
         name: data.head,
@@ -62,6 +61,7 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
     
     console.log(`Successfully wrote school to Firestore: ${schoolId}.`);
 
-    // Return the created school data structure
+    // In a real app, this would also write to the users collection.
+    // For the prototype, we just return the data structure.
     return newSchoolData;
 }
