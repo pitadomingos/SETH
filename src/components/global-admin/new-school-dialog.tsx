@@ -30,7 +30,7 @@ type SchoolFormValues = z.infer<typeof schoolSchema>;
 export function NewSchoolDialog({ groupId }: { groupId?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
-  const { addSchool } = useSchoolData();
+  const { addSchool: addSchoolToContext } = useSchoolData(); // Renamed to avoid confusion
 
   const form = useForm<SchoolFormValues>({
     resolver: zodResolver(schoolSchema),
@@ -49,7 +49,7 @@ export function NewSchoolDialog({ groupId }: { groupId?: string }) {
     const result = await createSchool(values, groupId);
 
     if (result) {
-        addSchool(result); // Update the context with the new school data
+        addSchoolToContext(result); // Update the context with the new school data
         toast({
             title: 'School Created!',
             description: `School "${values.name}" has been added to the system.`,

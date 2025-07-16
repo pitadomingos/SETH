@@ -9,6 +9,7 @@ export async function createSchool(data: NewSchoolData, groupId?: string): Promi
     try {
         const newSchool = await createSchoolInFirestore(data, groupId);
         
+        // This tells Next.js to re-fetch the data on the client for these paths.
         revalidatePath('/dashboard/global-admin/all-schools');
         revalidatePath('/dashboard/manage-schools');
         

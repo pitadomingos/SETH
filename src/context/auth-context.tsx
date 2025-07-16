@@ -99,25 +99,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const impersonateUser = (usernameOrEmail: string, asRole?: Role) => {
+    // This now correctly checks the dynamically updated mockUsers object
     let targetUserRecord = Object.values(mockUsers).find(u => u.user.email === usernameOrEmail);
     
-    // Fallback for dynamically created school admins not in mockUsers
-    if (!targetUserRecord && asRole === 'Admin') {
-        const school = Object.values(schoolData).find(s => s.profile.email === usernameOrEmail);
-        if (school) {
-            targetUserRecord = {
-                user: {
-                    username: school.profile.email,
-                    name: school.profile.head,
-                    role: 'Admin',
-                    email: school.profile.email,
-                    schoolId: school.profile.id,
-                },
-                password: 'admin', // Dummy password
-            };
-        }
-    }
-
     // Fallback for parent users who are not in mockUsers
     if (!targetUserRecord && asRole === 'Parent') {
         const parentStudent = Object.values(schoolData)
