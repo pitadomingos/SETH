@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -40,8 +39,6 @@ import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
 import { GenerateTestOutput } from '@/ai/flows/generate-test';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { createSchool } from '@/app/actions/school-actions';
-
 
 export type FinanceRecord = InitialFinanceRecord;
 export type Grade = InitialGrade;
@@ -110,7 +107,6 @@ interface SchoolDataContextType {
   updateSchoolProfile: (data: Partial<SchoolProfile>, schoolId?: string) => void;
   allSchoolData: typeof initialSchoolData | null;
   schoolGroups: typeof initialSchoolGroups | null;
-  addSchool: (data: NewSchoolData, groupId?: string) => Promise<void>;
   updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
   studentsData: Student[];
   addStudentFromAdmission: (admission: Admission) => void;
@@ -373,38 +369,6 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, role, allSchoolData, schoolGroups]);
 
-
-  const addSchool = async (data: NewSchoolData, groupId?: string) => {
-    // In a real app, this would call a server action that writes to Firestore.
-    // For now, it will update the local state to simulate the change.
-    const newSchool = await createSchool(data, groupId);
-
-    if (newSchool) {
-        setAllSchoolData(prev => ({
-            ...prev,
-            [newSchool.profile.id]: newSchool,
-        }));
-
-        if (groupId) {
-            setSchoolGroups(prev => {
-                const newGroups = { ...prev };
-                if (newGroups[groupId]) {
-                    newGroups[groupId] = [...newGroups[groupId], newSchool.profile.id];
-                }
-                return newGroups;
-            });
-        }
-        toast({
-            title: 'School Created!',
-            description: `School "${data.name}" has been added.`,
-        });
-    } else {
-         toast({
-            variant: 'destructive',
-            title: 'Error creating school',
-        });
-    }
-  };
 
   const updateSchoolStatus = (schoolId: string, status: SchoolProfile['status']) => {
     setAllSchoolData(prevData => {
@@ -953,7 +917,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const value = {
     schoolProfile, updateSchoolProfile,
-    allSchoolData, schoolGroups, addSchool, updateSchoolStatus,
+    allSchoolData, schoolGroups,
+    updateSchoolStatus,
     studentsData, addStudentFromAdmission, updateStudentStatus, addBehavioralAssessment,
     teachersData, addTeacher, updateTeacher, updateTeacherStatus,
     classesData, addClass,

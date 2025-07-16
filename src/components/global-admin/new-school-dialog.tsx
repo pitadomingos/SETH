@@ -1,18 +1,18 @@
 
-
 'use client';
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useSchoolData } from '@/context/school-data-context';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { createSchool } from '@/app/actions/school-actions';
+import { useToast } from '@/hooks/use-toast';
 
 const schoolSchema = z.object({
   name: z.string().min(3, "School name is required."),
@@ -27,8 +27,8 @@ const schoolSchema = z.object({
 type SchoolFormValues = z.infer<typeof schoolSchema>;
 
 export function NewSchoolDialog({ groupId }: { groupId?: string }) {
-  const { addSchool } = useSchoolData();
   const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<SchoolFormValues>({
     resolver: zodResolver(schoolSchema),
@@ -44,9 +44,22 @@ export function NewSchoolDialog({ groupId }: { groupId?: string }) {
   });
 
   async function onSubmit(values: SchoolFormValues) {
-    await addSchool(values, groupId);
-    form.reset();
-    setIsOpen(false);
+    const result = await createSchool(values, groupId);
+
+    if (result) {
+        toast({
+            title: 'School Created!',
+            description: `School "${values.name}" has been added to the system.`,
+        });
+        form.reset();
+        setIsOpen(false);
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Failed to create the school. Please try again.',
+        });
+    }
   }
 
   return (
@@ -58,7 +71,7 @@ export function NewSchoolDialog({ groupId }: { groupId?: string }) {
         <DialogHeader>
           <DialogTitle>Provision New School</DialogTitle>
           <DialogDescription>
-            Enter the details to create a new school.
+            Enter the details to create a new school. This will be saved to the database.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
