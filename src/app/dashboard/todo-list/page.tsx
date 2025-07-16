@@ -47,11 +47,13 @@ const completedTasks = [
   'Merged Syllabus management into Academics and Admin Panel into Settings.',
   'Moved Kiosk configuration to the Kiosk Showcase page.',
   'Fixed numerous bugs related to component imports, state management, and JSX syntax.',
+  'Implemented a holistic, weighted scoring system (Academics, Attendance, Behavior) for student rankings.',
 ];
 
 const upcomingFeatures = [
   'Connect mock data to a real database (e.g., Firestore) to enable persistence.',
   'Implement full CRUD (Create, Read, Update, Delete) on all management pages.',
+  'Implement full internationalization (i18n) for English and Portuguese.',
   'Build out analytics for the student test-taking results for teachers.',
   'Implement a site-wide notification and communication hub.',
   'Enhance mobile-first responsive design for a seamless experience on phones and tablets.',

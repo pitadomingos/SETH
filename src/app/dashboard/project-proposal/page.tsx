@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download } from 'lucide-react';
+import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download, Languages } from 'lucide-react';
 import { useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -279,6 +279,13 @@ export default function ProjectProposalPage() {
                     <div>
                         <h4 className="font-semibold">Extracurricular Management</h4>
                         <p className="text-sm text-muted-foreground">A dedicated module for managing non-academic activities, clubs, and sports teams with scheduling and communication tools.</p>
+                    </div>
+                </div>
+                 <div className="flex items-start gap-3">
+                    <Languages className="h-5 w-5 text-primary mt-1 shrink-0" />
+                    <div>
+                        <h4 className="font-semibold">Internationalization (i18n)</h4>
+                        <p className="text-sm text-muted-foreground">Full support for multiple languages, starting with English and Portuguese, to cater to the diverse linguistic landscape of the region.</p>
                     </div>
                 </div>
             </CardContent>
