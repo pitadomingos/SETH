@@ -445,6 +445,7 @@ export default function AwardsPage() {
     
     return allTeachers.map(teacher => {
       const school = allSchoolData[teacher.schoolId];
+      if (!school) return { ...teacher, avgStudentGrade: 0 };
       const teacherCourses = school.courses.filter(c => c.teacherId === teacher.id);
       const studentIds = new Set<string>();
       teacherCourses.forEach(course => {
