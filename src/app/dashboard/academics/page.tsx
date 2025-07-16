@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -61,7 +61,7 @@ function NewCourseDialog() {
     defaultValues: { subject: '', teacherId: '', classId: '', schedule: [{ day: 'Monday', startTime: '09:00', endTime: '10:00', room: '' }], },
   });
 
-  const { fields, append, remove } = useForm({ control: form.control, name: "schedule" });
+  const { fields, append, remove } = useFieldArray({ control: form.control, name: "schedule" });
 
   function onSubmit(values: CourseFormValues) {
     addCourse(values);
