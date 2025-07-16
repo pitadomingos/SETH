@@ -89,6 +89,13 @@ export default function SettingsPage() {
   const handleSaveCapacities = () => { if (schoolProfile) { updateSchoolProfile({ gradeCapacity: gradeCapacities }); toast({ title: "Capacities Updated", description: "Grade level capacities have been saved." }); } };
   const getStatusVariant = (status: 'Active' | 'Inactive' | 'Transferred') => { switch (status) { case 'Active': return 'secondary'; case 'Inactive': return 'destructive'; case 'Transferred': return 'outline'; default: return 'default'; } };
 
+  const gradesToDisplay = useMemo(() => {
+    if (schoolProfile?.schoolLevel === 'Primary') return Array.from({ length: 7 }, (_, i) => String(i + 1));
+    if (schoolProfile?.schoolLevel === 'Secondary') return Array.from({ length: 5 }, (_, i) => String(i + 8));
+    return Array.from({ length: 12 }, (_, i) => String(i + 1));
+  }, [schoolProfile]);
+
+
   if (isLoading || role !== 'Admin') {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
@@ -116,7 +123,7 @@ export default function SettingsPage() {
       
       <Card>
         <CardHeader><CardTitle>Grade Capacity Management</CardTitle><CardDescription>Set the maximum number of students for each grade level to manage admissions and resource planning.</CardDescription></CardHeader>
-        <CardContent><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">{Array.from({ length: 12 }, (_, i) => String(i + 1)).map(grade => (<div key={grade} className="space-y-2"><Label htmlFor={`grade-capacity-${grade}`}>Grade {grade}</Label><Input id={`grade-capacity-${grade}`} type="number" value={gradeCapacities[grade] || ''} onChange={(e) => handleCapacityChange(grade, e.target.value)} placeholder="0" /></div>))}</div></CardContent>
+        <CardContent><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">{gradesToDisplay.map(grade => (<div key={grade} className="space-y-2"><Label htmlFor={`grade-capacity-${grade}`}>Grade {grade}</Label><Input id={`grade-capacity-${grade}`} type="number" value={gradeCapacities[grade] || ''} onChange={(e) => handleCapacityChange(grade, e.target.value)} placeholder="0" /></div>))}</div></CardContent>
         <CardFooter><Button onClick={handleSaveCapacities}><Save className="mr-2 h-4 w-4" /> Save Capacities</Button></CardFooter>
       </Card>
 

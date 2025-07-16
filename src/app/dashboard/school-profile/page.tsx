@@ -18,6 +18,7 @@ import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 
 // --- New Component for the Upgrade Dialog ---
@@ -191,6 +192,7 @@ const profileSchema = z.object({
   phone: z.string().min(10, "A valid phone number is required."),
   email: z.string().email("A valid email is required."),
   motto: z.string().optional(),
+  schoolLevel: z.enum(['Primary', 'Secondary', 'Full']),
   logoUrl: z.string().url("Please enter a valid URL.").optional(),
   certificateTemplateUrl: z.string().url("Please enter a valid URL.").optional(),
   transcriptTemplateUrl: z.string().url("Please enter a valid URL.").optional(),
@@ -251,7 +253,8 @@ function EditProfileDialog() {
               <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Contact Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Contact Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="motto" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>School Motto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="motto" render={({ field }) => ( <FormItem className="md:col-span-1"><FormLabel>School Motto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="schoolLevel" render={({ field }) => ( <FormItem className="md:col-span-1"><FormLabel>School Level</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Primary">Primary</SelectItem><SelectItem value="Secondary">Secondary</SelectItem><SelectItem value="Full">Full (K-12)</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
               
               <div className="col-span-1 space-y-2">
                 <FormLabel>School Logo</FormLabel>
