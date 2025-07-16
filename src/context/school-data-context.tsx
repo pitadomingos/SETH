@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -39,6 +40,7 @@ import { CreateLessonPlanOutput } from '@/ai/flows/create-lesson-plan';
 import { GenerateTestOutput } from '@/ai/flows/generate-test';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { createSchool } from '@/app/actions/school-actions';
 
 
 export type FinanceRecord = InitialFinanceRecord;
@@ -373,63 +375,35 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
 
   const addSchool = async (data: NewSchoolData, groupId?: string) => {
-    const schoolId = data.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15);
-    
-    const newSchoolProfile: SchoolProfile = {
-      id: schoolId,
-      ...data,
-      tier: groupId ? 'Premium' : data.tier,
-      logoUrl: 'https://placehold.co/100x100.png',
-      gradingSystem: '20-Point',
-      currency: 'USD',
-      status: 'Active',
-      gradeCapacity: { "1": 30, "2": 30, "3": 30, "4": 30, "5": 30, "6": 35, "7": 35, "8": 35, "9": 40, "10": 40, "11": 40, "12": 40 },
-      kioskConfig: { showDashboard: true, showLeaderboard: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false },
-    };
+    // In a real app, this would call a server action that writes to Firestore.
+    // For now, it will update the local state to simulate the change.
+    const newSchool = await createSchool(data, groupId);
 
-    const newSchoolData = {
-      profile: newSchoolProfile,
-      students: [], teachers: [], classes: [], courses: [], lessonPlans: [], syllabi: [],
-      savedTests: [], deployedTests: [], admissions: [], exams: [],
-      finance: [], assets: [], assignments: [], grades: [], attendance: [],
-      events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'],
-      audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'],
-      expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
-      expenses: [], teams: [], competitions: [], terms: [], holidays: [],
-      kioskMedia: [],
-      activityLogs: [{
-        id: `LOG${schoolId}${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        schoolId: schoolId,
-        user: user?.name || 'System Admin',
-        role: role || 'GlobalAdmin',
-        action: 'Create',
-        details: `Provisioned new school: ${data.name}.`
-      }],
-      messages: [], savedReports: [],
-    };
+    if (newSchool) {
+        setAllSchoolData(prev => ({
+            ...prev,
+            [newSchool.profile.id]: newSchool,
+        }));
 
-    setAllSchoolData(prev => ({
-      ...prev,
-      [schoolId]: newSchoolData,
-    }));
-
-    if (groupId) {
-      setSchoolGroups(prev => {
-        const newGroups = { ...prev };
-        if (newGroups[groupId]) {
-          newGroups[groupId] = [...newGroups[groupId], schoolId];
-        } else {
-          newGroups[groupId] = [schoolId];
+        if (groupId) {
+            setSchoolGroups(prev => {
+                const newGroups = { ...prev };
+                if (newGroups[groupId]) {
+                    newGroups[groupId] = [...newGroups[groupId], newSchool.profile.id];
+                }
+                return newGroups;
+            });
         }
-        return newGroups;
-      });
+        toast({
+            title: 'School Created!',
+            description: `School "${data.name}" has been added.`,
+        });
+    } else {
+         toast({
+            variant: 'destructive',
+            title: 'Error creating school',
+        });
     }
-    
-    toast({
-      title: 'School Created!',
-      description: `School "${data.name}" has been added.`,
-    });
   };
 
   const updateSchoolStatus = (schoolId: string, status: SchoolProfile['status']) => {
@@ -855,7 +829,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const schoolIdForMessage = (recipient as any).schoolId || user.schoolId || 'global';
     
     const newMessage: Message = {
-      id: `MSG${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+      id: `MSG${Date.now()}${data.recipientUsername}${Math.random().toString(36).substring(2, 9)}`,
       timestamp: new Date().toISOString(),
       schoolId: schoolIdForMessage,
       senderUsername: user.email!,

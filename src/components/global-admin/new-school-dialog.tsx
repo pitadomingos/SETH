@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -12,7 +13,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import type { NewSchoolData } from '@/context/school-data-context';
 
 const schoolSchema = z.object({
   name: z.string().min(3, "School name is required."),
@@ -27,7 +27,7 @@ const schoolSchema = z.object({
 type SchoolFormValues = z.infer<typeof schoolSchema>;
 
 export function NewSchoolDialog({ groupId }: { groupId?: string }) {
-  const { addSchool, isLoading } = useSchoolData();
+  const { addSchool } = useSchoolData();
   const [isOpen, setIsOpen] = useState(false);
 
   const form = useForm<SchoolFormValues>({
@@ -58,7 +58,7 @@ export function NewSchoolDialog({ groupId }: { groupId?: string }) {
         <DialogHeader>
           <DialogTitle>Provision New School</DialogTitle>
           <DialogDescription>
-            Enter the details to create a new school. This will be saved to Firestore.
+            Enter the details to create a new school.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
