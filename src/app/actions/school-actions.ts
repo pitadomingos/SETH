@@ -1,6 +1,7 @@
 
 'use server';
 
+import 'dotenv/config';
 import { SchoolData, NewSchoolData } from '@/context/school-data-context';
 import { revalidatePath } from 'next/cache';
 import { createSchoolInFirestore } from '@/lib/firebase/firestore-service';
