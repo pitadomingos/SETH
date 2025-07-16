@@ -452,15 +452,42 @@ export default function AwardsPage() {
 
   const topStudents = useMemo(() => {
     if (!allSchoolData) return [];
-    const allStudents = Object.values(allSchoolData).flatMap(s => s.students.map(student => ({...student, schoolName: s.profile.name, schoolId: s.profile.id})));
+    const allStudents = Object.values(allSchoolData).flatMap(school =>
+      school.students.map(student => ({ ...student, schoolName: school.profile.name, schoolId: school.profile.id }))
+    );
     const allGrades = Object.values(allSchoolData).flatMap(s => s.grades);
-    
+    const allAttendance = Object.values(allSchoolData).flatMap(s => s.attendance);
+
     return allStudents.map(student => {
-        const studentGrades = allGrades.filter(g => g.studentId === student.id).map(g => parseFloat(g.grade));
-        const avgGrade = studentGrades.length > 0 ? studentGrades.reduce((sum, g) => sum + g, 0) / studentGrades.length : 0;
-        return { ...student, avgGrade };
+      // Academic Score (60%)
+      const studentGrades = allGrades.filter(g => g.studentId === student.id).map(g => parseFloat(g.grade));
+      const avgGrade = studentGrades.length > 0 ? studentGrades.reduce((sum, g) => sum + g, 0) / studentGrades.length : 0;
+      const academicScore = (avgGrade / 20) * 60;
+
+      // Attendance Score (20%)
+      const studentAttendance = allAttendance.filter(a => a.studentId === student.id);
+      const attendedCount = studentAttendance.filter(a => a.status === 'Present' || a.status === 'Late').length;
+      const attendanceRate = studentAttendance.length > 0 ? (attendedCount / studentAttendance.length) * 100 : 100;
+      const attendanceScore = (attendanceRate / 100) * 20;
+
+      // Behavioral Score (20%)
+      let behaviorScore = 0;
+      if (student.behavioralAssessments && student.behavioralAssessments.length > 0) {
+          const totalScore = student.behavioralAssessments.reduce((sum, assessment) => sum + assessment.respect + assessment.participation + assessment.socialSkills + assessment.conduct, 0);
+          const totalItems = student.behavioralAssessments.length * 4;
+          const avgBehavior = totalScore / totalItems;
+          // Normalize from 1-5 scale to 0-1, then multiply by weight
+          behaviorScore = ((avgBehavior - 1) / 4) * 20;
+      } else {
+          // Default to average score if no assessments
+          behaviorScore = ( (3 - 1) / 4 ) * 20;
+      }
+      
+      const holisticScore = academicScore + attendanceScore + behaviorScore;
+
+      return { ...student, avgGrade, holisticScore };
     })
-    .sort((a,b) => b.avgGrade - a.avgGrade)
+    .sort((a,b) => b.holisticScore - a.holisticScore)
     .slice(0, 3);
   }, [allSchoolData]);
 
@@ -470,20 +497,23 @@ export default function AwardsPage() {
     const allGrades = Object.values(allSchoolData).flatMap(s => s.grades);
 
     return allTeachers.map(teacher => {
-      const teacherCourses = allSchoolData[teacher.schoolId]?.courses.filter(c => c.teacherId === teacher.id) || [];
+      const school = allSchoolData[teacher.schoolId];
+      if (!school) return { ...teacher, avgStudentGrade: 0 };
+
+      const teacherCourses = school.courses.filter(c => c.teacherId === teacher.id);
       const studentIds = new Set<string>();
       
       teacherCourses.forEach(course => {
-          const classInfo = allSchoolData[teacher.schoolId]?.classes.find(c => c.id === course.classId);
+          const classInfo = school.classes.find(c => c.id === course.classId);
           if(classInfo) {
-              allSchoolData[teacher.schoolId]?.students
+              school.students
                   .filter(s => s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim())
                   .forEach(s => studentIds.add(s.id));
           }
       });
 
       const teacherGrades = allGrades
-          .filter(g => studentIds.has(g.studentId) && g.subject === teacher.subject)
+          .filter(g => studentIds.has(g.studentId) && teacherCourses.some(c => c.subject === g.subject))
           .map(g => parseFloat(g.grade));
       
       const avgStudentGrade = teacherGrades.length > 0
@@ -606,7 +636,8 @@ export default function AwardsPage() {
                         <Avatar className="h-24 w-24 mb-4 border-2 border-yellow-500"><AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile picture"/><AvatarFallback>{topStudents[0].name[0]}</AvatarFallback></Avatar>
                         <p className="text-xl font-bold">{topStudents[0].name}</p>
                         <p className="text-sm text-muted-foreground">{topStudents[0].schoolName}</p>
-                        <p className="text-3xl font-bold text-primary mt-2">{topStudents[0].avgGrade.toFixed(2)}/20</p>
+                        <p className="text-3xl font-bold text-primary mt-2">{topStudents[0].holisticScore.toFixed(2)}</p>
+                        <p className="text-xs text-muted-foreground">Holistic Score</p>
                       </div>
                     </StudentAnalysisDialog>
                   </AwardCard>
@@ -619,7 +650,7 @@ export default function AwardsPage() {
                             <div>
                               <p className="font-bold">{topStudents[1].name}</p>
                               <p className="text-xs text-muted-foreground">{topStudents[1].schoolName}</p>
-                              <p className="text-xl font-bold text-primary mt-1">{topStudents[1].avgGrade.toFixed(2)}/20</p>
+                              <p className="text-xl font-bold text-primary mt-1">{topStudents[1].holisticScore.toFixed(2)}</p>
                             </div>
                           </div>
                         </StudentAnalysisDialog>
@@ -633,7 +664,7 @@ export default function AwardsPage() {
                             <div>
                               <p className="font-bold">{topStudents[2].name}</p>
                               <p className="text-xs text-muted-foreground">{topStudents[2].schoolName}</p>
-                              <p className="text-xl font-bold text-primary mt-1">{topStudents[2].avgGrade.toFixed(2)}/20</p>
+                              <p className="text-xl font-bold text-primary mt-1">{topStudents[2].holisticScore.toFixed(2)}</p>
                             </div>
                           </div>
                         </StudentAnalysisDialog>

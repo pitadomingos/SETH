@@ -8,32 +8,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { useSchoolData, Attendance } from '@/context/school-data-context';
+import { useSchoolData, Attendance, Student } from '@/context/school-data-context';
 import { Award, Trophy, BookOpen, CalendarCheck } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { formatGradeDisplay } from '@/lib/utils';
 
-// --- Grade Calculation Helpers ---
-const calculateAverageScore = (studentId: string, grades: any[]) => {
-    const studentGrades = grades.filter(g => g.studentId === studentId);
-    if (studentGrades.length === 0) return 0;
-    const totalPoints = studentGrades.reduce((acc, g) => acc + parseFloat(g.grade), 0);
-    return (totalPoints / studentGrades.length);
-};
+// --- Holistic Score Calculation ---
+const calculateHolisticScore = (student: Student, allGrades: any[], allAttendance: any[]) => {
+    // Academic Score (60%)
+    const studentGrades = allGrades.filter(g => g.studentId === student.id).map(g => parseFloat(g.grade));
+    const avgGrade = studentGrades.length > 0 ? studentGrades.reduce((sum, g) => sum + g, 0) / studentGrades.length : 0;
+    const academicScore = (avgGrade / 20) * 60;
 
-const getAttendanceSummary = (studentId: string, attendance: Attendance[]) => {
-  const studentAttendance = attendance.filter(a => a.studentId === studentId);
-  return studentAttendance.reduce((acc, record) => {
-    const status = record.status.toLowerCase();
-    acc[status] = (acc[status] || 0) + 1;
-    return acc;
-  }, { present: 0, late: 0, absent: 0, sick: 0 });
+    // Attendance Score (20%)
+    const studentAttendance = allAttendance.filter(a => a.studentId === student.id);
+    const attendedCount = studentAttendance.filter(a => a.status === 'Present' || a.status === 'Late').length;
+    const attendanceRate = studentAttendance.length > 0 ? (attendedCount / studentAttendance.length) * 100 : 100; // Default to 100 if no records
+    const attendanceScore = (attendanceRate / 100) * 20;
+
+    // Behavioral Score (20%)
+    let behaviorScore = 0;
+    if (student.behavioralAssessments && student.behavioralAssessments.length > 0) {
+        const totalScore = student.behavioralAssessments.reduce((sum, assessment) => sum + assessment.respect + assessment.participation + assessment.socialSkills + assessment.conduct, 0);
+        const totalItems = student.behavioralAssessments.length * 4;
+        const avgBehavior = totalScore / totalItems;
+        // Normalize from 1-5 scale to 0-1, then multiply by weight
+        behaviorScore = ((avgBehavior - 1) / 4) * 20;
+    } else {
+        // Default to average score (3/5) if no assessments
+        behaviorScore = ( (3 - 1) / 4 ) * 20;
+    }
+    
+    return academicScore + attendanceScore + behaviorScore;
 };
 
 
 // --- Components ---
 
-const LeaderboardTable = ({ students, attendance, gradingSystem }) => {
+const LeaderboardTable = ({ students, gradingSystem }) => {
     if (!students || students.length === 0) {
         return <p className="text-center text-muted-foreground py-8">No data available for this selection.</p>;
     }
@@ -44,13 +56,11 @@ const LeaderboardTable = ({ students, attendance, gradingSystem }) => {
                 <TableRow>
                     <TableHead className="w-[80px]">Rank</TableHead>
                     <TableHead>Student</TableHead>
-                    <TableHead>Attendance</TableHead>
-                    <TableHead className="text-right">Average Grade</TableHead>
+                    <TableHead className="text-right">Holistic Score</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {students.slice(0, 10).map((student, index) => {
-                    const attendanceSummary = getAttendanceSummary(student.id, attendance);
                     return (
                         <TableRow key={student.id}>
                             <TableCell className="font-bold text-lg text-primary">{index + 1}</TableCell>
@@ -66,16 +76,9 @@ const LeaderboardTable = ({ students, attendance, gradingSystem }) => {
                                     </div>
                                 </div>
                             </TableCell>
-                            <TableCell>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    <span>P: <span className="font-semibold text-green-600">{attendanceSummary.present}</span></span>
-                                    <span>L: <span className="font-semibold text-orange-500">{attendanceSummary.late}</span></span>
-                                    <span>A: <span className="font-semibold text-red-500">{attendanceSummary.absent}</span></span>
-                                </div>
-                            </TableCell>
                             <TableCell className="text-right">
                                  <Badge variant="secondary" className="text-base">
-                                    {formatGradeDisplay(student.averageScore, gradingSystem)}
+                                    {student.holisticScore.toFixed(2)}
                                 </Badge>
                             </TableCell>
                         </TableRow>
@@ -89,7 +92,7 @@ const LeaderboardTable = ({ students, attendance, gradingSystem }) => {
 
 const IndividualRankingView = () => {
   const { role } = useAuth();
-  const { studentsData, allSchoolData } = useSchoolData();
+  const { studentsData, allSchoolData, schoolProfile } = useSchoolData();
 
   const allStudentsWithScoreBySchool = useMemo(() => {
     if (!allSchoolData) return {};
@@ -99,8 +102,8 @@ const IndividualRankingView = () => {
       data[schoolId] = {
         students: school.students.map(student => ({
           ...student,
-          averageScore: calculateAverageScore(student.id, school.grades),
-        })).sort((a, b) => b.averageScore - a.averageScore),
+          holisticScore: calculateHolisticScore(student, school.grades, school.attendance),
+        })).sort((a, b) => b.holisticScore - a.holisticScore),
         gradingSystem: school.profile.gradingSystem,
         attendance: school.attendance,
       };
@@ -116,7 +119,8 @@ const IndividualRankingView = () => {
 
   const getSubjectRanks = (student, schoolId) => {
       if (!allSchoolData || !allSchoolData[schoolId]) return [];
-      const schoolGrades = allSchoolData[schoolId]?.grades || [];
+      const schoolData = allSchoolData[schoolId];
+      const schoolGrades = schoolData.grades;
       const studentSubjects = [...new Set(schoolGrades.filter(g => g.studentId === student.id).map(g => g.subject))];
 
       return studentSubjects.map(subject => {
@@ -124,9 +128,11 @@ const IndividualRankingView = () => {
           const studentIdsInSubject = [...new Set(subjectGradesForSchool.map(g => g.studentId))];
           
           const rankedStudents = studentIdsInSubject.map(sId => {
-              const avgScore = calculateAverageScore(sId, subjectGradesForSchool);
-              return { id: sId, averageScore: avgScore };
-          }).sort((a, b) => b.averageScore - a.averageScore);
+              const sInfo = schoolData.students.find(s => s.id === sId);
+              if (!sInfo) return null;
+              const holisticScore = calculateHolisticScore(sInfo, subjectGradesForSchool, schoolData.attendance);
+              return { id: sId, holisticScore };
+          }).filter(Boolean).sort((a, b) => b.holisticScore - a.holisticScore);
 
           const rankInfo = getRank(student.id, rankedStudents);
           return { subject, ...rankInfo };
@@ -135,7 +141,7 @@ const IndividualRankingView = () => {
   
   const headerTitle = role === 'Parent' ? "My Children's Rankings" : "My Academic Rankings";
   const headerDescription = role === 'Parent'
-    ? "A detailed look at your children's academic performance for the 2024-2025 year."
+    ? "A detailed look at your children's performance for the 2024-2025 year."
     : "A detailed look at your academic performance for the 2024-2025 year.";
 
 
@@ -149,11 +155,15 @@ const IndividualRankingView = () => {
         {studentsData.map(child => {
           const schoolRanks = allStudentsWithScoreBySchool[child.schoolId!]?.students || [];
           const classRanks = schoolRanks.filter(s => s.grade === child.grade && s.class === child.class);
-          const attendanceSummary = getAttendanceSummary(child.id, allStudentsWithScoreBySchool[child.schoolId!]?.attendance || []);
           
           const overallRank = getRank(child.id, schoolRanks);
           const classRank = getRank(child.id, classRanks);
           const subjectRanks = getSubjectRanks(child, child.schoolId!);
+          const studentAttendance = allStudentsWithScoreBySchool[child.schoolId!]?.attendance || [];
+          const attendanceSummary = studentAttendance.filter(a => a.studentId === child.id).reduce((acc, record) => {
+            acc[record.status.toLowerCase()] = (acc[record.status.toLowerCase()] || 0) + 1;
+            return acc;
+          }, { present: 0, late: 0, absent: 0, sick: 0 });
 
           return (
             <Card key={child.id}>
@@ -219,8 +229,8 @@ export default function LeaderboardsPage() {
 
     const allStudentsWithScore = useMemo(() => studentsData.map(student => ({
         ...student,
-        averageScore: calculateAverageScore(student.id, grades),
-    })).sort((a, b) => b.averageScore - a.averageScore), [studentsData, grades]);
+        holisticScore: calculateHolisticScore(student, grades, attendance),
+    })).sort((a, b) => b.holisticScore - a.holisticScore), [studentsData, grades, attendance]);
     
     const teacherInfo = useMemo(() => {
         if (role !== 'Teacher' || !user) return null;
@@ -246,7 +256,7 @@ export default function LeaderboardsPage() {
         const studentsInClass = allStudentsWithScore.filter(s =>
             s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim()
         );
-        return studentsInClass.sort((a, b) => b.averageScore - a.averageScore);
+        return studentsInClass.sort((a, b) => b.holisticScore - a.holisticScore);
     }, [selectedClass, classesData, allStudentsWithScore]);
 
     const topStudentsBySubject = useMemo(() => {
@@ -256,16 +266,15 @@ export default function LeaderboardsPage() {
         
         const rankedStudents = studentIdsInSubject.map(studentId => {
             const studentInfo = studentsData.find(s => s.id === studentId);
-            const avgScore = calculateAverageScore(studentId, subjectGrades);
+            if (!studentInfo) return null;
             return {
                 ...studentInfo,
-                id: studentId,
-                averageScore: avgScore,
+                holisticScore: calculateHolisticScore(studentInfo, subjectGrades, attendance),
             };
-        }).sort((a, b) => b.averageScore - a.averageScore);
+        }).filter(Boolean).sort((a, b) => b.holisticScore - a.holisticScore);
 
         return rankedStudents;
-    }, [selectedSubject, grades, studentsData]);
+    }, [selectedSubject, grades, studentsData, attendance]);
 
     return (
         <div className="space-y-6 animate-in fade-in-50">
@@ -285,10 +294,10 @@ export default function LeaderboardsPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2"><Award /> Overall Academic Champions</CardTitle>
-                            <CardDescription>Top 10 students across all grades based on calculated average score and attendance.</CardDescription>
+                            <CardDescription>Top 10 students across all grades based on a holistic score including academics, attendance, and behavior.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <LeaderboardTable students={allStudentsWithScore} attendance={attendance} gradingSystem={gradingSystem} />
+                            <LeaderboardTable students={allStudentsWithScore} gradingSystem={gradingSystem} />
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -310,7 +319,7 @@ export default function LeaderboardsPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <LeaderboardTable students={topStudentsInClass} attendance={attendance} gradingSystem={gradingSystem}/>
+                            <LeaderboardTable students={topStudentsInClass} gradingSystem={gradingSystem}/>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -332,7 +341,7 @@ export default function LeaderboardsPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                           <LeaderboardTable students={topStudentsBySubject} attendance={attendance} gradingSystem={gradingSystem}/>
+                           <LeaderboardTable students={topStudentsBySubject} gradingSystem={gradingSystem}/>
                         </CardContent>
                     </Card>
                 </TabsContent>
