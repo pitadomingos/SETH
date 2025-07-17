@@ -8,7 +8,8 @@
  * - AnalyzeSchoolSystemOutput - The return type for the analyzeSchoolSystem function.
  */
 
-import {ai} from '@/ai/genkit';
+import {configureGenkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const SchoolDataSchema = z.object({
@@ -33,14 +34,16 @@ const AnalyzeSchoolSystemOutputSchema = z.object({
 export type AnalyzeSchoolSystemOutput = z.infer<typeof AnalyzeSchoolSystemOutputSchema>;
 
 export async function analyzeSchoolSystem(input: AnalyzeSchoolSystemInput): Promise<AnalyzeSchoolSystemOutput> {
-  return analyzeSchoolSystemFlow(input);
-}
+  const ai = configureGenkit({
+    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
+    model: 'googleai/gemini-2.0-flash',
+  });
 
-const prompt = ai.definePrompt({
-  name: 'analyzeSchoolSystemPrompt',
-  input: {schema: AnalyzeSchoolSystemInputSchema},
-  output: {schema: AnalyzeSchoolSystemOutputSchema},
-  prompt: `You are an expert educational consultant and data analyst for the EduManage platform. The developer, acting as a successful education advisor, needs a high-level overview of the entire network of schools.
+  const prompt = ai.definePrompt({
+    name: 'analyzeSchoolSystemPrompt',
+    input: {schema: AnalyzeSchoolSystemInputSchema},
+    output: {schema: AnalyzeSchoolSystemOutputSchema},
+    prompt: `You are an expert educational consultant and data analyst for the EduManage platform. The developer, acting as a successful education advisor, needs a high-level overview of the entire network of schools.
 
 Analyze the following data from all schools in the system. Your goal is to identify system-wide trends, compare schools, and provide strategic recommendations.
 
@@ -58,18 +61,10 @@ Analyze the following data from all schools in the system. Your goal is to ident
 1.  **Overall Analysis:** Provide a concise analysis of the system's health. Identify the top-performing schools based on a mix of academic (GPA) and financial (low overdue fees) health. Point out any schools that might be struggling in certain areas. Note the subscription tier in your analysis where relevant (e.g., a Premium school might have access to more resources). Are there any interesting correlations, e.g., between teacher-student ratio and GPA?
 2.  **Recommendations:** Based on your analysis, provide a bulleted list of actionable recommendations. These could be system-wide (e.g., "Implement a professional development program for teachers in schools with lower GPAs") or school-specific (e.g., "Suggest that Northwood High's administration focuses on improving fee collection strategies.").
 `,
-});
+  });
 
-const analyzeSchoolSystemFlow = ai.defineFlow(
-  {
-    name: 'analyzeSchoolSystemFlow',
-    inputSchema: AnalyzeSchoolSystemInputSchema,
-    outputSchema: AnalyzeSchoolSystemOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+  const {output} = await prompt(input);
+  return output!;
+}
 
     

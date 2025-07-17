@@ -9,7 +9,8 @@
  * - GenerateParentAdviceOutput - The return type for the generateParentAdvice function.
  */
 
-import {ai} from '@/ai/genkit';
+import {configureGenkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const GenerateParentAdviceInputSchema = z.object({
@@ -35,14 +36,16 @@ const GenerateParentAdviceOutputSchema = z.object({
 export type GenerateParentAdviceOutput = z.infer<typeof GenerateParentAdviceOutputSchema>;
 
 export async function generateParentAdvice(input: GenerateParentAdviceInput): Promise<GenerateParentAdviceOutput> {
-  return generateParentAdviceFlow(input);
-}
+  const ai = configureGenkit({
+    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
+    model: 'googleai/gemini-2.0-flash',
+  });
 
-const prompt = ai.definePrompt({
-  name: 'generateParentAdvicePrompt',
-  input: {schema: GenerateParentAdviceInputSchema},
-  output: {schema: GenerateParentAdviceOutputSchema},
-  prompt: `You are an experienced and encouraging educational counselor. A parent is asking for a summary of their child's recent performance.
+  const prompt = ai.definePrompt({
+    name: 'generateParentAdvicePrompt',
+    input: {schema: GenerateParentAdviceInputSchema},
+    output: {schema: GenerateParentAdviceOutputSchema},
+    prompt: `You are an experienced and encouraging educational counselor. A parent is asking for a summary of their child's recent performance.
   
   Analyze the provided data for the student, named {{{studentName}}}.
   
@@ -66,16 +69,8 @@ const prompt = ai.definePrompt({
   2. A bulleted list of key strengths. Consider academic performance in relation to attendance (e.g., "Maintains strong grades despite some absences, showing resilience.").
   3. A bulleted list of actionable recommendations for the parent. If attendance is an issue, suggest ways to support regular lesson attendance.
   `,
-});
+  });
 
-const generateParentAdviceFlow = ai.defineFlow(
-  {
-    name: 'generateParentAdviceFlow',
-    inputSchema: GenerateParentAdviceInputSchema,
-    outputSchema: GenerateParentAdviceOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+  const {output} = await prompt(input);
+  return output!;
+}

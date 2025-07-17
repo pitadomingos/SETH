@@ -1,9 +1,11 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to analyze why a teacher is a top performer.
  */
 
-import {ai} from '@/ai/genkit';
+import {configureGenkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const AnalyzeTopTeacherInputSchema = z.object({
@@ -27,14 +29,16 @@ type AnalyzeTopTeacherOutput = z.infer<typeof AnalyzeTopTeacherOutputSchema>;
 
 
 export async function analyzeTopTeacher(input: AnalyzeTopTeacherInput): Promise<AnalyzeTopTeacherOutput> {
-  return analyzeTopTeacherFlow(input);
-}
+  const ai = configureGenkit({
+    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
+    model: 'googleai/gemini-2.0-flash',
+  });
 
-const prompt = ai.definePrompt({
-  name: 'analyzeTopTeacherPrompt',
-  input: {schema: AnalyzeTopTeacherInputSchema},
-  output: {schema: AnalyzeTopTeacherOutputSchema},
-  prompt: `You are an educational consultant writing a commendation for a top-performing teacher.
+  const prompt = ai.definePrompt({
+    name: 'analyzeTopTeacherPrompt',
+    input: {schema: AnalyzeTopTeacherInputSchema},
+    output: {schema: AnalyzeTopTeacherOutputSchema},
+    prompt: `You are an educational consultant writing a commendation for a top-performing teacher.
   
   Teacher: {{{teacherName}}}
   School: {{{schoolName}}}
@@ -55,16 +59,8 @@ const prompt = ai.definePrompt({
   - Conclude with a bulleted list of key, data-driven metrics that showcase their success.
   - The tone should be professional and celebratory.
   `,
-});
+  });
 
-const analyzeTopTeacherFlow = ai.defineFlow(
-  {
-    name: 'analyzeTopTeacherFlow',
-    inputSchema: AnalyzeTopTeacherInputSchema,
-    outputSchema: AnalyzeTopTeacherOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+  const {output} = await prompt(input);
+  return output!;
+}

@@ -4,7 +4,8 @@
  * @fileOverview An AI flow to grade a student's multiple-choice test.
  */
 
-import {ai} from '@/ai/genkit';
+import {configureGenkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const QuestionSchema = z.object({
@@ -29,14 +30,16 @@ export const GradeStudentTestOutputSchema = z.object({
 export type GradeStudentTestOutput = z.infer<typeof GradeStudentTestOutputSchema>;
 
 export async function gradeStudentTest(input: GradeStudentTestInput): Promise<GradeStudentTestOutput> {
-  return gradeStudentTestFlow(input);
-}
+  const ai = configureGenkit({
+    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
+    model: 'googleai/gemini-2.0-flash',
+  });
 
-const prompt = ai.definePrompt({
-  name: 'gradeStudentTestPrompt',
-  input: {schema: GradeStudentTestInputSchema},
-  output: {schema: GradeStudentTestOutputSchema},
-  prompt: `You are an automated test grading assistant for the EduManage platform. Your task is to grade a student's multiple-choice test based on the provided questions, correct answers, and the student's submission.
+  const prompt = ai.definePrompt({
+    name: 'gradeStudentTestPrompt',
+    input: {schema: GradeStudentTestInputSchema},
+    output: {schema: GradeStudentTestOutputSchema},
+    prompt: `You are an automated test grading assistant for the EduManage platform. Your task is to grade a student's multiple-choice test based on the provided questions, correct answers, and the student's submission.
 
   The grading scale is 0-20. You must calculate the final score by scaling the number of correct answers to this 20-point scale.
   For example:
@@ -65,18 +68,10 @@ const prompt = ai.definePrompt({
   3. Calculate the final score out of 20 based on the number of correct answers and the total number of questions.
   4. Return the final score, the count of correct answers, and the total number of questions in the specified JSON format.
   `,
-});
+  });
 
-const gradeStudentTestFlow = ai.defineFlow(
-  {
-    name: 'gradeStudentTestFlow',
-    inputSchema: GradeStudentTestInputSchema,
-    outputSchema: GradeStudentTestOutputSchema,
-  },
-  async (input) => {
-    // A simple JS implementation would be faster, but the user requested AI grading.
-    // This flow directly calls the LLM as requested.
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+  // A simple JS implementation would be faster, but the user requested AI grading.
+  // This flow directly calls the LLM as requested.
+  const {output} = await prompt(input);
+  return output!;
+}

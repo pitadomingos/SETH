@@ -8,7 +8,8 @@
  * - AnalyzeTeacherPerformanceOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
+import {configureGenkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const AnalyzeTeacherPerformanceOutputSchema = z.object({
@@ -39,14 +40,16 @@ export type AnalyzeTeacherPerformanceInput = z.infer<typeof AnalyzeTeacherPerfor
 
 
 export async function analyzeTeacherPerformance(input: AnalyzeTeacherPerformanceInput): Promise<AnalyzeTeacherPerformanceOutput> {
-  return analyzeTeacherPerformanceFlow(input);
-}
+  const ai = configureGenkit({
+    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
+    model: 'googleai/gemini-2.0-flash',
+  });
 
-const prompt = ai.definePrompt({
-  name: 'analyzeTeacherPerformancePrompt',
-  input: {schema: AnalyzeTeacherPerformanceInputSchema},
-  output: {schema: AnalyzeTeacherPerformanceOutputSchema},
-  prompt: `You are an expert academic performance reviewer for school administrators. Your task is to analyze the performance of a teacher based on the aggregate results of the classes they teach. The grading scale is 0-20, where >=10 is passing.
+  const prompt = ai.definePrompt({
+    name: 'analyzeTeacherPerformancePrompt',
+    input: {schema: AnalyzeTeacherPerformanceInputSchema},
+    output: {schema: AnalyzeTeacherPerformanceOutputSchema},
+    prompt: `You are an expert academic performance reviewer for school administrators. Your task is to analyze the performance of a teacher based on the aggregate results of the classes they teach. The grading scale is 0-20, where >=10 is passing.
 
 **Teacher Data:**
 - Name: {{{teacherName}}}
@@ -74,16 +77,8 @@ A previous analysis for this teacher was run on {{previousAnalysis.generatedAt}}
 Please compare the current class performance data with the previous analysis. In the 'comparisonAnalysis' field, provide a brief, data-driven summary of the teacher's progress or regression, noting changes in average grades or passing rates across their classes.
 {{/if}}
 `,
-});
+  });
 
-const analyzeTeacherPerformanceFlow = ai.defineFlow(
-  {
-    name: 'analyzeTeacherPerformanceFlow',
-    inputSchema: AnalyzeTeacherPerformanceInputSchema,
-    outputSchema: AnalyzeTeacherPerformanceOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+  const {output} = await prompt(input);
+  return output!;
+}

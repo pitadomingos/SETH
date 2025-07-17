@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to identify students who are struggling academically.
@@ -7,7 +8,8 @@
  * - IdentifyStrugglingStudentsOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
+import {configureGenkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const StudentGradeInfoSchema = z.object({
@@ -37,14 +39,16 @@ const IdentifyStrugglingStudentsOutputSchema = z.object({
 export type IdentifyStrugglingStudentsOutput = z.infer<typeof IdentifyStrugglingStudentsOutputSchema>;
 
 export async function identifyStrugglingStudents(input: IdentifyStrugglingStudentsInput): Promise<IdentifyStrugglingStudentsOutput> {
-  return identifyStrugglingStudentsFlow(input);
-}
+  const ai = configureGenkit({
+    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
+    model: 'googleai/gemini-2.0-flash',
+  });
 
-const prompt = ai.definePrompt({
-  name: 'identifyStrugglingStudentsPrompt',
-  input: {schema: IdentifyStrugglingStudentsInputSchema},
-  output: {schema: IdentifyStrugglingStudentsOutputSchema},
-  prompt: `You are an expert educational analyst. Your task is to review a list of all students and their grades to identify those who are struggling academically. The grading scale is 0-20, where a grade below 10 is considered failing.
+  const prompt = ai.definePrompt({
+    name: 'identifyStrugglingStudentsPrompt',
+    input: {schema: IdentifyStrugglingStudentsInputSchema},
+    output: {schema: IdentifyStrugglingStudentsOutputSchema},
+    prompt: `You are an expert educational analyst. Your task is to review a list of all students and their grades to identify those who are struggling academically. The grading scale is 0-20, where a grade below 10 is considered failing.
 
 Review the following student data:
 {{#each students}}
@@ -62,16 +66,8 @@ Identify students who meet one or more of the following criteria:
 
 For each student you identify, provide a concise reason and a suggested next step for the school administrator. Compile this into a list. If no students are struggling, return an empty list.
 `,
-});
+  });
 
-const identifyStrugglingStudentsFlow = ai.defineFlow(
-  {
-    name: 'identifyStrugglingStudentsFlow',
-    inputSchema: IdentifyStrugglingStudentsInputSchema,
-    outputSchema: IdentifyStrugglingStudentsOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+  const {output} = await prompt(input);
+  return output!;
+}

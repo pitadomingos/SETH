@@ -8,7 +8,8 @@
  * - AnalyzeStudentFailureOutput - The return type for the analyzeStudentFailure function.
  */
 
-import {ai} from '@/ai/genkit';
+import {configureGenkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const AnalyzeStudentFailureInputSchema = z.object({
@@ -35,14 +36,16 @@ const AnalyzeStudentFailureOutputSchema = z.object({
 export type AnalyzeStudentFailureOutput = z.infer<typeof AnalyzeStudentFailureOutputSchema>;
 
 export async function analyzeStudentFailure(input: AnalyzeStudentFailureInput): Promise<AnalyzeStudentFailureOutput> {
-  return analyzeStudentFailureFlow(input);
-}
+  const ai = configureGenkit({
+    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
+    model: 'googleai/gemini-2.0-flash',
+  });
 
-const prompt = ai.definePrompt({
-  name: 'analyzeStudentFailurePrompt',
-  input: {schema: AnalyzeStudentFailureInputSchema},
-  output: {schema: AnalyzeStudentFailureOutputSchema},
-  prompt: `You are a caring and insightful academic advisor. You are tasked with analyzing the record of a student named {{{studentName}}} who has not met the requirements for graduation.
+  const prompt = ai.definePrompt({
+    name: 'analyzeStudentFailurePrompt',
+    input: {schema: AnalyzeStudentFailureInputSchema},
+    output: {schema: AnalyzeStudentFailureOutputSchema},
+    prompt: `You are a caring and insightful academic advisor. You are tasked with analyzing the record of a student named {{{studentName}}} who has not met the requirements for graduation.
 
 Your goal is to provide a clear, supportive analysis of why they failed and give them concrete, encouraging steps to succeed when they re-sit their exams.
 
@@ -73,16 +76,8 @@ Sex: {{{sex}}}
 - Focus on future success.
 - The language should be clear and easy for a student to understand.
 `,
-});
+  });
 
-const analyzeStudentFailureFlow = ai.defineFlow(
-  {
-    name: 'analyzeStudentFailureFlow',
-    inputSchema: AnalyzeStudentFailureInputSchema,
-    outputSchema: AnalyzeStudentFailureOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+  const {output} = await prompt(input);
+  return output!;
+}

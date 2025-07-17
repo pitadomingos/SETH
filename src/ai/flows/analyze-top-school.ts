@@ -1,9 +1,11 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to analyze why a school is a top performer.
  */
 
-import {ai} from '@/ai/genkit';
+import {configureGenkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const AnalyzeTopSchoolInputSchema = z.object({
@@ -24,14 +26,16 @@ type AnalyzeTopSchoolOutput = z.infer<typeof AnalyzeTopSchoolOutputSchema>;
 
 
 export async function analyzeTopSchool(input: AnalyzeTopSchoolInput): Promise<AnalyzeTopSchoolOutput> {
-  return analyzeTopSchoolFlow(input);
-}
+  const ai = configureGenkit({
+    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
+    model: 'googleai/gemini-2.0-flash',
+  });
 
-const prompt = ai.definePrompt({
-  name: 'analyzeTopSchoolPrompt',
-  input: {schema: AnalyzeTopSchoolInputSchema},
-  output: {schema: AnalyzeTopSchoolOutputSchema},
-  prompt: `You are an expert educational analyst writing a citation for an award-winning school.
+  const prompt = ai.definePrompt({
+    name: 'analyzeTopSchoolPrompt',
+    input: {schema: AnalyzeTopSchoolInputSchema},
+    output: {schema: AnalyzeTopSchoolOutputSchema},
+    prompt: `You are an expert educational analyst writing a citation for an award-winning school.
   
   School Name: {{{schoolName}}}
   
@@ -51,16 +55,8 @@ const prompt = ai.definePrompt({
   - Conclude by summarizing their key strengths in a bulleted list.
   - The tone should be formal and celebratory.
   `,
-});
+  });
 
-const analyzeTopSchoolFlow = ai.defineFlow(
-  {
-    name: 'analyzeTopSchoolFlow',
-    inputSchema: AnalyzeTopSchoolInputSchema,
-    outputSchema: AnalyzeTopSchoolOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+  const {output} = await prompt(input);
+  return output!;
+}

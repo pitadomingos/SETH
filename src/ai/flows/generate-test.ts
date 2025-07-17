@@ -9,7 +9,8 @@
  * - GenerateTestOutput - The return type for the generateTest function.
  */
 
-import {ai} from '@/ai/genkit';
+import {configureGenkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const GenerateTestInputSchema = z.object({
@@ -33,14 +34,16 @@ export type GenerateTestOutput = z.infer<typeof GenerateTestOutputSchema>;
 
 
 export async function generateTest(input: GenerateTestInput): Promise<GenerateTestOutput> {
-  return generateTestFlow(input);
-}
+  const ai = configureGenkit({
+    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
+    model: 'googleai/gemini-2.0-flash',
+  });
 
-const prompt = ai.definePrompt({
-  name: 'generateTestPrompt',
-  input: {schema: GenerateTestInputSchema},
-  output: {schema: GenerateTestOutputSchema},
-  prompt: `You are an expert curriculum designer and teacher. Your task is to generate a multiple-choice test based on the user's specifications, using the school's official syllabus as a guide for the question content.
+  const prompt = ai.definePrompt({
+    name: 'generateTestPrompt',
+    input: {schema: GenerateTestInputSchema},
+    output: {schema: GenerateTestOutputSchema},
+    prompt: `You are an expert curriculum designer and teacher. Your task is to generate a multiple-choice test based on the user's specifications, using the school's official syllabus as a guide for the question content.
 
   Subject: {{{subject}}}
   Topic (from syllabus): {{{topic}}}
@@ -57,16 +60,8 @@ const prompt = ai.definePrompt({
 
   Ensure the 'correctAnswer' field's value is an exact match to one of the strings in the 'options' array.
   `,
-});
+  });
 
-const generateTestFlow = ai.defineFlow(
-  {
-    name: 'generateTestFlow',
-    inputSchema: GenerateTestInputSchema,
-    outputSchema: GenerateTestOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+  const {output} = await prompt(input);
+  return output!;
+}

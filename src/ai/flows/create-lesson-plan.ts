@@ -1,3 +1,4 @@
+
 // src/ai/flows/create-lesson-plan.ts
 'use server';
 
@@ -9,7 +10,8 @@
  * - CreateLessonPlanOutput - The return type for the createLessonPlan function.
  */
 
-import {ai} from '@/ai/genkit';
+import {configureGenkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const CreateLessonPlanInputSchema = z.object({
@@ -36,14 +38,16 @@ const CreateLessonPlanOutputSchema = z.object({
 export type CreateLessonPlanOutput = z.infer<typeof CreateLessonPlanOutputSchema>;
 
 export async function createLessonPlan(input: CreateLessonPlanInput): Promise<CreateLessonPlanOutput> {
-  return createLessonPlanFlow(input);
-}
+  const ai = configureGenkit({
+    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
+    model: 'googleai/gemini-2.0-flash',
+  });
 
-const prompt = ai.definePrompt({
-  name: 'createLessonPlanPrompt',
-  input: {schema: CreateLessonPlanInputSchema},
-  output: {schema: CreateLessonPlanOutputSchema},
-  prompt: `You are an expert instructional designer and AI assistant for teachers. Your task is to create a detailed, performance-aware weekly lesson plan.
+  const prompt = ai.definePrompt({
+    name: 'createLessonPlanPrompt',
+    input: {schema: CreateLessonPlanInputSchema},
+    output: {schema: CreateLessonPlanOutputSchema},
+    prompt: `You are an expert instructional designer and AI assistant for teachers. Your task is to create a detailed, performance-aware weekly lesson plan.
 
   **Context:**
   - Class: {{{className}}} ({{{gradeLevel}}})
@@ -68,16 +72,8 @@ const prompt = ai.definePrompt({
 
   Ensure the entire output is a valid JSON object matching the provided schema, with a 'weeklyPlan' array containing exactly five daily plan objects.
   `,
-});
+  });
 
-const createLessonPlanFlow = ai.defineFlow(
-  {
-    name: 'createLessonPlanFlow',
-    inputSchema: CreateLessonPlanInputSchema,
-    outputSchema: CreateLessonPlanOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+  const {output} = await prompt(input);
+  return output!;
+}

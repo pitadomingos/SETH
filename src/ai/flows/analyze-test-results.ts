@@ -8,7 +8,8 @@
  * - AnalyzeTestResultsOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
+import {configureGenkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const TestQuestionSchema = z.object({
@@ -50,14 +51,16 @@ const AnalyzeTestResultsOutputSchema = z.object({
 export type AnalyzeTestResultsOutput = z.infer<typeof AnalyzeTestResultsOutputSchema>;
 
 export async function analyzeTestResults(input: AnalyzeTestResultsInput): Promise<AnalyzeTestResultsOutput> {
-  return analyzeTestResultsFlow(input);
-}
+  const ai = configureGenkit({
+    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
+    model: 'googleai/gemini-2.0-flash',
+  });
 
-const prompt = ai.definePrompt({
-  name: 'analyzeTestResultsPrompt',
-  input: {schema: AnalyzeTestResultsInputSchema},
-  output: {schema: AnalyzeTestResultsOutputSchema},
-  prompt: `You are an expert AI educational analyst. Your task is to analyze the results of a test on the topic of "{{testTopic}}" and provide actionable feedback for the teacher.
+  const prompt = ai.definePrompt({
+    name: 'analyzeTestResultsPrompt',
+    input: {schema: AnalyzeTestResultsInputSchema},
+    output: {schema: AnalyzeTestResultsOutputSchema},
+    prompt: `You are an expert AI educational analyst. Your task is to analyze the results of a test on the topic of "{{testTopic}}" and provide actionable feedback for the teacher.
 
 **Test & Submission Data:**
 
@@ -89,22 +92,14 @@ const prompt = ai.definePrompt({
 
 Return the entire analysis in the specified JSON format. If no students are struggling, return an empty list for 'strugglingStudents'.
 `,
-});
+  });
 
-const analyzeTestResultsFlow = ai.defineFlow(
-  {
-    name: 'analyzeTestResultsFlow',
-    inputSchema: AnalyzeTestResultsInputSchema,
-    outputSchema: AnalyzeTestResultsOutputSchema,
-  },
-  async (input) => {
-    if (input.submissions.length === 0) {
-      return {
-        overallSummary: "No submissions have been recorded for this test yet. Analysis cannot be performed.",
-        strugglingStudents: [],
-      };
-    }
-    const {output} = await prompt(input);
-    return output!;
+  if (input.submissions.length === 0) {
+    return {
+      overallSummary: "No submissions have been recorded for this test yet. Analysis cannot be performed.",
+      strugglingStudents: [],
+    };
   }
-);
+  const {output} = await prompt(input);
+  return output!;
+}

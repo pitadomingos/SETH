@@ -8,7 +8,8 @@
  * - AnalyzeSchoolPerformanceOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
+import {configureGenkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const TeacherInfoSchema = z.object({
@@ -69,14 +70,16 @@ export type AnalyzeSchoolPerformanceInput = z.infer<typeof AnalyzeSchoolPerforma
 
 
 export async function analyzeSchoolPerformance(input: AnalyzeSchoolPerformanceInput): Promise<AnalyzeSchoolPerformanceOutput> {
-  return analyzeSchoolPerformanceFlow(input);
-}
+  const ai = configureGenkit({
+    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
+    model: 'googleai/gemini-2.0-flash',
+  });
 
-const prompt = ai.definePrompt({
-  name: 'analyzeSchoolPerformancePrompt',
-  input: {schema: AnalyzeSchoolPerformanceInputSchema},
-  output: {schema: AnalyzeSchoolPerformanceOutputSchema},
-  prompt: `You are an expert educational consultant and data analyst for a school named {{{schoolName}}}. Your task is to provide a holistic, high-level analysis of the school's overall performance based on the provided data.
+  const prompt = ai.definePrompt({
+    name: 'analyzeSchoolPerformancePrompt',
+    input: {schema: AnalyzeSchoolPerformanceInputSchema},
+    output: {schema: AnalyzeSchoolPerformanceOutputSchema},
+    prompt: `You are an expert educational consultant and data analyst for a school named {{{schoolName}}}. Your task is to provide a holistic, high-level analysis of the school's overall performance based on the provided data.
 
 **Academic Data:**
 - Total Students: {{overallStudentCount}}
@@ -124,16 +127,8 @@ A previous analysis was run on {{previousAnalysis.generatedAt}}.
 Please compare the current data with the previous analysis. In the 'comparisonAnalysis' field, provide a brief, data-driven summary of the progress or regression, focusing on key changes in metrics like overall average grade, attendance rate, or fee collection.
 {{/if}}
 `,
-});
+  });
 
-const analyzeSchoolPerformanceFlow = ai.defineFlow(
-  {
-    name: 'analyzeSchoolPerformanceFlow',
-    inputSchema: AnalyzeSchoolPerformanceInputSchema,
-    outputSchema: AnalyzeSchoolPerformanceOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+  const {output} = await prompt(input);
+  return output!;
+}

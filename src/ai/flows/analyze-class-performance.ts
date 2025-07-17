@@ -8,7 +8,8 @@
  * - AnalyzeClassPerformanceOutput - The return type for the analyzeClassPerformance function.
  */
 
-import {ai} from '@/ai/genkit';
+import {configureGenkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const AnalyzeClassPerformanceOutputSchema = z.object({
@@ -34,14 +35,16 @@ export type AnalyzeClassPerformanceInput = z.infer<typeof AnalyzeClassPerformanc
 
 
 export async function analyzeClassPerformance(input: AnalyzeClassPerformanceInput): Promise<AnalyzeClassPerformanceOutput> {
-  return analyzeClassPerformanceFlow(input);
-}
+  const ai = configureGenkit({
+    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
+    model: 'googleai/gemini-2.0-flash',
+  });
 
-const prompt = ai.definePrompt({
-  name: 'analyzeClassPerformancePrompt',
-  input: {schema: AnalyzeClassPerformanceInputSchema},
-  output: {schema: AnalyzeClassPerformanceOutputSchema},
-  prompt: `You are an expert AI educational analyst for a school management system called EduManage.
+  const prompt = ai.definePrompt({
+    name: 'analyzeClassPerformancePrompt',
+    input: {schema: AnalyzeClassPerformanceInputSchema},
+    output: {schema: AnalyzeClassPerformanceOutputSchema},
+    prompt: `You are an expert AI educational analyst for a school management system called EduManage.
   Your task is to analyze the academic performance of a class based on a set of recent grades.
   The grading system uses both letter grades (A-F) and a numeric scale from 0 to 20, where 12 is a passing grade.
 
@@ -71,24 +74,16 @@ const prompt = ai.definePrompt({
   Please compare the current data with the previous analysis. In the 'comparisonAnalysis' field, provide a brief, data-driven summary of the progress or regression. For example: "Performance has improved significantly since the last analysis..." or "There has been a decline in performance..."
   {{/if}}
   `,
-});
+  });
 
-const analyzeClassPerformanceFlow = ai.defineFlow(
-  {
-    name: 'analyzeClassPerformanceFlow',
-    inputSchema: AnalyzeClassPerformanceInputSchema,
-    outputSchema: AnalyzeClassPerformanceOutputSchema,
-  },
-  async input => {
-    // If there are no grades, return a default "not enough data" response.
-    if (input.grades.length === 0) {
-      return {
-        analysis: `There is not enough grade data for ${input.subject} in ${input.className} to perform an analysis.`,
-        recommendation: "Please ensure grades are recorded for this class and subject to enable AI insights.",
-        interventionNeeded: false,
-      };
-    }
-    const {output} = await prompt(input);
-    return output!;
+  // If there are no grades, return a default "not enough data" response.
+  if (input.grades.length === 0) {
+    return {
+      analysis: `There is not enough grade data for ${input.subject} in ${input.className} to perform an analysis.`,
+      recommendation: "Please ensure grades are recorded for this class and subject to enable AI insights.",
+      interventionNeeded: false,
+    };
   }
-);
+  const {output} = await prompt(input);
+  return output!;
+}

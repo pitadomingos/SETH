@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to analyze a school's course schedule for conflicts.
@@ -7,7 +8,8 @@
  * - AnalyzeScheduleConflictsOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
+import {configureGenkit} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const CourseScheduleInputSchema = z.object({
@@ -41,14 +43,16 @@ const AnalyzeScheduleConflictsOutputSchema = z.object({
 export type AnalyzeScheduleConflictsOutput = z.infer<typeof AnalyzeScheduleConflictsOutputSchema>;
 
 export async function analyzeScheduleConflicts(input: AnalyzeScheduleConflictsInput): Promise<AnalyzeScheduleConflictsOutput> {
-  return analyzeScheduleConflictsFlow(input);
-}
+  const ai = configureGenkit({
+    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
+    model: 'googleai/gemini-2.0-flash',
+  });
 
-const prompt = ai.definePrompt({
-  name: 'analyzeScheduleConflictsPrompt',
-  input: {schema: AnalyzeScheduleConflictsInputSchema},
-  output: {schema: AnalyzeScheduleConflictsOutputSchema},
-  prompt: `You are an expert school administrator specializing in timetable and schedule management. Your task is to analyze a list of courses and their weekly schedules to identify any conflicts.
+  const prompt = ai.definePrompt({
+    name: 'analyzeScheduleConflictsPrompt',
+    input: {schema: AnalyzeScheduleConflictsInputSchema},
+    output: {schema: AnalyzeScheduleConflictsOutputSchema},
+    prompt: `You are an expert school administrator specializing in timetable and schedule management. Your task is to analyze a list of courses and their weekly schedules to identify any conflicts.
 
 A conflict occurs if the same teacher or the same room is scheduled for two different classes at the same overlapping time on the same day.
 
@@ -79,23 +83,15 @@ Here is the schedule data to analyze:
 
 Return the final analysis in the specified JSON format.
 `,
-});
+  });
 
-const analyzeScheduleConflictsFlow = ai.defineFlow(
-  {
-    name: 'analyzeScheduleConflictsFlow',
-    inputSchema: AnalyzeScheduleConflictsInputSchema,
-    outputSchema: AnalyzeScheduleConflictsOutputSchema,
-  },
-  async (input) => {
-    if (input.courses.length < 2) {
-        return {
-            hasConflicts: false,
-            summary: "Not enough course data to analyze for conflicts.",
-            conflicts: [],
-        }
-    }
-    const {output} = await prompt(input);
-    return output!;
+  if (input.courses.length < 2) {
+      return {
+          hasConflicts: false,
+          summary: "Not enough course data to analyze for conflicts.",
+          conflicts: [],
+      }
   }
-);
+  const {output} = await prompt(input);
+  return output!;
+}
