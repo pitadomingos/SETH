@@ -1,6 +1,6 @@
 
 'use server';
-import 'dotenv/config';
+import 'dotenv/config'; // Ensure environment variables are loaded for server actions
 import { SchoolProfile } from '@/context/school-data-context';
 import { updateSchoolInFirestore } from '@/lib/firebase/firestore-service';
 

@@ -1,5 +1,4 @@
 
-import 'dotenv/config';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from './config';
 import { type SchoolData, type NewSchoolData, type SchoolProfile } from '@/context/school-data-context';
