@@ -57,7 +57,7 @@ export type { Team, Admission, Student, ActivityLog, Message, Teacher, Attendanc
 
 interface NewClassData { name: string; grade: string; teacher: string; students: number; room: string; }
 interface NewFeeData { studentId: string; description: string; totalAmount: number; dueDate: string; }
-interface NewGradeData { studentId: string; subject: string; grade: string; }
+export interface NewGradeData { studentId: string; subject: string; grade: string; type: Grade['type']; description: string; }
 interface NewExpenseData { description: string; category: string; amount: number; date: string; proofUrl: string; }
 interface NewTeamData { name: string; coach: string; icon: string; }
 interface NewCompetitionData { title: string; ourTeamId: string; opponent: string; date: Date; time: string; location: string; }
@@ -133,7 +133,7 @@ interface SchoolDataContextType {
   addAsset: (asset: Omit<Asset, 'id'>) => void;
   assignments: any[];
   grades: Grade[];
-  addGrade: (data: NewGradeData) => void;
+  addGrade: (data: NewGradeData) => boolean;
   attendance: Attendance[];
   addLessonAttendance: (courseId: string, date: string, attendanceData: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => void;
   events: SchoolEvent[];
@@ -542,8 +542,48 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const addGrade = (data: NewGradeData) => {
-    const newGrade: Grade = { studentId: data.studentId, subject: data.subject, grade: data.grade as Grade['grade'], date: new Date().toISOString() };
+    const existingGrade = grades.find(g => 
+        g.studentId === data.studentId &&
+        g.subject === data.subject &&
+        g.description.toLowerCase() === data.description.toLowerCase()
+    );
+
+    if (existingGrade) {
+        toast({
+            variant: 'destructive',
+            title: 'Duplicate Grade Entry',
+            description: `A grade for "${data.description}" already exists for this student in ${data.subject}. Please use a different description.`,
+        });
+        return false;
+    }
+
+    const newGrade: Grade = {
+      id: `GRD${Date.now()}`,
+      studentId: data.studentId,
+      subject: data.subject,
+      type: data.type,
+      description: data.description,
+      grade: data.grade,
+      date: new Date().toISOString(),
+    };
     setGrades(prev => [newGrade, ...prev]);
+    
+    // Log this action
+    if (user?.schoolId) {
+      const studentName = studentsData.find(s => s.id === data.studentId)?.name || 'Unknown';
+       const logEntry: ActivityLog = {
+        id: `LOG${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        schoolId: user.schoolId,
+        user: user.name,
+        role: role!,
+        action: 'Create',
+        details: `Entered grade for ${studentName}: ${data.subject} (${data.description}) - ${data.grade}`
+      };
+      setActivityLogs(prev => [logEntry, ...prev]);
+    }
+
+    return true;
   };
 
   const addStudentFromAdmission = (admission: Admission) => {

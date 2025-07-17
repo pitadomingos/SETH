@@ -13,6 +13,7 @@ import { useSchoolData } from '@/context/school-data-context';
 import { Loader2, FileCheck, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getLetterGrade } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 
 
 // Generate options from 20 down to 0 with letter equivalents
@@ -73,28 +74,35 @@ export default function GradingPage() {
     form.reset();
   }, [selectedCourseId, form]);
 
-  async function onSubmit(data: Record<string, string>) {
+  async function onSubmit(data: Record<string, any>) {
     if (!selectedCourse) {
         toast({ variant: 'destructive', title: 'Error', description: 'Please select a course.' });
         return;
     }
     setIsSubmitting(true);
     let gradesAdded = 0;
-    Object.entries(data).forEach(([studentId, grade]) => {
-      if (grade) {
-        addGrade({
-          studentId,
-          subject: selectedCourse.subject,
-          grade,
-        });
-        gradesAdded++;
-      }
-    });
     
-    toast({
-      title: 'Grades Saved',
-      description: `${gradesAdded} grade(s) for ${selectedCourse.subject} have been successfully recorded.`,
-    });
+    for (const studentId of Object.keys(data)) {
+      const studentData = data[studentId];
+      if (studentData && studentData.grade) {
+        const success = addGrade({
+          studentId: studentId,
+          subject: selectedCourse.subject,
+          grade: studentData.grade,
+          type: studentData.type || 'Coursework',
+          description: studentData.description || 'General Grade',
+        });
+        if (success) gradesAdded++;
+      }
+    }
+    
+    if(gradesAdded > 0) {
+      toast({
+        title: 'Grades Saved',
+        description: `${gradesAdded} grade(s) for ${selectedCourse.subject} have been successfully recorded.`,
+      });
+    }
+
     form.reset();
     setIsSubmitting(false);
   }
@@ -141,7 +149,9 @@ export default function GradingPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Student Name</TableHead>
-                        <TableHead className="w-[180px]">Enter Grade</TableHead>
+                        <TableHead>Assessment Type</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="w-[180px]">Grade</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -149,26 +159,19 @@ export default function GradingPage() {
                         <TableRow key={student.id}>
                           <TableCell className="font-medium">{student.name}</TableCell>
                           <TableCell>
-                            <FormField
-                              control={form.control}
-                              name={student.id}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Grade" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      {gradeOptions.map(option => (
-                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </FormItem>
-                              )}
-                            />
+                            <FormField control={form.control} name={`${student.id}.type`} render={({ field }) => (
+                                <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Coursework">Coursework</SelectItem><SelectItem value="Test">Test</SelectItem><SelectItem value="Exam">Exam</SelectItem></SelectContent></Select></FormItem>
+                            )}/>
+                          </TableCell>
+                           <TableCell>
+                            <FormField control={form.control} name={`${student.id}.description`} render={({ field }) => (
+                                <FormItem><FormControl><Input placeholder="e.g., Mid-Term Exam" {...field} /></FormControl></FormItem>
+                            )}/>
+                           </TableCell>
+                          <TableCell>
+                            <FormField control={form.control} name={`${student.id}.grade`} render={({ field }) => (
+                                <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Grade" /></SelectTrigger></FormControl><SelectContent>{gradeOptions.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent></Select></FormItem>
+                            )}/>
                           </TableCell>
                         </TableRow>
                       ))}
