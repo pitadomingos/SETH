@@ -42,6 +42,8 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import { updateSchoolProfileAction } from '@/app/actions/update-school-action';
+
 
 export type FinanceRecord = InitialFinanceRecord;
 export type Grade = InitialGrade;
@@ -477,23 +479,14 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     toast({ title: 'Teacher Status Updated' });
   };
 
-  const updateSchoolProfile = (data: Partial<SchoolProfile>, schoolIdToUpdate?: string) => {
+  const updateSchoolProfile = async (data: Partial<SchoolProfile>, schoolIdToUpdate?: string) => {
     const targetSchoolId = schoolIdToUpdate || user?.schoolId;
-
-    if (targetSchoolId) {
-        setAllSchoolData(prevAllData => {
-            const newAllData = { ...prevAllData };
-            if (newAllData[targetSchoolId]) {
-                const currentProfile = newAllData[targetSchoolId].profile;
-                newAllData[targetSchoolId].profile = { ...currentProfile, ...data };
-            }
-            return newAllData;
-        });
+    if (!targetSchoolId) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not determine which school to update.' });
+        return;
     }
-
-    if (!schoolIdToUpdate) {
-        setSchoolProfile(prev => prev ? { ...prev, ...data } : null);
-    }
+    await updateSchoolProfileAction(targetSchoolId, data);
+    toast({ title: 'Profile Updated', description: 'Changes have been saved to the database.' });
   };
 
   const addSubject = (subject: string) => !subjects.includes(subject) && setSubjects(prev => [...prev, subject].sort());

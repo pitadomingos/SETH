@@ -1,6 +1,6 @@
 
 import 'dotenv/config';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from './config';
 import { type SchoolData, type NewSchoolData, type SchoolProfile } from '@/context/school-data-context';
 
@@ -64,4 +64,27 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
     // In a real app, this would also write to the users collection.
     // For the prototype, we just return the data structure.
     return newSchoolData;
+}
+
+
+export async function updateSchoolInFirestore(schoolId: string, data: Partial<SchoolProfile>): Promise<boolean> {
+  try {
+    const schoolRef = doc(db, 'schools', schoolId);
+    
+    // Firestore's `updateDoc` requires dot notation for nested objects.
+    // We create an object with dot notation keys from the partial data.
+    const updateData = {};
+    for (const key in data) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        updateData[`profile.${key}`] = data[key];
+      }
+    }
+    
+    await updateDoc(schoolRef, updateData);
+    console.log(`Successfully updated school profile in Firestore: ${schoolId}`);
+    return true;
+  } catch (error) {
+    console.error("Error updating school profile in Firestore:", error);
+    return false;
+  }
 }
