@@ -19,8 +19,7 @@ provider.register();
 
 
 const googleAiPlugin = googleAI({
-  // IMPORTANT: Replace this placeholder with your actual Google AI API key
-  apiKey: "YOUR_GOOGLE_API_KEY_HERE",
+  apiKey: process.env.GOOGLE_API_KEY,
 });
 
 export const ai = genkit({
