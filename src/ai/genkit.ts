@@ -5,7 +5,7 @@ import {genkit} from '@genkit-ai/core';
 import {googleAI} from '@genkit-ai/googleai';
 import {AlwaysOnSampler, NodeTracerProvider} from '@opentelemetry/sdk-trace-node';
 import {SimpleSpanProcessor} from '@opentelemetry/sdk-trace-base';
-import {OpenTelemetryTraceExporter} from '@opentelemetry/exporter-trace-otlp-http';
+import {OTLPTraceExporter} from '@opentelemetry/exporter-trace-otlp-http';
 
 const provider = new NodeTracerProvider({
   sampler: new AlwaysOnSampler(),
@@ -13,7 +13,7 @@ const provider = new NodeTracerProvider({
 
 provider.addSpanProcessor(
   new SimpleSpanProcessor(
-    new OpenTelemetryTraceExporter({
+    new OTLPTraceExporter({
       url: 'http://localhost:4318/v1/traces',
     })
   )
