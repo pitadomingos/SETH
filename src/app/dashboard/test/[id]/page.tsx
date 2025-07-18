@@ -6,7 +6,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useForm, Controller } from 'react-hook-form';
-import { gradeStudentTestAndSave } from '@/app/actions/grade-test-action';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -14,7 +13,6 @@ import { Label } from '@/components/ui/label';
 import { Loader2, AlertTriangle, CheckCircle, BrainCircuit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
-import { type GradeStudentTestOutput } from '@/ai/flows/grade-student-test';
 
 export default function TakeTestPage() {
     const params = useParams();
@@ -25,7 +23,6 @@ export default function TakeTestPage() {
     const { deployedTests, savedTests, studentsData, isLoading: dataIsLoading } = useSchoolData();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [result, setResult] = useState<GradeStudentTestOutput | null>(null);
 
     const { deployedTest, testInfo } = useMemo(() => {
         const dt = deployedTests.find(d => d.id === deployedTestId);
@@ -43,27 +40,14 @@ export default function TakeTestPage() {
             toast({ variant: 'destructive', title: "Error", description: "Could not identify student."});
             return;
         }
-
         setIsSubmitting(true);
-        try {
-            const scoreData = await gradeStudentTestAndSave({
-                deployedTestId,
-                studentId,
-                studentAnswers: data,
-            });
-
-            if (scoreData) {
-                setResult(scoreData);
-                toast({ title: "Test Submitted!", description: "Your score has been calculated by our AI." });
-            } else {
-                throw new Error("Failed to get score from the server.");
-            }
-        } catch (error) {
-            console.error("Submission error", error);
-            toast({ variant: 'destructive', title: "Submission Failed", description: "There was an error submitting your test. Please try again." });
-        } finally {
+        // This is a placeholder since the AI grading action was removed.
+        // In a real app without AI, you'd save the submission and mark it for manual grading.
+        setTimeout(() => {
+            toast({ title: "Test Submitted!", description: "Your answers have been saved for grading." });
+            router.push('/dashboard');
             setIsSubmitting(false);
-        }
+        }, 1000);
     }
 
     if (dataIsLoading) {
@@ -81,31 +65,6 @@ export default function TakeTestPage() {
         );
     }
     
-    if (result) {
-        return (
-            <div className="flex justify-center items-center min-h-[70vh]">
-                <Card className="w-full max-w-lg text-center animate-in fade-in-50">
-                    <CardHeader>
-                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
-                            <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-                        </div>
-                        <CardTitle className="mt-4">Test Submitted Successfully!</CardTitle>
-                        <CardDescription>Your results have been graded by our AI and saved to your profile.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="text-4xl font-bold text-primary">{result.score.toFixed(1)} / 20</div>
-                        <p className="text-muted-foreground">You answered {result.correctCount} out of {result.totalQuestions} questions correctly.</p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button onClick={() => router.push('/dashboard')} className="w-full">
-                            Back to Dashboard
-                        </Button>
-                    </CardFooter>
-                </Card>
-            </div>
-        )
-    }
-
     return (
         <div className="space-y-6 animate-in fade-in-50">
             <Card>
@@ -150,8 +109,8 @@ export default function TakeTestPage() {
                     </CardContent>
                     <CardFooter>
                         <Button type="submit" disabled={isSubmitting} className="w-full md:w-auto">
-                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-                            Submit for AI Grading
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Submit Test
                         </Button>
                     </CardFooter>
                 </form>

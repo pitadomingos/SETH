@@ -16,7 +16,6 @@ import { useSchoolData, Syllabus, SyllabusTopic } from '@/context/school-data-co
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { analyzeScheduleConflicts, type AnalyzeScheduleConflictsOutput } from '@/ai/flows/analyze-schedule-conflicts';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
@@ -216,54 +215,6 @@ function DeleteTopicDialog({ syllabus, topic, children }: { syllabus: Syllabus, 
     );
 }
 
-function AnalyzeScheduleDialog() {
-  const { coursesData, teachersData, classesData } = useSchoolData();
-  const { toast } = useToast();
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalyzeScheduleConflictsOutput | null>(null);
-
-  const handleRunAnalysis = async () => {
-    setIsLoading(true); setAnalysisResult(null);
-    try {
-      const analysisInput = { courses: coursesData.map(course => ({ subject: course.subject, teacherName: teachersData.find(t => t.id === course.teacherId)?.name || 'N/A', className: classesData.find(c => c.id === course.classId)?.name || 'N/A', schedule: course.schedule, })) };
-      const result = await analyzeScheduleConflicts(analysisInput);
-      setAnalysisResult(result);
-    } catch (e) {
-      console.error(e);
-      toast({ variant: 'destructive', title: 'Analysis Failed', description: 'Could not run the schedule analysis. Please try again later.' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const onOpenChange = (open: boolean) => { setIsOpen(open); if (!open) { setAnalysisResult(null); setIsLoading(false); } }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline"><BrainCircuit className="mr-2 h-4 w-4" /> Analyze Schedule</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader><DialogTitle>AI Schedule Conflict Analysis</DialogTitle><DialogDescription>The AI will analyze the entire course schedule for teacher and room booking conflicts.</DialogDescription></DialogHeader>
-        <div className="py-4 min-h-[20rem] max-h-[70vh] overflow-y-auto pr-4">
-          {isLoading ? ( <div className="flex flex-col items-center justify-center h-full text-muted-foreground"><Loader2 className="h-10 w-10 animate-spin mb-4 text-primary" /><p>Analyzing schedule for conflicts...</p></div>
-          ) : analysisResult ? (
-            <div className="space-y-6">
-              <div className={`p-4 rounded-lg border ${analysisResult.hasConflicts ? 'border-destructive/20 bg-destructive/5' : 'border-green-500/20 bg-green-500/5'}`}>
-                <h3 className={`font-bold flex items-center gap-2 ${analysisResult.hasConflicts ? 'text-destructive' : 'text-green-600'}`}>{analysisResult.hasConflicts ? <AlertTriangle /> : <CheckCircle />}Analysis Summary</h3>
-                <p className="text-sm text-muted-foreground mt-1">{analysisResult.summary}</p>
-              </div>
-              {analysisResult.hasConflicts && (<div><h4 className="font-semibold mb-2">Detected Conflicts:</h4><ul className="space-y-3">{analysisResult.conflicts.map((conflict, index) => (<li key={index} className="p-4 bg-muted rounded-md text-sm"><p className="font-semibold text-card-foreground">{conflict.type}</p><p className="text-muted-foreground mt-1">{conflict.details}</p><p className="text-primary font-medium mt-2">Suggestion: <span className="text-muted-foreground">{conflict.suggestion}</span></p></li>))}</ul></div>)}
-            </div>
-          ) : (<div className="flex flex-col items-center justify-center h-full text-muted-foreground"><p className="text-center">Click the button below to start the analysis.</p></div>)}
-        </div>
-        <DialogFooter><DialogClose asChild><Button type="button" variant="secondary">Close</Button></DialogClose>{!analysisResult && ( <Button onClick={handleRunAnalysis} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4" />}Run Analysis</Button>)}</DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 function SubjectDetailsDialog({ subject, courses }: { subject: string; courses: any[] }) {
   const { teachersData, classesData } = useSchoolData();
   return (
@@ -313,7 +264,7 @@ export default function AcademicsPage() {
     <div className="space-y-6 animate-in fade-in-50">
       <header className="flex flex-wrap gap-2 justify-between items-center">
         <div><h2 className="text-3xl font-bold tracking-tight">Academics</h2><p className="text-muted-foreground">Manage school subjects, schedules, and curriculum syllabus.</p></div>
-        <div className="flex gap-2"><AnalyzeScheduleDialog /><NewCourseDialog /></div>
+        <div className="flex gap-2"><NewCourseDialog /></div>
       </header>
 
       <Card>
