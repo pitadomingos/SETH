@@ -9,6 +9,10 @@ export interface User {
 }
 
 export const mockUsers: Record<string, { user: User, password: string }> = {
+  developer: {
+    user: { username: 'developer', name: 'Developer User', role: 'GlobalAdmin', email: 'dev@edudesk.com' },
+    password: 'password'
+  },
   admin: {
     user: { username: 'admin', name: 'Admin User', role: 'Admin', email: 'admin@edudesk.com' },
     password: 'password'
@@ -19,6 +23,10 @@ export const mockUsers: Record<string, { user: User, password: string }> = {
   },
   student: {
     user: { username: 'student', name: 'Student User', role: 'Student', email: 'student@edudesk.com' },
+    password: 'password'
+  },
+  parent: {
+    user: { username: 'parent', name: 'Parent User', role: 'Parent', email: 'parent@edudesk.com' },
     password: 'password'
   },
 };

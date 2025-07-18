@@ -25,7 +25,11 @@ export interface NavLink {
     icon: LucideIcon;
 }
 
-export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
+export const roleLinks: Record<Role, NavLink[]> = {
+  GlobalAdmin: [
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard/profile', label: 'Profile', icon: User },
+  ],
   Admin: [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
@@ -36,6 +40,10 @@ export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
     { href: '/dashboard/profile', label: 'Profile', icon: User },
   ],
   Student: [
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard/profile', label: 'Profile', icon: User },
+  ],
+  Parent: [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
   ],

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { mockUsers } from '@/lib/mock-data';
 
-export type Role = 'Admin' | 'Teacher' | 'Student';
+export type Role = 'Admin' | 'Teacher' | 'Student' | 'Parent' | 'GlobalAdmin';
 
 export interface User {
   username: string;
