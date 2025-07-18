@@ -10,8 +10,7 @@
  * - CreateLessonPlanOutput - The return type for the createLessonPlan function.
  */
 
-import {configureGenkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
+import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const CreateLessonPlanInputSchema = z.object({
@@ -38,42 +37,49 @@ const CreateLessonPlanOutputSchema = z.object({
 export type CreateLessonPlanOutput = z.infer<typeof CreateLessonPlanOutputSchema>;
 
 export async function createLessonPlan(input: CreateLessonPlanInput): Promise<CreateLessonPlanOutput> {
-  const ai = configureGenkit({
-    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
-    model: 'googleai/gemini-2.0-flash',
-  });
-
-  const prompt = ai.definePrompt({
-    name: 'createLessonPlanPrompt',
-    input: {schema: CreateLessonPlanInputSchema},
-    output: {schema: CreateLessonPlanOutputSchema},
-    prompt: `You are an expert instructional designer and AI assistant for teachers. Your task is to create a detailed, performance-aware weekly lesson plan.
-
-  **Context:**
-  - Class: {{{className}}} ({{{gradeLevel}}})
-  - Subject: {{{subject}}}
-  - Weekly Syllabus/Topics: {{{weeklySyllabus}}}
-  - Recent Student Grades (0-20 scale): {{#each recentGrades}}{{this}}, {{/each}}
-
-  **Your Task:**
-
-  1.  **Analyze Performance:** Review the "Recent Student Grades". The passing score is 10 out of 20. If a significant number of grades (e.g., more than 25-30%) are below 12, or if the average seems low, the students are struggling.
-  
-  2.  **Plan the Week:**
-      *   **If students are struggling:** Dedicate Monday's lesson to a **recap** of prerequisite concepts related to this week's syllabus. Clearly label this day as a recap. Then, structure the remaining syllabus topics from Tuesday to Friday.
-      *   **If students are performing well:** Proceed with the new syllabus topics for the entire week, starting from Monday.
-
-  3.  **Generate the 5-Day Plan:** Create a structured plan for Monday through Friday. For each day, provide:
-      *   **topic:** A clear topic for the lesson.
-      *   **isRecap:** A boolean flag indicating if it's a recap day.
-      *   **objectives:** What students should be able to do by the end of the lesson (use a bulleted list).
-      *   **activities:** How the lesson will be taught (e.g., lecture, group discussion, hands-on activity, short quiz). Use a bulleted list.
-      *   **materials:** What resources are needed (e.g., textbook chapters, worksheets, specific websites, equipment). Use a bulleted list.
-
-  Ensure the entire output is a valid JSON object matching the provided schema, with a 'weeklyPlan' array containing exactly five daily plan objects.
-  `,
-  });
-
-  const {output} = await prompt(input);
-  return output!;
+  return createLessonPlanFlow(input);
 }
+
+
+const createLessonPlanFlow = ai.defineFlow(
+  {
+    name: 'createLessonPlanFlow',
+    inputSchema: CreateLessonPlanInputSchema,
+    outputSchema: CreateLessonPlanOutputSchema,
+  },
+  async (input) => {
+    const prompt = ai.definePrompt({
+      name: 'createLessonPlanPrompt',
+      input: {schema: CreateLessonPlanInputSchema},
+      output: {schema: CreateLessonPlanOutputSchema},
+      prompt: `You are an expert instructional designer and AI assistant for teachers. Your task is to create a detailed, performance-aware weekly lesson plan.
+
+        **Context:**
+        - Class: {{{className}}} ({{{gradeLevel}}})
+        - Subject: {{{subject}}}
+        - Weekly Syllabus/Topics: {{{weeklySyllabus}}}
+        - Recent Student Grades (0-20 scale): {{#each recentGrades}}{{this}}, {{/each}}
+
+        **Your Task:**
+
+        1.  **Analyze Performance:** Review the "Recent Student Grades". The passing score is 10 out of 20. If a significant number of grades (e.g., more than 25-30%) are below 12, or if the average seems low, the students are struggling.
+        
+        2.  **Plan the Week:**
+            *   **If students are struggling:** Dedicate Monday's lesson to a **recap** of prerequisite concepts related to this week's syllabus. Clearly label this day as a recap. Then, structure the remaining syllabus topics from Tuesday to Friday.
+            *   **If students are performing well:** Proceed with the new syllabus topics for the entire week, starting from Monday.
+
+        3.  **Generate the 5-Day Plan:** Create a structured plan for Monday through Friday. For each day, provide:
+            *   **topic:** A clear topic for the lesson.
+            *   **isRecap:** A boolean flag indicating if it's a recap day.
+            *   **objectives:** What students should be able to do by the end of the lesson (use a bulleted list).
+            *   **activities:** How the lesson will be taught (e.g., lecture, group discussion, hands-on activity, short quiz). Use a bulleted list.
+            *   **materials:** What resources are needed (e.g., textbook chapters, worksheets, specific websites, equipment). Use a bulleted list.
+
+        Ensure the entire output is a valid JSON object matching the provided schema, with a 'weeklyPlan' array containing exactly five daily plan objects.
+      `,
+    });
+
+    const {output} = await prompt(input);
+    return output!;
+  }
+);

@@ -4,8 +4,7 @@
  * @fileOverview An AI flow to analyze why a teacher is a top performer.
  */
 
-import {configureGenkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
+import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AnalyzeTopTeacherInputSchema = z.object({
@@ -29,38 +28,45 @@ type AnalyzeTopTeacherOutput = z.infer<typeof AnalyzeTopTeacherOutputSchema>;
 
 
 export async function analyzeTopTeacher(input: AnalyzeTopTeacherInput): Promise<AnalyzeTopTeacherOutput> {
-  const ai = configureGenkit({
-    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
-    model: 'googleai/gemini-2.0-flash',
-  });
-
-  const prompt = ai.definePrompt({
-    name: 'analyzeTopTeacherPrompt',
-    input: {schema: AnalyzeTopTeacherInputSchema},
-    output: {schema: AnalyzeTopTeacherOutputSchema},
-    prompt: `You are an educational consultant writing a commendation for a top-performing teacher.
-  
-  Teacher: {{{teacherName}}}
-  School: {{{schoolName}}}
-  Subject: {{{subject}}}
-  
-  Performance Data:
-  - Overall Average Student Grade: {{averageStudentGrade}}/20
-  - Performance per class:
-    {{#each classPerformances}}
-    - Class {{className}}: Avg. Grade {{averageGrade}}, Pass Rate {{passingRate}}%
-    {{/each}}
-  
-  Based on this data, write an analysis explaining why {{{teacherName}}} is being recognized as a Teacher of the Year.
-  
-  - Start by congratulating the teacher on their outstanding achievement.
-  - Emphasize their ability to achieve a high average grade across all their students.
-  - Point out their effectiveness in ensuring high pass rates, showing their ability to teach students of all levels.
-  - Conclude with a bulleted list of key, data-driven metrics that showcase their success.
-  - The tone should be professional and celebratory.
-  `,
-  });
-
-  const {output} = await prompt(input);
-  return output!;
+  return analyzeTopTeacherFlow(input);
 }
+
+
+const analyzeTopTeacherFlow = ai.defineFlow(
+  {
+    name: 'analyzeTopTeacherFlow',
+    inputSchema: AnalyzeTopTeacherInputSchema,
+    outputSchema: AnalyzeTopTeacherOutputSchema,
+  },
+  async (input) => {
+    const prompt = ai.definePrompt({
+      name: 'analyzeTopTeacherPrompt',
+      input: {schema: AnalyzeTopTeacherInputSchema},
+      output: {schema: AnalyzeTopTeacherOutputSchema},
+      prompt: `You are an educational consultant writing a commendation for a top-performing teacher.
+      
+      Teacher: {{{teacherName}}}
+      School: {{{schoolName}}}
+      Subject: {{{subject}}}
+      
+      Performance Data:
+      - Overall Average Student Grade: {{averageStudentGrade}}/20
+      - Performance per class:
+        {{#each classPerformances}}
+        - Class {{className}}: Avg. Grade {{averageGrade}}, Pass Rate {{passingRate}}%
+        {{/each}}
+      
+      Based on this data, write an analysis explaining why {{{teacherName}}} is being recognized as a Teacher of the Year.
+      
+      - Start by congratulating the teacher on their outstanding achievement.
+      - Emphasize their ability to achieve a high average grade across all their students.
+      - Point out their effectiveness in ensuring high pass rates, showing their ability to teach students of all levels.
+      - Conclude with a bulleted list of key, data-driven metrics that showcase their success.
+      - The tone should be professional and celebratory.
+      `,
+    });
+
+    const {output} = await prompt(input);
+    return output!;
+  }
+);

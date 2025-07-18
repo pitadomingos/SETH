@@ -4,8 +4,7 @@
  * @fileOverview An AI flow to grade a student's multiple-choice test.
  */
 
-import {configureGenkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
+import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const QuestionSchema = z.object({
@@ -30,48 +29,55 @@ export const GradeStudentTestOutputSchema = z.object({
 export type GradeStudentTestOutput = z.infer<typeof GradeStudentTestOutputSchema>;
 
 export async function gradeStudentTest(input: GradeStudentTestInput): Promise<GradeStudentTestOutput> {
-  const ai = configureGenkit({
-    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
-    model: 'googleai/gemini-2.0-flash',
-  });
-
-  const prompt = ai.definePrompt({
-    name: 'gradeStudentTestPrompt',
-    input: {schema: GradeStudentTestInputSchema},
-    output: {schema: GradeStudentTestOutputSchema},
-    prompt: `You are an automated test grading assistant for the EduManage platform. Your task is to grade a student's multiple-choice test based on the provided questions, correct answers, and the student's submission.
-
-  The grading scale is 0-20. You must calculate the final score by scaling the number of correct answers to this 20-point scale.
-  For example:
-  - If there are 10 questions, each correct answer is worth 2 points.
-  - If there are 5 questions, each correct answer is worth 4 points.
-  - If there are 8 questions, each correct answer is worth 2.5 points.
-
-  Here is the test information:
-  Subject: {{{subject}}}
-  Topic: {{{topic}}}
-
-  Questions and Correct Answers:
-  {{#each questions}}
-  - Question {{../@index}}: {{this.questionText}}
-    - Correct Answer: {{this.correctAnswer}}
-  {{/each}}
-
-  Student's Submitted Answers:
-  {{#each studentAnswers}}
-  - Question {{@key}}: {{this}}
-  {{/each}}
-
-  Please perform the following steps:
-  1. Compare the student's answer for each question with the correct answer.
-  2. Count the total number of correct answers.
-  3. Calculate the final score out of 20 based on the number of correct answers and the total number of questions.
-  4. Return the final score, the count of correct answers, and the total number of questions in the specified JSON format.
-  `,
-  });
-
-  // A simple JS implementation would be faster, but the user requested AI grading.
-  // This flow directly calls the LLM as requested.
-  const {output} = await prompt(input);
-  return output!;
+  return gradeStudentTestFlow(input);
 }
+
+
+const gradeStudentTestFlow = ai.defineFlow(
+  {
+    name: 'gradeStudentTestFlow',
+    inputSchema: GradeStudentTestInputSchema,
+    outputSchema: GradeStudentTestOutputSchema,
+  },
+  async (input) => {
+    // A simple JS implementation would be faster, but the user requested AI grading.
+    // This flow directly calls the LLM as requested.
+    const prompt = ai.definePrompt({
+      name: 'gradeStudentTestPrompt',
+      input: {schema: GradeStudentTestInputSchema},
+      output: {schema: GradeStudentTestOutputSchema},
+      prompt: `You are an automated test grading assistant for the EduManage platform. Your task is to grade a student's multiple-choice test based on the provided questions, correct answers, and the student's submission.
+
+        The grading scale is 0-20. You must calculate the final score by scaling the number of correct answers to this 20-point scale.
+        For example:
+        - If there are 10 questions, each correct answer is worth 2 points.
+        - If there are 5 questions, each correct answer is worth 4 points.
+        - If there are 8 questions, each correct answer is worth 2.5 points.
+
+        Here is the test information:
+        Subject: {{{subject}}}
+        Topic: {{{topic}}}
+
+        Questions and Correct Answers:
+        {{#each questions}}
+        - Question {{../@index}}: {{this.questionText}}
+          - Correct Answer: {{this.correctAnswer}}
+        {{/each}}
+
+        Student's Submitted Answers:
+        {{#each studentAnswers}}
+        - Question {{@key}}: {{this}}
+        {{/each}}
+
+        Please perform the following steps:
+        1. Compare the student's answer for each question with the correct answer.
+        2. Count the total number of correct answers.
+        3. Calculate the final score out of 20 based on the number of correct answers and the total number of questions.
+        4. Return the final score, the count of correct answers, and the total number of questions in the specified JSON format.
+      `,
+    });
+
+    const {output} = await prompt(input);
+    return output!;
+  }
+);

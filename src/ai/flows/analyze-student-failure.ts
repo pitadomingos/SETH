@@ -8,8 +8,7 @@
  * - AnalyzeStudentFailureOutput - The return type for the analyzeStudentFailure function.
  */
 
-import {configureGenkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
+import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AnalyzeStudentFailureInputSchema = z.object({
@@ -36,48 +35,52 @@ const AnalyzeStudentFailureOutputSchema = z.object({
 export type AnalyzeStudentFailureOutput = z.infer<typeof AnalyzeStudentFailureOutputSchema>;
 
 export async function analyzeStudentFailure(input: AnalyzeStudentFailureInput): Promise<AnalyzeStudentFailureOutput> {
-  const ai = configureGenkit({
-    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
-    model: 'googleai/gemini-2.0-flash',
-  });
-
-  const prompt = ai.definePrompt({
-    name: 'analyzeStudentFailurePrompt',
-    input: {schema: AnalyzeStudentFailureInputSchema},
-    output: {schema: AnalyzeStudentFailureOutputSchema},
-    prompt: `You are a caring and insightful academic advisor. You are tasked with analyzing the record of a student named {{{studentName}}} who has not met the requirements for graduation.
-
-Your goal is to provide a clear, supportive analysis of why they failed and give them concrete, encouraging steps to succeed when they re-sit their exams.
-
-**Student Data:**
-Student Name: {{{studentName}}}
-Age: {{{age}}}
-Sex: {{{sex}}}
-
-**Grades:**
-{{#each grades}}
-- Subject: {{subject}}, Grade: {{grade}}
-{{/each}}
-
-**Lesson Attendance Summary:**
-- Present: {{attendanceSummary.present}} lessons
-- Late: {{attendanceSummary.late}} lessons
-- Absent: {{attendanceSummary.absent}} lessons
-{{#if attendanceSummary.sick}}
-- Sick: {{attendanceSummary.sick}} lessons
-{{/if}}
-
-**Analysis Task:**
-1.  **Analyze Failure:** Examine the grades and attendance. Consider the student's age and sex as context but do not focus on them unless it's highly relevant. Identify the key contributing factors. Is it poor performance in one specific, critical subject? Is it a general trend of low grades across the board? Does high lesson absenteeism or sickness correlate with poor grades in specific subjects?
-2.  **Provide Suggestions:** Based on your analysis, provide a bulleted list of actionable suggestions. These should be practical and encouraging. For example, suggest focusing on specific subjects, seeking tutoring, improving study habits, creating a study schedule, or improving lesson attendance.
-
-**Output Tone:**
-- Be empathetic and supportive, not judgmental.
-- Focus on future success.
-- The language should be clear and easy for a student to understand.
-`,
-  });
-
-  const {output} = await prompt(input);
-  return output!;
+  return analyzeStudentFailureFlow(input);
 }
+
+
+const analyzeStudentFailureFlow = ai.defineFlow({
+    name: 'analyzeStudentFailureFlow',
+    inputSchema: AnalyzeStudentFailureInputSchema,
+    outputSchema: AnalyzeStudentFailureOutputSchema,
+}, async (input) => {
+    const prompt = ai.definePrompt({
+      name: 'analyzeStudentFailurePrompt',
+      input: {schema: AnalyzeStudentFailureInputSchema},
+      output: {schema: AnalyzeStudentFailureOutputSchema},
+      prompt: `You are a caring and insightful academic advisor. You are tasked with analyzing the record of a student named {{{studentName}}} who has not met the requirements for graduation.
+
+        Your goal is to provide a clear, supportive analysis of why they failed and give them concrete, encouraging steps to succeed when they re-sit their exams.
+
+        **Student Data:**
+        Student Name: {{{studentName}}}
+        Age: {{{age}}}
+        Sex: {{{sex}}}
+
+        **Grades:**
+        {{#each grades}}
+        - Subject: {{subject}}, Grade: {{grade}}
+        {{/each}}
+
+        **Lesson Attendance Summary:**
+        - Present: {{attendanceSummary.present}} lessons
+        - Late: {{attendanceSummary.late}} lessons
+        - Absent: {{attendanceSummary.absent}} lessons
+        {{#if attendanceSummary.sick}}
+        - Sick: {{attendanceSummary.sick}} lessons
+        {{/if}}
+
+        **Analysis Task:**
+        1.  **Analyze Failure:** Examine the grades and attendance. Consider the student's age and sex as context but do not focus on them unless it's highly relevant. Identify the key contributing factors. Is it poor performance in one specific, critical subject? Is it a general trend of low grades across the board? Does high lesson absenteeism or sickness correlate with poor grades in specific subjects?
+        2.  **Provide Suggestions:** Based on your analysis, provide a bulleted list of actionable suggestions. These should be practical and encouraging. For example, suggest focusing on specific subjects, seeking tutoring, improving study habits, creating a study schedule, or improving lesson attendance.
+
+        **Output Tone:**
+        - Be empathetic and supportive, not judgmental.
+        - Focus on future success.
+        - The language should be clear and easy for a student to understand.
+      `,
+    });
+
+    const {output} = await prompt(input);
+    return output!;
+});

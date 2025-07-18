@@ -8,8 +8,7 @@
  * - AnalyzeTestResultsOutput - The return type for the function.
  */
 
-import {configureGenkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
+import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const TestQuestionSchema = z.object({
@@ -51,55 +50,62 @@ const AnalyzeTestResultsOutputSchema = z.object({
 export type AnalyzeTestResultsOutput = z.infer<typeof AnalyzeTestResultsOutputSchema>;
 
 export async function analyzeTestResults(input: AnalyzeTestResultsInput): Promise<AnalyzeTestResultsOutput> {
-  const ai = configureGenkit({
-    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
-    model: 'googleai/gemini-2.0-flash',
-  });
-
-  const prompt = ai.definePrompt({
-    name: 'analyzeTestResultsPrompt',
-    input: {schema: AnalyzeTestResultsInputSchema},
-    output: {schema: AnalyzeTestResultsOutputSchema},
-    prompt: `You are an expert AI educational analyst. Your task is to analyze the results of a test on the topic of "{{testTopic}}" and provide actionable feedback for the teacher.
-
-**Test & Submission Data:**
-
-**Questions:**
-{{#each questions}}
-- Q{{@index}}: {{this.questionText}} (Correct: {{this.correctAnswer}})
-{{/each}}
-
-**Student Submissions:**
-{{#each submissions}}
-- {{this.studentName}}: Score {{this.score}}/20
-  Answers:
-  {{#each this.answers}}
-  - Q{{@key}}: {{this}}
-  {{/each}}
-{{/each}}
-
-**Your Tasks:**
-
-1.  **Overall Summary:** Provide a concise summary of the class's performance. Mention the average score and any general patterns you observe (e.g., "Most students struggled with questions about concept X").
-
-2.  **Identify Struggling Students:** Identify all students who scored below 12 out of 20. These are the students who need intervention.
-
-3.  **Generate Personalized Revision Advice:** For each struggling student you identified:
-    -   Review the specific questions they answered incorrectly.
-    -   Based on the content of those wrong questions, infer the underlying concepts or sub-topics they need to revise.
-    -   Provide a list of specific, actionable revision suggestions. For example, if they failed questions about photosynthesis, suggest they "Revise the light-dependent reactions of photosynthesis."
-    -   For each suggestion, provide a brief reasoning, like "This is suggested because you missed questions about chlorophyll's role."
-
-Return the entire analysis in the specified JSON format. If no students are struggling, return an empty list for 'strugglingStudents'.
-`,
-  });
-
   if (input.submissions.length === 0) {
     return {
       overallSummary: "No submissions have been recorded for this test yet. Analysis cannot be performed.",
       strugglingStudents: [],
     };
   }
-  const {output} = await prompt(input);
-  return output!;
+  return analyzeTestResultsFlow(input);
 }
+
+
+const analyzeTestResultsFlow = ai.defineFlow(
+  {
+    name: 'analyzeTestResultsFlow',
+    inputSchema: AnalyzeTestResultsInputSchema,
+    outputSchema: AnalyzeTestResultsOutputSchema,
+  },
+  async (input) => {
+    const prompt = ai.definePrompt({
+      name: 'analyzeTestResultsPrompt',
+      input: {schema: AnalyzeTestResultsInputSchema},
+      output: {schema: AnalyzeTestResultsOutputSchema},
+      prompt: `You are an expert AI educational analyst. Your task is to analyze the results of a test on the topic of "{{testTopic}}" and provide actionable feedback for the teacher.
+
+        **Test & Submission Data:**
+
+        **Questions:**
+        {{#each questions}}
+        - Q{{@index}}: {{this.questionText}} (Correct: {{this.correctAnswer}})
+        {{/each}}
+
+        **Student Submissions:**
+        {{#each submissions}}
+        - {{this.studentName}}: Score {{this.score}}/20
+          Answers:
+          {{#each this.answers}}
+          - Q{{@key}}: {{this}}
+          {{/each}}
+        {{/each}}
+
+        **Your Tasks:**
+
+        1.  **Overall Summary:** Provide a concise summary of the class's performance. Mention the average score and any general patterns you observe (e.g., "Most students struggled with questions about concept X").
+
+        2.  **Identify Struggling Students:** Identify all students who scored below 12 out of 20. These are the students who need intervention.
+
+        3.  **Generate Personalized Revision Advice:** For each struggling student you identified:
+            -   Review the specific questions they answered incorrectly.
+            -   Based on the content of those wrong questions, infer the underlying concepts or sub-topics they need to revise.
+            -   Provide a list of specific, actionable revision suggestions. For example, if they failed questions about photosynthesis, suggest they "Revise the light-dependent reactions of photosynthesis."
+            -   For each suggestion, provide a brief reasoning, like "This is suggested because you missed questions about chlorophyll's role."
+
+        Return the entire analysis in the specified JSON format. If no students are struggling, return an empty list for 'strugglingStudents'.
+      `,
+    });
+
+    const {output} = await prompt(input);
+    return output!;
+  }
+);

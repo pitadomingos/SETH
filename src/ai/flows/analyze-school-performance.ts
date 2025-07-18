@@ -8,8 +8,7 @@
  * - AnalyzeSchoolPerformanceOutput - The return type for the function.
  */
 
-import {configureGenkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
+import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const TeacherInfoSchema = z.object({
@@ -70,65 +69,72 @@ export type AnalyzeSchoolPerformanceInput = z.infer<typeof AnalyzeSchoolPerforma
 
 
 export async function analyzeSchoolPerformance(input: AnalyzeSchoolPerformanceInput): Promise<AnalyzeSchoolPerformanceOutput> {
-  const ai = configureGenkit({
-    plugins: [googleAI({ apiKey: process.env.GOOGLE_API_KEY })],
-    model: 'googleai/gemini-2.0-flash',
-  });
-
-  const prompt = ai.definePrompt({
-    name: 'analyzeSchoolPerformancePrompt',
-    input: {schema: AnalyzeSchoolPerformanceInputSchema},
-    output: {schema: AnalyzeSchoolPerformanceOutputSchema},
-    prompt: `You are an expert educational consultant and data analyst for a school named {{{schoolName}}}. Your task is to provide a holistic, high-level analysis of the school's overall performance based on the provided data.
-
-**Academic Data:**
-- Total Students: {{overallStudentCount}}
-- School-Wide Average Grade: {{overallAverageGrade}}/20
-- Subject Performance:
-  {{#each subjects}}
-  - {{name}}: Avg. Grade {{averageGrade}}/20, Failure Rate {{failureRate}}%
-  {{/each}}
-
-**Attendance Data:**
-- Overall Attendance Rate: {{attendance.overallAttendanceRate}}%
-- Chronic Absenteeism Rate (students missing >10% of lessons): {{attendance.chronicAbsenteeismRate}}%
-
-**Teacher Data:**
-{{#each teachers}}
-- {{name}} ({{subject}}): Avg. Grade {{averageGrade}}/20 for {{studentCount}} students.
-{{/each}}
-
-**Financial Data:**
-- Total Billed Fees: \${{financials.totalFees}}
-- Total Revenue Collected: \${{financials.totalRevenue}}
-- Fee Collection Rate: {{financials.collectionRate}}%
-- Overdue Fees: \${{financials.overdueAmount}}
-
-**Analysis Task:**
-
-1.  **Holistic Analysis:** Write a comprehensive analysis that synthesizes all the provided data.
-    -   **Academics:** Comment on the overall average grade. Are there any subjects that are performing exceptionally well or poorly? Highlight any subjects with high failure rates.
-    -   **Attendance:** Analyze the attendance data. Is the overall rate healthy (ideally >95%)? Is the chronic absenteeism rate a concern (ideally <5%)? Correlate poor attendance with academic performance if possible.
-    -   **Teachers:** Briefly comment on teacher performance. Are there any clear high-performers based on average grades?
-    -   **Financials:** Analyze the financial health. How is the fee collection rate? Is the amount of overdue fees a concern?
-    -   **Synthesis & Recommendations:** Conclude with a summary of the school's main strengths and areas needing attention. Provide 2-3 actionable recommendations. For example, if a subject has a high failure rate, suggest a curriculum review. If chronic absenteeism is high, suggest an outreach program for at-risk students.
-
-2.  **Key Metrics:** Extract key metrics for a summary chart. These should be:
-    -   The school-wide average grade (out of 20).
-    -   The overall pass rate (calculated as 100 minus the average of all subject failure rates).
-    -   The fee collection rate (%).
-    -   The overall attendance rate (%).
-
-3.  **Performance Score:** Finally, calculate a single, holistic 'performanceScore' for the school from 0 to 100. Use the following weighting: Academics (60%), Financial Health (20%), and Attendance (20%). A high score requires strong results in all areas.
-
-{{#if previousAnalysis}}
-**Previous Analysis Comparison:**
-A previous analysis was run on {{previousAnalysis.generatedAt}}.
-Please compare the current data with the previous analysis. In the 'comparisonAnalysis' field, provide a brief, data-driven summary of the progress or regression, focusing on key changes in metrics like overall average grade, attendance rate, or fee collection.
-{{/if}}
-`,
-  });
-
-  const {output} = await prompt(input);
-  return output!;
+  return analyzeSchoolPerformanceFlow(input);
 }
+
+
+const analyzeSchoolPerformanceFlow = ai.defineFlow(
+  {
+    name: 'analyzeSchoolPerformanceFlow',
+    inputSchema: AnalyzeSchoolPerformanceInputSchema,
+    outputSchema: AnalyzeSchoolPerformanceOutputSchema,
+  },
+  async (input) => {
+    const prompt = ai.definePrompt({
+      name: 'analyzeSchoolPerformancePrompt',
+      input: {schema: AnalyzeSchoolPerformanceInputSchema},
+      output: {schema: AnalyzeSchoolPerformanceOutputSchema},
+      prompt: `You are an expert educational consultant and data analyst for a school named {{{schoolName}}}. Your task is to provide a holistic, high-level analysis of the school's overall performance based on the provided data.
+
+        **Academic Data:**
+        - Total Students: {{overallStudentCount}}
+        - School-Wide Average Grade: {{overallAverageGrade}}/20
+        - Subject Performance:
+          {{#each subjects}}
+          - {{name}}: Avg. Grade {{averageGrade}}/20, Failure Rate {{failureRate}}%
+          {{/each}}
+
+        **Attendance Data:**
+        - Overall Attendance Rate: {{attendance.overallAttendanceRate}}%
+        - Chronic Absenteeism Rate (students missing >10% of lessons): {{attendance.chronicAbsenteeismRate}}%
+
+        **Teacher Data:**
+        {{#each teachers}}
+        - {{name}} ({{subject}}): Avg. Grade {{averageGrade}}/20 for {{studentCount}} students.
+        {{/each}}
+
+        **Financial Data:**
+        - Total Billed Fees: \${{financials.totalFees}}
+        - Total Revenue Collected: \${{financials.totalRevenue}}
+        - Fee Collection Rate: {{financials.collectionRate}}%
+        - Overdue Fees: \${{financials.overdueAmount}}
+
+        **Analysis Task:**
+
+        1.  **Holistic Analysis:** Write a comprehensive analysis that synthesizes all the provided data.
+            -   **Academics:** Comment on the overall average grade. Are there any subjects that are performing exceptionally well or poorly? Highlight any subjects with high failure rates.
+            -   **Attendance:** Analyze the attendance data. Is the overall rate healthy (ideally >95%)? Is the chronic absenteeism rate a concern (ideally <5%)? Correlate poor attendance with academic performance if possible.
+            -   **Teachers:** Briefly comment on teacher performance. Are there any clear high-performers based on average grades?
+            -   **Financials:** Analyze the financial health. How is the fee collection rate? Is the amount of overdue fees a concern?
+            -   **Synthesis & Recommendations:** Conclude with a summary of the school's main strengths and areas needing attention. Provide 2-3 actionable recommendations. For example, if a subject has a high failure rate, suggest a curriculum review. If chronic absenteeism is high, suggest an outreach program for at-risk students.
+
+        2.  **Key Metrics:** Extract key metrics for a summary chart. These should be:
+            -   The school-wide average grade (out of 20).
+            -   The overall pass rate (calculated as 100 minus the average of all subject failure rates).
+            -   The fee collection rate (%).
+            -   The overall attendance rate (%).
+
+        3.  **Performance Score:** Finally, calculate a single, holistic 'performanceScore' for the school from 0 to 100. Use the following weighting: Academics (60%), Financial Health (20%), and Attendance (20%). A high score requires strong results in all areas.
+
+        {{#if previousAnalysis}}
+        **Previous Analysis Comparison:**
+        A previous analysis was run on {{previousAnalysis.generatedAt}}.
+        Please compare the current data with the previous analysis. In the 'comparisonAnalysis' field, provide a brief, data-driven summary of the progress or regression, focusing on key changes in metrics like overall average grade, attendance rate, or fee collection.
+        {{/if}}
+      `,
+    });
+
+    const {output} = await prompt(input);
+    return output!;
+  }
+);
