@@ -1,18 +1,22 @@
 /**
  * @fileoverview This file is the main entry point for Genkit.
  */
-import 'dotenv/config';
-import {genkit, type Plugin} from '@genkit-ai/core';
+import {genkit} from '@genkit-ai/core';
 import {googleAI} from '@genkit-ai/googleai';
-import {AlwaysOnSampler, OpenTelemetryTraceExporter, SimpleSpanProcessor} from '@opentelemetry/sdk-trace-base';
-import {NodeTracerProvider} from '@opentelemetry/sdk-trace-node';
+import {AlwaysOnSampler, NodeTracerProvider} from '@opentelemetry/sdk-trace-node';
+import {SimpleSpanProcessor} from '@opentelemetry/sdk-trace-base';
+import {OpenTelemetryTraceExporter} from '@opentelemetry/exporter-trace-otlp-http';
 
 const provider = new NodeTracerProvider({
   sampler: new AlwaysOnSampler(),
 });
 
 provider.addSpanProcessor(
-  new SimpleSpanProcessor(new OpenTelemetryTraceExporter())
+  new SimpleSpanProcessor(
+    new OpenTelemetryTraceExporter({
+      url: 'http://localhost:4318/v1/traces',
+    })
+  )
 );
 provider.register();
 

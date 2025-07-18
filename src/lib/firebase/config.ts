@@ -17,14 +17,7 @@ const firebaseConfig = {
 // Initialize Firebase
 let app;
 if (!getApps().length) {
-    try {
-        app = initializeApp(firebaseConfig);
-    } catch(e) {
-        console.error("Firebase initialization error", e);
-        // In a real app, you might want to handle this more gracefully
-        // For the prototype, we can let it fail loudly to know the config is wrong
-        throw e;
-    }
+    app = initializeApp(firebaseConfig);
 } else {
     app = getApp();
 }
