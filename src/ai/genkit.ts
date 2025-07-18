@@ -1,17 +1,16 @@
+
 /**
  * @fileoverview This file is the main entry point for Genkit.
  */
-import { genkit, configureGenkit } from '@genkit-ai/core';
+import { genkit } from '@genkit-ai/core';
 import { googleAI } from '@genkit-ai/googleai';
 
-const googleAiPlugin = googleAI({
-  apiKey: process.env.GOOGLE_API_KEY,
-});
-
-configureGenkit({
-  plugins: [googleAiPlugin],
+export const ai = genkit({
+  plugins: [
+    googleAI({
+      apiKey: process.env.GOOGLE_API_KEY,
+    }),
+  ],
   logLevel: 'debug',
   enableTracingAndMetrics: true,
 });
-
-export const ai = genkit();
