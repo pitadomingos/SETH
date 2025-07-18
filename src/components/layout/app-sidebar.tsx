@@ -7,51 +7,17 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { useAuth, Role } from '@/context/auth-context';
 import { 
     GraduationCap, 
     LayoutDashboard, 
-    User, 
-    BookMarked, 
-    PenSquare, 
-    ShieldCheck,
-    Presentation,
-    School,
-    UserPlus,
-    BookOpen,
-    ClipboardList,
-    CalendarCheck,
-    DollarSign,
-    Trophy,
-    CalendarDays,
-    BarChart3,
+    User,
     Settings,
-    FileText,
-    BookUser,
-    ListTodo,
-    Package,
-    Building,
-    Award,
-    Globe,
-    HeartHandshake,
-    FlaskConical,
-    FileCheck,
-    Briefcase,
-    History,
-    Mail,
-    Lock,
-    Gem,
-    MonitorPlay,
-    Camera,
-    HeartPulse,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { type LucideIcon } from 'lucide-react';
-import { useSchoolData } from '@/context/school-data-context';
-import { useMemo } from 'react';
 
 export interface NavLink {
     href: string;
@@ -59,129 +25,27 @@ export interface NavLink {
     icon: LucideIcon;
 }
 
-const commonLinks: NavLink[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/events', label: 'Events', icon: CalendarDays },
-  { href: '/dashboard/profile', label: 'Profile', icon: User },
-];
-
-const studentAndTeacherLinks: NavLink[] = [
-  { href: '/dashboard/schedule', label: 'Schedules', icon: BookMarked },
-  { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Award },
-];
-
-const documentationLinks: NavLink[] = [
-    { href: '/dashboard/user-manual', label: 'User Manual', icon: BookUser },
-];
-
 export const roleLinks: Record<Exclude<Role, null>, NavLink[]> = {
-  GlobalAdmin: [
-    { href: '/dashboard/global-admin', label: 'System Dashboard', icon: Globe },
-    { href: '/dashboard/global-admin/all-schools', label: 'All Schools', icon: Building },
-    { href: '/dashboard/global-admin/students', label: 'All Students', icon: GraduationCap },
-    { href: '/dashboard/global-admin/teachers', label: 'All Teachers', icon: Presentation },
-    { href: '/dashboard/global-admin/parents', label: 'All Parents', icon: HeartHandshake },
-    { href: '/dashboard/global-admin/inbox', label: 'Messaging', icon: Mail },
-    { href: '/dashboard/global-admin/awards', label: 'Awards', icon: Award },
-    { href: '/dashboard/global-admin/settings', label: 'System Settings', icon: Settings },
-    { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
-    { href: '/kiosk/global', label: 'Public Kiosk', icon: MonitorPlay },
-    { href: '/dashboard/project-proposal', label: 'Project Proposal', icon: Briefcase },
-    { href: '/dashboard/system-documentation', label: 'System Docs', icon: FileText },
-    { href: '/dashboard/todo-list', label: 'To-Do List', icon: ListTodo },
-  ],
   Admin: [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/dashboard/reports', label: 'Reports', icon: BarChart3 },
-    { href: '/dashboard/admissions', label: 'Admissions', icon: UserPlus },
-    { href: '/dashboard/students', label: 'Students', icon: GraduationCap },
-    { href: '/dashboard/teachers', label: 'Teachers', icon: Presentation },
-    { href: '/dashboard/classes', label: 'Classes', icon: School },
-    { href: '/dashboard/academics', label: 'Academics', icon: BookOpen },
-    { href: '/dashboard/examinations', label: 'Examinations', icon: ClipboardList },
-    { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
-    { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
-    { href: '/dashboard/assets', label: 'Assets', icon: Package },
-    { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
-    { href: '/dashboard/events', label: 'Events', icon: CalendarDays },
-    { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
-    { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Award },
-    { href: '/dashboard/school-profile', label: 'School Profile', icon: Building },
-    { href: '/dashboard/kiosk-showcase', label: 'Kiosk', icon: Camera },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
   ],
   Teacher: [
-    ...commonLinks,
-    ...studentAndTeacherLinks,
-    { href: '/dashboard/lesson-planner', label: 'Lesson Planner', icon: PenSquare },
-    { href: '/dashboard/ai-testing', label: 'AI Test Generator', icon: FlaskConical },
-    { href: '/dashboard/grading', label: 'Gradebook', icon: FileCheck },
-    { href: '/dashboard/attendance', label: 'Attendance', icon: CalendarCheck },
-    { href: '/dashboard/behavioral', label: 'Behavioral', icon: HeartPulse },
-    { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard/profile', label: 'Profile', icon: User },
   ],
   Student: [
-    ...commonLinks,
-    ...studentAndTeacherLinks,
-  ],
-  Parent: [
-    ...commonLinks,
-    { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Award },
-    { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
-    { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard/profile', label: 'Profile', icon: User },
   ],
 };
 
 export function AppSidebar() {
-  const { user, role } = useAuth();
-  const { schoolProfile, schoolGroups } = useSchoolData();
+  const { role } = useAuth();
   const pathname = usePathname();
 
-  const isPremiumAdmin = useMemo(() => {
-    if (role !== 'Admin' || !user?.schoolId || !schoolGroups) return false;
-    return Object.values(schoolGroups).some(group => group.includes(user.schoolId!));
-  }, [role, user, schoolGroups]);
-
-  const getLinksForRole = () => {
-    if (!role) return [];
-    let links = [...(roleLinks[role] || [])];
-    
-    if (role === 'Admin') {
-      const kioskLink = { href: `/kiosk/${user?.schoolId}`, label: 'Public Kiosk', icon: MonitorPlay };
-      const settingsIndex = links.findIndex(l => l.href === '/dashboard/settings');
-      if (settingsIndex !== -1) {
-        links.splice(settingsIndex, 0, kioskLink);
-      } else {
-        links.push(kioskLink);
-      }
-
-      if (isPremiumAdmin) {
-        const manageLink = { href: '/dashboard/manage-schools', label: 'Manage Schools', icon: Building };
-        const profileIndex = links.findIndex(l => l.href === '/dashboard/school-profile');
-        if (profileIndex !== -1) {
-            links.splice(profileIndex, 0, manageLink);
-        } else {
-            links.unshift(manageLink);
-        }
-      }
-    }
-    return links;
-  };
-
-  const allLinks = getLinksForRole();
-
-  const uniqueLinks = allLinks.filter((link, index, self) =>
-    index === self.findIndex((l) => (
-      l.href === link.href
-    ))
-  );
-
-  const isSchoolSuspended = schoolProfile?.status && schoolProfile.status !== 'Active';
-  const schoolTier = schoolProfile?.tier;
-
-  const proFeaturesForAdmin = ['/dashboard/reports', '/dashboard/admissions'];
-  const proFeaturesForTeacher = ['/dashboard/lesson-planner', '/dashboard/ai-testing', '/dashboard/behavioral'];
+  const links = role ? roleLinks[role] : [];
 
   return (
     <>
@@ -195,46 +59,18 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {uniqueLinks.map((link) => {
-            const allowedWhenSuspended = ['/dashboard', '/dashboard/school-profile'];
-            const isSuspendedAndLocked = role === 'Admin' && isSchoolSuspended && !allowedWhenSuspended.includes(link.href);
-
-            let isTierLocked = false;
-            if (schoolTier === 'Starter') {
-              if (role === 'Admin' && proFeaturesForAdmin.includes(link.href)) {
-                isTierLocked = true;
-              }
-              if (role === 'Teacher' && proFeaturesForTeacher.includes(link.href)) {
-                isTierLocked = true;
-              }
-            }
-
-            const isLinkDisabled = isSuspendedAndLocked || isTierLocked;
-            const tooltipContent = isTierLocked ? `${link.label} (Upgrade to Pro)` : link.label;
-
-            return (
-              <SidebarMenuItem key={link.href}>
-                <Link href={isLinkDisabled ? '#' : link.href} passHref style={isLinkDisabled ? { pointerEvents: 'none', cursor: 'not-allowed' } : {}} target={link.label === 'Public Kiosk' ? '_blank' : '_self'}>
-                  <SidebarMenuButton asChild disabled={isLinkDisabled} isActive={pathname.startsWith(link.href) && (link.href !== '/dashboard' || pathname === '/dashboard')} tooltip={tooltipContent}>
-                      <span>
-                        <link.icon className="h-4 w-4" />
-                        <span>{link.label}</span>
-                        {isTierLocked && <Lock className="ml-auto h-3 w-3" />}
-                      </span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            );
-          })}
-          <SidebarSeparator />
-           {documentationLinks.map((link) => (
+          {links.map((link) => (
             <SidebarMenuItem key={link.href}>
-              <Link href={link.href}>
-                <SidebarMenuButton asChild isActive={pathname === link.href} tooltip={link.label}>
-                    <span>
-                      <link.icon className="h-4 w-4" />
-                      <span>{link.label}</span>
-                    </span>
+              <Link href={link.href} passHref>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === link.href}
+                  tooltip={link.label}
+                >
+                  <span>
+                    <link.icon className="h-4 w-4" />
+                    <span>{link.label}</span>
+                  </span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>

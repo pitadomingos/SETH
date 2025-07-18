@@ -15,17 +15,16 @@ import { Input } from '@/components/ui/input';
 import { GraduationCap, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { mockUsers } from '@/lib/mock-data';
 
 const formSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email.' }),
+  username: z.string().min(1, { message: 'Username is required.' }),
   password: z.string().min(1, { message: 'Password is required.' }),
 });
 
 type LoginFormValues = z.infer<typeof formSchema>;
 
 export function LoginForm() {
-  const { login } = useAuth();
+  const { login, mockUsers } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -33,14 +32,14 @@ export function LoginForm() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
     },
   });
 
   async function onSubmit(values: LoginFormValues) {
     setIsLoggingIn(true);
-    const result = await login(values.email, values.password);
+    const result = await login(values.username, values.password);
 
     if (result.success) {
       router.push('/dashboard');
@@ -64,19 +63,19 @@ export function LoginForm() {
           <GraduationCap className="h-8 w-8 text-primary-foreground" />
         </div>
         <CardTitle className="text-3xl font-headline">EduDesk</CardTitle>
-        <CardDescription>Multi-School Management System</CardDescription>
+        <CardDescription>Multi-Role Education Platform</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             <FormField
               control={form.control}
-              name="email"
+              name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Username</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your email" {...field} />
+                    <Input placeholder="Enter your username" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -108,9 +107,9 @@ export function LoginForm() {
                       <AccordionContent>
                           <ul className="space-y-1 text-xs text-muted-foreground">
                               {demoUsers.map(({ user, password }) => (
-                                  <li key={user.email} className="flex justify-between">
-                                      <span className="font-semibold">{user.role} ({user.name}):</span>
-                                      <span>{user.email} / {password}</span>
+                                  <li key={user.username} className="flex justify-between">
+                                      <span className="font-semibold">{user.role}:</span>
+                                      <span>{user.username} / {password}</span>
                                   </li>
                               ))}
                           </ul>

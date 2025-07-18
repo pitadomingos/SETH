@@ -10,49 +10,26 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, User, Bell, GraduationCap, Globe } from 'lucide-react';
+import { LogOut, User, Bell, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { ThemeToggle } from './theme-toggle';
-import { useSchoolData } from '@/context/school-data-context';
-import Image from 'next/image';
 
 export function AppHeader() {
-  const { user, logout, originalUser, originalRole, revertImpersonation } = useAuth();
-  const { schoolProfile } = useSchoolData();
+  const { user, logout } = useAuth();
   const initials = user?.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
-  
-  const getRevertButtonText = () => {
-    if (originalRole === 'GlobalAdmin') {
-        return 'Return to Global Dashboard';
-    }
-    if (originalRole === 'Admin') {
-        return 'Return to Group Dashboard';
-    }
-    return 'Return to Main Dashboard';
-};
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
       <div className="flex items-center gap-2">
         <SidebarTrigger className="md:hidden" />
          <div className="hidden items-center gap-2 md:flex">
-            {schoolProfile?.logoUrl ? (
-                <Image src={schoolProfile.logoUrl} alt={`${schoolProfile.name} Logo`} width={24} height={24} className="rounded-sm" data-ai-hint="school logo" />
-            ) : (
-                <GraduationCap className="h-6 w-6 text-primary" />
-            )}
-            <h1 className="text-xl font-semibold">{schoolProfile?.name || 'EduDesk'}</h1>
+            <GraduationCap className="h-6 w-6 text-primary" />
+            <h1 className="text-xl font-semibold">EduDesk</h1>
         </div>
       </div>
       <div className="flex items-center gap-4">
-        {originalUser && (
-            <Button variant="outline" size="sm" onClick={revertImpersonation}>
-                <Globe className="mr-2 h-4 w-4" />
-                {getRevertButtonText()}
-            </Button>
-        )}
         <ThemeToggle />
         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
             <Bell className="h-4 w-4" />
@@ -77,12 +54,12 @@ export function AppHeader() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <Link href="/dashboard/profile" passHref>
-              <DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/profile">
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
-              </DropdownMenuItem>
-            </Link>
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout}>
               <LogOut className="mr-2 h-4 w-4" />

@@ -4,8 +4,8 @@ import { ProtectedRoute } from '@/context/auth-context';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { AppHeader } from '@/components/layout/app-header';
 import { Sidebar, SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { useSchoolData } from '@/context/school-data-context';
 import { Loader2 } from 'lucide-react';
+import { useSchoolData } from '@/context/school-data-context';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
     const { isLoading } = useSchoolData();
@@ -20,7 +20,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     
     return <>{children}</>;
 }
-
 
 export default function DashboardLayout({
   children,
