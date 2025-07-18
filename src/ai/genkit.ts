@@ -1,7 +1,7 @@
 /**
  * @fileoverview This file is the main entry point for Genkit.
  */
-
+import 'dotenv/config';
 import {genkit, type Plugin} from '@genkit-ai/core';
 import {googleAI, type GoogleAIVertexPredictOptions} from '@genkit-ai/googleai';
 import { AlwaysOnSampler, OpenTelemetryTraceExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
@@ -19,8 +19,11 @@ provider.register();
 
 
 const googleAiPlugin = googleAI({
-  apiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
+  apiKey: process.env.GOOGLE_API_KEY,
 });
 
 export const ai = genkit({
-  plugins: [
+  plugins: [googleAiPlugin],
+  logLevel: 'debug',
+  enableTracingAndMetrics: true,
+});

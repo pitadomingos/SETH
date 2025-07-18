@@ -36,6 +36,7 @@ export const AnalyzeClassPerformanceOutputSchema = z.object({
     .describe(
       'A recommendation for the teacher based on the class performance.'
     ),
+  gradeDistribution: z.record(z.number()).describe('A distribution of grades (A, B, C, D, F).'),
   interventionNeeded: z
     .boolean()
     .describe(
@@ -60,7 +61,7 @@ const prompt = ai.definePrompt({
 
 You will be provided with the grades for a class, and an optional previous analysis.
 
-Your task is to provide a detailed analysis of the class performance, and a recommendation for the teacher based on the class performance. You will also determine if an intervention is needed for the class.
+Your task is to provide a detailed analysis of the class performance, a recommendation for the teacher, a grade distribution, and determine if an intervention is needed for the class.
 
 Your analysis should be based on the following criteria:
 - The overall performance of the class.
