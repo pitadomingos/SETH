@@ -1,6 +1,7 @@
 
 'use server';
 
+import 'dotenv/config';
 import { schoolData } from '@/lib/mock-data';
 import { gradeStudentTest } from '@/ai/flows/grade-student-test';
 
