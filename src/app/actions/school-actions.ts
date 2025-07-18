@@ -1,7 +1,6 @@
 
 'use server';
 
-import 'dotenv/config'; // Ensure environment variables are loaded for server actions
 import { NewSchoolData, SchoolData } from '@/context/school-data-context';
 import { revalidatePath } from 'next/cache';
 import { createSchoolInFirestore } from '@/lib/firebase/firestore-service';
