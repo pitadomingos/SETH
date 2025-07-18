@@ -4,11 +4,8 @@
 
 import {genkit, type Plugin} from '@genkit-ai/core';
 import {googleAI, type GoogleAIVertexPredictOptions} from '@genkit-ai/googleai';
-import {dotprompt, type Prompt} from '@genkit-ai/dotprompt';
 import { AlwaysOnSampler, OpenTelemetryTraceExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
-import { NodeTracerProvider }_from_ '@opentelemetry/sdk-trace-node';
-
-import 'dotenv/config';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 
 
 const provider = new NodeTracerProvider({
@@ -22,11 +19,8 @@ provider.register();
 
 
 const googleAiPlugin = googleAI({
-  apiKey: process.env.GOOGLE_API_KEY,
+  apiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
 });
 
 export const ai = genkit({
-  plugins: [googleAiPlugin, dotprompt()],
-  enableTracing: true,
-  traceStore: 'dev-local',
-});
+  plugins: [
