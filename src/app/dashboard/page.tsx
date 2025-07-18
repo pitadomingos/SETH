@@ -1,4 +1,3 @@
-
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useSchoolData } from '@/context/school-data-context';
@@ -7,7 +6,7 @@ import AdminDashboard from '@/components/dashboard/admin-dashboard';
 import TeacherDashboard from '@/components/dashboard/teacher-dashboard';
 import StudentDashboard from '@/components/dashboard/student-dashboard';
 import ParentDashboard from '@/components/dashboard/parent-dashboard';
-import { useEffect }dfrom 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import PremiumAdminDashboard from '@/components/dashboard/premium-admin-dashboard';
 
