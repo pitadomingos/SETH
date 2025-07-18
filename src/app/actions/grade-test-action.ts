@@ -1,6 +1,5 @@
 
 'use server';
-import 'dotenv/config';
 import { gradeStudentTest, type GradeStudentTestInput } from '@/ai/flows/grade-test';
 
 export async function gradeTestAction(input: GradeStudentTestInput) {
