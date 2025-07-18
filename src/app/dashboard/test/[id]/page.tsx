@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, AlertTriangle, CheckCircle, BrainCircuit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
+import { gradeTestAction } from '@/app/actions/grade-test-action';
 
 export default function TakeTestPage() {
     const params = useParams();
@@ -20,9 +21,10 @@ export default function TakeTestPage() {
     const { toast } = useToast();
     const { user } = useAuth();
     const deployedTestId = params.id as string;
-    const { deployedTests, savedTests, studentsData, isLoading: dataIsLoading } = useSchoolData();
+    const { deployedTests, savedTests, studentsData, addGrade, isLoading: dataIsLoading } = useSchoolData();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [result, setResult] = useState<{ score: number, feedback: string } | null>(null);
 
     const { deployedTest, testInfo } = useMemo(() => {
         const dt = deployedTests.find(d => d.id === deployedTestId);
@@ -36,18 +38,37 @@ export default function TakeTestPage() {
     const { control, handleSubmit } = form;
 
     async function onSubmit(data: Record<string, string>) {
-        if (!studentId) {
-            toast({ variant: 'destructive', title: "Error", description: "Could not identify student."});
+        if (!testInfo || !studentId) {
+            toast({ variant: 'destructive', title: "Error", description: "Could not find test or student information."});
             return;
         }
         setIsSubmitting(true);
-        // This is a placeholder since the AI grading action was removed.
-        // In a real app without AI, you'd save the submission and mark it for manual grading.
-        setTimeout(() => {
-            toast({ title: "Test Submitted!", description: "Your answers have been saved for grading." });
-            router.push('/dashboard');
+        setResult(null);
+
+        try {
+            const gradingResult = await gradeTestAction({
+                questions: testInfo.questions,
+                studentAnswers: data,
+            });
+
+            if (gradingResult) {
+                setResult(gradingResult);
+                addGrade({
+                    studentId,
+                    subject: testInfo.subject,
+                    grade: String(gradingResult.score),
+                    type: 'Test',
+                    description: `AI Graded Test: ${testInfo.topic}`
+                });
+            } else {
+                throw new Error("AI grading failed to return a result.");
+            }
+        } catch (error) {
+            console.error("Error submitting test:", error);
+            toast({ variant: 'destructive', title: "Submission Failed", description: "There was an error grading your test." });
+        } finally {
             setIsSubmitting(false);
-        }, 1000);
+        }
     }
 
     if (dataIsLoading) {
@@ -65,6 +86,35 @@ export default function TakeTestPage() {
         );
     }
     
+    if (result) {
+        return (
+             <div className="space-y-6 animate-in fade-in-50">
+                <Card>
+                    <CardHeader className="text-center">
+                         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                            <CheckCircle className="h-10 w-10 text-primary" />
+                        </div>
+                        <CardTitle className="text-3xl mt-4">Test Submitted!</CardTitle>
+                        <CardDescription>Your test has been graded by our AI.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="text-center">
+                            <p className="text-muted-foreground">Your Score</p>
+                            <p className="text-6xl font-bold">{result.score.toFixed(1)} / 20</p>
+                        </div>
+                        <div className="p-4 bg-muted rounded-md space-y-2">
+                            <h4 className="font-semibold flex items-center gap-2"><BrainCircuit /> AI Feedback</h4>
+                            <p className="text-sm text-muted-foreground">{result.feedback}</p>
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={() => router.push('/dashboard')} className="w-full">Return to Dashboard</Button>
+                    </CardFooter>
+                </Card>
+             </div>
+        )
+    }
+
     return (
         <div className="space-y-6 animate-in fade-in-50">
             <Card>
