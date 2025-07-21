@@ -45,7 +45,7 @@ const calculateHolisticScore = (student: Student, allGrades: any[], allAttendanc
 
 // --- Components ---
 
-const LeaderboardTable = ({ students, gradingSystem }) => {
+const LeaderboardTable = ({ students, gradingSystem }: { students: any[], gradingSystem?: string }) => {
     if (!students || students.length === 0) {
         return <p className="text-center text-muted-foreground py-8">No data available for this selection.</p>;
     }
@@ -92,7 +92,7 @@ const LeaderboardTable = ({ students, gradingSystem }) => {
 
 const IndividualRankingView = () => {
   const { role } = useAuth();
-  const { studentsData, allSchoolData, schoolProfile } = useSchoolData();
+  const { studentsData, allSchoolData } = useSchoolData();
 
   const allStudentsWithScoreBySchool = useMemo(() => {
     if (!allSchoolData) return {};
@@ -221,10 +221,6 @@ export default function LeaderboardsPage() {
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
     
-    if (role === 'Parent' || role === 'Student') {
-        return <IndividualRankingView />;
-    }
-    
     const gradingSystem = schoolProfile?.gradingSystem;
 
     const allStudentsWithScore = useMemo(() => studentsData.map(student => ({
@@ -275,6 +271,10 @@ export default function LeaderboardsPage() {
 
         return rankedStudents;
     }, [selectedSubject, grades, studentsData, attendance]);
+
+    if (role === 'Parent' || role === 'Student') {
+        return <IndividualRankingView />;
+    }
 
     return (
         <div className="space-y-6 animate-in fade-in-50">
