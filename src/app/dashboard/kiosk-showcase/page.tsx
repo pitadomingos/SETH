@@ -103,6 +103,8 @@ export default function KioskShowcasePage() {
   const [kioskConfig, setKioskConfig] = useState(schoolProfile?.kioskConfig || {
     showDashboard: true,
     showLeaderboard: true,
+    showTeacherLeaderboard: true,
+    showAllSchools: true,
     showAttendance: false,
     showAcademics: false,
     showAwards: false,
@@ -113,14 +115,25 @@ export default function KioskShowcasePage() {
 
   useEffect(() => {
     if (schoolProfile) {
-        setKioskConfig(schoolProfile.kioskConfig || { showDashboard: true, showLeaderboard: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false });
+        setKioskConfig(schoolProfile.kioskConfig || { showDashboard: true, showLeaderboard: true, showTeacherLeaderboard: true, showAllSchools: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false });
     }
   }, [schoolProfile]);
 
-  useEffect(() => { if (!isLoading && role !== 'Admin') router.push('/dashboard'); }, [role, isLoading, router]);
+  const isAuthorized = role === 'Admin' || role === 'GlobalAdmin';
+
+  useEffect(() => {
+      if (!isLoading && !isAuthorized) {
+          router.push('/dashboard');
+      }
+  }, [role, isLoading, isAuthorized, router]);
   
-  if (isLoading) return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  if (role !== 'Admin') return <div className="flex h-full items-center justify-center"><p>Access Denied</p></div>;
+  if (isLoading || !isAuthorized) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const sortedMedia = [...kioskMedia].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
