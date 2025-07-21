@@ -33,21 +33,12 @@ const calculateAverageNumericGrade = (studentId: string, grades: any[]) => {
 };
 
 function AIFailureAnalysis({ student, grades, attendanceSummary }) {
-  const [isLoading, setIsLoading] = useState(false);
-
   return (
     <div className="space-y-4 text-sm">
-      {isLoading ? (
-         <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground p-4">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <p>AI is analyzing academic record...</p>
-         </div>
-      ) : (
-        <div>
-          <AlertTitle className="mb-2">AI-Powered Academic Analysis (Temporarily Disabled)</AlertTitle>
-          <AlertDescription>The AI analysis feature is currently unavailable. Please contact your teacher or school administrator for guidance on your academic standing and suggestions for improvement.</AlertDescription>
-        </div>
-      )}
+      <div>
+        <AlertTitle className="mb-2">AI-Powered Academic Analysis</AlertTitle>
+        <AlertDescription>The AI analysis feature is temporarily unavailable. Please contact your teacher or school administrator for guidance on your academic standing and suggestions for improvement.</AlertDescription>
+      </div>
     </div>
   );
 }

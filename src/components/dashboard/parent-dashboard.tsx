@@ -135,9 +135,7 @@ function NewApplicationDialog() {
 }
 
 
-function AIGeneratedAdvice({ child, childGrades, childAttendanceSummary }) {
-  const [isLoadingAdvice, setIsLoadingAdvice] = useState(false);
-
+function AIGeneratedAdvice({ child }) {
   return (
     <Card className="lg:col-span-2">
       <CardHeader>
@@ -145,16 +143,9 @@ function AIGeneratedAdvice({ child, childGrades, childAttendanceSummary }) {
           <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
       </CardHeader>
       <CardContent>
-          {isLoadingAdvice ? (
-              <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-                  <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" />
-                  <p>Generating personalized advice...</p>
-              </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-              <p>AI features are temporarily disabled.</p>
-            </div>
-          )}
+        <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+          <p>AI features are temporarily disabled for maintenance.</p>
+        </div>
       </CardContent>
     </Card>
   )
@@ -282,15 +273,6 @@ export default function ParentDashboard() {
     return grades.filter(g => g.studentId === selectedChildId);
   }, [grades, selectedChildId]);
   
-  const childAttendanceSummary = useMemo(() => {
-    if (!selectedChildId) return { present: 0, late: 0, absent: 0, sick: 0 };
-    const records = attendance.filter(a => a.studentId === selectedChildId);
-    return records.reduce((acc, record) => {
-      acc[record.status.toLowerCase()] = (acc[record.status.toLowerCase()] || 0) + 1;
-      return acc;
-    }, { present: 0, late: 0, absent: 0, sick: 0 });
-  }, [attendance, selectedChildId]);
-
   const childFinanceSummary = useMemo(() => {
     if (!selectedChildId) return null;
     const childFees = financeData.filter(f => f.studentId === selectedChildId);
@@ -366,13 +348,7 @@ export default function ParentDashboard() {
       {selectedChild ? (
         <div className="space-y-6 animate-in fade-in-25">
            <div className="grid gap-6 lg:grid-cols-3">
-            {selectedChild && (
-              <AIGeneratedAdvice
-                child={selectedChild}
-                childGrades={childGrades}
-                childAttendanceSummary={childAttendanceSummary}
-              />
-            )}
+            {selectedChild && <AIGeneratedAdvice child={selectedChild} />}
              <div className="space-y-6">
                 <Card>
                     <CardHeader className="pb-4">
