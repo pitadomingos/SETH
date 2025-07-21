@@ -4,7 +4,7 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSchoolData } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, School, Users, Presentation, TrendingUp, Trophy, Award, BarChart2, Briefcase, Lightbulb, Link as LinkIcon, Tv, Medal, Camera } from 'lucide-react';
+import { Loader2, School, Users, Presentation, TrendingUp, Trophy, Award, BarChart2, Briefcase, Lightbulb, Link as LinkIcon, Tv, Medal, Camera, Building } from 'lucide-react';
 import Image from 'next/image';
 import {
   Carousel,
@@ -135,7 +135,7 @@ function KioskDashboardSlide({ school, allSchoolData }) {
     );
 }
 
-function KioskLeaderboardSlide({ school, allSchoolData }) {
+function KioskStudentLeaderboardSlide({ school, allSchoolData }) {
     const isGlobal = school.profile.id === 'global';
 
     const topStudents = useMemo(() => {
@@ -160,7 +160,7 @@ function KioskLeaderboardSlide({ school, allSchoolData }) {
 
     return (
         <div className="p-8 h-full flex flex-col">
-            <h2 className="text-5xl font-bold text-center mb-8 flex items-center justify-center gap-4"><Trophy /> {isGlobal ? 'Network' : 'School'} Leaderboard</h2>
+            <h2 className="text-5xl font-bold text-center mb-8 flex items-center justify-center gap-4"><Trophy /> {isGlobal ? 'Network' : 'School'} Top Students</h2>
             <Table className="text-2xl">
                 <TableHeader>
                     <TableRow>
@@ -197,6 +197,110 @@ function KioskLeaderboardSlide({ school, allSchoolData }) {
     );
 }
 
+function KioskTeacherLeaderboardSlide({ allSchoolData }) {
+    const topTeachers = useMemo(() => {
+        if (!allSchoolData) return [];
+        const allTeachers = Object.values(allSchoolData).flatMap(s => s.teachers.map(teacher => ({...teacher, schoolName: s.profile.name, schoolId: s.profile.id})));
+        
+        return allTeachers.map(teacher => {
+          const school = allSchoolData[teacher.schoolId];
+          if (!school) return { ...teacher, avgStudentGrade: 0 };
+          const teacherCourses = school.courses.filter(c => c.teacherId === teacher.id);
+          const studentIds = new Set<string>();
+          teacherCourses.forEach(course => {
+              const classInfo = school.classes.find(c => c.id === course.classId);
+              if(classInfo) {
+                  school.students
+                      .filter(s => s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim())
+                      .forEach(s => studentIds.add(s.id));
+              }
+          });
+          const teacherGrades = school.grades
+              .filter(g => studentIds.has(g.studentId) && g.subject === teacher.subject)
+              .map(g => parseFloat(g.grade));
+          
+          const avgStudentGrade = teacherGrades.length > 0
+              ? teacherGrades.reduce((sum, g) => sum + g, 0) / teacherGrades.length
+              : 0;
+          
+          return { ...teacher, avgStudentGrade };
+        })
+        .sort((a, b) => b.avgStudentGrade - a.avgStudentGrade)
+        .slice(0, 10);
+    }, [allSchoolData]);
+
+    return (
+        <div className="p-8 h-full flex flex-col">
+            <h2 className="text-5xl font-bold text-center mb-8 flex items-center justify-center gap-4"><Presentation /> Network Top Teachers</h2>
+            <Table className="text-2xl">
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="w-[100px] text-3xl">Rank</TableHead>
+                        <TableHead className="text-3xl">Teacher</TableHead>
+                        <TableHead className="text-3xl">School</TableHead>
+                        <TableHead className="text-right text-3xl">Avg. Student Grade</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                {topTeachers.map((teacher, index) => (
+                    <TableRow key={teacher.id}>
+                        <TableCell className="font-bold text-4xl text-primary">{index + 1}</TableCell>
+                        <TableCell>
+                            <div className="flex items-center gap-4">
+                                <Avatar className="h-16 w-16">
+                                    <AvatarImage src={`https://placehold.co/100x100.png`} alt={teacher.name} data-ai-hint="profile picture"/>
+                                    <AvatarFallback>{teacher.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                </Avatar>
+                                <span className="font-medium text-3xl">{teacher.name}</span>
+                            </div>
+                        </TableCell>
+                        <TableCell className="text-2xl">{teacher.schoolName}</TableCell>
+                        <TableCell className="text-right">
+                             <Badge variant="secondary" className="text-3xl p-3">
+                                {teacher.avgStudentGrade.toFixed(2)}/20
+                            </Badge>
+                        </TableCell>
+                    </TableRow>
+                ))}
+                </TableBody>
+            </Table>
+        </div>
+    );
+}
+
+function AllSchoolsSlide({ allSchoolData }) {
+    return (
+        <div className="p-8 h-full flex flex-col">
+            <h2 className="text-5xl font-bold text-center mb-8 flex items-center justify-center gap-4"><Building /> Our Schools Network</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1 overflow-y-auto pr-2">
+                {Object.values(allSchoolData).map(school => (
+                    <Card key={school.profile.id}>
+                        <CardHeader className="flex flex-row items-center gap-4">
+                            <Image src={school.profile.logoUrl} alt={school.profile.name} width={64} height={64} className="rounded-lg" data-ai-hint="school logo"/>
+                            <div>
+                                <CardTitle>{school.profile.name}</CardTitle>
+                                <CardDescription>"{school.profile.motto}"</CardDescription>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                             <div className="flex items-center gap-3 p-3 bg-muted rounded-md">
+                                <Avatar className="h-12 w-12">
+                                    <AvatarImage src={`https://placehold.co/100x100.png`} alt={school.profile.head} data-ai-hint="profile picture"/>
+                                    <AvatarFallback>{school.profile.head.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-semibold">{school.profile.head}</p>
+                                    <p className="text-xs text-muted-foreground">Head of School</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 function KioskMarketingSlide({ title, description, icon: Icon, children }) {
     return (
         <div className="p-16 h-full flex flex-col items-center justify-center text-center bg-primary/5">
@@ -226,9 +330,9 @@ function KioskPage() {
             name: 'EduManage Network', 
             motto: 'Showcasing Excellence Across All Schools', 
             logoUrl: 'https://placehold.co/100x100.png',
-            kioskConfig: { showDashboard: true, showLeaderboard: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false },
+            kioskConfig: allSchoolData['northwood'].profile.kioskConfig,
           },
-          ...Object.values(allSchoolData)[0], // Provide some default data to prevent crashes, although it won't be used for global slides
+          ...Object.values(allSchoolData)[0], // Provide some default data to prevent crashes
           students: [], teachers: [], grades: []
         };
     }
@@ -248,9 +352,14 @@ function KioskPage() {
         allPossibleSlides.push({ id: 'marketing-goal', enabled: true, component: <KioskMarketingSlide title="Our Goal & Mission" description="Our mission is to make modern educational technology accessible and affordable for institutions across Southern Africa, starting with Mozambique, fostering a new era of data-driven, efficient, and impactful education." icon={Briefcase} /> });
     }
     
-    allPossibleSlides.push({ id: 'dashboard', enabled: kioskConfig?.showDashboard || isGlobal, component: <KioskDashboardSlide school={school} allSchoolData={allSchoolData} /> });
-    allPossibleSlides.push({ id: 'leaderboard', enabled: kioskConfig?.showLeaderboard || isGlobal, component: <KioskLeaderboardSlide school={school} allSchoolData={allSchoolData} /> });
+    allPossibleSlides.push({ id: 'dashboard', enabled: kioskConfig?.showDashboard || false, component: <KioskDashboardSlide school={school} allSchoolData={allSchoolData} /> });
+    allPossibleSlides.push({ id: 'leaderboard', enabled: kioskConfig?.showLeaderboard || false, component: <KioskStudentLeaderboardSlide school={school} allSchoolData={allSchoolData} /> });
     
+    if (isGlobal) {
+        allPossibleSlides.push({ id: 'teacher-leaderboard', enabled: kioskConfig?.showTeacherLeaderboard || false, component: <KioskTeacherLeaderboardSlide allSchoolData={allSchoolData} /> });
+        allPossibleSlides.push({ id: 'all-schools', enabled: kioskConfig?.showAllSchools || false, component: <AllSchoolsSlide allSchoolData={allSchoolData} /> });
+    }
+
     if (isGlobal) {
          allPossibleSlides.push({ id: 'marketing-connect', enabled: true, component: <KioskMarketingSlide title="Join the EduManage Family" description="Connect your school to a powerful, unified ecosystem. Boost efficiency, empower your teachers, and unlock data-driven insights for student success." icon={LinkIcon}>
             <p className="text-2xl mt-8">Contact us at +258 845479481 to request a demo.</p>

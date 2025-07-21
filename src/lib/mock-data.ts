@@ -35,7 +35,9 @@ export interface SchoolProfile {
     gradeCapacity: Record<string, number>;
     kioskConfig: {
       showDashboard: boolean;
-      showLeaderboard: boolean;
+      showLeaderboard: boolean; // This will now be for students
+      showTeacherLeaderboard: boolean;
+      showAllSchools: boolean;
       showAttendance: boolean;
       showAcademics: boolean;
       showAwards: boolean;
@@ -394,6 +396,19 @@ export const mockUsers: Record<string, UserProfile> = {
 
 // --- MOCK SCHOOL DATA ---
 
+const defaultKioskConfig = {
+    showDashboard: true,
+    showLeaderboard: true,
+    showTeacherLeaderboard: true,
+    showAllSchools: true,
+    showAttendance: false,
+    showAcademics: false,
+    showAwards: false,
+    showPerformers: false,
+    showAwardWinner: false,
+    showShowcase: false,
+};
+
 const northwoodData: SchoolData = {
     profile: {
         id: 'northwood',
@@ -412,7 +427,7 @@ const northwoodData: SchoolData = {
         status: 'Active',
         schoolLevel: 'Full',
         gradeCapacity: { "1": 30, "2": 30, "3": 30, "4": 30, "5": 30, "6": 35, "7": 35, "8": 35, "9": 40, "10": 40, "11": 40, "12": 40 },
-        kioskConfig: { showDashboard: true, showLeaderboard: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false },
+        kioskConfig: defaultKioskConfig,
     },
     students: [
         { id: 'STU001', name: 'Miguel Santos', email: 'miguel.santos@northwood.edu', phone: '840000001', address: 'Rua de Kassuende', sex: 'Male', dateOfBirth: '2008-05-10', grade: '10', class: 'A', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] },
@@ -462,7 +477,7 @@ const maplewoodData: SchoolData = {
         status: 'Active',
         schoolLevel: 'Secondary',
         gradeCapacity: { "8": 30, "9": 30, "10": 30, "11": 35, "12": 35 },
-        kioskConfig: { showDashboard: true, showLeaderboard: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false },
+        kioskConfig: defaultKioskConfig,
     },
     students: [
         { id: 'STU101', name: 'Sofia Oliveira', email: 'sofia.oliveira@maplewood.edu', phone: '820000101', address: 'Rua do Comércio', sex: 'Female', dateOfBirth: '2007-11-22', grade: '11', class: 'A', parentName: 'Rui Oliveira', parentEmail: 'rui.oliveira@email.com', status: 'Active', behavioralAssessments: [] },
@@ -505,7 +520,7 @@ const miniArteData: SchoolData = {
         status: 'Active',
         schoolLevel: 'Full',
         gradeCapacity: { "1": 20, "2": 20, "3": 20, "4": 25, "5": 25, "6": 25, "7": 30, "8": 30, "9": 30, "10": 30, "11": 30, "12": 30 },
-        kioskConfig: { showDashboard: true, showLeaderboard: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false },
+        kioskConfig: defaultKioskConfig,
     },
     students: [],
     teachers: [],
@@ -528,6 +543,7 @@ const miniArteMatolaData: SchoolData = {
     head: 'Isabel Rocha',
     address: 'Bairro Tsalala, Matola',
     email: 'isabel.rocha@miniarte.edu',
+    kioskConfig: defaultKioskConfig,
   },
   schoolGroups: {},
 };
@@ -541,6 +557,7 @@ const miniArteBeiraData: SchoolData = {
     head: 'Pedro Gonçalves',
     address: 'Bairro da Ponta Gêa, Beira',
     email: 'pedro.goncalves@miniarte.edu',
+    kioskConfig: defaultKioskConfig,
   },
   schoolGroups: {},
 };

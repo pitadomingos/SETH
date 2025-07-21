@@ -5,7 +5,7 @@ import { Loader2, Save, Tv } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useSchoolData } from '@/context/school-data-context';
+import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -24,6 +24,8 @@ export default function GlobalSettingsPage() {
   const [kioskConfig, setKioskConfig] = useState(globalKioskConfigSource?.profile.kioskConfig || {
     showDashboard: true,
     showLeaderboard: true,
+    showTeacherLeaderboard: true,
+    showAllSchools: true,
     showAttendance: false,
     showAcademics: false,
     showAwards: false,
@@ -83,7 +85,15 @@ export default function GlobalSettingsPage() {
             </div>
              <div className="flex items-center space-x-2">
                 <Checkbox id="kiosk-leaderboard" checked={kioskConfig.showLeaderboard} onCheckedChange={(checked) => handleKioskConfigChange('showLeaderboard', checked as boolean)} />
-                <Label htmlFor="kiosk-leaderboard">Show Top Student Leaderboard Slide</Label>
+                <Label htmlFor="kiosk-leaderboard">Show Top Students Leaderboard</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+                <Checkbox id="kiosk-teacher-leaderboard" checked={kioskConfig.showTeacherLeaderboard} onCheckedChange={(checked) => handleKioskConfigChange('showTeacherLeaderboard', checked as boolean)} />
+                <Label htmlFor="kiosk-teacher-leaderboard">Show Top Teachers Leaderboard</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+                <Checkbox id="kiosk-all-schools" checked={kioskConfig.showAllSchools} onCheckedChange={(checked) => handleKioskConfigChange('showAllSchools', checked as boolean)} />
+                <Label htmlFor="kiosk-all-schools">Show All Schools Slide</Label>
             </div>
         </CardContent>
         <CardFooter>
