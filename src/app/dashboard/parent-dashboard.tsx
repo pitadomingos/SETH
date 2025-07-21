@@ -27,7 +27,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Textarea } from '../ui/textarea';
-import { generateParentAdvice, GenerateParentAdviceOutput } from '@/ai/flows/generate-parent-advice';
 
 
 const applicationSchema = z.object({
@@ -136,38 +135,7 @@ function NewApplicationDialog() {
 }
 
 
-function AIGeneratedAdvice({ child, childGrades, childAttendanceSummary }) {
-  const [isLoadingAdvice, setIsLoadingAdvice] = useState(true);
-  const [advice, setAdvice] = useState<GenerateParentAdviceOutput | null>(null);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchAdvice = async () => {
-      if (!child) return;
-      setIsLoadingAdvice(true);
-      try {
-        const result = await generateParentAdvice({
-          studentName: child.name,
-          grades: childGrades.map(g => ({ subject: g.subject, grade: g.grade })),
-          attendanceSummary: childAttendanceSummary
-        });
-        setAdvice(result);
-      } catch (error) {
-        console.error("Failed to generate parent advice:", error);
-        toast({
-          variant: "destructive",
-          title: "AI Advice Error",
-          description: "Could not load AI-powered insights for your child at this time.",
-        });
-        setAdvice(null);
-      } finally {
-        setIsLoadingAdvice(false);
-      }
-    };
-    fetchAdvice();
-  }, [child, childGrades, childAttendanceSummary, toast]);
-
-
+function AIGeneratedAdvice({ child }) {
   return (
     <Card className="lg:col-span-2">
       <CardHeader>
@@ -175,31 +143,9 @@ function AIGeneratedAdvice({ child, childGrades, childAttendanceSummary }) {
           <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
       </CardHeader>
       <CardContent>
-          {isLoadingAdvice ? (
-              <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-                  <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" />
-                  <p>Generating personalized advice...</p>
-              </div>
-          ) : advice ? (
-            <div className="space-y-4 text-sm">
-                <div>
-                    <h4 className="font-semibold mb-1">Strengths</h4>
-                    <p className="text-muted-foreground whitespace-pre-wrap">{advice.strengths}</p>
-                </div>
-                 <div>
-                    <h4 className="font-semibold mb-1">Areas for Improvement</h4>
-                    <p className="text-muted-foreground whitespace-pre-wrap">{advice.areasForImprovement}</p>
-                </div>
-                 <div>
-                    <h4 className="font-semibold mb-1">Recommendations for Parents</h4>
-                    <p className="text-muted-foreground whitespace-pre-wrap">{advice.recommendations}</p>
-                </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-48 text-muted-foreground">
-              <p>Could not load AI advice.</p>
-            </div>
-          )}
+        <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+          <p>AI features are temporarily disabled for maintenance.</p>
+        </div>
       </CardContent>
     </Card>
   )
@@ -327,15 +273,6 @@ export default function ParentDashboard() {
     return grades.filter(g => g.studentId === selectedChildId);
   }, [grades, selectedChildId]);
   
-  const childAttendanceSummary = useMemo(() => {
-    if (!selectedChildId) return { present: 0, late: 0, absent: 0, sick: 0 };
-    const records = attendance.filter(a => a.studentId === selectedChildId);
-    return records.reduce((acc, record) => {
-      acc[record.status.toLowerCase()] = (acc[record.status.toLowerCase()] || 0) + 1;
-      return acc;
-    }, { present: 0, late: 0, absent: 0, sick: 0 });
-  }, [attendance, selectedChildId]);
-
   const childFinanceSummary = useMemo(() => {
     if (!selectedChildId) return null;
     const childFees = financeData.filter(f => f.studentId === selectedChildId);
@@ -411,13 +348,7 @@ export default function ParentDashboard() {
       {selectedChild ? (
         <div className="space-y-6 animate-in fade-in-25">
            <div className="grid gap-6 lg:grid-cols-3">
-            {selectedChild && (
-              <AIGeneratedAdvice
-                child={selectedChild}
-                childGrades={childGrades}
-                childAttendanceSummary={childAttendanceSummary}
-              />
-            )}
+            {selectedChild && <AIGeneratedAdvice child={selectedChild} />}
              <div className="space-y-6">
                 <Card>
                     <CardHeader className="pb-4">

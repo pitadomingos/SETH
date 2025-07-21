@@ -1,9 +1,4 @@
 'use server';
 
-import { analyzeStudentFailure } from "@/ai/flows/analyze-student-failure";
-import { generateParentAdvice } from "@/ai/flows/generate-parent-advice";
-
-// This file is intentionally left with these functions to be used by the UI components.
-// We are re-exporting them here to follow the pattern of having actions in the /actions directory.
-
-export { analyzeStudentFailure, generateParentAdvice };
+// This file is intentionally left empty. The AI flows have been removed for stability.
+// We are keeping this file to avoid breaking imports in other parts of the codebase.

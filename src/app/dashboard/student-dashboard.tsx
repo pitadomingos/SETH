@@ -23,7 +23,6 @@ import Image from 'next/image';
 import { formatGradeDisplay, calculateAge } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { EndOfTermReportDialog } from '@/components/dashboard/end-of-term-report';
-import { analyzeStudentFailure, AnalyzeStudentFailureOutput } from '@/ai/flows/analyze-student-failure';
 
 const calculateAverageNumericGrade = (studentId: string, grades: any[]) => {
     if (!studentId || !grades) return 0;
@@ -34,67 +33,12 @@ const calculateAverageNumericGrade = (studentId: string, grades: any[]) => {
 };
 
 function AIFailureAnalysis({ student, grades, attendanceSummary }) {
-  const { toast } = useToast();
-  const [analysis, setAnalysis] = useState<AnalyzeStudentFailureOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchAnalysis = async () => {
-      setIsLoading(true);
-      try {
-        const gradesForAnalysis = grades.map(g => ({ subject: g.subject, grade: g.grade }));
-        const age = calculateAge(student.dateOfBirth);
-        const result = await analyzeStudentFailure({
-          studentName: student.name,
-          age,
-          sex: student.sex,
-          grades: gradesForAnalysis,
-          attendanceSummary,
-        });
-        setAnalysis(result);
-      } catch (error) {
-        console.error("Failed to fetch failure analysis:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Could not load AI-powered academic advice.",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    if (student) {
-        fetchAnalysis();
-    }
-  }, [student, grades, attendanceSummary, toast]);
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground p-4">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        <p>AI is analyzing academic record...</p>
-      </div>
-    );
-  }
-
-  if (!analysis) {
-    return (
-        <p className="text-sm text-destructive p-4">
-            Could not load academic analysis at this time. Please speak with your advisor.
-        </p>
-    );
-  }
-
   return (
     <div className="space-y-4 text-sm">
-       <div>
-         <AlertTitle className="mb-2">AI-Powered Academic Analysis</AlertTitle>
-         <AlertDescription>{analysis.failureAnalysis}</AlertDescription>
-       </div>
-       <div>
-         <h4 className="font-semibold text-destructive mb-1 mt-4">Suggestions for Success</h4>
-         <p className="whitespace-pre-wrap text-muted-foreground">{analysis.resitSuggestions}</p>
-       </div>
+      <div>
+        <AlertTitle className="mb-2">AI-Powered Academic Analysis</AlertTitle>
+        <AlertDescription>The AI analysis feature is temporarily unavailable. Please contact your teacher or school administrator for guidance on your academic standing and suggestions for improvement.</AlertDescription>
+      </div>
     </div>
   );
 }
