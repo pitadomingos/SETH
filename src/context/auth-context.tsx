@@ -24,6 +24,7 @@ interface AuthContextType {
   user: User | null;
   role: Role | null;
   schoolId: string | null;
+  originalUser: User | null;
   login: (username: string, pass: string) => Promise<LoginResult>;
   logout: () => void;
   isLoading: boolean;
@@ -37,6 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [schoolId, setSchoolId] = useState<string | null>(null);
+  const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [mockUsers, setMockUsers] = useState(initialMockUsers);
   const router = useRouter();
@@ -47,10 +49,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const storedUser = sessionStorage.getItem('user');
       const storedRole = sessionStorage.getItem('role') as Role;
       const storedSchoolId = sessionStorage.getItem('schoolId');
+      const storedOriginalUser = sessionStorage.getItem('originalUser');
       if (storedUser && storedRole) {
         setUser(JSON.parse(storedUser));
         setRole(storedRole);
         setSchoolId(storedSchoolId);
+      }
+      if(storedOriginalUser) {
+        setOriginalUser(JSON.parse(storedOriginalUser));
       }
     } catch (error) {
       console.error('Failed to parse user from sessionStorage', error);
@@ -77,13 +83,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const impersonateUser = (username: string, targetRole: Role) => {
-    const originalUser = sessionStorage.getItem('user');
+    const originalUserString = sessionStorage.getItem('user');
     const originalRole = sessionStorage.getItem('role');
     const originalSchoolId = sessionStorage.getItem('schoolId');
-    if(!sessionStorage.getItem('originalUser')) {
-      sessionStorage.setItem('originalUser', originalUser!);
+    if(!sessionStorage.getItem('originalUser') && originalUserString) {
+      const currentOriginalUser = JSON.parse(originalUserString);
+      setOriginalUser(currentOriginalUser);
+      sessionStorage.setItem('originalUser', originalUserString!);
       sessionStorage.setItem('originalRole', originalRole!);
-      sessionStorage.setItem('originalSchoolId', originalSchoolId!);
+      if(originalSchoolId) sessionStorage.setItem('originalSchoolId', originalSchoolId!);
     }
     
     const userRecord = Object.values(mockUsers).find(u => u.user.email === username);
@@ -102,32 +110,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    const originalUser = sessionStorage.getItem('originalUser');
-    if(originalUser) {
+    const originalUserString = sessionStorage.getItem('originalUser');
+    if(originalUserString) {
         const originalRole = sessionStorage.getItem('originalRole') as Role;
         const originalSchoolId = sessionStorage.getItem('originalSchoolId');
-        setUser(JSON.parse(originalUser));
+        const parsedOriginalUser = JSON.parse(originalUserString);
+        setUser(parsedOriginalUser);
         setRole(originalRole);
         setSchoolId(originalSchoolId);
-        sessionStorage.setItem('user', originalUser);
+        setOriginalUser(null);
+        sessionStorage.setItem('user', originalUserString);
         sessionStorage.setItem('role', originalRole);
         if(originalSchoolId) sessionStorage.setItem('schoolId', originalSchoolId);
 
         sessionStorage.removeItem('originalUser');
         sessionStorage.removeItem('originalRole');
         sessionStorage.removeItem('originalSchoolId');
-        router.push('/dashboard');
+        router.push('/dashboard/global-admin');
     } else {
         setUser(null);
         setRole(null);
         setSchoolId(null);
+        setOriginalUser(null);
         sessionStorage.clear();
         router.push('/');
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, schoolId, login, logout, isLoading, mockUsers, impersonateUser }}>
+    <AuthContext.Provider value={{ user, role, schoolId, originalUser, login, logout, isLoading, mockUsers, impersonateUser }}>
       {children}
     </AuthContext.Provider>
   );
