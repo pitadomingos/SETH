@@ -1,10 +1,7 @@
-
-
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useSchoolData, NewAdmissionData, Competition, Team, Student } from '@/context/school-data-context';
-import { generateParentAdvice, GenerateParentAdviceOutput } from '@/ai/flows/generate-parent-advice';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy } from 'lucide-react';
@@ -17,7 +14,7 @@ import {
   ChartConfig,
 } from '@/components/ui/chart';
 import { Bar, BarChart } from 'recharts';
-import { getLetterGrade, formatGradeDisplay, getGpaFromNumeric } from '@/lib/utils';
+import { getGpaFromNumeric, formatGradeDisplay } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { useForm } from 'react-hook-form';
@@ -139,46 +136,7 @@ function NewApplicationDialog() {
 
 
 function AIGeneratedAdvice({ child, childGrades, childAttendanceSummary }) {
-  const { toast } = useToast();
-  const [advice, setAdvice] = useState<GenerateParentAdviceOutput | null>(null);
-  const [isLoadingAdvice, setIsLoadingAdvice] = useState(true);
-
-  useEffect(() => {
-    if (!child) return;
-    const fetchAdvice = async () => {
-      setIsLoadingAdvice(true);
-      setAdvice(null);
-      try {
-        const gradesForAdvice = childGrades.map(g => ({ subject: g.subject, grade: g.grade }));
-        
-        if (gradesForAdvice.length === 0) {
-          setAdvice({
-            summary: `${child.name} doesn't have any grades recorded yet. Check back soon for AI-powered insights!`,
-            strengths: 'No data available.',
-            recommendations: 'Encourage regular study habits and participation in class.'
-          });
-          return;
-        }
-
-        const result = await generateParentAdvice({
-          studentName: child.name,
-          grades: gradesForAdvice,
-          attendanceSummary: childAttendanceSummary,
-        });
-        setAdvice(result);
-      } catch (error) {
-        console.error('Failed to generate parent advice:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: `Could not load AI advice for ${child.name}. Please try again later.`,
-        });
-      } finally {
-        setIsLoadingAdvice(false);
-      }
-    };
-    fetchAdvice();
-  }, [child, childGrades, childAttendanceSummary, toast]);
+  const [isLoadingAdvice, setIsLoadingAdvice] = useState(false);
 
   return (
     <Card className="lg:col-span-2">
@@ -192,20 +150,10 @@ function AIGeneratedAdvice({ child, childGrades, childAttendanceSummary }) {
                   <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" />
                   <p>Generating personalized advice...</p>
               </div>
-          ) : advice ? (
-              <div className="space-y-4 text-sm">
-                  <p className="italic">{advice.summary}</p>
-                  <div>
-                      <h4 className="font-semibold mb-1">Strengths:</h4>
-                      <p className="whitespace-pre-wrap text-muted-foreground">{advice.strengths}</p>
-                  </div>
-                    <div>
-                      <h4 className="font-semibold mb-1">Recommendations:</h4>
-                      <p className="whitespace-pre-wrap text-muted-foreground">{advice.recommendations}</p>
-                  </div>
-              </div>
           ) : (
-              <p>Could not load advice.</p>
+            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+              <p>AI features are temporarily disabled.</p>
+            </div>
           )}
       </CardContent>
     </Card>
