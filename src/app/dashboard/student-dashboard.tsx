@@ -1,4 +1,3 @@
-
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
@@ -21,10 +20,10 @@ import {
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import Image from 'next/image';
-import { analyzeStudentFailure, AnalyzeStudentFailureOutput } from '@/ai/flows/analyze-student-failure';
 import { formatGradeDisplay, calculateAge } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { EndOfTermReportDialog } from '@/components/dashboard/end-of-term-report';
+import { analyzeStudentFailure, AnalyzeStudentFailureOutput } from '@/ai/flows/analyze-student-failure';
 
 const calculateAverageNumericGrade = (studentId: string, grades: any[]) => {
     if (!studentId || !grades) return 0;
@@ -342,13 +341,13 @@ export default function StudentDashboard() {
         <p className="text-muted-foreground">Welcome back, {user?.name}</p>
       </header>
       
-       <CompletionStatusAlert 
+       {student && <CompletionStatusAlert 
           student={student}
           hasPassed={hasPassed}
           areAllFeesPaid={areAllFeesPaid} 
           grades={studentGrades}
           attendanceSummary={studentAttendanceSummary}
-       />
+       />}
       
        <div className="grid gap-6 lg:grid-cols-2">
           <RankCard studentId={studentId} />
