@@ -60,7 +60,7 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         schoolGroups: {},
     };
     
-    await setDoc(doc(db, 'schools', schoolId), newSchoolData);
+    // await setDoc(doc(db, 'schools', schoolId), newSchoolData);
     
     // Add the new admin user to the mock users for the session
     mockUsers[data.email] = adminUser;
@@ -82,7 +82,7 @@ export async function updateSchoolInFirestore(schoolId: string, data: Partial<Sc
       }
     }
     
-    await updateDoc(schoolRef, updateData);
+    // await updateDoc(schoolRef, updateData);
     
     console.log(`Successfully updated school profile in Firestore: ${schoolId}`);
     return true;

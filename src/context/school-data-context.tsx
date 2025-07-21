@@ -1,8 +1,5 @@
-
 'use client';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
-import { collection, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
 import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabus, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, SchoolProfile, DeployedTest, SavedTest, NewMessageData, NewAdmissionData } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 import type { Role } from './auth-context';
@@ -102,52 +99,10 @@ const SchoolDataContext = createContext<SchoolDataContextType | undefined>(undef
 
 export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { user, role, schoolId: authSchoolId } = useAuth();
-  const [data, setData] = useState<Record<string, SchoolData>>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const [data, setData] = useState<Record<string, SchoolData>>(initialSchoolData);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    setIsLoading(true);
-    const q = collection(db, "schools");
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const schoolsData: Record<string, SchoolData> = {};
-        querySnapshot.forEach((doc) => {
-            const schoolDoc = doc.data() as SchoolData;
-            
-            // Convert Firestore timestamps to JS Dates
-            const convertTimestamps = (obj: any) => {
-                for (const key in obj) {
-                    if (obj[key] && typeof obj[key].toDate === 'function') {
-                        obj[key] = obj[key].toDate();
-                    } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-                        convertTimestamps(obj[key]);
-                    }
-                }
-                return obj;
-            };
-            schoolsData[doc.id] = convertTimestamps(schoolDoc);
-        });
-        
-        // If the database is empty, seed it with initial data
-        if (Object.keys(schoolsData).length === 0) {
-            console.log("Firestore 'schools' collection is empty. Seeding with initial mock data...");
-            Object.entries(initialSchoolData).forEach(([id, schoolData]) => {
-                setDoc(doc(db, "schools", id), schoolData);
-            });
-            setData(initialSchoolData);
-        } else {
-             setData(schoolsData);
-        }
-
-        setIsLoading(false);
-    }, (error) => {
-        console.error("Error fetching school data from Firestore:", error);
-        setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-}, []);
-  
-  const addLog = useCallback(async (schoolId: string, action: string, details: string) => {
+  const addLog = useCallback((schoolId: string, action: string, details: string) => {
     if(!user || !role) return;
     const newLog: ActivityLog = {
       id: `LOG${Date.now()}`,
@@ -158,8 +113,17 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       action: action,
       details: details,
     };
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { activityLogs: arrayUnion(newLog) });
+    
+    setData(prevData => {
+        const newData = { ...prevData };
+        if (newData[schoolId]) {
+            newData[schoolId] = {
+                ...newData[schoolId],
+                activityLogs: [...newData[schoolId].activityLogs, newLog],
+            };
+        }
+        return newData;
+    });
   }, [user, role]);
 
   const schoolId = useMemo(() => {
@@ -168,7 +132,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [authSchoolId, role]);
 
   const schoolData = useMemo(() => {
-    if (!schoolId || !data[schoolId]) return null;
+    if (!schoolId) return null;
     return data[schoolId];
   }, [schoolId, data]);
   
@@ -186,105 +150,136 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [role, user, schoolData, allStudents]);
   
   const addSchool = (newSchoolData: SchoolData) => {
-    // This is now mainly handled by the createSchoolInFirestore and the onSnapshot listener.
-    // This function can remain for optimistic UI updates if needed, but for now, it's a no-op.
+    setData(prev => ({
+      ...prev,
+      [newSchoolData.profile.id]: newSchoolData
+    }));
   };
 
-  const updateSchoolProfile = async (profileData: Partial<SchoolProfile>, targetSchoolId?: string) => {
+  const updateSchoolProfile = (profileData: Partial<SchoolProfile>, targetSchoolId?: string) => {
     const sId = targetSchoolId || schoolId;
     if (!sId) return;
-    const schoolRef = doc(db, 'schools', sId);
-    const updatePayload: Record<string, any> = {};
-    Object.keys(profileData).forEach(key => {
-        updatePayload[`profile.${key}`] = profileData[key];
+
+    setData(prev => {
+        const newData = { ...prev };
+        if (newData[sId]) {
+            newData[sId] = {
+                ...newData[sId],
+                profile: {
+                    ...newData[sId].profile,
+                    ...profileData
+                }
+            };
+            addLog(sId, 'Update', 'Updated school profile information.');
+        }
+        return newData;
     });
-    await updateDoc(schoolRef, updatePayload);
   };
   
-  const addTeacher = async (teacher: Omit<Teacher, 'id' | 'status'>) => {
+  const addTeacher = (teacher: Omit<Teacher, 'id' | 'status'>) => {
     if (!schoolId) return;
      const newTeacher: Teacher = { id: `T${Date.now()}`, status: 'Active', ...teacher };
-     const schoolRef = doc(db, 'schools', schoolId);
-     await updateDoc(schoolRef, { teachers: arrayUnion(newTeacher) });
-     addLog(schoolId, 'Create', `Added new teacher: ${teacher.name}`);
+     setData(prev => {
+         const newData = { ...prev };
+         newData[schoolId].teachers.push(newTeacher);
+         addLog(schoolId, 'Create', `Added new teacher: ${teacher.name}`);
+         return newData;
+     });
   };
 
-  const updateTeacher = async (id: string, teacherData: Partial<Teacher>) => {
+  const updateTeacher = (id: string, teacherData: Partial<Teacher>) => {
       if (!schoolId) return;
-      const currentTeachers = schoolData?.teachers || [];
-      const updatedTeachers = currentTeachers.map(t => t.id === id ? {...t, ...teacherData} : t);
-      const schoolRef = doc(db, 'schools', schoolId);
-      await updateDoc(schoolRef, { teachers: updatedTeachers });
-      addLog(schoolId, 'Update', `Updated profile for teacher: ${teacherData.name || id}`);
+      setData(prev => {
+          const newData = { ...prev };
+          const school = newData[schoolId];
+          school.teachers = school.teachers.map(t => t.id === id ? {...t, ...teacherData} : t);
+          addLog(schoolId, 'Update', `Updated profile for teacher: ${teacherData.name || id}`);
+          return newData;
+      });
   };
   
-  const addClass = async (classData: Omit<Class, 'id'>) => {
+  const addClass = (classData: Omit<Class, 'id'>) => {
     if (!schoolId) return;
     const newClass: Class = { id: `C${Date.now()}`, ...classData };
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { classes: arrayUnion(newClass) });
-    addLog(schoolId, 'Create', `Created new class: ${classData.name}`);
+     setData(prev => {
+         const newData = { ...prev };
+         newData[schoolId].classes.push(newClass);
+         addLog(schoolId, 'Create', `Created new class: ${classData.name}`);
+         return newData;
+     });
   };
   
-  const addCourse = async (course: Omit<Course, 'id'>) => {
+  const addCourse = (course: Omit<Course, 'id'>) => {
     if (!schoolId) return;
     const newCourse: Course = { id: `CRS${Date.now()}`, ...course };
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { courses: arrayUnion(newCourse) });
-     addLog(schoolId, 'Create', `Created new course: ${course.subject}`);
+    setData(prev => {
+        const newData = { ...prev };
+        newData[schoolId].courses.push(newCourse);
+        addLog(schoolId, 'Create', `Created new course: ${course.subject}`);
+        return newData;
+    });
   };
 
-  // ... (All other action functions need to be converted to use updateDoc)
-  // For brevity, I will show a few more conversions. A full implementation would convert all of them.
-
-  const addSyllabus = async (syllabus: Omit<Syllabus, 'id'|'topics'>) => {
+  const addSyllabus = (syllabus: Omit<Syllabus, 'id'|'topics'>) => {
       if(!schoolId) return;
       const newSyllabus: Syllabus = { id: `SYL${Date.now()}`, topics: [], ...syllabus };
-      const schoolRef = doc(db, 'schools', schoolId);
-      await updateDoc(schoolRef, { syllabi: arrayUnion(newSyllabus) });
-      addLog(schoolId, 'Create', `Created syllabus for ${syllabus.subject} Grade ${syllabus.grade}`);
+      setData(prev => {
+          const newData = { ...prev };
+          newData[schoolId].syllabi.push(newSyllabus);
+          addLog(schoolId, 'Create', `Created syllabus for ${syllabus.subject} Grade ${syllabus.grade}`);
+          return newData;
+      });
   };
   
-  const updateSyllabusTopic = async (subject: string, grade: string, topic: any) => {
-    if(!schoolId || !schoolData) return;
-    const updatedSyllabi = schoolData.syllabi.map(s => {
-        if (s.subject === subject && s.grade === grade) {
-            const topicIndex = s.topics.findIndex(t => t.id === topic.id);
-            if (topicIndex > -1) {
-                s.topics[topicIndex] = topic;
-            } else {
-                s.topics.push(topic);
-            }
+  const updateSyllabusTopic = (subject: string, grade: string, topic: any) => {
+    if(!schoolId) return;
+    setData(prev => {
+      const newData = {...prev};
+      const school = newData[schoolId];
+      school.syllabi = school.syllabi.map(s => {
+        if(s.subject === subject && s.grade === grade) {
+          const topicIndex = s.topics.findIndex(t => t.id === topic.id);
+          if (topicIndex > -1) {
+            s.topics[topicIndex] = topic;
+          } else {
+            s.topics.push(topic);
+          }
         }
         return s;
+      });
+      addLog(schoolId, 'Update', `Updated syllabus topic "${topic.topic}" for ${subject}`);
+      return newData;
     });
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { syllabi: updatedSyllabi });
-    addLog(schoolId, 'Update', `Updated syllabus topic "${topic.topic}" for ${subject}`);
   };
   
-  const deleteSyllabusTopic = async (subject: string, grade: string, topicId: string) => {
-      if(!schoolId || !schoolData) return;
-      const updatedSyllabi = schoolData.syllabi.map(s => {
-          if (s.subject === subject && s.grade === grade) {
-              s.topics = s.topics.filter(t => t.id !== topicId);
-          }
-          return s;
+  const deleteSyllabusTopic = (subject: string, grade: string, topicId: string) => {
+      if(!schoolId) return;
+      setData(prev => {
+          const newData = {...prev};
+          const school = newData[schoolId];
+          school.syllabi = school.syllabi.map(s => {
+              if (s.subject === subject && s.grade === grade) {
+                  s.topics = s.topics.filter(t => t.id !== topicId);
+              }
+              return s;
+          });
+          addLog(schoolId, 'Delete', `Deleted a topic from ${subject} syllabus`);
+          return newData;
       });
-      const schoolRef = doc(db, 'schools', schoolId);
-      await updateDoc(schoolRef, { syllabi: updatedSyllabi });
-      addLog(schoolId, 'Delete', `Deleted a topic from ${subject} syllabus`);
   };
 
-  const updateApplicationStatus = async (id: string, status: Admission['status']) => {
-      if (!schoolId || !schoolData) return;
-      const updatedAdmissions = schoolData.admissions.map(a => a.id === id ? { ...a, status } : a);
-      const schoolRef = doc(db, 'schools', schoolId);
-      await updateDoc(schoolRef, { admissions: updatedAdmissions });
-      addLog(schoolId, 'Update', `Updated application ${id} status to ${status}`);
+  const updateApplicationStatus = (id: string, status: Admission['status']) => {
+      if (!schoolId) return;
+      setData(prev => {
+        const newData = { ...prev };
+        const school = newData[schoolId];
+        school.admissions = school.admissions.map(a => a.id === id ? { ...a, status } : a);
+        addLog(schoolId, 'Update', `Updated application ${id} status to ${status}`);
+        return newData;
+      });
   };
 
-  const addStudentFromAdmission = async (application: Admission) => {
+  const addStudentFromAdmission = (application: Admission) => {
       if (!schoolId) return;
       const [grade, studentClass] = application.appliedFor.replace('Grade ', '').split('-');
       const newStudent: Student = {
@@ -302,21 +297,27 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           status: 'Active',
           behavioralAssessments: [],
       };
-      const schoolRef = doc(db, 'schools', schoolId);
-      await updateDoc(schoolRef, { students: arrayUnion(newStudent) });
-      addLog(schoolId, 'Create', `Enrolled new student ${newStudent.name} from admission.`);
+      setData(prev => {
+          const newData = { ...prev };
+          newData[schoolId].students.push(newStudent);
+          addLog(schoolId, 'Create', `Enrolled new student ${newStudent.name} from admission.`);
+          return newData;
+      });
   };
   
-  const addAsset = async (asset: Omit<any, 'id'>) => {
+  const addAsset = (asset: Omit<any, 'id'>) => {
       if (!schoolId) return;
       const newAsset = { id: `AST${Date.now()}`, ...asset };
-      const schoolRef = doc(db, 'schools', schoolId);
-      await updateDoc(schoolRef, { assets: arrayUnion(newAsset) });
-      addLog(schoolId, 'Create', `Added new asset: ${asset.name}`);
+      setData(prev => {
+          const newData = { ...prev };
+          newData[schoolId].assets.push(newAsset);
+          addLog(schoolId, 'Create', `Added new asset: ${asset.name}`);
+          return newData;
+      });
   };
   
-  const addLessonAttendance = async (courseId: string, date: string, studentStatuses: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => {
-    if(!schoolId || !schoolData) return;
+  const addLessonAttendance = (courseId: string, date: string, studentStatuses: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => {
+    if(!schoolId) return;
     const newRecords: Attendance[] = Object.entries(studentStatuses).map(([studentId, status]) => ({
       id: `ATT${Date.now()}${studentId}`,
       studentId,
@@ -324,48 +325,69 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       status,
       courseId,
     }));
-    const otherRecords = schoolData.attendance.filter(a => !(a.date.toISOString().split('T')[0] === date && a.courseId === courseId));
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { attendance: [...otherRecords, ...newRecords]});
-    addLog(schoolId, 'Create', `Recorded attendance for course ${courseId} on ${date}`);
+    
+    setData(prev => {
+      const newData = {...prev};
+      const school = newData[schoolId];
+      // Filter out old records for the same day and course
+      school.attendance = school.attendance.filter(a => !(a.date.toISOString().split('T')[0] === date && a.courseId === courseId));
+      school.attendance.push(...newRecords);
+      addLog(schoolId, 'Create', `Recorded attendance for course ${courseId} on ${date}`);
+      return newData;
+    });
   };
 
-  const addEvent = async (event: Omit<Event, 'id' | 'schoolName'>) => {
+  const addEvent = (event: Omit<Event, 'id' | 'schoolName'>) => {
     if(!schoolId || !schoolProfile) return;
     const newEvent: Event = { id: `EVT${Date.now()}`, schoolName: schoolProfile.name, ...event };
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { events: arrayUnion(newEvent) });
-    addLog(schoolId, 'Create', `Scheduled new event: ${event.title}`);
+    setData(prev => {
+        const newData = { ...prev };
+        newData[schoolId].events.push(newEvent);
+        addLog(schoolId, 'Create', `Scheduled new event: ${event.title}`);
+        return newData;
+    });
   };
 
-  const addGrade = async (grade: Omit<Grade, 'id' | 'date' | 'teacherId'>) => {
+  const teacher = useMemo(() => {
+    if (role !== 'Teacher' || !user?.email) return null;
+    return schoolData?.teachers.find(t => t.email === user.email);
+  }, [role, user, schoolData]);
+  
+  const addGrade = (grade: Omit<Grade, 'id' | 'date' | 'teacherId'>): boolean => {
     if(!schoolId || !teacher) return false;
     const teacherId = teacher.id;
     const newGrade: Grade = { id: `GRD${Date.now()}`, date: new Date(), teacherId, ...grade };
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { grades: arrayUnion(newGrade) });
+    setData(prev => {
+        const newData = { ...prev };
+        newData[schoolId].grades.push(newGrade);
+        return newData;
+    });
     return true;
   };
   
-  const recordPayment = async (feeId: string, amount: number) => {
-    if (!schoolId || !schoolData) return;
-    const updatedFinance = schoolData.finance.map(f => {
+  const recordPayment = (feeId: string, amount: number) => {
+    if (!schoolId) return;
+    setData(prev => {
+      const newData = { ...prev };
+      const school = newData[schoolId];
+      school.finance = school.finance.map(f => {
         if (f.id === feeId) {
-            const newAmountPaid = f.amountPaid + amount;
-            const newStatus = newAmountPaid >= f.totalAmount ? 'Paid' : 'Partially Paid';
-            addLog(schoolId, 'Update', `Recorded payment of ${amount} for fee ${f.description}`);
-            return { ...f, amountPaid: newAmountPaid, status: newStatus };
+          const newAmountPaid = f.amountPaid + amount;
+          const newStatus = newAmountPaid >= f.totalAmount ? 'Paid' : 'Partially Paid';
+          addLog(schoolId, 'Update', `Recorded payment of ${amount} for fee ${f.description}`);
+          return { ...f, amountPaid: newAmountPaid, status: newStatus };
         }
         return f;
+      });
+      return newData;
     });
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { finance: updatedFinance });
   };
 
-  const addFee = async (fee: Omit<FinanceRecord, 'id' | 'studentName' | 'status' | 'amountPaid'>) => {
-    if (!schoolId || !schoolData) return;
-    const student = schoolData.students.find(s => s.id === fee.studentId);
+  const addFee = (fee: Omit<FinanceRecord, 'id' | 'studentName' | 'status' | 'amountPaid'>) => {
+    if (!schoolId) return;
+    const student = schoolData?.students.find(s => s.id === fee.studentId);
     if (!student) return;
+
     const newFee: FinanceRecord = {
         id: `FIN${Date.now()}`,
         studentName: student.name,
@@ -373,114 +395,147 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         amountPaid: 0,
         ...fee
     };
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { finance: arrayUnion(newFee) });
-    addLog(schoolId, 'Create', `Created new fee for ${student.name}: ${fee.description}`);
+
+    setData(prev => {
+        const newData = { ...prev };
+        newData[schoolId].finance.push(newFee);
+        addLog(schoolId, 'Create', `Created new fee for ${student.name}: ${fee.description}`);
+        return newData;
+    });
   };
 
-  const addExpense = async (expense: Omit<Expense, 'id'>) => {
+  const addExpense = (expense: Omit<Expense, 'id'>) => {
       if(!schoolId) return;
       const newExpense: Expense = { id: `EXP${Date.now()}`, ...expense };
-      const schoolRef = doc(db, 'schools', schoolId);
-      await updateDoc(schoolRef, { expenses: arrayUnion(newExpense) });
-      addLog(schoolId, 'Create', `Added expense: ${expense.description}`);
+      setData(prev => {
+          const newData = { ...prev };
+          newData[schoolId].expenses.push(newExpense);
+          addLog(schoolId, 'Create', `Added expense: ${expense.description}`);
+          return newData;
+      });
   };
   
-  const addTeam = async (team: Omit<Team, 'id' | 'playerIds'>) => {
+  const addTeam = (team: Omit<Team, 'id' | 'playerIds'>) => {
     if (!schoolId) return;
     const newTeam: Team = { id: `TM${Date.now()}`, playerIds: [], ...team };
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { teams: arrayUnion(newTeam) });
-    addLog(schoolId, 'Create', `Created new sports team: ${team.name}`);
+    setData(prev => {
+      const newData = { ...prev };
+      newData[schoolId].teams.push(newTeam);
+      addLog(schoolId, 'Create', `Created new sports team: ${team.name}`);
+      return newData;
+    });
   };
   
-  const deleteTeam = async (teamId: string) => {
-    if (!schoolId || !schoolData) return;
-    const teamName = schoolData.teams.find(t => t.id === teamId)?.name;
-    const updatedTeams = schoolData.teams.filter(t => t.id !== teamId);
-    const updatedCompetitions = schoolData.competitions.filter(c => c.ourTeamId !== teamId);
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { teams: updatedTeams, competitions: updatedCompetitions });
-    addLog(schoolId, 'Delete', `Deleted team: ${teamName}`);
+  const deleteTeam = (teamId: string) => {
+    if (!schoolId) return;
+    setData(prev => {
+      const newData = { ...prev };
+      const school = newData[schoolId];
+      const teamName = school.teams.find(t => t.id === teamId)?.name;
+      school.teams = school.teams.filter(t => t.id !== teamId);
+      school.competitions = school.competitions.filter(c => c.ourTeamId !== teamId);
+      addLog(schoolId, 'Delete', `Deleted team: ${teamName}`);
+      return newData;
+    });
   };
 
-  const addPlayerToTeam = async (teamId: string, studentId: string) => {
-      if(!schoolId || !schoolData) return;
-      const updatedTeams = schoolData.teams.map(t => {
-          if (t.id === teamId && !t.playerIds.includes(studentId)) {
-              t.playerIds.push(studentId);
-          }
-          return t;
+  const addPlayerToTeam = (teamId: string, studentId: string) => {
+      if(!schoolId) return;
+      setData(prev => {
+          const newData = {...prev};
+          const school = newData[schoolId];
+          school.teams = school.teams.map(t => {
+              if (t.id === teamId && !t.playerIds.includes(studentId)) {
+                  t.playerIds.push(studentId);
+              }
+              return t;
+          });
+          return newData;
       });
-      const schoolRef = doc(db, 'schools', schoolId);
-      await updateDoc(schoolRef, { teams: updatedTeams });
   };
   
-  const removePlayerFromTeam = async (teamId: string, studentId: string) => {
-      if(!schoolId || !schoolData) return;
-      const updatedTeams = schoolData.teams.map(t => {
-          if (t.id === teamId) {
-              t.playerIds = t.playerIds.filter(id => id !== studentId);
-          }
-          return t;
+  const removePlayerFromTeam = (teamId: string, studentId: string) => {
+      if(!schoolId) return;
+      setData(prev => {
+          const newData = {...prev};
+          const school = newData[schoolId];
+          school.teams = school.teams.map(t => {
+              if (t.id === teamId) {
+                  t.playerIds = t.playerIds.filter(id => id !== studentId);
+              }
+              return t;
+          });
+          return newData;
       });
-      const schoolRef = doc(db, 'schools', schoolId);
-      await updateDoc(schoolRef, { teams: updatedTeams });
   };
   
-  const addCompetition = async (competition: Omit<Competition, 'id'>) => {
+  const addCompetition = (competition: Omit<Competition, 'id'>) => {
     if(!schoolId) return;
     const newCompetition: Competition = { id: `CMP${Date.now()}`, ...competition };
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { competitions: arrayUnion(newCompetition) });
-    addLog(schoolId, 'Create', `Scheduled competition: ${competition.title}`);
-  };
-  
-  const addCompetitionResult = async (competitionId: string, result: Competition['result']) => {
-    if (!schoolId || !schoolData) return;
-    const updatedCompetitions = schoolData.competitions.map(c => {
-      if (c.id === competitionId) {
-          const outcome = result.ourScore > result.opponentScore ? 'Win' : result.ourScore < result.opponentScore ? 'Loss' : 'Draw';
-          return { ...c, result: {...result, outcome} };
-      }
-      return c;
+    setData(prev => {
+        const newData = {...prev};
+        newData[schoolId].competitions.push(newCompetition);
+        addLog(schoolId, 'Create', `Scheduled competition: ${competition.title}`);
+        return newData;
     });
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { competitions: updatedCompetitions });
-    addLog(schoolId, 'Update', `Recorded result for competition ${competitionId}`);
   };
   
-  const addBehavioralAssessment = async (assessment: Omit<any, 'id'|'date'>) => {
-    if(!schoolId || !schoolData) return;
-    const newAssessment = { id: `BA${Date.now()}`, date: new Date(), ...assessment };
-    const updatedStudents = schoolData.students.map(s => {
-        if(s.id === assessment.studentId) {
-            s.behavioralAssessments.push(newAssessment);
+  const addCompetitionResult = (competitionId: string, result: Competition['result']) => {
+    if (!schoolId) return;
+    setData(prev => {
+      const newData = { ...prev };
+      const school = newData[schoolId];
+      school.competitions = school.competitions.map(c => {
+        if (c.id === competitionId) {
+            const outcome = result.ourScore > result.opponentScore ? 'Win' : result.ourScore < result.opponentScore ? 'Loss' : 'Draw';
+            return { ...c, result: {...result, outcome} };
         }
-        return s;
+        return c;
+      });
+      addLog(schoolId, 'Update', `Recorded result for competition ${competitionId}`);
+      return newData;
     });
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { students: updatedStudents });
-    addLog(schoolId, 'Create', `Added behavioral assessment for student ${assessment.studentId}`);
   };
   
-  const addKioskMedia = async (media: Omit<KioskMedia, 'id' | 'createdAt'>) => {
+  const addBehavioralAssessment = (assessment: Omit<any, 'id'|'date'>) => {
+    if(!schoolId) return;
+    const newAssessment = { id: `BA${Date.now()}`, date: new Date(), ...assessment };
+    setData(prev => {
+        const newData = {...prev};
+        const school = newData[schoolId];
+        school.students = school.students.map(s => {
+            if(s.id === assessment.studentId) {
+                s.behavioralAssessments.push(newAssessment);
+            }
+            return s;
+        });
+        addLog(schoolId, 'Create', `Added behavioral assessment for student ${assessment.studentId}`);
+        return newData;
+    });
+  };
+  
+  const addKioskMedia = (media: Omit<KioskMedia, 'id' | 'createdAt'>) => {
     if (!schoolId) return;
     const newMedia: KioskMedia = { id: `KM${Date.now()}`, createdAt: new Date(), ...media };
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { kioskMedia: arrayUnion(newMedia) });
-    addLog(schoolId, 'Create', `Added kiosk media: ${media.title}`);
+    setData(prev => {
+      const newData = { ...prev };
+      newData[schoolId].kioskMedia.push(newMedia);
+      addLog(schoolId, 'Create', `Added kiosk media: ${media.title}`);
+      return newData;
+    });
   };
   
-  const removeKioskMedia = async (id: string) => {
-      if(!schoolId || !schoolData) return;
-      const updatedMedia = schoolData.kioskMedia.filter(m => m.id !== id);
-      const schoolRef = doc(db, 'schools', schoolId);
-      await updateDoc(schoolRef, { kioskMedia: updatedMedia });
-      addLog(schoolId, 'Delete', `Removed kiosk media item ${id}`);
+  const removeKioskMedia = (id: string) => {
+      if(!schoolId) return;
+      setData(prev => {
+          const newData = {...prev};
+          newData[schoolId].kioskMedia = newData[schoolId].kioskMedia.filter(m => m.id !== id);
+          addLog(schoolId, 'Delete', `Removed kiosk media item ${id}`);
+          return newData;
+      });
   };
   
-  const addMessage = async (message: NewMessageData) => {
+  const addMessage = (message: NewMessageData) => {
     if(!schoolId || !user || !role) return;
     const recipientSchoolId = Object.values(data).find(d => d.profile.email === message.recipientUsername)?.profile.id || schoolId;
     const recipient = Object.values(data).flatMap(d => [...d.teachers, ...d.students]).find(u => u.email === message.recipientUsername);
@@ -503,129 +558,170 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         attachmentName: message.attachmentName,
     };
     
-    const senderSchoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(senderSchoolRef, { messages: arrayUnion(newMessage) });
-    if(recipientSchoolId !== schoolId) {
-        const recipientSchoolRef = doc(db, 'schools', recipientSchoolId);
-        await updateDoc(recipientSchoolRef, { messages: arrayUnion(newMessage) });
-    }
-    addLog(schoolId, 'Message', `Sent message to ${recipientName}`);
+    setData(prev => {
+      const newData = {...prev};
+      newData[schoolId].messages.push(newMessage);
+      // If sending to another school, add it to their messages too.
+      if (recipientSchoolId && recipientSchoolId !== schoolId) {
+          newData[recipientSchoolId].messages.push(newMessage);
+      }
+      addLog(schoolId, 'Message', `Sent message to ${recipientName}`);
+      return newData;
+    });
   };
   
-  const addAdmission = async (admission: NewAdmissionData) => {
+  const addAdmission = (admission: NewAdmissionData) => {
     const { schoolId, ...rest } = admission;
     if (!schoolId || !user) return;
     const newAdmission: Admission = {
         id: `ADM${Date.now()}`,
         ...rest,
-        date: format(new Date(), 'yyyy-MM-dd'),
+        date: new Date().toISOString().split('T')[0],
         parentName: user.name,
         parentEmail: user.email,
         status: 'Pending',
         grades: rest.gradesSummary || 'N/A'
     };
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { admissions: arrayUnion(newAdmission) });
-    addLog(schoolId, 'Create', `Submitted new admission for ${admission.name}`);
+     setData(prev => {
+      const newData = {...prev};
+      newData[schoolId].admissions.push(newAdmission);
+      addLog(schoolId, 'Create', `Submitted new admission for ${admission.name}`);
+      return newData;
+    });
   };
   
-  const updateSchoolStatus = async (targetSchoolId: string, status: SchoolProfile['status']) => {
-    const schoolRef = doc(db, 'schools', targetSchoolId);
-    await updateDoc(schoolRef, { 'profile.status': status });
-    addLog(targetSchoolId, 'Update', `School status changed to ${status}`);
-  };
-
-  const updateMessageStatus = async (messageId: string, status: Message['status']) => {
-    for (const sId in data) {
-      const school = data[sId];
-      const messageIndex = school.messages.findIndex(m => m.id === messageId);
-      if (messageIndex > -1) {
-        const updatedMessages = [...school.messages];
-        updatedMessages[messageIndex] = { ...updatedMessages[messageIndex], status };
-        const schoolRef = doc(db, 'schools', sId);
-        await updateDoc(schoolRef, { messages: updatedMessages });
-        addLog(sId, 'Update', `Message ${messageId} status set to ${status}`);
+  const updateSchoolStatus = (targetSchoolId: string, status: SchoolProfile['status']) => {
+    setData(prev => {
+      const newData = { ...prev };
+      if (newData[targetSchoolId]) {
+        newData[targetSchoolId].profile.status = status;
+        addLog(targetSchoolId, 'Update', `School status changed to ${status}`);
       }
-    }
+      return newData;
+    });
   };
 
-  const updateStudentStatus = async (sId: string, studentId: string, status: Student['status']) => {
-    if (!data[sId]) return;
-    const updatedStudents = data[sId].students.map(s => s.id === studentId ? { ...s, status } : s);
-    const schoolRef = doc(db, 'schools', sId);
-    await updateDoc(schoolRef, { students: updatedStudents });
-    addLog(sId, 'Update', `Student ${studentId} status changed to ${status}`);
+  const updateMessageStatus = (messageId: string, status: Message['status']) => {
+    setData(prev => {
+      const newData = { ...prev };
+      for (const sId in newData) {
+        const school = newData[sId];
+        const messageIndex = school.messages.findIndex(m => m.id === messageId);
+        if (messageIndex > -1) {
+          school.messages[messageIndex].status = status;
+          addLog(sId, 'Update', `Message ${messageId} status set to ${status}`);
+        }
+      }
+      return newData;
+    });
   };
 
-  const updateTeacherStatus = async (sId: string, teacherId: string, status: Teacher['status']) => {
-    if (!data[sId]) return;
-    const updatedTeachers = data[sId].teachers.map(t => t.id === teacherId ? { ...t, status } : t);
-    const schoolRef = doc(db, 'schools', sId);
-    await updateDoc(schoolRef, { teachers: updatedTeachers });
-    addLog(sId, 'Update', `Teacher ${teacherId} status changed to ${status}`);
+  const updateStudentStatus = (sId: string, studentId: string, status: Student['status']) => {
+    setData(prev => {
+        const newData = {...prev};
+        const student = newData[sId]?.students.find(s => s.id === studentId);
+        if(student) {
+            student.status = status;
+            addLog(sId, 'Update', `Student ${studentId} status changed to ${status}`);
+        }
+        return newData;
+    });
   };
 
-  const updateParentStatus = async (parentEmail: string, status: 'Active' | 'Suspended') => {
-    // This isn't stored on the school doc, so it's a client-side override for the demo.
-    // In a real app, this would update a separate 'parents' collection.
+  const updateTeacherStatus = (sId: string, teacherId: string, status: Teacher['status']) => {
+      setData(prev => {
+        const newData = {...prev};
+        const teacher = newData[sId]?.teachers.find(t => t.id === teacherId);
+        if(teacher) {
+            teacher.status = status;
+            addLog(sId, 'Update', `Teacher ${teacherId} status changed to ${status}`);
+        }
+        return newData;
+    });
+  };
+
+  const [parentStatusOverrides, setParentStatusOverrides] = useState<Record<string, 'Active' | 'Suspended'>>({});
+  const updateParentStatus = (parentEmail: string, status: 'Active' | 'Suspended') => {
+    setParentStatusOverrides(prev => ({...prev, [parentEmail]: status}));
+    // In a real app, you'd also log this.
   };
   
-  const addExamBoard = async (board: string) => {
+  const addExamBoard = (board: string) => {
     if(!schoolId) return;
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { examBoards: arrayUnion(board) });
+    setData(prev => {
+        const newData = {...prev};
+        newData[schoolId].examBoards.push(board);
+        return newData;
+    });
   };
-  const deleteExamBoard = async (board: string) => {
+  const deleteExamBoard = (board: string) => {
     if(!schoolId) return;
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { examBoards: arrayRemove(board) });
+    setData(prev => {
+        const newData = {...prev};
+        newData[schoolId].examBoards = newData[schoolId].examBoards.filter(b => b !== board);
+        return newData;
+    });
   };
-  const addFeeDescription = async (desc: string) => {
+  const addFeeDescription = (desc: string) => {
     if(!schoolId) return;
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { feeDescriptions: arrayUnion(desc) });
+    setData(prev => {
+        const newData = {...prev};
+        newData[schoolId].feeDescriptions.push(desc);
+        return newData;
+    });
   };
-  const deleteFeeDescription = async (desc: string) => {
+  const deleteFeeDescription = (desc: string) => {
     if(!schoolId) return;
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { feeDescriptions: arrayRemove(desc) });
+    setData(prev => {
+        const newData = {...prev};
+        newData[schoolId].feeDescriptions = newData[schoolId].feeDescriptions.filter(d => d !== desc);
+        return newData;
+    });
   };
-  const addAudience = async (aud: string) => {
+  const addAudience = (aud: string) => {
     if(!schoolId) return;
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { audiences: arrayUnion(aud) });
+    setData(prev => {
+        const newData = {...prev};
+        newData[schoolId].audiences.push(aud);
+        return newData;
+    });
   };
-  const deleteAudience = async (aud: string) => {
+  const deleteAudience = (aud: string) => {
     if(!schoolId) return;
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { audiences: arrayRemove(aud) });
+    setData(prev => {
+        const newData = {...prev};
+        newData[schoolId].audiences = newData[schoolId].audiences.filter(a => a !== aud);
+        return newData;
+    });
   };
   
-  const addTerm = async (term: any) => {
+  const addTerm = (term: any) => {
     if (!schoolId) return;
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { terms: arrayUnion({id: `T${Date.now()}`, ...term}) });
+    setData(prev => {
+        const newData = {...prev};
+        newData[schoolId].terms.push({id: `T${Date.now()}`, ...term});
+        return newData;
+    });
   };
 
-  const addHoliday = async (holiday: any) => {
+  const addHoliday = (holiday: any) => {
       if (!schoolId) return;
-      const schoolRef = doc(db, 'schools', schoolId);
-      await updateDoc(schoolRef, { holidays: arrayUnion({id: `H${Date.now()}`, ...holiday}) });
+      setData(prev => {
+          const newData = {...prev};
+          newData[schoolId].holidays.push({id: `H${Date.now()}`, ...holiday});
+          return newData;
+      });
   };
   
-  const addSavedReport = async (report: Omit<SavedReport, 'id'>) => {
+  const addSavedReport = (report: Omit<SavedReport, 'id'>) => {
       if (!schoolId) return;
       const newReport: SavedReport = { id: `REP${Date.now()}`, ...report };
-      const schoolRef = doc(db, 'schools', schoolId);
-      await updateDoc(schoolRef, { savedReports: arrayUnion(newReport) });
+      setData(prev => {
+          const newData = {...prev};
+          newData[schoolId].savedReports.push(newReport);
+          return newData;
+      });
   };
-
-  const teacher = useMemo(() => {
-    if (role !== 'Teacher' || !user?.email) return null;
-    return schoolData?.teachers.find(t => t.email === user.email);
-  }, [role, user, schoolData]);
-  
-  const [parentStatusOverrides, setParentStatusOverrides] = useState<Record<string, 'Active' | 'Suspended'>>({});
 
   const value = {
     isLoading,
