@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { mockUsers } from '@/lib/mock-data';
+import { mockUsers as initialMockUsers, UserProfile } from '@/lib/mock-data';
 
 export type Role = 'Admin' | 'Teacher' | 'Student' | 'Parent' | 'GlobalAdmin';
 
@@ -12,6 +12,7 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  schoolId?: string;
 }
 
 interface LoginResult {
@@ -22,10 +23,12 @@ interface LoginResult {
 interface AuthContextType {
   user: User | null;
   role: Role | null;
+  schoolId: string | null;
   login: (username: string, pass: string) => Promise<LoginResult>;
   logout: () => void;
   isLoading: boolean;
-  mockUsers: typeof mockUsers;
+  mockUsers: Record<string, UserProfile>;
+  impersonateUser: (username: string, role: Role) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,7 +36,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role | null>(null);
+  const [schoolId, setSchoolId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mockUsers, setMockUsers] = useState(initialMockUsers);
   const router = useRouter();
 
   useEffect(() => {
@@ -41,9 +46,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const storedUser = sessionStorage.getItem('user');
       const storedRole = sessionStorage.getItem('role') as Role;
+      const storedSchoolId = sessionStorage.getItem('schoolId');
       if (storedUser && storedRole) {
         setUser(JSON.parse(storedUser));
         setRole(storedRole);
+        setSchoolId(storedSchoolId);
       }
     } catch (error) {
       console.error('Failed to parse user from sessionStorage', error);
@@ -58,22 +65,69 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const loggedInUser = userRecord.user;
       setUser(loggedInUser);
       setRole(loggedInUser.role);
+      setSchoolId(loggedInUser.schoolId || null);
       sessionStorage.setItem('user', JSON.stringify(loggedInUser));
       sessionStorage.setItem('role', loggedInUser.role);
+      if (loggedInUser.schoolId) {
+          sessionStorage.setItem('schoolId', loggedInUser.schoolId);
+      }
       return { success: true };
     }
     return { success: false, message: 'Invalid username or password' };
   };
+  
+  const impersonateUser = (username: string, targetRole: Role) => {
+    const originalUser = sessionStorage.getItem('user');
+    const originalRole = sessionStorage.getItem('role');
+    const originalSchoolId = sessionStorage.getItem('schoolId');
+    if(!sessionStorage.getItem('originalUser')) {
+      sessionStorage.setItem('originalUser', originalUser!);
+      sessionStorage.setItem('originalRole', originalRole!);
+      sessionStorage.setItem('originalSchoolId', originalSchoolId!);
+    }
+    
+    const userRecord = Object.values(mockUsers).find(u => u.user.email === username);
+    if(userRecord) {
+      const targetUser = userRecord.user;
+      setUser(targetUser);
+      setRole(targetUser.role);
+      setSchoolId(targetUser.schoolId || null);
+      sessionStorage.setItem('user', JSON.stringify(targetUser));
+      sessionStorage.setItem('role', targetUser.role);
+      if(targetUser.schoolId) {
+        sessionStorage.setItem('schoolId', targetUser.schoolId);
+      }
+      router.push('/dashboard');
+    }
+  };
 
   const logout = () => {
-    setUser(null);
-    setRole(null);
-    sessionStorage.clear();
-    router.push('/');
+    const originalUser = sessionStorage.getItem('originalUser');
+    if(originalUser) {
+        const originalRole = sessionStorage.getItem('originalRole') as Role;
+        const originalSchoolId = sessionStorage.getItem('originalSchoolId');
+        setUser(JSON.parse(originalUser));
+        setRole(originalRole);
+        setSchoolId(originalSchoolId);
+        sessionStorage.setItem('user', originalUser);
+        sessionStorage.setItem('role', originalRole);
+        if(originalSchoolId) sessionStorage.setItem('schoolId', originalSchoolId);
+
+        sessionStorage.removeItem('originalUser');
+        sessionStorage.removeItem('originalRole');
+        sessionStorage.removeItem('originalSchoolId');
+        router.push('/dashboard');
+    } else {
+        setUser(null);
+        setRole(null);
+        setSchoolId(null);
+        sessionStorage.clear();
+        router.push('/');
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, login, logout, isLoading, mockUsers }}>
+    <AuthContext.Provider value={{ user, role, schoolId, login, logout, isLoading, mockUsers, impersonateUser }}>
       {children}
     </AuthContext.Provider>
   );
