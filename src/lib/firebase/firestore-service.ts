@@ -60,14 +60,12 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         schoolGroups: {},
     };
     
-    // NOTE: In a real production app, you would write to Firestore here.
-    // This is commented out for the prototype to rely on in-memory state.
-    // await setDoc(doc(db, 'schools', schoolId), newSchoolData);
+    await setDoc(doc(db, 'schools', schoolId), newSchoolData);
     
     // Add the new admin user to the mock users for the session
     mockUsers[data.email] = adminUser;
     
-    console.log(`Successfully created school data in-memory: ${schoolId}.`);
+    console.log(`Successfully created school data in Firestore: ${schoolId}.`);
 
     return newSchoolData;
 }
@@ -84,11 +82,9 @@ export async function updateSchoolInFirestore(schoolId: string, data: Partial<Sc
       }
     }
     
-    // NOTE: In a real production app, you would write to Firestore here.
-    // This is commented out for the prototype to rely on in-memory state.
-    // await updateDoc(schoolRef, updateData);
+    await updateDoc(schoolRef, updateData);
     
-    console.log(`Successfully updated school profile in-memory: ${schoolId}`);
+    console.log(`Successfully updated school profile in Firestore: ${schoolId}`);
     return true;
   } catch (error) {
     console.error("Error updating school profile in Firestore:", error);
