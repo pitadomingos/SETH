@@ -552,5 +552,3 @@ export const initialSchoolData: Record<string, SchoolData> = {
     'miniarte_matola': miniArteMatolaData,
     'miniarte_beira': miniArteBeiraData,
 };
-
-    

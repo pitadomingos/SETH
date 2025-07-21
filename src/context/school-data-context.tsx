@@ -31,6 +31,8 @@ interface SchoolDataContextType {
     savedReports: SavedReport[];
     schoolGroups: Record<string, string[]>;
     parentStatusOverrides: Record<string, 'Active' | 'Suspended'>;
+    deployedTests: DeployedTest[];
+    savedTests: SavedTest[];
     
     // --- Dropdown Data ---
     subjects: string[];
@@ -76,6 +78,7 @@ interface SchoolDataContextType {
     updateTeacherStatus: (schoolId: string, teacherId: string, status: Teacher['status']) => void;
     updateParentStatus: (parentEmail: string, status: 'Active' | 'Suspended') => void;
     addSchool: (schoolData: SchoolData) => void;
+    addBehavioralAssessment: (assessment: Omit<any, 'id' | 'date'>) => void;
     
     // Academic Year
     terms: any[];
@@ -577,6 +580,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     allSchoolData: role === 'GlobalAdmin' || role === 'Parent' || role === 'Admin' ? data : null,
     schoolGroups,
     parentStatusOverrides,
+    deployedTests: schoolData?.deployedTests || [],
+    savedTests: schoolData?.savedTests || [],
 
     // Dropdowns
     examBoards: schoolData?.examBoards || [],
