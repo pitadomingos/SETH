@@ -66,7 +66,6 @@ export const roleLinks: Record<Role, NavLink[]> = {
     { href: '/dashboard/global-admin/teachers', label: 'All Teachers', icon: Presentation },
     { href: '/dashboard/global-admin/awards', label: 'Annual Awards', icon: Trophy },
     { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: MonitorPlay },
-    { href: '/dashboard/global-admin/settings', label: 'System Settings', icon: Settings },
     { href: '/dashboard/project-proposal', label: 'Project Proposal', icon: FileText },
     { href: '/dashboard/system-documentation', label: 'System Docs', icon: GitBranch },
     { href: '/dashboard/todo-list', label: 'To-Do List', icon: List },
@@ -75,7 +74,6 @@ export const roleLinks: Record<Role, NavLink[]> = {
   ],
   Admin: [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/dashboard/school-profile', label: 'School Profile', icon: School },
     { href: '/dashboard/academics', label: 'Academics', icon: BookOpen },
     { href: '/dashboard/students', label: 'Students', icon: Users },
     { href: '/dashboard/teachers', label: 'Teachers', icon: Presentation },
@@ -86,7 +84,6 @@ export const roleLinks: Record<Role, NavLink[]> = {
     { href: '/dashboard/events', label: 'Events', icon: Calendar },
     { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
     { href: '/dashboard/assets', label: 'Assets', icon: Briefcase },
-    { href: '/dashboard/examinations', label: 'Examinations', icon: ClipboardList },
     { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: MonitorPlay },
     { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
