@@ -56,6 +56,7 @@ export interface NavLink {
     icon: LucideIcon;
     pro?: boolean; // Feature is available on Pro or higher
     dynamic?: boolean; // Indicates if the href needs dynamic segment replacement
+    target?: string; // To open in a new tab
 }
 
 export const roleLinks: Record<Role, NavLink[]> = {
@@ -87,7 +88,7 @@ export const roleLinks: Record<Role, NavLink[]> = {
     { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
     { href: '/dashboard/assets', label: 'Assets', icon: Briefcase },
     { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: MonitorPlay },
-    { href: '/dashboard/kiosk/[schoolId]', label: 'Public Kiosk', icon: Tv, dynamic: true },
+    { href: '/dashboard/kiosk/[schoolId]', label: 'Public Kiosk', icon: Tv, dynamic: true, target: '_blank' },
     { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
     { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
@@ -166,7 +167,7 @@ export function AppSidebar() {
 
             return (
               <SidebarMenuItem key={link.href}>
-                <Link href={finalHref} passHref>
+                <Link href={finalHref} passHref target={link.target}>
                   <SidebarMenuButton
                     asChild
                     isActive={pathname === finalHref}
