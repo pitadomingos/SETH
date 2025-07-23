@@ -197,7 +197,8 @@ export default function AssetsPage() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredAssets = useMemo(() => {
-    return assetsData.filter(asset =>
+    const safeAssetsData = assetsData || [];
+    return safeAssetsData.filter(asset =>
       asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       asset.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       asset.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -206,7 +207,8 @@ export default function AssetsPage() {
   }, [assetsData, searchTerm]);
   
   const summaryStats = useMemo(() => {
-    const stats = assetsData.reduce((acc, asset) => {
+    const safeAssetsData = assetsData || [];
+    const stats = safeAssetsData.reduce((acc, asset) => {
         acc.total++;
         if (asset.status === 'In Use') acc.inUse++;
         else if (asset.status === 'Available') acc.available++;
@@ -253,8 +255,8 @@ export default function AssetsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-          <AssetsByStatusChart assets={assetsData} />
-          <AssetsByCategoryChart assets={assetsData} />
+          <AssetsByStatusChart assets={assetsData || []} />
+          <AssetsByCategoryChart assets={assetsData || []} />
       </div>
 
       <Card>
