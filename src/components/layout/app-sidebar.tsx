@@ -42,6 +42,7 @@ import {
     BrainCircuit,
     History,
     CalendarCheck,
+    Tv,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -54,6 +55,7 @@ export interface NavLink {
     label: string;
     icon: LucideIcon;
     pro?: boolean; // Feature is available on Pro or higher
+    dynamic?: boolean; // Indicates if the href needs dynamic segment replacement
 }
 
 export const roleLinks: Record<Role, NavLink[]> = {
@@ -85,6 +87,7 @@ export const roleLinks: Record<Role, NavLink[]> = {
     { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
     { href: '/dashboard/assets', label: 'Assets', icon: Briefcase },
     { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: MonitorPlay },
+    { href: '/dashboard/kiosk/[schoolId]', label: 'Public Kiosk', icon: Tv, dynamic: true },
     { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
     { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
@@ -156,22 +159,28 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {links.map((link) => (
-            <SidebarMenuItem key={link.href}>
-              <Link href={link.href} passHref>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === link.href}
-                  tooltip={link.label}
-                >
-                  <span>
-                    <link.icon className="h-4 w-4" />
-                    <span>{link.label}</span>
-                  </span>
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-          ))}
+          {links.map((link) => {
+            const finalHref = (link.dynamic && user?.schoolId) 
+              ? link.href.replace('[schoolId]', user.schoolId)
+              : link.href;
+
+            return (
+              <SidebarMenuItem key={link.href}>
+                <Link href={finalHref} passHref>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === finalHref}
+                    tooltip={link.label}
+                  >
+                    <span>
+                      <link.icon className="h-4 w-4" />
+                      <span>{link.label}</span>
+                    </span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
