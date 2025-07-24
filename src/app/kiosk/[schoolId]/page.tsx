@@ -242,14 +242,13 @@ function KioskPage({ allSchoolData }: { allSchoolData: Record<string, SchoolData
 
   const school = useMemo(() => allSchoolData?.[schoolId], [schoolId, allSchoolData]);
   const isGlobal = schoolId === 'global';
-
-  // Standalone default config for the global kiosk.
+  
   const globalKioskConfig = useMemo(() => ({
       showDashboard: true,
       showLeaderboard: true,
       showTeacherLeaderboard: true,
       showAllSchools: true,
-      showShowcase: true, // For marketing slides
+      showShowcase: true,
       showAttendance: false,
       showAcademics: false,
       showAwards: false,
@@ -332,8 +331,15 @@ function KioskPage({ allSchoolData }: { allSchoolData: Record<string, SchoolData
 
 function KioskPageWrapper() {
   const { allSchoolData, isLoading } = useSchoolData();
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!isLoading && allSchoolData) {
+      setDataLoaded(true);
+    }
+  }, [isLoading, allSchoolData]);
+
+  if (!dataLoaded) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -341,11 +347,7 @@ function KioskPageWrapper() {
     );
   }
 
-  if (!allSchoolData) {
-     return <div className="flex h-screen items-center justify-center"><p>Could not load school data.</p></div>;
-  }
-  
-  return <KioskPage allSchoolData={allSchoolData} />;
+  return <KioskPage allSchoolData={allSchoolData!} />;
 }
 
 export default function KioskPageContainer() {
