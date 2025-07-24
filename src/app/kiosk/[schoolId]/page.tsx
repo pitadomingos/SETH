@@ -246,12 +246,14 @@ function KioskPage() {
 
   const slides = useMemo(() => {
     if (isGlobal && allSchoolData) {
-      const kioskConfig = allSchoolData['northwood'].profile.kioskConfig;
+      const globalKioskConfigSource = allSchoolData['northwood'];
+      if (!globalKioskConfigSource) return [];
+      const kioskConfig = globalKioskConfigSource.profile.kioskConfig;
       const globalSlides = [];
       globalSlides.push({ id: 'marketing-who', enabled: true, component: <KioskMarketingSlide title="Who We Are" description="EduManage is a catalyst for educational transformation, empowering schools with AI-driven tools to reduce administrative overhead and elevate academic standards." icon={Lightbulb} /> });
       globalSlides.push({ id: 'marketing-goal', enabled: true, component: <KioskMarketingSlide title="Our Goal & Mission" description="Our mission is to make modern educational technology accessible and affordable for institutions across Southern Africa, fostering a new era of data-driven, efficient, and impactful education." icon={Briefcase} /> });
       if(kioskConfig.showDashboard) globalSlides.push({ id: 'dashboard', enabled: true, component: <KioskGlobalDashboardSlide allSchoolData={allSchoolData} /> });
-      if(kioskConfig.showLeaderboard) globalSlides.push({ id: 'leaderboard', enabled: true, component: <KioskStudentLeaderboardSlide topStudents={Object.values(allSchoolData).flatMap(s => s.students).map(s => ({...s, schoolName: allSchoolData[s.schoolId as string]?.profile.name, avgGrade: getGpaFromNumeric(Math.random()*10+10)})).sort((a,b)=>b.avgGrade - a.avgGrade).slice(0,10)} isGlobal={true} gradingSystem="20-Point" /> });
+      if(kioskConfig.showLeaderboard) globalSlides.push({ id: 'leaderboard', enabled: true, component: <KioskStudentLeaderboardSlide topStudents={Object.values(allSchoolData).flatMap(s => s.students.map(student => ({...student, schoolName: allSchoolData[student.schoolId as string]?.profile.name, avgGrade: getGpaFromNumeric(Math.random()*10+10)}))).sort((a,b)=>b.avgGrade - a.avgGrade).slice(0,10)} isGlobal={true} gradingSystem="20-Point" /> });
       if(kioskConfig.showTeacherLeaderboard) globalSlides.push({ id: 'teacher-leaderboard', enabled: true, component: <KioskTeacherLeaderboardSlide allSchoolData={allSchoolData} /> });
       if(kioskConfig.showAllSchools) globalSlides.push({ id: 'all-schools', enabled: true, component: <AllSchoolsSlide allSchoolData={allSchoolData} /> });
       globalSlides.push({ id: 'marketing-connect', enabled: true, component: <KioskMarketingSlide title="Join the EduManage Family" description="Connect your school to a powerful, unified ecosystem. Boost efficiency, empower your teachers, and unlock data-driven insights for student success." icon={LinkIcon}><p className="text-2xl mt-8">Contact us at +258 845479481 to request a demo.</p></KioskMarketingSlide> });
@@ -280,8 +282,8 @@ function KioskPage() {
   }, [api]);
 
   if (isLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
-  if (!school) return <div className="flex h-screen items-center justify-center"><Card className="w-full max-w-lg"><CardHeader className="text-center"><CardTitle>Error: School Not Found</CardTitle><CardDescription>The requested school ID "{schoolId}" does not exist.</CardDescription></CardHeader></Card></div>;
-  if (slides.length === 0) return <div className="flex h-screen items-center justify-center p-8"><Card className="w-full max-w-2xl text-center"><CardHeader><Tv className="mx-auto h-16 w-16 text-muted-foreground mb-4" /><CardTitle>Kiosk Mode is Not Configured</CardTitle><CardDescription>The administrator for {school.profile.name} has not enabled any display slides for the public kiosk.</CardDescription></CardHeader><CardContent><p className="text-sm text-muted-foreground">Please go to Dashboard &gt; Kiosk Showcase to configure the kiosk slides.</p></CardContent></Card></div>;
+  if (!school && !isGlobal) return <div className="flex h-screen items-center justify-center"><Card className="w-full max-w-lg"><CardHeader className="text-center"><CardTitle>Error: School Not Found</CardTitle><CardDescription>The requested school ID "{schoolId}" does not exist.</CardDescription></CardHeader></Card></div>;
+  if (slides.length === 0) return <div className="flex h-screen items-center justify-center p-8"><Card className="w-full max-w-2xl text-center"><CardHeader><Tv className="mx-auto h-16 w-16 text-muted-foreground mb-4" /><CardTitle>Kiosk Mode is Not Configured</CardTitle><CardDescription>The administrator for {school?.profile.name || 'this school'} has not enabled any display slides for the public kiosk.</CardDescription></CardHeader><CardContent><p className="text-sm text-muted-foreground">Please go to Dashboard &gt; Kiosk Showcase to configure the kiosk slides.</p></CardContent></Card></div>;
 
   return (
     <Carousel setApi={setApi} className="w-full h-screen"><CarouselContent>{slides.map(slide => <CarouselItem key={slide.id}>{slide.component}</CarouselItem>)}</CarouselContent></Carousel>
