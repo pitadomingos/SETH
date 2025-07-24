@@ -135,14 +135,16 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [user, role]);
 
   const schoolId = useMemo(() => {
-      if (role === 'GlobalAdmin') return null;
-      return authSchoolId;
+    if (role === 'GlobalAdmin') return null;
+    return authSchoolId;
   }, [authSchoolId, role]);
 
   const schoolData = useMemo(() => {
-    if (!schoolId || !data) return null;
+    if (!data) return null;
+    if (role === 'GlobalAdmin') return data.northwood; // Global admin context is northwood for prototype
+    if (!schoolId) return null;
     return data[schoolId];
-  }, [schoolId, data]);
+  }, [schoolId, data, role]);
   
   const schoolGroups = useMemo(() => {
     return data?.['northwood']?.schoolGroups || {};
@@ -577,18 +579,26 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   
   const addMessage = (message: NewMessageData) => {
     if(!data || !user || !role) return;
+  
+    // Determine the sender's school. If GlobalAdmin, they don't have one.
+    const senderSchoolId = role === 'GlobalAdmin' ? 'northwood' : user.schoolId; // Use a default for global admin
+    if (!senderSchoolId) return;
 
-    const sendingSchoolId = user.schoolId || Object.values(data).find(d => d.profile.email === user.email)?.profile.id;
-    if (!sendingSchoolId) return;
-
-    const recipientSchool = Object.values(data).find(d => d.teachers.some(t => t.email === message.recipientUsername) || d.profile.email === message.recipientUsername);
-    const recipientSchoolId = recipientSchool?.profile.id || schoolId;
+    // Find recipient's school
+    let recipientSchoolId: string | undefined = undefined;
+    for (const sId in data) {
+        if (data[sId].profile.email === message.recipientUsername || data[sId].teachers.some(t => t.email === message.recipientUsername)) {
+            recipientSchoolId = sId;
+            break;
+        }
+    }
     if (!recipientSchoolId) return;
-
+  
+    // Find recipient's details
     const recipientUser = Object.values(data).flatMap(d => d.teachers).find(u => u.email === message.recipientUsername);
     const recipientName = recipientUser?.name || data[recipientSchoolId]?.profile.head || 'Admin';
     const recipientRole = recipientUser ? 'Teacher' : 'Admin';
-
+  
     const newMessage: Message = {
         id: `MSG${Date.now()}`,
         senderUsername: user.email,
@@ -608,12 +618,18 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setData(prev => {
       if (!prev) return null;
       const newData = {...prev};
-      newData[sendingSchoolId].messages.push(newMessage);
-
-      if (recipientSchoolId && recipientSchoolId !== sendingSchoolId) {
+      
+      // Add to sender's message list
+      if (newData[senderSchoolId]) {
+        newData[senderSchoolId].messages.push(newMessage);
+      }
+  
+      // Add to recipient's message list if they are in a different school context
+      if (recipientSchoolId && recipientSchoolId !== senderSchoolId) {
           newData[recipientSchoolId].messages.push(newMessage);
       }
-      addLog(sendingSchoolId, 'Message', `Sent message to ${recipientName}`);
+      
+      addLog(senderSchoolId, 'Message', `Sent message to ${recipientName}`);
       return newData;
     });
   };
