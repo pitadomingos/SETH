@@ -4,7 +4,7 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSchoolData, SchoolData } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, School, Users, Presentation, TrendingUp, Trophy, Award, BarChart2, Briefcase, Lightbulb, Link as LinkIcon, Tv, Medal, Camera, Building } from 'lucide-react';
+import { Loader2, School, Users, Presentation, TrendingUp, Trophy, Award, BarChart2, Briefcase, Lightbulb, Link as LinkIcon, Tv, Medal, Camera, Building, Maximize, Minimize } from 'lucide-react';
 import Image from 'next/image';
 import {
   Carousel,
@@ -26,6 +26,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { SchoolDataProvider } from '@/context/school-data-context';
+import { Button } from '@/components/ui/button';
 
 // --- Global Kiosk Slides ---
 
@@ -239,6 +240,7 @@ function KioskPage({ allSchoolData }: { allSchoolData: Record<string, SchoolData
   const params = useParams();
   const schoolId = params.schoolId as string;
   const [api, setApi] = useState<CarouselApi>();
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const school = useMemo(() => allSchoolData?.[schoolId], [schoolId, allSchoolData]);
   const isGlobal = schoolId === 'global';
@@ -249,11 +251,6 @@ function KioskPage({ allSchoolData }: { allSchoolData: Record<string, SchoolData
       showTeacherLeaderboard: true,
       showAllSchools: true,
       showShowcase: true,
-      showAttendance: false,
-      showAcademics: false,
-      showAwards: false,
-      showPerformers: false,
-      showAwardWinner: false,
   }), []);
 
   const slides = useMemo(() => {
@@ -282,6 +279,7 @@ function KioskPage({ allSchoolData }: { allSchoolData: Record<string, SchoolData
     
     if (school) {
         const kioskConfig = school.profile.kioskConfig;
+        if (!kioskConfig) return [];
         const schoolSlides = [];
         if(kioskConfig.showDashboard) schoolSlides.push({ id: 'dashboard', component: <SchoolDashboardSlide school={school} /> });
         if(kioskConfig.showPerformers) {
@@ -315,6 +313,24 @@ function KioskPage({ allSchoolData }: { allSchoolData: Record<string, SchoolData
     return () => clearInterval(interval);
   }, [api]);
 
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true));
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().then(() => setIsFullscreen(false));
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   if (!isGlobal && !school) return <div className="flex h-screen items-center justify-center"><Card className="w-full max-w-lg"><CardHeader className="text-center"><CardTitle>Error: School Not Found</CardTitle><CardDescription>The requested school ID "{schoolId}" does not exist.</CardDescription></CardHeader></Card></div>;
   
   const kioskConfig = isGlobal ? globalKioskConfig : school?.profile.kioskConfig;
@@ -325,7 +341,20 @@ function KioskPage({ allSchoolData }: { allSchoolData: Record<string, SchoolData
   if (slides.length === 0) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
 
   return (
-    <Carousel setApi={setApi} className="w-full h-screen"><CarouselContent>{slides.map(slide => <CarouselItem key={slide.id}>{slide.component}</CarouselItem>)}</CarouselContent></Carousel>
+    <div className="relative w-full h-screen">
+      <Carousel setApi={setApi} className="w-full h-full">
+        <CarouselContent>{slides.map(slide => <CarouselItem key={slide.id}>{slide.component}</CarouselItem>)}</CarouselContent>
+      </Carousel>
+      <Button
+        variant="outline"
+        size="icon"
+        className="absolute bottom-4 right-4 z-50 rounded-full h-12 w-12 bg-background/50 backdrop-blur-sm"
+        onClick={toggleFullScreen}
+        aria-label={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+      >
+        {isFullscreen ? <Minimize className="h-6 w-6" /> : <Maximize className="h-6 w-6" />}
+      </Button>
+    </div>
   );
 }
 
@@ -353,3 +382,4 @@ function KioskPageWrapper() {
 export default function KioskPageContainer() {
   return (<SchoolDataProvider><KioskPageWrapper /></SchoolDataProvider>);
 }
+
