@@ -243,37 +243,58 @@ function KioskPage() {
 
   const school = useMemo(() => allSchoolData?.[schoolId], [schoolId, allSchoolData]);
   const isGlobal = schoolId === 'global';
+  const globalKioskConfig = allSchoolData?.['northwood']?.profile.kioskConfig;
 
   const slides = useMemo(() => {
     if (isLoading) return [];
-    if (isGlobal && allSchoolData) {
-      const globalKioskConfig = allSchoolData['northwood']?.profile.kioskConfig;
-      if (!globalKioskConfig) return [];
+
+    if (isGlobal) {
+      if (!allSchoolData || !globalKioskConfig) return [];
       const globalSlides = [];
-      globalSlides.push({ id: 'marketing-who', enabled: true, component: <KioskMarketingSlide title="Who We Are" description="EduManage is a catalyst for educational transformation, empowering schools with AI-driven tools to reduce administrative overhead and elevate academic standards." icon={Lightbulb} /> });
-      globalSlides.push({ id: 'marketing-goal', enabled: true, component: <KioskMarketingSlide title="Our Goal & Mission" description="Our mission is to make modern educational technology accessible and affordable for institutions across Southern Africa, fostering a new era of data-driven, efficient, and impactful education." icon={Briefcase} /> });
-      if(globalKioskConfig.showDashboard) globalSlides.push({ id: 'dashboard', enabled: true, component: <KioskGlobalDashboardSlide allSchoolData={allSchoolData} /> });
-      if(globalKioskConfig.showLeaderboard) globalSlides.push({ id: 'leaderboard', enabled: true, component: <KioskStudentLeaderboardSlide topStudents={Object.values(allSchoolData).flatMap(s => s.students.map(student => ({...student, schoolName: allSchoolData[student.schoolId as string]?.profile.name, avgGrade: getGpaFromNumeric(Math.random()*10+10)}))).sort((a,b)=>b.avgGrade - a.avgGrade).slice(0,10)} isGlobal={true} gradingSystem="20-Point" /> });
-      if(globalKioskConfig.showTeacherLeaderboard) globalSlides.push({ id: 'teacher-leaderboard', enabled: true, component: <KioskTeacherLeaderboardSlide allSchoolData={allSchoolData} /> });
-      if(globalKioskConfig.showAllSchools) globalSlides.push({ id: 'all-schools', enabled: true, component: <AllSchoolsSlide allSchoolData={allSchoolData} /> });
-      globalSlides.push({ id: 'marketing-connect', enabled: true, component: <KioskMarketingSlide title="Join the EduManage Family" description="Connect your school to a powerful, unified ecosystem. Boost efficiency, empower your teachers, and unlock data-driven insights for student success." icon={LinkIcon}><p className="text-2xl mt-8">Contact us at +258 845479481 to request a demo.</p></KioskMarketingSlide> });
+      globalSlides.push({ id: 'marketing-who', component: <KioskMarketingSlide title="Who We Are" description="EduManage is a catalyst for educational transformation, empowering schools with AI-driven tools to reduce administrative overhead and elevate academic standards." icon={Lightbulb} /> });
+      globalSlides.push({ id: 'marketing-goal', component: <KioskMarketingSlide title="Our Goal & Mission" description="Our mission is to make modern educational technology accessible and affordable for institutions across Southern Africa, fostering a new era of data-driven, efficient, and impactful education." icon={Briefcase} /> });
+      if(globalKioskConfig.showDashboard) globalSlides.push({ id: 'dashboard', component: <KioskGlobalDashboardSlide allSchoolData={allSchoolData} /> });
+      if(globalKioskConfig.showLeaderboard) {
+          const topStudents = Object.values(allSchoolData).flatMap(s => s.students.map(student => {
+            const avgGrade = s.grades.filter(g => g.studentId === student.id).reduce((sum, g) => sum + parseFloat(g.grade), 0) / (s.grades.filter(g => g.studentId === student.id).length || 1);
+            return {...student, schoolName: s.profile.name, avgGrade: isNaN(avgGrade) ? 0 : avgGrade};
+          })).sort((a,b)=>b.avgGrade - a.avgGrade).slice(0,10);
+          globalSlides.push({ id: 'leaderboard', component: <KioskStudentLeaderboardSlide topStudents={topStudents} isGlobal={true} gradingSystem="20-Point" /> });
+      }
+      if(globalKioskConfig.showTeacherLeaderboard) globalSlides.push({ id: 'teacher-leaderboard', component: <KioskTeacherLeaderboardSlide allSchoolData={allSchoolData} /> });
+      if(globalKioskConfig.showAllSchools) globalSlides.push({ id: 'all-schools', component: <AllSchoolsSlide allSchoolData={allSchoolData} /> });
+      globalSlides.push({ id: 'marketing-connect', component: <KioskMarketingSlide title="Join the EduManage Family" description="Connect your school to a powerful, unified ecosystem. Boost efficiency, empower your teachers, and unlock data-driven insights for student success." icon={LinkIcon}><p className="text-2xl mt-8">Contact us at +258 845479481 to request a demo.</p></KioskMarketingSlide> });
       return globalSlides;
     }
     
     if (school) {
         const kioskConfig = school.profile.kioskConfig;
         const schoolSlides = [];
-        if(kioskConfig.showDashboard) schoolSlides.push({ id: 'dashboard', enabled: true, component: <SchoolDashboardSlide school={school} /> });
-        const topStudents = school.students.map(s => ({...s, avgGrade: getGpaFromNumeric(Math.random()*10+10)})).sort((a,b)=>b.avgGrade - a.avgGrade).slice(0,10);
-        if(kioskConfig.showLeaderboard) schoolSlides.push({ id: 'leaderboard', enabled: true, component: <KioskStudentLeaderboardSlide topStudents={topStudents} isGlobal={false} gradingSystem={school.profile.gradingSystem} /> });
-        const topTeachers = school.teachers.map(t => ({...t, avgGrade: Math.random()*5+15})).sort((a,b)=>b.avgGrade - a.avgGrade).slice(0,5);
-        if(kioskConfig.showPerformers) schoolSlides.push({ id: 'performers', enabled: true, component: <KioskPerformersSlide topStudents={topStudents.slice(0,5)} topTeachers={topTeachers} schoolName={school.profile.name} gradingSystem={school.profile.gradingSystem} /> });
-        if(kioskConfig.showShowcase && school.kioskMedia.length > 0) schoolSlides.push({ id: 'showcase', enabled: true, component: <KioskShowcaseSlide media={school.kioskMedia} /> });
-        return schoolSlides.filter(s => s.enabled);
+        if(kioskConfig.showDashboard) schoolSlides.push({ id: 'dashboard', component: <SchoolDashboardSlide school={school} /> });
+        if(kioskConfig.showPerformers) {
+          const topStudents = school.students.map(s => {
+            const avgGrade = school.grades.filter(g => g.studentId === s.id).reduce((sum, g) => sum + parseFloat(g.grade), 0) / (school.grades.filter(g => g.studentId === s.id).length || 1);
+            return {...s, avgGrade: isNaN(avgGrade) ? 0 : avgGrade};
+          }).sort((a,b)=>b.avgGrade - a.avgGrade).slice(0,5);
+          
+          const topTeachers = school.teachers.map(t => {
+            const teacherCourses = school.courses.filter(c => c.teacherId === t.id);
+            const studentIds = new Set(teacherCourses.flatMap(course => {
+                const classInfo = school.classes.find(c => c.id === course.classId);
+                return classInfo ? school.students.filter(s => s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim()).map(s => s.id) : [];
+            }));
+            const teacherGrades = school.grades.filter(g => studentIds.has(g.studentId) && g.subject === t.subject).map(g => parseFloat(g.grade));
+            const avgStudentGrade = teacherGrades.length > 0 ? teacherGrades.reduce((sum, g) => sum + g, 0) / teacherGrades.length : 0;
+            return { ...t, avgGrade: avgStudentGrade };
+          }).sort((a, b) => b.avgGrade - a.avgGrade).slice(0,5);
+          schoolSlides.push({ id: 'performers', component: <KioskPerformersSlide topStudents={topStudents} topTeachers={topTeachers} schoolName={school.profile.name} gradingSystem={school.profile.gradingSystem} /> });
+        }
+        if(kioskConfig.showShowcase && school.kioskMedia.length > 0) schoolSlides.push({ id: 'showcase', component: <KioskShowcaseSlide media={school.kioskMedia} /> });
+        return schoolSlides;
     }
     
     return [];
-  }, [school, allSchoolData, isGlobal, isLoading]);
+  }, [school, allSchoolData, isGlobal, isLoading, globalKioskConfig]);
 
   useEffect(() => {
     if (!api) return;
@@ -284,10 +305,10 @@ function KioskPage() {
   if (isLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
   if (!isGlobal && !school) return <div className="flex h-screen items-center justify-center"><Card className="w-full max-w-lg"><CardHeader className="text-center"><CardTitle>Error: School Not Found</CardTitle><CardDescription>The requested school ID "{schoolId}" does not exist.</CardDescription></CardHeader></Card></div>;
   
-  const kioskConfig = isGlobal ? allSchoolData?.['northwood']?.profile.kioskConfig : school?.profile.kioskConfig;
+  const kioskConfig = isGlobal ? globalKioskConfig : school?.profile.kioskConfig;
   const isConfigured = kioskConfig && Object.values(kioskConfig).some(v => v === true);
 
-  if (!isConfigured) return <div className="flex h-screen items-center justify-center p-8"><Card className="w-full max-w-2xl text-center"><CardHeader><Tv className="mx-auto h-16 w-16 text-muted-foreground mb-4" /><CardTitle>Kiosk Mode is Not Configured</CardTitle><CardDescription>The administrator for {school?.profile.name || 'this school'} has not enabled any display slides for the public kiosk.</CardDescription></CardHeader><CardContent><p className="text-sm text-muted-foreground">Please go to Dashboard &gt; Kiosk Showcase to configure the kiosk slides.</p></CardContent></Card></div>;
+  if (!isConfigured) return <div className="flex h-screen items-center justify-center p-8"><Card className="w-full max-w-2xl text-center"><CardHeader><Tv className="mx-auto h-16 w-16 text-muted-foreground mb-4" /><CardTitle>Kiosk Mode is Not Configured</CardTitle><CardDescription>The administrator for {school?.profile.name || 'Pixel Digital Solutions HQ'} has not enabled any display slides for the public kiosk.</CardDescription></CardHeader><CardContent><p className="text-sm text-muted-foreground">Please go to Dashboard &gt; Kiosk Showcase to configure the kiosk slides.</p></CardContent></Card></div>;
   
   if (slides.length === 0) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
 
