@@ -43,10 +43,17 @@ function ComposeMessageDialog({ open, onOpenChange, replyTo, prefillData }: { op
   
   const form = useForm<MessageFormValues>({
     resolver: zodResolver(messageSchema),
+    defaultValues: {
+      recipientUsername: '',
+      subject: '',
+      body: '',
+      attachmentUrl: '',
+      attachmentName: '',
+    },
   });
   
   useEffect(() => {
-    let defaultValues: Partial<MessageFormValues> = { body: '', attachmentName: '', attachmentUrl: '' };
+    let defaultValues: Partial<MessageFormValues> = { body: '', attachmentName: '', attachmentUrl: '', subject: '', recipientUsername: '' };
 
     if (replyTo) {
       defaultValues.recipientUsername = replyTo.senderUsername;
