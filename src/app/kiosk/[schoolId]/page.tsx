@@ -2,7 +2,7 @@
 'use client';
 import React, { useMemo, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useSchoolData } from '@/context/school-data-context';
+import { useSchoolData, SchoolData } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, School, Users, Presentation, TrendingUp, Trophy, Award, BarChart2, Briefcase, Lightbulb, Link as LinkIcon, Tv, Medal, Camera, Building } from 'lucide-react';
 import Image from 'next/image';
@@ -235,24 +235,36 @@ function KioskShowcaseSlide({ media }) {
 }
 
 // --- Main Page Component ---
-function KioskPage() {
+function KioskPage({ allSchoolData }: { allSchoolData: Record<string, SchoolData> }) {
   const params = useParams();
   const schoolId = params.schoolId as string;
-  const { allSchoolData, isLoading } = useSchoolData();
   const [api, setApi] = useState<CarouselApi>();
 
   const school = useMemo(() => allSchoolData?.[schoolId], [schoolId, allSchoolData]);
   const isGlobal = schoolId === 'global';
-  const globalKioskConfig = allSchoolData?.['northwood']?.profile.kioskConfig;
+
+  // Standalone default config for the global kiosk.
+  const globalKioskConfig = useMemo(() => ({
+      showDashboard: true,
+      showLeaderboard: true,
+      showTeacherLeaderboard: true,
+      showAllSchools: true,
+      showShowcase: true, // For marketing slides
+      showAttendance: false,
+      showAcademics: false,
+      showAwards: false,
+      showPerformers: false,
+      showAwardWinner: false,
+  }), []);
 
   const slides = useMemo(() => {
-    if (isLoading) return [];
-
     if (isGlobal) {
-      if (!allSchoolData || !globalKioskConfig) return [];
+      if (!allSchoolData) return [];
       const globalSlides = [];
-      globalSlides.push({ id: 'marketing-who', component: <KioskMarketingSlide title="Who We Are" description="EduManage is a catalyst for educational transformation, empowering schools with AI-driven tools to reduce administrative overhead and elevate academic standards." icon={Lightbulb} /> });
-      globalSlides.push({ id: 'marketing-goal', component: <KioskMarketingSlide title="Our Goal & Mission" description="Our mission is to make modern educational technology accessible and affordable for institutions across Southern Africa, fostering a new era of data-driven, efficient, and impactful education." icon={Briefcase} /> });
+      if(globalKioskConfig.showShowcase) {
+          globalSlides.push({ id: 'marketing-who', component: <KioskMarketingSlide title="Who We Are" description="EduManage is a catalyst for educational transformation, empowering schools with AI-driven tools to reduce administrative overhead and elevate academic standards." icon={Lightbulb} /> });
+          globalSlides.push({ id: 'marketing-goal', component: <KioskMarketingSlide title="Our Goal & Mission" description="Our mission is to make modern educational technology accessible and affordable for institutions across Southern Africa, fostering a new era of data-driven, efficient, and impactful education." icon={Briefcase} /> });
+      }
       if(globalKioskConfig.showDashboard) globalSlides.push({ id: 'dashboard', component: <KioskGlobalDashboardSlide allSchoolData={allSchoolData} /> });
       if(globalKioskConfig.showLeaderboard) {
           const topStudents = Object.values(allSchoolData).flatMap(s => s.students.map(student => {
@@ -263,7 +275,9 @@ function KioskPage() {
       }
       if(globalKioskConfig.showTeacherLeaderboard) globalSlides.push({ id: 'teacher-leaderboard', component: <KioskTeacherLeaderboardSlide allSchoolData={allSchoolData} /> });
       if(globalKioskConfig.showAllSchools) globalSlides.push({ id: 'all-schools', component: <AllSchoolsSlide allSchoolData={allSchoolData} /> });
-      globalSlides.push({ id: 'marketing-connect', component: <KioskMarketingSlide title="Join the EduManage Family" description="Connect your school to a powerful, unified ecosystem. Boost efficiency, empower your teachers, and unlock data-driven insights for student success." icon={LinkIcon}><p className="text-2xl mt-8">Contact us at +258 845479481 to request a demo.</p></KioskMarketingSlide> });
+      if(globalKioskConfig.showShowcase) {
+          globalSlides.push({ id: 'marketing-connect', component: <KioskMarketingSlide title="Join the EduManage Family" description="Connect your school to a powerful, unified ecosystem. Boost efficiency, empower your teachers, and unlock data-driven insights for student success." icon={LinkIcon}><p className="text-2xl mt-8">Contact us at +258 845479481 to request a demo.</p></KioskMarketingSlide> });
+      }
       return globalSlides;
     }
     
@@ -294,7 +308,7 @@ function KioskPage() {
     }
     
     return [];
-  }, [school, allSchoolData, isGlobal, isLoading, globalKioskConfig]);
+  }, [school, allSchoolData, isGlobal, globalKioskConfig]);
 
   useEffect(() => {
     if (!api) return;
@@ -302,7 +316,6 @@ function KioskPage() {
     return () => clearInterval(interval);
   }, [api]);
 
-  if (isLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
   if (!isGlobal && !school) return <div className="flex h-screen items-center justify-center"><Card className="w-full max-w-lg"><CardHeader className="text-center"><CardTitle>Error: School Not Found</CardTitle><CardDescription>The requested school ID "{schoolId}" does not exist.</CardDescription></CardHeader></Card></div>;
   
   const kioskConfig = isGlobal ? globalKioskConfig : school?.profile.kioskConfig;
@@ -317,6 +330,24 @@ function KioskPage() {
   );
 }
 
-export default function KioskPageWrapper() {
-  return (<SchoolDataProvider><KioskPage /></SchoolDataProvider>);
+function KioskPageWrapper() {
+  const { allSchoolData, isLoading } = useSchoolData();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!allSchoolData) {
+     return <div className="flex h-screen items-center justify-center"><p>Could not load school data.</p></div>;
+  }
+  
+  return <KioskPage allSchoolData={allSchoolData} />;
+}
+
+export default function KioskPageContainer() {
+  return (<SchoolDataProvider><KioskPageWrapper /></SchoolDataProvider>);
 }
