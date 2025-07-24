@@ -69,6 +69,7 @@ export const roleLinks: Record<Role, NavLink[]> = {
     { href: '/dashboard/global-admin/teachers', label: 'All Teachers', icon: Presentation },
     { href: '/dashboard/global-admin/awards', label: 'Annual Awards', icon: Trophy },
     { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: MonitorPlay },
+    { href: '/kiosk/global', label: 'Public Kiosk', icon: Tv, dynamic: false, target: '_blank' },
     { href: '/dashboard/project-proposal', label: 'Project Proposal', icon: FileText },
     { href: '/dashboard/system-documentation', label: 'System Docs', icon: GitBranch },
     { href: '/dashboard/todo-list', label: 'To-Do List', icon: List },

@@ -100,8 +100,9 @@ export default function KioskShowcasePage() {
   
   const isLoading = authLoading || schoolLoading;
   
-  // Use Northwood's config as the template for the Global Admin
-  const kioskConfigSource = role === 'GlobalAdmin' ? allSchoolData?.['northwood']?.profile : schoolProfile;
+  const isGlobalAdmin = role === 'GlobalAdmin';
+  
+  const kioskConfigSource = isGlobalAdmin ? allSchoolData?.['northwood']?.profile : schoolProfile;
 
   const [kioskConfig, setKioskConfig] = useState(kioskConfigSource?.kioskConfig || {
     showDashboard: true,
@@ -145,7 +146,7 @@ export default function KioskShowcasePage() {
   };
 
   const handleSaveKioskConfig = () => {
-     if (role === 'GlobalAdmin' && allSchoolData?.['northwood']) {
+     if (isGlobalAdmin && allSchoolData?.['northwood']) {
          updateSchoolProfile({ kioskConfig }, 'northwood');
          toast({ title: "Global Kiosk Settings Updated", description: "Your public kiosk display settings have been saved." });
      } else if (schoolProfile) {
@@ -154,11 +155,10 @@ export default function KioskShowcasePage() {
     }
   };
   
-  const pageTitle = role === 'GlobalAdmin' ? 'Global Kiosk Management' : 'Kiosk Management';
-  const pageDescription = role === 'GlobalAdmin' 
+  const pageTitle = isGlobalAdmin ? 'Global Kiosk Management' : 'Kiosk Management';
+  const pageDescription = isGlobalAdmin 
     ? "Manage media and display settings for the corporate headquarters' public kiosk."
     : "Manage media and display settings for your school's public kiosk.";
-
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
@@ -167,7 +167,7 @@ export default function KioskShowcasePage() {
           <h2 className="text-3xl font-bold tracking-tight">{pageTitle}</h2>
           <p className="text-muted-foreground">{pageDescription}</p>
         </div>
-        {role === 'Admin' && <NewMediaDialog />}
+        {!isGlobalAdmin && <NewMediaDialog />}
       </header>
       
       <div className="grid lg:grid-cols-3 gap-6">
@@ -175,14 +175,14 @@ export default function KioskShowcasePage() {
             <CardHeader>
               <CardTitle>Showcase Gallery</CardTitle>
               <CardDescription>
-                {role === 'Admin' 
+                {!isGlobalAdmin 
                   ? sortedMedia.length > 0 ? `You have ${sortedMedia.length} item(s) in your showcase.` : "No media uploaded yet. Add images or videos to display."
                   : 'Media management is only available to individual school administrators.'
                 }
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {role === 'Admin' && sortedMedia.length > 0 ? (
+              {!isGlobalAdmin && sortedMedia.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-2">
                   {sortedMedia.map((media) => (
                     <Card key={media.id} className="overflow-hidden">
@@ -206,7 +206,7 @@ export default function KioskShowcasePage() {
                 </div>
               ) : (
                 <div className="text-center py-16 text-muted-foreground"><p>
-                    {role === 'Admin' ? 'Your showcase is empty. Click "Add Media" to get started.' : 'Please log in as a school administrator to manage media.'}
+                    {!isGlobalAdmin ? 'Your showcase is empty. Click "Add Media" to get started.' : 'Please log in as a school administrator to manage media.'}
                 </p></div>
               )}
             </CardContent>
@@ -218,21 +218,19 @@ export default function KioskShowcasePage() {
                 <CardDescription>Choose which slides to display. Changes apply on the next cycle.</CardDescription>
             </CardHeader>
             <CardContent className="grid sm:grid-cols-1 gap-4">
-                {role === 'GlobalAdmin' ? (
+                <div className="flex items-center space-x-2"><Checkbox id="kiosk-dashboard" checked={kioskConfig.showDashboard} onCheckedChange={(checked) => handleKioskConfigChange('showDashboard', checked as boolean)} /><Label htmlFor="kiosk-dashboard">Show Main Dashboard Slide</Label></div>
+                <div className="flex items-center space-x-2"><Checkbox id="kiosk-leaderboard" checked={kioskConfig.showLeaderboard} onCheckedChange={(checked) => handleKioskConfigChange('showLeaderboard', checked as boolean)} /><Label htmlFor="kiosk-leaderboard">Show Top Student Leaderboard</Label></div>
+                {isGlobalAdmin ? (
                   <>
-                    <div className="flex items-center space-x-2"><Checkbox id="kiosk-dashboard" checked={kioskConfig.showDashboard} onCheckedChange={(checked) => handleKioskConfigChange('showDashboard', checked as boolean)} /><Label htmlFor="kiosk-dashboard">Show Main Dashboard Slide</Label></div>
-                    <div className="flex items-center space-x-2"><Checkbox id="kiosk-leaderboard" checked={kioskConfig.showLeaderboard} onCheckedChange={(checked) => handleKioskConfigChange('showLeaderboard', checked as boolean)} /><Label htmlFor="kiosk-leaderboard">Show Top Students Leaderboard</Label></div>
                     <div className="flex items-center space-x-2"><Checkbox id="kiosk-teacher-leaderboard" checked={kioskConfig.showTeacherLeaderboard} onCheckedChange={(checked) => handleKioskConfigChange('showTeacherLeaderboard', checked as boolean)} /><Label htmlFor="kiosk-teacher-leaderboard">Show Top Teachers Leaderboard</Label></div>
                     <div className="flex items-center space-x-2"><Checkbox id="kiosk-all-schools" checked={kioskConfig.showAllSchools} onCheckedChange={(checked) => handleKioskConfigChange('showAllSchools', checked as boolean)} /><Label htmlFor="kiosk-all-schools">Show All Schools Slide</Label></div>
                   </>
                 ) : (
                   <>
-                    <div className="flex items-center space-x-2"><Checkbox id="kiosk-dashboard" checked={kioskConfig.showDashboard} onCheckedChange={(checked) => handleKioskConfigChange('showDashboard', checked as boolean)} /><Label htmlFor="kiosk-dashboard">Show Main Dashboard Slide</Label></div>
-                    <div className="flex items-center space-x-2"><Checkbox id="kiosk-leaderboard" checked={kioskConfig.showLeaderboard} onCheckedChange={(checked) => handleKioskConfigChange('showLeaderboard', checked as boolean)} /><Label htmlFor="kiosk-leaderboard">Show Top Student Leaderboard</Label></div>
                     <div className="flex items-center space-x-2"><Checkbox id="kiosk-performers" checked={kioskConfig.showPerformers} onCheckedChange={(checked) => handleKioskConfigChange('showPerformers', checked as boolean)} /><Label htmlFor="kiosk-performers">Show Top Performers & Staff</Label></div>
-                    <div className="flex items-center space-x-2"><Checkbox id="kiosk-award-winner" checked={kioskConfig.showAwardWinner} onCheckedChange={(checked) => handleKioskConfigChange('showAwardWinner', checked as boolean)} /><Label htmlFor="kiosk-award-winner">Show Award Winner Announcement</Label></div>
                     <div className="flex items-center space-x-2"><Checkbox id="kiosk-showcase" checked={kioskConfig.showShowcase} onCheckedChange={(checked) => handleKioskConfigChange('showShowcase', checked as boolean)} /><Label htmlFor="kiosk-showcase">Show Media Showcase</Label></div>
                     <Separator />
+                    <Label className="text-xs text-muted-foreground">Advanced Data Slides</Label>
                     <div className="flex items-center space-x-2"><Checkbox id="kiosk-attendance" checked={kioskConfig.showAttendance} onCheckedChange={(checked) => handleKioskConfigChange('showAttendance', checked as boolean)} /><Label htmlFor="kiosk-attendance">Show Attendance Trend Chart</Label></div>
                     <div className="flex items-center space-x-2"><Checkbox id="kiosk-academics" checked={kioskConfig.showAcademics} onCheckedChange={(checked) => handleKioskConfigChange('showAcademics', checked as boolean)} /><Label htmlFor="kiosk-academics">Show Academic Performance Charts</Label></div>
                     <div className="flex items-center space-x-2"><Checkbox id="kiosk-awards" checked={kioskConfig.showAwards} onCheckedChange={(checked) => handleKioskConfigChange('showAwards', checked as boolean)} /><Label htmlFor="kiosk-awards">Show Annual Award Announcements</Label></div>

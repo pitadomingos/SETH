@@ -5,6 +5,8 @@ import { Loader2, Tv } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function GlobalSettingsPage() {
   const { role, isLoading: authLoading } = useAuth();
@@ -36,6 +38,9 @@ export default function GlobalSettingsPage() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">Please use the Kiosk Showcase link in the sidebar to configure all public display settings.</p>
+          <Button asChild variant="link" className="px-0">
+            <Link href="/dashboard/kiosk-showcase">Go to Kiosk Showcase</Link>
+          </Button>
         </CardContent>
       </Card>
     </div>
