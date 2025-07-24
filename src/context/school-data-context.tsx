@@ -1,3 +1,4 @@
+
 'use client';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabus, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, SchoolProfile, DeployedTest, SavedTest, NewMessageData, NewAdmissionData } from '@/lib/mock-data';
@@ -99,8 +100,14 @@ const SchoolDataContext = createContext<SchoolDataContextType | undefined>(undef
 
 export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { user, role, schoolId: authSchoolId } = useAuth();
-  const [data, setData] = useState<Record<string, SchoolData>>(initialSchoolData);
-  const [isLoading, setIsLoading] = useState(false);
+  const [data, setData] = useState<Record<string, SchoolData> | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate loading data. In a real app, this would be an async fetch.
+    setData(initialSchoolData);
+    setIsLoading(false);
+  }, []);
 
   const addLog = useCallback((schoolId: string, action: string, details: string) => {
     if(!user || !role) return;
@@ -115,6 +122,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     };
     
     setData(prevData => {
+        if (!prevData) return null;
         const newData = { ...prevData };
         if (newData[schoolId]) {
             newData[schoolId] = {
@@ -132,7 +140,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [authSchoolId, role]);
 
   const schoolData = useMemo(() => {
-    if (!schoolId) return null;
+    if (!schoolId || !data) return null;
     return data[schoolId];
   }, [schoolId, data]);
   
@@ -140,7 +148,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     return data?.['northwood']?.schoolGroups || {};
   }, [data]);
   
-  const allStudents = useMemo(() => Object.values(data).flatMap(d => d.students.map(s => ({...s, schoolName: d.profile.name, schoolId: d.profile.id }))), [data]);
+  const allStudents = useMemo(() => {
+    if (!data) return [];
+    return Object.values(data).flatMap(d => d.students.map(s => ({...s, schoolName: d.profile.name, schoolId: d.profile.id })))
+  }, [data]);
 
   const studentsData = useMemo(() => {
     if (role === 'Parent' && user?.email) {
@@ -150,10 +161,13 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [role, user, schoolData, allStudents]);
   
   const addSchool = (newSchoolData: SchoolData) => {
-    setData(prev => ({
-      ...prev,
-      [newSchoolData.profile.id]: newSchoolData
-    }));
+    setData(prev => {
+        if (!prev) return { [newSchoolData.profile.id]: newSchoolData };
+        return {
+            ...prev,
+            [newSchoolData.profile.id]: newSchoolData
+        }
+    });
   };
 
   const updateSchoolProfile = (profileData: Partial<SchoolProfile>, targetSchoolId?: string) => {
@@ -161,6 +175,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if (!sId) return;
 
     setData(prev => {
+        if (!prev) return null;
         const newData = { ...prev };
         if (newData[sId]) {
             newData[sId] = {
@@ -180,6 +195,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if (!schoolId) return;
      const newTeacher: Teacher = { id: `T${Date.now()}`, status: 'Active', ...teacher };
      setData(prev => {
+         if (!prev) return null;
          const newData = { ...prev };
          newData[schoolId].teachers.push(newTeacher);
          addLog(schoolId, 'Create', `Added new teacher: ${teacher.name}`);
@@ -190,6 +206,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const updateTeacher = (id: string, teacherData: Partial<Teacher>) => {
       if (!schoolId) return;
       setData(prev => {
+          if (!prev) return null;
           const newData = { ...prev };
           const school = newData[schoolId];
           school.teachers = school.teachers.map(t => t.id === id ? {...t, ...teacherData} : t);
@@ -202,6 +219,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if (!schoolId) return;
     const newClass: Class = { id: `C${Date.now()}`, ...classData };
      setData(prev => {
+         if (!prev) return null;
          const newData = { ...prev };
          newData[schoolId].classes.push(newClass);
          addLog(schoolId, 'Create', `Created new class: ${classData.name}`);
@@ -213,6 +231,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if (!schoolId) return;
     const newCourse: Course = { id: `CRS${Date.now()}`, ...course };
     setData(prev => {
+        if (!prev) return null;
         const newData = { ...prev };
         newData[schoolId].courses.push(newCourse);
         addLog(schoolId, 'Create', `Created new course: ${course.subject}`);
@@ -224,6 +243,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       if(!schoolId) return;
       const newSyllabus: Syllabus = { id: `SYL${Date.now()}`, topics: [], ...syllabus };
       setData(prev => {
+          if (!prev) return null;
           const newData = { ...prev };
           newData[schoolId].syllabi.push(newSyllabus);
           addLog(schoolId, 'Create', `Created syllabus for ${syllabus.subject} Grade ${syllabus.grade}`);
@@ -234,6 +254,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const updateSyllabusTopic = (subject: string, grade: string, topic: any) => {
     if(!schoolId) return;
     setData(prev => {
+      if (!prev) return null;
       const newData = {...prev};
       const school = newData[schoolId];
       school.syllabi = school.syllabi.map(s => {
@@ -255,6 +276,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const deleteSyllabusTopic = (subject: string, grade: string, topicId: string) => {
       if(!schoolId) return;
       setData(prev => {
+          if (!prev) return null;
           const newData = {...prev};
           const school = newData[schoolId];
           school.syllabi = school.syllabi.map(s => {
@@ -271,6 +293,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const updateApplicationStatus = (id: string, status: Admission['status']) => {
       if (!schoolId) return;
       setData(prev => {
+        if (!prev) return null;
         const newData = { ...prev };
         const school = newData[schoolId];
         school.admissions = school.admissions.map(a => a.id === id ? { ...a, status } : a);
@@ -298,6 +321,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           behavioralAssessments: [],
       };
       setData(prev => {
+          if (!prev) return null;
           const newData = { ...prev };
           newData[schoolId].students.push(newStudent);
           addLog(schoolId, 'Create', `Enrolled new student ${newStudent.name} from admission.`);
@@ -309,6 +333,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       if (!schoolId) return;
       const newAsset = { id: `AST${Date.now()}`, ...asset };
       setData(prev => {
+          if (!prev) return null;
           const newData = { ...prev };
           newData[schoolId].assets.push(newAsset);
           addLog(schoolId, 'Create', `Added new asset: ${asset.name}`);
@@ -327,6 +352,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }));
     
     setData(prev => {
+      if (!prev) return null;
       const newData = {...prev};
       const school = newData[schoolId];
       // Filter out old records for the same day and course
@@ -341,6 +367,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if(!schoolId || !schoolProfile) return;
     const newEvent: Event = { id: `EVT${Date.now()}`, schoolName: schoolProfile.name, ...event };
     setData(prev => {
+        if (!prev) return null;
         const newData = { ...prev };
         newData[schoolId].events.push(newEvent);
         addLog(schoolId, 'Create', `Scheduled new event: ${event.title}`);
@@ -358,6 +385,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const teacherId = teacher.id;
     const newGrade: Grade = { id: `GRD${Date.now()}`, date: new Date(), teacherId, ...grade };
     setData(prev => {
+        if (!prev) return null;
         const newData = { ...prev };
         newData[schoolId].grades.push(newGrade);
         return newData;
@@ -368,6 +396,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const recordPayment = (feeId: string, amount: number) => {
     if (!schoolId) return;
     setData(prev => {
+      if (!prev) return null;
       const newData = { ...prev };
       const school = newData[schoolId];
       school.finance = school.finance.map(f => {
@@ -397,6 +426,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     };
 
     setData(prev => {
+        if (!prev) return null;
         const newData = { ...prev };
         newData[schoolId].finance.push(newFee);
         addLog(schoolId, 'Create', `Created new fee for ${student.name}: ${fee.description}`);
@@ -408,6 +438,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       if(!schoolId) return;
       const newExpense: Expense = { id: `EXP${Date.now()}`, ...expense };
       setData(prev => {
+          if (!prev) return null;
           const newData = { ...prev };
           newData[schoolId].expenses.push(newExpense);
           addLog(schoolId, 'Create', `Added expense: ${expense.description}`);
@@ -419,6 +450,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if (!schoolId) return;
     const newTeam: Team = { id: `TM${Date.now()}`, playerIds: [], ...team };
     setData(prev => {
+      if (!prev) return null;
       const newData = { ...prev };
       newData[schoolId].teams.push(newTeam);
       addLog(schoolId, 'Create', `Created new sports team: ${team.name}`);
@@ -429,6 +461,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const deleteTeam = (teamId: string) => {
     if (!schoolId) return;
     setData(prev => {
+      if (!prev) return null;
       const newData = { ...prev };
       const school = newData[schoolId];
       const teamName = school.teams.find(t => t.id === teamId)?.name;
@@ -442,6 +475,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addPlayerToTeam = (teamId: string, studentId: string) => {
       if(!schoolId) return;
       setData(prev => {
+          if (!prev) return null;
           const newData = {...prev};
           const school = newData[schoolId];
           school.teams = school.teams.map(t => {
@@ -457,6 +491,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const removePlayerFromTeam = (teamId: string, studentId: string) => {
       if(!schoolId) return;
       setData(prev => {
+          if (!prev) return null;
           const newData = {...prev};
           const school = newData[schoolId];
           school.teams = school.teams.map(t => {
@@ -473,6 +508,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if(!schoolId) return;
     const newCompetition: Competition = { id: `CMP${Date.now()}`, ...competition };
     setData(prev => {
+        if (!prev) return null;
         const newData = {...prev};
         newData[schoolId].competitions.push(newCompetition);
         addLog(schoolId, 'Create', `Scheduled competition: ${competition.title}`);
@@ -483,6 +519,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addCompetitionResult = (competitionId: string, result: Competition['result']) => {
     if (!schoolId) return;
     setData(prev => {
+      if (!prev) return null;
       const newData = { ...prev };
       const school = newData[schoolId];
       school.competitions = school.competitions.map(c => {
@@ -501,6 +538,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if(!schoolId) return;
     const newAssessment = { id: `BA${Date.now()}`, date: new Date(), ...assessment };
     setData(prev => {
+        if (!prev) return null;
         const newData = {...prev};
         const school = newData[schoolId];
         school.students = school.students.map(s => {
@@ -518,6 +556,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if (!schoolId) return;
     const newMedia: KioskMedia = { id: `KM${Date.now()}`, createdAt: new Date(), ...media };
     setData(prev => {
+      if (!prev) return null;
       const newData = { ...prev };
       newData[schoolId].kioskMedia.push(newMedia);
       addLog(schoolId, 'Create', `Added kiosk media: ${media.title}`);
@@ -528,6 +567,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const removeKioskMedia = (id: string) => {
       if(!schoolId) return;
       setData(prev => {
+          if (!prev) return null;
           const newData = {...prev};
           newData[schoolId].kioskMedia = newData[schoolId].kioskMedia.filter(m => m.id !== id);
           addLog(schoolId, 'Delete', `Removed kiosk media item ${id}`);
@@ -536,11 +576,18 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const addMessage = (message: NewMessageData) => {
-    if(!schoolId || !user || !role) return;
-    const recipientSchoolId = Object.values(data).find(d => d.profile.email === message.recipientUsername)?.profile.id || schoolId;
-    const recipient = Object.values(data).flatMap(d => [...d.teachers, ...d.students]).find(u => u.email === message.recipientUsername);
-    const recipientRole = recipient ? (studentsData.some(s => s.id === recipient.id) ? 'Student' : 'Teacher') : 'Admin';
-    const recipientName = recipient?.name || data[recipientSchoolId]?.profile.head || 'Admin';
+    if(!data || !user || !role) return;
+
+    const sendingSchoolId = user.schoolId || Object.values(data).find(d => d.profile.email === user.email)?.profile.id;
+    if (!sendingSchoolId) return;
+
+    const recipientSchool = Object.values(data).find(d => d.teachers.some(t => t.email === message.recipientUsername) || d.profile.email === message.recipientUsername);
+    const recipientSchoolId = recipientSchool?.profile.id || schoolId;
+    if (!recipientSchoolId) return;
+
+    const recipientUser = Object.values(data).flatMap(d => d.teachers).find(u => u.email === message.recipientUsername);
+    const recipientName = recipientUser?.name || data[recipientSchoolId]?.profile.head || 'Admin';
+    const recipientRole = recipientUser ? 'Teacher' : 'Admin';
 
     const newMessage: Message = {
         id: `MSG${Date.now()}`,
@@ -548,8 +595,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         senderName: user.name,
         senderRole: role,
         recipientUsername: message.recipientUsername,
-        recipientName,
-        recipientRole,
+        recipientName: recipientName,
+        recipientRole: recipientRole,
         subject: message.subject,
         body: message.body,
         timestamp: new Date(),
@@ -559,13 +606,14 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     };
     
     setData(prev => {
+      if (!prev) return null;
       const newData = {...prev};
-      newData[schoolId].messages.push(newMessage);
-      // If sending to another school, add it to their messages too.
-      if (recipientSchoolId && recipientSchoolId !== schoolId) {
+      newData[sendingSchoolId].messages.push(newMessage);
+
+      if (recipientSchoolId && recipientSchoolId !== sendingSchoolId) {
           newData[recipientSchoolId].messages.push(newMessage);
       }
-      addLog(schoolId, 'Message', `Sent message to ${recipientName}`);
+      addLog(sendingSchoolId, 'Message', `Sent message to ${recipientName}`);
       return newData;
     });
   };
@@ -583,6 +631,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         grades: rest.gradesSummary || 'N/A'
     };
      setData(prev => {
+      if (!prev) return null;
       const newData = {...prev};
       newData[schoolId].admissions.push(newAdmission);
       addLog(schoolId, 'Create', `Submitted new admission for ${admission.name}`);
@@ -592,6 +641,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   
   const updateSchoolStatus = (targetSchoolId: string, status: SchoolProfile['status']) => {
     setData(prev => {
+      if (!prev) return null;
       const newData = { ...prev };
       if (newData[targetSchoolId]) {
         newData[targetSchoolId].profile.status = status;
@@ -603,6 +653,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const updateMessageStatus = (messageId: string, status: Message['status']) => {
     setData(prev => {
+      if (!prev) return null;
       const newData = { ...prev };
       for (const sId in newData) {
         const school = newData[sId];
@@ -618,6 +669,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const updateStudentStatus = (sId: string, studentId: string, status: Student['status']) => {
     setData(prev => {
+        if (!prev) return null;
         const newData = {...prev};
         const student = newData[sId]?.students.find(s => s.id === studentId);
         if(student) {
@@ -630,6 +682,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const updateTeacherStatus = (sId: string, teacherId: string, status: Teacher['status']) => {
       setData(prev => {
+        if (!prev) return null;
         const newData = {...prev};
         const teacher = newData[sId]?.teachers.find(t => t.id === teacherId);
         if(teacher) {
@@ -649,6 +702,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addExamBoard = (board: string) => {
     if(!schoolId) return;
     setData(prev => {
+        if (!prev) return null;
         const newData = {...prev};
         newData[schoolId].examBoards.push(board);
         return newData;
@@ -657,6 +711,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const deleteExamBoard = (board: string) => {
     if(!schoolId) return;
     setData(prev => {
+        if (!prev) return null;
         const newData = {...prev};
         newData[schoolId].examBoards = newData[schoolId].examBoards.filter(b => b !== board);
         return newData;
@@ -665,6 +720,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addFeeDescription = (desc: string) => {
     if(!schoolId) return;
     setData(prev => {
+        if (!prev) return null;
         const newData = {...prev};
         newData[schoolId].feeDescriptions.push(desc);
         return newData;
@@ -673,6 +729,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const deleteFeeDescription = (desc: string) => {
     if(!schoolId) return;
     setData(prev => {
+        if (!prev) return null;
         const newData = {...prev};
         newData[schoolId].feeDescriptions = newData[schoolId].feeDescriptions.filter(d => d !== desc);
         return newData;
@@ -681,6 +738,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addAudience = (aud: string) => {
     if(!schoolId) return;
     setData(prev => {
+        if (!prev) return null;
         const newData = {...prev};
         newData[schoolId].audiences.push(aud);
         return newData;
@@ -689,6 +747,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const deleteAudience = (aud: string) => {
     if(!schoolId) return;
     setData(prev => {
+        if (!prev) return null;
         const newData = {...prev};
         newData[schoolId].audiences = newData[schoolId].audiences.filter(a => a !== aud);
         return newData;
@@ -698,6 +757,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addTerm = (term: any) => {
     if (!schoolId) return;
     setData(prev => {
+        if (!prev) return null;
         const newData = {...prev};
         newData[schoolId].terms.push({id: `T${Date.now()}`, ...term});
         return newData;
@@ -707,6 +767,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addHoliday = (holiday: any) => {
       if (!schoolId) return;
       setData(prev => {
+          if (!prev) return null;
           const newData = {...prev};
           newData[schoolId].holidays.push({id: `H${Date.now()}`, ...holiday});
           return newData;
@@ -717,6 +778,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       if (!schoolId) return;
       const newReport: SavedReport = { id: `REP${Date.now()}`, ...report };
       setData(prev => {
+          if (!prev) return null;
           const newData = {...prev};
           newData[schoolId].savedReports.push(newReport);
           return newData;
@@ -730,7 +792,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     teachersData: schoolData?.teachers || [],
     classesData: schoolData?.classes || [],
     coursesData: schoolData?.courses || [],
-    subjects: useMemo(() => [...new Set(schoolData?.courses.map(c => c.subject) || [])], [schoolData]),
+    subjects: useMemo(() => {
+        if (!schoolData) return [];
+        return [...new Set(schoolData.courses.map(c => c.subject))]
+    }, [schoolData]),
     syllabi: schoolData?.syllabi || [],
     admissionsData: schoolData?.admissions || [],
     financeData: schoolData?.finance || [],
@@ -738,6 +803,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     grades: schoolData?.grades || [],
     attendance: schoolData?.attendance || [],
     events: useMemo(() => {
+        if (!data) return [];
         if (role === 'Parent' || role === 'Student') {
             return Object.values(data).flatMap(d => d.events);
         }
@@ -748,6 +814,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     competitionsData: schoolData?.competitions || [],
     kioskMedia: schoolData?.kioskMedia || [],
     activityLogs: useMemo(() => {
+        if (!data) return [];
         if (role === 'GlobalAdmin') {
             return Object.values(data).flatMap(d => d.activityLogs);
         }
@@ -755,7 +822,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }, [schoolData, data, role]),
     messages: schoolData?.messages || [],
     savedReports: schoolData?.savedReports || [],
-    allSchoolData: role === 'GlobalAdmin' || role === 'Parent' || role === 'Admin' ? data : null,
+    allSchoolData: data,
     schoolGroups,
     parentStatusOverrides,
     deployedTests: schoolData?.deployedTests || [],
