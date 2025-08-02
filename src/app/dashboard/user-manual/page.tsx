@@ -16,11 +16,11 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
       'All Schools Management: View and provision new schools. From here, you can manage a school\'s status (Active, Suspended) and switch context to manage a school directly using the "Log in as user" feature.',
       'Inbox: Receive, view, and track messages from School Administrators across the network.',
       'Global User Management: Access dedicated pages to view and manage every student and parent account across the entire network, including suspending access.',
-      'EduManage Awards: Configure prizes and announce the annual system-wide awards for top-performing schools, students, and teachers. Click on any winner to get a detailed AI analysis of their success.',
+      'EduDesk Awards: Configure prizes and announce the annual system-wide awards for top-performing schools, students, and teachers. Click on any winner to get a detailed AI analysis of their success.',
       'Public Kiosk: Access and view the public-facing kiosk display for your corporate headquarters. This includes marketing slides and network-wide data.',
       'System Settings: A dedicated page to configure global settings, such as which slides are visible on the corporate kiosk display.',
       'Activity Logs: View a global feed of all significant actions taken by users across all schools for complete system oversight.',
-      'Project Proposal: Review the high-level business and development proposal for EduManage.',
+      'Project Proposal: Review the high-level business and development proposal for EduDesk.',
       'System Documentation: Access technical documentation about the application\'s architecture and technology stack.',
       'To-Do List: View the project\'s development progress and upcoming features.',
     ],
@@ -111,14 +111,14 @@ export default function UserManualPage() {
       <header className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">User Manual</h2>
-          <p className="text-muted-foreground">A guide on how to use EduManage, tailored for your role.</p>
+          <p className="text-muted-foreground">A guide on how to use EduDesk, tailored for your role.</p>
         </div>
         <Button onClick={handlePrint}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
       </header>
       
       {role === 'GlobalAdmin' ? (
        <div className="space-y-6">
-        <p className="text-muted-foreground print:hidden">A comprehensive guide for all user roles in the EduManage system.</p>
+        <p className="text-muted-foreground print:hidden">A comprehensive guide for all user roles in the EduDesk system.</p>
         {Object.entries(userGuides).map(([roleKey, guide]) => {
           const GuideIcon = guide.icon;
           const menuItems = roleLinks[roleKey as Role] || [];

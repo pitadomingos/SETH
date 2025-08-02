@@ -30,7 +30,7 @@ export default function ProjectProposalPage() {
   return (
     <div className="space-y-8 animate-in fade-in-50">
       <header className="text-center print:hidden">
-        <h2 className="text-4xl font-bold tracking-tight text-primary">Project Proposal: EduManage</h2>
+        <h2 className="text-4xl font-bold tracking-tight text-primary">Project Proposal: EduDesk</h2>
         <p className="text-xl text-muted-foreground mt-2">A Catalyst for Educational Transformation in Southern Africa</p>
          <div className="mt-4 flex justify-center">
             <Button onClick={handlePrint}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
@@ -38,7 +38,7 @@ export default function ProjectProposalPage() {
       </header>
 
        <header className="text-center hidden print:block mb-8">
-        <h2 className="text-4xl font-bold tracking-tight text-primary">Project Proposal: EduManage</h2>
+        <h2 className="text-4xl font-bold tracking-tight text-primary">Project Proposal: EduDesk</h2>
         <p className="text-xl text-muted-foreground mt-2">A Catalyst for Educational Transformation in Southern Africa</p>
       </header>
 
@@ -47,7 +47,7 @@ export default function ProjectProposalPage() {
           <CardTitle className="flex items-center gap-3 text-2xl"><Rocket /> Executive Summary</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-muted-foreground">
-            <p>The landscape of education in Mozambique and the broader Southern African region is at a critical inflection point. While rich in potential, it faces significant challenges related to administrative efficiency, resource allocation, and data-driven decision-making. EduManage is a comprehensive, multi-tenant SaaS platform engineered not just to manage schools, but to transform them. By integrating a suite of powerful, AI-driven tools into a single, accessible system, EduManage will empower educators, engage parents, and provide administrators with the insights needed to elevate educational standards.</p>
+            <p>The landscape of education in Mozambique and the broader Southern African region is at a critical inflection point. While rich in potential, it faces significant challenges related to administrative efficiency, resource allocation, and data-driven decision-making. EduDesk is a comprehensive, multi-tenant SaaS platform engineered not just to manage schools, but to transform them. By integrating a suite of powerful, AI-driven tools into a single, accessible system, EduDesk will empower educators, engage parents, and provide administrators with the insights needed to elevate educational standards.</p>
             <p>Our prototype has successfully validated the core thesis: that a unified, intelligent platform can drastically reduce administrative overhead and unlock a new level of academic oversight. We are now seeking seed funding to transition from our robust prototype to a production-ready Firebase backend, enabling us to launch in Mozambique and subsequently scale across the SADC region. This investment will fuel a sustainable business model designed for long-term social impact, making modern educational tools accessible and affordable.</p>
         </CardContent>
       </Card>
@@ -65,14 +65,14 @@ export default function ProjectProposalPage() {
              </div>
              <div>
                 <h3 className="font-semibold text-card-foreground">Our Solution: A Unified, Intelligent Ecosystem</h3>
-                <p className="text-sm text-muted-foreground mt-1">EduManage replaces this disconnected patchwork with a single, cloud-native platform. Our key differentiator is the deep integration of AI to not just manage data, but to provide actionable insights—from performance-aware lesson planning for teachers to strategic system-wide analysis for administrators. By automating administrative tasks and providing clear, visual data, we free up educators to do what they do best: teach.</p>
+                <p className="text-sm text-muted-foreground mt-1">EduDesk replaces this disconnected patchwork with a single, cloud-native platform. Our key differentiator is the deep integration of AI to not just manage data, but to provide actionable insights—from performance-aware lesson planning for teachers to strategic system-wide analysis for administrators. By automating administrative tasks and providing clear, visual data, we free up educators to do what they do best: teach.</p>
              </div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><TrendingUp /> How EduManage Elevates Standards</CardTitle>
+            <CardTitle className="flex items-center gap-2"><TrendingUp /> How EduDesk Elevates Standards</CardTitle>
             <CardDescription>Directly Addressing Key Educational Challenges</CardDescription>
           </CardHeader>
            <CardContent className="space-y-4 text-sm">
@@ -151,7 +151,7 @@ export default function ProjectProposalPage() {
                   </div>
                    <div>
                       <h4 className="font-semibold">Corporate Sponsorships</h4>
-                      <p className="text-sm text-muted-foreground mt-1">Secure sponsorships for the "EduManage Excellence Awards" from local and international companies looking to invest in the region's educational development, creating an additional revenue stream.</p>
+                      <p className="text-sm text-muted-foreground mt-1">Secure sponsorships for the "EduDesk Excellence Awards" from local and international companies looking to invest in the region's educational development, creating an additional revenue stream.</p>
                   </div>
               </div>
             </div>
@@ -160,11 +160,11 @@ export default function ProjectProposalPage() {
 
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Trophy /> Motivation & Recognition: The EduManage Awards</CardTitle>
+                <CardTitle className="flex items-center gap-2"><Trophy /> Motivation & Recognition: The EduDesk Awards</CardTitle>
                 <CardDescription>Fostering a Culture of Excellence</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <p className="text-muted-foreground">To further drive engagement and celebrate success, we will establish the annual **EduManage Excellence Awards**. These awards will recognize top-performing schools, teachers, and students across the network, based on data-driven metrics pulled from the platform. The system owner can configure prizes and announce the winners from a dedicated page in their dashboard.</p>
+                <p className="text-muted-foreground">To further drive engagement and celebrate success, we will establish the annual **EduDesk Excellence Awards**. These awards will recognize top-performing schools, teachers, and students across the network, based on data-driven metrics pulled from the platform. The system owner can configure prizes and announce the winners from a dedicated page in their dashboard.</p>
                 <p className="text-muted-foreground">This initiative creates a positive feedback loop, encouraging healthy competition and a focus on improvement. It also opens up a valuable revenue stream through **corporate sponsorships**, allowing local and international brands to align themselves with educational excellence in the region.</p>
             </CardContent>
         </Card>
@@ -301,17 +301,17 @@ export default function ProjectProposalPage() {
             <div className="grid md:grid-cols-3 gap-6 mt-6">
               <div className="flex flex-col items-center text-center p-4 rounded-lg bg-muted/50">
                 <Baby className="h-10 w-10 text-primary mb-3"/>
-                <h4 className="font-semibold">EduManage Pre-School</h4>
+                <h4 className="font-semibold">EduDesk Pre-School</h4>
                 <p className="text-sm text-muted-foreground mt-1">Focusing on developmental milestones, play-based learning, and parent communication, creating the foundational data points for a child's educational profile.</p>
               </div>
               <div className="flex flex-col items-center text-center p-4 rounded-lg bg-primary/10 border border-primary/20 shadow-inner">
                 <School className="h-10 w-10 text-primary mb-3"/>
-                <h4 className="font-semibold">EduManage K-12 (Core)</h4>
+                <h4 className="font-semibold">EduDesk K-12 (Core)</h4>
                 <p className="text-sm text-muted-foreground mt-1">Our current platform, perfecting the management of curriculum-based education, assessments, and school operations, building a rich academic history.</p>
               </div>
               <div className="flex flex-col items-center text-center p-4 rounded-lg bg-muted/50">
                 <Briefcase className="h-10 w-10 text-primary mb-3"/>
-                <h4 className="font-semibold">EduManage University & Careers</h4>
+                <h4 className="font-semibold">EduDesk University & Careers</h4>
                 <p className="text-sm text-muted-foreground mt-1">A specialized module for higher education that also bridges the gap to employment. Upon student consent, employers and recruitment agents can gain temporary, verified access to academic records, helping them connect with the right talent.</p>
               </div>
             </div>

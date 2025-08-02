@@ -1,7 +1,7 @@
 
-# EduManage: AI-Powered Multi-School Management Prototype
+# EduDesk: AI-Powered Multi-School Management Prototype
 
-Welcome to EduManage, an advanced prototype for a multi-tenant, AI-powered School Management System built with Next.js, ShadCN UI, and Google's Genkit. This application is designed to showcase a powerful and scalable solution for modern educational institutions.
+Welcome to EduDesk, an advanced prototype for a multi-tenant, AI-powered School Management System built with Next.js, ShadCN UI, and Google's Genkit. This application is designed to showcase a powerful and scalable solution for modern educational institutions.
 
 ## About This Project
 

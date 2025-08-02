@@ -51,14 +51,16 @@ const completedTasks = [
 ];
 
 const upcomingFeatures = [
+  'Implement multi-language support (Portuguese/English) with a quick-toggle menu.',
+  'Redesign sidebar with collapsible sections for better feature grouping.',
+  'Implement bulk user/class import for Admins.',
+  'Create a flexible custom report generator for financial and academic data.',
+  'Add a "Back" button for consistent navigation within modules.',
+  'Enhance the grade entry system to support concepts, weights, and modules per national standards.',
+  'Develop list export (PDF/DOCX) for students, classes, and grades with custom branding.',
+  'Integrate a notification center for students for grades, absences, and events.',
+  'Add an approval workflow with history for financial transactions.',
   'Connect mock data to a real database (e.g., Firestore) to enable persistence.',
-  'Implement full CRUD (Create, Read, Update, Delete) on all management pages.',
-  'Implement full internationalization (i18n) for English and Portuguese.',
-  'Build out analytics for the student test-taking results for teachers.',
-  'Implement a site-wide notification and communication hub.',
-  'Enhance mobile-first responsive design for a seamless experience on phones and tablets.',
-  'Introduce student-centric features like goal setting and digital portfolios.',
-  'Develop district, provincial, and national data views for higher-level administration.',
 ];
 
 export default function TodoListPage() {
@@ -85,7 +87,7 @@ export default function TodoListPage() {
       <header className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <div>
             <h2 className="text-3xl font-bold tracking-tight">Project Progress & To-Do List</h2>
-            <p className="text-muted-foreground">A tracker for what's done and what's next for the EduManage app.</p>
+            <p className="text-muted-foreground">A tracker for what's done and what's next for the EduDesk app.</p>
         </div>
         <Button onClick={handlePrint}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
       </header>
@@ -111,7 +113,7 @@ export default function TodoListPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Clock className="text-accent" />Upcoming Features</CardTitle>
-            <CardDescription>The next set of features to be developed, in order of priority.</CardDescription>
+            <CardDescription>The next set of features to be developed, based on stakeholder feedback.</CardDescription>
           </CardHeader>
           <CardContent>
              <ul className="space-y-3">

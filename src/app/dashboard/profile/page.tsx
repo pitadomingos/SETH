@@ -1,3 +1,4 @@
+
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from '@/components/ui/card';
@@ -13,7 +14,7 @@ import { useState, useRef } from 'react';
 
 function ShareDialog() {
   const { toast } = useToast();
-  const referralLink = "https://edumanage.app/demo-trial";
+  const referralLink = "https://eduddesk.app/demo-trial";
 
   const handleCopyLink = () => {
     // In a real app, you'd use navigator.clipboard.writeText(referralLink)
@@ -26,11 +27,11 @@ function ShareDialog() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline"><Share2 className="mr-2 h-4 w-4" /> Share EduManage</Button>
+        <Button variant="outline"><Share2 className="mr-2 h-4 w-4" /> Share EduDesk</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Share EduManage & Earn Rewards</DialogTitle>
+          <DialogTitle>Share EduDesk & Earn Rewards</DialogTitle>
           <DialogDescription>
             Share this link with other schools. They can request a demo and you'll be credited for the referral.
           </DialogDescription>
@@ -143,7 +144,7 @@ export default function ProfilePage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Refer & Earn</CardTitle>
-                        <CardDescription>Love using EduManage? Share it with other institutions and get rewarded.</CardDescription>
+                        <CardDescription>Love using EduDesk? Share it with other institutions and get rewarded.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <p className="text-sm text-muted-foreground mb-4">

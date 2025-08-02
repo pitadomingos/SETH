@@ -35,7 +35,7 @@ export default function SystemDocumentationPage() {
       <header className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <div>
             <h2 className="text-3xl font-bold tracking-tight">System Documentation</h2>
-            <p className="text-muted-foreground">A detailed technical overview of the EduManage application.</p>
+            <p className="text-muted-foreground">A detailed technical overview of the EduDesk application.</p>
         </div>
         <Button onClick={handlePrint}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
       </header>
@@ -82,7 +82,7 @@ export default function SystemDocumentationPage() {
           <CardDescription>How the application manages its data during a session.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">For prototype stability and speed, EduManage uses a "session-based" in-memory data store. Changes are **not** persisted between page reloads.</p>
+            <p className="text-sm text-muted-foreground">For prototype stability and speed, EduDesk uses a "session-based" in-memory data store. Changes are **not** persisted between page reloads.</p>
             <ol className="list-decimal pl-6 text-sm text-muted-foreground space-y-2">
                 <li><b>Initialization:</b> When the app first loads, <code>SchoolDataProvider</code> in <code>school-data-context.tsx</code> reads the entire dataset from <code>/src/lib/mock-data.ts</code> into React state variables.</li>
                 <li><b>Data Slicing:</b> The context then uses the authenticated user's role and school ID to "slice" this global dataset, providing each component with only the data it's authorized to see (e.g., a teacher only sees their students).</li>
