@@ -1,13 +1,13 @@
-
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download, Languages } from 'lucide-react';
+import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download, Languages, MonitorPlay } from 'lucide-react';
 import { useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import Link from 'next/link';
 
 export default function ProjectProposalPage() {
   const { role, isLoading } = useAuth();
@@ -32,8 +32,13 @@ export default function ProjectProposalPage() {
       <header className="text-center print:hidden">
         <h2 className="text-4xl font-bold tracking-tight text-primary">Project Proposal: EduDesk</h2>
         <p className="text-xl text-muted-foreground mt-2">A Catalyst for Educational Transformation in Southern Africa</p>
-         <div className="mt-4 flex justify-center">
+         <div className="mt-4 flex justify-center gap-4">
             <Button onClick={handlePrint}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+            <Button asChild variant="outline">
+              <Link href="/proposal-slides" target="_blank">
+                <MonitorPlay className="mr-2 h-4 w-4" /> Present Slides
+              </Link>
+            </Button>
         </div>
       </header>
 
