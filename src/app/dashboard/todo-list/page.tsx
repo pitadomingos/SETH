@@ -48,18 +48,20 @@ const completedTasks = [
   'Moved Kiosk configuration to the Kiosk Showcase page.',
   'Fixed numerous bugs related to component imports, state management, and JSX syntax.',
   'Implemented a holistic, weighted scoring system (Academics, Attendance, Behavior) for student rankings.',
+  'Renamed all instances of "EduManage" to "EduDesk" for brand consistency.',
+  'Created a dedicated, full-screen presentation mode for the Project Proposal.',
 ];
 
 const upcomingFeatures = [
-  'Implement multi-language support (Portuguese/English) with a quick-toggle menu.',
-  'Redesign sidebar with collapsible sections for better feature grouping.',
+  'Group functionalities into clear sidebar categories with collapsible sections.',
   'Implement bulk user/class import for Admins.',
   'Create a flexible custom report generator for financial and academic data.',
-  'Add a "Back" button for consistent navigation within modules.',
+  'Add an approval workflow with history for financial transactions.',
   'Enhance the grade entry system to support concepts, weights, and modules per national standards.',
   'Develop list export (PDF/DOCX) for students, classes, and grades with custom branding.',
   'Integrate a notification center for students for grades, absences, and events.',
-  'Add an approval workflow with history for financial transactions.',
+  'Implement multi-language support (Portuguese/English) with a quick-toggle menu.',
+  'Add a "Back" button for consistent navigation within modules.',
   'Connect mock data to a real database (e.g., Firestore) to enable persistence.',
 ];
 
@@ -95,7 +97,7 @@ export default function TodoListPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><CheckCircle2 className="text-green-500" />Completed Tasks</CardTitle>
+            <CardTitle className="flex items-center gap-2"><CheckCircle2 className="text-green-500" />Completed Tasks ({completedTasks.length})</CardTitle>
             <CardDescription>Features that have been implemented so far.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -112,7 +114,7 @@ export default function TodoListPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Clock className="text-accent" />Upcoming Features</CardTitle>
+            <CardTitle className="flex items-center gap-2"><Clock className="text-accent" />Upcoming Features ({upcomingFeatures.length})</CardTitle>
             <CardDescription>The next set of features to be developed, based on stakeholder feedback.</CardDescription>
           </CardHeader>
           <CardContent>
