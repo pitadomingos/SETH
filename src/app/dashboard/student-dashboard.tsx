@@ -282,7 +282,7 @@ function AssignedTests({ student, studentClass }) {
             .filter(dt => dt.classId === studentClass.id && !dt.submissions.some(s => s.studentId === student.id))
             .map(dt => {
                 const testDetails = savedTests.find(st => st.id === dt.testId);
-                const deadlineDate = dt.deadline.toDate ? dt.deadline.toDate() : new Date(dt.deadline);
+                const deadlineDate = dt.deadline instanceof Date ? dt.deadline : new Date(dt.deadline);
                 return { ...dt, ...testDetails, deadline: deadlineDate };
             })
             .sort((a,b) => a.deadline.getTime() - b.deadline.getTime());
