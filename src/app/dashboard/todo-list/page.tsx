@@ -53,21 +53,36 @@ const completedTasks = [
 ];
 
 const upcomingFeatures = [
+  // Foundational & Backend
   'Connect mock data to a real database (e.g., Firestore) to enable persistence.',
   'Implement full CRUD (Create, Read, Update, Delete) on all management pages.',
+  'Re-enable and connect all AI functionalities to the new Firebase data layer.',
+  
+  // UI/UX & Navigation
   'Group all functionalities into clear sidebar categories with collapsible sections.',
   'Enhance mobile-first responsive design for a seamless experience on phones and tablets.',
-  'Add a "Back" button for consistent navigation within modules.',
+  'Include a "Back" button in all modules for consistent navigation.',
   'Implement multi-language support (Portuguese/English) with a quick-toggle menu.',
-  'Implement batch user/class import for Admins.',
+  'Apply highlight colors in cards and alerts to reinforce information hierarchy.',
+  
+  // Admin & Management Features
+  'Implement batch user/class import for Admins (bulk upload).',
   'Create a flexible custom report generator for financial and academic data.',
-  'Implement a site-wide notification and communication hub for students and parents.',
   'Develop list export (PDF/DOCX) for students, classes, and grades with custom branding.',
+  'Incorporate an approval workflow with history for financial transactions.',
+  
+  // Teacher Features
   'Enhance the grade entry system to support concepts, weights, and modules per national standards.',
   'Build out analytics for the student test-taking results for teachers.',
+  
+  // Student & Parent Features
+  'Implement a site-wide notification and communication hub for students and parents.',
   'Introduce student-centric features like goal setting and digital portfolios.',
-  'Add an approval workflow with history for financial transactions.',
+  'Redesign the student schedule module with alerts and calendar integration.',
+
+  // High-Level Features
   'Develop district, provincial, and national data views for higher-level administration.',
+  'Validate and implement automatic data synchronization between accounts and profiles.',
 ];
 
 export default function TodoListPage() {
