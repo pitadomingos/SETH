@@ -85,7 +85,7 @@ export default function SystemDocumentationPage() {
             <p className="text-sm text-muted-foreground">For prototype stability and speed, EduDesk uses a "session-based" in-memory data store. Changes are **not** persisted between page reloads.</p>
             <ol className="list-decimal pl-6 text-sm text-muted-foreground space-y-2">
                 <li><b>Initialization:</b> When the app first loads, <code>SchoolDataProvider</code> in <code>school-data-context.tsx</code> reads the entire dataset from <code>/src/lib/mock-data.ts</code> into React state variables.</li>
-                <li><b>Data Slicing:</b> The context then uses the authenticated user's role and school ID to "slice" this global dataset, providing each component with only the data it's authorized to see (e.g., a teacher only sees their students).</li>
+                <li><b>Data Slicing & Isolation:</b> The context then uses the authenticated user's role and school ID to "slice" this global dataset, providing each component with only the data it's authorized to see (e.g., a teacher only sees their students). Global Admin activity logs are isolated to a specific school record to prevent them from appearing in individual school feeds.</li>
                 <li><b>In-Memory Mutations:</b> When a user performs an action (like adding a student), the corresponding function (e.g., <code>addStudent</code>) updates the state variable directly. It does **not** write back to the mock data file.</li>
                 <li><b>Re-rendering:</b> Because the data is in React state, any component consuming that data via the <code>useSchoolData</code> hook will automatically re-render to reflect the changes.</li>
             </ol>

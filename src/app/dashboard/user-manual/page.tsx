@@ -43,7 +43,8 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
         'Examinations: Schedule and manage official examinations.',
         'Kiosk Showcase: Manage the media (images/videos) and configure the slides for your school\'s public-facing kiosk display.',
         'Settings: A central place to manage users, configure the academic calendar (terms & holidays), and define system-wide data like currency, exam boards, and fee descriptions.',
-        'Messaging, Events, Activity Logs, Leaderboards, Profile: Standard modules for communication, scheduling, tracking, and personal settings.',
+        'Messaging, Events, Leaderboards, Profile: Standard modules for communication, scheduling, tracking, and personal settings.',
+        'Activity Logs: View a log of all significant actions taken by users within your school. This feed is specific to your school only.',
     ]
   },
   Teacher: {

@@ -50,12 +50,13 @@ const completedTasks = [
   'Implemented a holistic, weighted scoring system (Academics, Attendance, Behavior) for student rankings.',
   'Renamed all instances of "EduManage" to "EduDesk" for brand consistency.',
   'Created a dedicated, full-screen presentation mode for the Project Proposal.',
+  'Fixed Activity Log data isolation between Global Admins and School Admins.',
+  'Implemented full CRUD operations for Teachers and Classes management modules.',
 ];
 
 const upcomingFeatures = [
   // Foundational & Backend
   'Connect mock data to a real database (e.g., Firestore) to enable persistence.',
-  'Implement full CRUD (Create, Read, Update, Delete) on all management pages.',
   'Re-enable and connect all AI functionalities to the new Firebase data layer.',
   
   // UI/UX & Navigation
