@@ -1,7 +1,37 @@
 
 import { doc, setDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from './config';
-import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, mockUsers } from '@/lib/mock-data';
+import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile } from '@/lib/mock-data';
+
+// --- Email Simulation ---
+async function sendWelcomeEmail(adminUser: { username: string, profile: UserProfile }, schoolName: string): Promise<void> {
+    const appUrl = window.location.origin;
+    const emailBody = `
+        Dear ${adminUser.profile.user.name},
+
+        Welcome to EduDesk!
+
+        Your new account for ${schoolName} has been created. You can log in using the following temporary credentials:
+
+        App Link: ${appUrl}
+        Username: ${adminUser.username}
+        Password: ${adminUser.profile.password}
+
+        We recommend that you change your password upon your first login.
+
+        Best regards,
+        The EduDesk Team
+    `;
+
+    // In a real app, this would use an email service like Nodemailer or SendGrid.
+    // For this prototype, we'll log it to the console.
+    console.log("--- SIMULATED EMAIL ---");
+    console.log(`To: ${adminUser.profile.user.email}`);
+    console.log(`Subject: Welcome to EduDesk - Your Admin Account for ${schoolName}`);
+    console.log(emailBody.trim());
+    console.log("-----------------------");
+}
+
 
 export async function getSchoolsFromFirestore(): Promise<Record<string, SchoolData>> {
     const schoolsCollection = collection(db, 'schools');
@@ -78,6 +108,9 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         // For the prototype, this logic is handled client-side.
         console.log(`School ${schoolId} associated with group ${groupId}.`);
     }
+    
+    // Send the welcome email
+    await sendWelcomeEmail({ username: adminUsername, profile: adminUser }, data.name);
     
     console.log(`Successfully created school data in Firestore: ${schoolId}.`);
 

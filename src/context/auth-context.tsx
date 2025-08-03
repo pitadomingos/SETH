@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if(originalSchoolId) sessionStorage.setItem('originalSchoolId', originalSchoolId!);
     }
     
-    // Corrected logic: Find user by email, not username.
+    // Corrected logic: Find user by email from the live state, not session storage.
     const userRecord = Object.values(mockUsers).find(u => u.user.email === email);
     
     if(userRecord) {
