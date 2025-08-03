@@ -32,7 +32,7 @@ export default function AllSchoolsPage() {
   
   const handleManageSchool = (schoolId: string) => {
     const school = allSchoolData?.[schoolId];
-    if (school) {
+    if (school?.profile?.email) {
         impersonateUser(school.profile.email, 'Admin');
     } else {
         toast({

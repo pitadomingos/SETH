@@ -88,53 +88,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const impersonateUser = (email: string, targetRole: Role) => {
-    const originalUserString = sessionStorage.getItem('user');
-    const originalRole = sessionStorage.getItem('role');
-    const originalSchoolId = sessionStorage.getItem('schoolId');
-    if(!sessionStorage.getItem('originalUser') && originalUserString) {
-      const currentOriginalUser = JSON.parse(originalUserString);
-      setOriginalUser(currentOriginalUser);
-      sessionStorage.setItem('originalUser', originalUserString!);
-      sessionStorage.setItem('originalRole', originalRole!);
-      if(originalSchoolId) sessionStorage.setItem('originalSchoolId', originalSchoolId!);
-    }
+    if (!user) return; // Can't impersonate if not logged in.
     
-    // Corrected logic: Find user by email from the live state, not session storage.
+    // Ensure we are not already impersonating
+    if (!sessionStorage.getItem('originalUser')) {
+        setOriginalUser(user);
+        sessionStorage.setItem('originalUser', JSON.stringify(user));
+    }
+
     const userRecord = Object.values(mockUsers).find(u => u.user.email === email);
     
-    if(userRecord) {
-      const targetUser = userRecord.user;
-      setUser(targetUser);
-      setRole(targetUser.role);
-      setSchoolId(targetUser.schoolId || null);
-      sessionStorage.setItem('user', JSON.stringify(targetUser));
-      sessionStorage.setItem('role', targetUser.role);
-      if(targetUser.schoolId) {
-        sessionStorage.setItem('schoolId', targetUser.schoolId);
-      } else {
-        sessionStorage.removeItem('schoolId');
-      }
-      router.push('/dashboard');
+    if (userRecord) {
+        const targetUser = userRecord.user;
+        setUser(targetUser);
+        setRole(targetUser.role);
+        setSchoolId(targetUser.schoolId || null);
+        sessionStorage.setItem('user', JSON.stringify(targetUser));
+        sessionStorage.setItem('role', targetUser.role);
+        if (targetUser.schoolId) {
+            sessionStorage.setItem('schoolId', targetUser.schoolId);
+        } else {
+            sessionStorage.removeItem('schoolId');
+        }
+        router.push('/dashboard');
+    } else {
+        console.error(`Impersonation failed: Could not find user with email ${email}`);
     }
   };
 
   const logout = () => {
     const originalUserString = sessionStorage.getItem('originalUser');
     if(originalUserString) {
-        const originalRole = sessionStorage.getItem('originalRole') as Role;
-        const originalSchoolId = sessionStorage.getItem('originalSchoolId');
         const parsedOriginalUser = JSON.parse(originalUserString);
         setUser(parsedOriginalUser);
-        setRole(originalRole);
-        setSchoolId(originalSchoolId);
+        setRole(parsedOriginalUser.role);
+        setSchoolId(parsedOriginalUser.schoolId || null);
         setOriginalUser(null);
+        
         sessionStorage.setItem('user', originalUserString);
-        sessionStorage.setItem('role', originalRole);
-        if(originalSchoolId) sessionStorage.setItem('schoolId', originalSchoolId);
+        sessionStorage.setItem('role', parsedOriginalUser.role);
+        if (parsedOriginalUser.schoolId) {
+          sessionStorage.setItem('schoolId', parsedOriginalUser.schoolId);
+        } else {
+          sessionStorage.removeItem('schoolId');
+        }
 
         sessionStorage.removeItem('originalUser');
-        sessionStorage.removeItem('originalRole');
-        sessionStorage.removeItem('originalSchoolId');
         router.push('/dashboard/global-admin/all-schools');
     } else {
         setUser(null);
