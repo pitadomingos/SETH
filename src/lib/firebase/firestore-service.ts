@@ -1,7 +1,7 @@
 
-import { doc, setDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, collection, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from './config';
-import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile } from '@/lib/mock-data';
+import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData } from '@/lib/mock-data';
 
 // --- Email Simulation ---
 async function sendWelcomeEmail(adminUser: { username: string, profile: UserProfile }, schoolName: string): Promise<void> {
@@ -41,6 +41,15 @@ export async function getSchoolsFromFirestore(): Promise<Record<string, SchoolDa
         return acc;
     }, {} as Record<string, SchoolData>);
     return schoolList;
+}
+
+export async function seedInitialData(): Promise<void> {
+    const batch = writeBatch(db);
+    Object.entries(initialSchoolData).forEach(([schoolId, schoolData]) => {
+        const schoolRef = doc(db, 'schools', schoolId);
+        batch.set(schoolRef, schoolData);
+    });
+    await batch.commit();
 }
 
 

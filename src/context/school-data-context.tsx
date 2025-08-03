@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect, useMe
 import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabus, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, SchoolProfile, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, mockUsers, UserProfile } from '@/lib/mock-data';
 import { useAuth, User } from './auth-context';
 import type { Role } from './auth-context';
-import { getSchoolsFromFirestore } from '@/lib/firebase/firestore-service';
+import { getSchoolsFromFirestore, seedInitialData } from '@/lib/firebase/firestore-service';
 
 export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, SyllabusTopic, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, DeployedTest, SavedTest, NewMessageData, NewAdmissionData } from '@/lib/mock-data';
 
@@ -108,14 +108,16 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const fetchSchoolData = async () => {
         setIsLoading(true);
         try {
-            const firestoreData = await getSchoolsFromFirestore();
-            if (Object.keys(firestoreData).length > 0) {
-                setData(firestoreData);
-            } else {
-                setData(initialSchoolData);
+            let firestoreData = await getSchoolsFromFirestore();
+            if (Object.keys(firestoreData).length === 0) {
+                console.log("Database is empty, seeding with initial data...");
+                await seedInitialData();
+                firestoreData = await getSchoolsFromFirestore(); // Re-fetch after seeding
             }
+            setData(firestoreData);
         } catch (error) {
-            console.error("Failed to fetch school data, falling back to mock data.", error);
+            console.error("Failed to fetch or seed school data.", error);
+            // Fallback to mock data in case of severe firestore error
             setData(initialSchoolData);
         } finally {
             setIsLoading(false);
