@@ -1,12 +1,13 @@
 
-import { doc, setDoc, updateDoc, collection, getDocs, writeBatch } from 'firebase/firestore';
+
+import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from './config';
 import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers } from '@/lib/mock-data';
 import { sendEmail } from '@/lib/email-service';
 
 // --- Email Simulation ---
 async function sendWelcomeEmail(adminUser: { username: string, profile: UserProfile }, schoolName: string): Promise<void> {
-    const appUrl = window.location.origin;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
     const emailHtml = `
         <p>Dear ${adminUser.profile.user.name},</p>
         <p>Welcome to EduDesk!</p>
@@ -59,7 +60,13 @@ export async function seedInitialData(): Promise<void> {
     // Seed schools
     Object.entries(initialSchoolData).forEach(([schoolId, schoolData]) => {
         const schoolRef = doc(db, 'schools', schoolId);
-        batch.set(schoolRef, schoolData);
+        
+        const dataWithServerTimestamps = {
+            ...schoolData,
+            activityLogs: schoolData.activityLogs.map(log => ({...log, timestamp: serverTimestamp()})),
+        };
+
+        batch.set(schoolRef, dataWithServerTimestamps);
     });
 
     // Seed users
@@ -114,7 +121,7 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         kioskMedia: [],
         activityLogs: [{
             id: `LOG${schoolId}${Date.now()}`,
-            timestamp: new Date(),
+            timestamp: new Date(), // This will be converted before returning
             schoolId: schoolId,
             user: 'System Admin',
             role: 'GlobalAdmin',
@@ -128,27 +135,47 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         savedTests: [],
         schoolGroups: {},
     };
+
+    // Prepare data for Firestore by converting the Date object to a Firestore Timestamp
+    const dataForFirestore = {
+        ...newSchoolData,
+        activityLogs: newSchoolData.activityLogs.map(log => ({
+            ...log,
+            timestamp: serverTimestamp() // Use server timestamp for accuracy
+        }))
+    };
     
     const schoolDocRef = doc(db, 'schools', schoolId);
     const userDocRef = doc(db, 'users', adminUsername);
 
     const batch = writeBatch(db);
-    batch.set(schoolDocRef, newSchoolData);
+    batch.set(schoolDocRef, dataForFirestore);
     batch.set(userDocRef, adminUser);
     await batch.commit();
     
     if (groupId) {
-        // In a real app, you would update the school group document.
-        // For the prototype, this logic is handled client-side.
-        console.log(`School ${schoolId} associated with group ${groupId}.`);
+       console.log(`School ${schoolId} associated with group ${groupId}.`);
     }
     
-    // Send the welcome email
-    await sendWelcomeEmail({ username: adminUsername, profile: adminUser }, data.name);
+    // Send the welcome email (no changes needed here)
+    if (typeof window !== 'undefined') {
+        await sendWelcomeEmail({ username: adminUsername, profile: adminUser }, data.name);
+    }
     
     console.log(`Successfully created school data and admin user in Firestore: ${schoolId}.`);
 
-    return { school: newSchoolData, adminUser: { username: adminUsername, profile: adminUser } };
+    // Prepare data to be returned to the client: convert the date back to a serializable format
+    const returnedData = {
+        ...newSchoolData,
+        activityLogs: newSchoolData.activityLogs.map(log => ({
+            ...log,
+            // @ts-ignore
+            timestamp: log.timestamp.toISOString(),
+        })),
+    };
+
+    // @ts-ignore
+    return { school: returnedData, adminUser: { username: adminUsername, profile: adminUser } };
 }
 
 
