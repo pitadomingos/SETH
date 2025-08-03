@@ -447,16 +447,20 @@ const northwoodData: SchoolData = {
         { id: 'CRS02', subject: 'History', teacherId: 'T02', classId: 'C02', schedule: [{ day: 'Tuesday', startTime: '10:00', endTime: '11:00', room: '102' }] },
     ],
     grades: [
-        { id: 'G01', studentId: 'STU001', subject: 'Mathematics', grade: '18', date: new Date('2024-03-15'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
-        { id: 'G02', studentId: 'STU002', subject: 'Mathematics', grade: '14', date: new Date('2024-03-15'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
-        { id: 'G03', studentId: 'STU003', subject: 'History', grade: '16', date: new Date('2024-04-10'), type: 'Coursework', description: 'WWII Essay', teacherId: 'T02' },
+        { id: 'G01', studentId: 'STU001', subject: 'Mathematics', grade: '18', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
+        { id: 'G02', studentId: 'STU002', subject: 'Mathematics', grade: '14', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
+        { id: 'G03', studentId: 'STU003', subject: 'History', grade: '16', date: new Date('2024-04-10T00:00:00Z'), type: 'Coursework', description: 'WWII Essay', teacherId: 'T02' },
     ],
     finance: [
         { id: 'FIN01', studentId: 'STU001', studentName: 'Miguel Santos', description: 'Term 1 Tuition', totalAmount: 50000, amountPaid: 50000, dueDate: '2024-02-01', status: 'Paid' },
         { id: 'FIN02', studentId: 'STU002', studentName: 'Inês Pereira', description: 'Term 1 Tuition', totalAmount: 50000, amountPaid: 25000, dueDate: '2024-02-01', status: 'Partially Paid' },
         { id: 'FIN03', studentId: 'STU003', studentName: 'Tiago Rodrigues', description: 'Term 2 Tuition', totalAmount: 50000, amountPaid: 0, dueDate: '2024-05-01', status: 'Pending' },
     ],
-    syllabi: [], admissions: [], assets: [], exams: [], attendance: [], events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'], audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'], expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], activityLogs: [], messages: [], savedReports: [], examBoards: ['Internal', 'Cambridge', 'IEB'], deployedTests: [], lessonPlans: [], savedTests: [], schoolGroups: {}
+    activityLogs: [
+        { id: 'LOG001', timestamp: new Date('2024-05-20T10:00:00Z'), schoolId: 'northwood', user: 'Amelia Costa', role: 'Admin', action: 'Update', details: 'Updated school profile.' },
+        { id: 'LOG002', timestamp: new Date('2024-05-19T14:30:00Z'), schoolId: 'northwood', user: 'Sérgio Almeida', role: 'Teacher', action: 'Create', details: 'Added new grade for Miguel Santos.' },
+    ],
+    syllabi: [], admissions: [], assets: [], exams: [], attendance: [], events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'], audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'], expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], messages: [], savedReports: [], examBoards: ['Internal', 'Cambridge', 'IEB'], deployedTests: [], lessonPlans: [], savedTests: [], schoolGroups: {}
 };
 
 const maplewoodData: SchoolData = {
@@ -493,13 +497,16 @@ const maplewoodData: SchoolData = {
         { id: 'CRS11', subject: 'English', teacherId: 'T11', classId: 'C11', schedule: [{ day: 'Monday', startTime: '11:00', endTime: '12:00', room: 'A1' }] },
     ],
     grades: [
-        { id: 'G11', studentId: 'STU101', subject: 'English', grade: '19', date: new Date('2024-04-01'), type: 'Coursework', description: 'Shakespeare Essay', teacherId: 'T11' },
-        { id: 'G12', studentId: 'STU102', subject: 'English', grade: '15', date: new Date('2024-04-01'), type: 'Coursework', description: 'Shakespeare Essay', teacherId: 'T11' },
+        { id: 'G11', studentId: 'STU101', subject: 'English', grade: '19', date: new Date('2024-04-01T00:00:00Z'), type: 'Coursework', description: 'Shakespeare Essay', teacherId: 'T11' },
+        { id: 'G12', studentId: 'STU102', subject: 'English', grade: '15', date: new Date('2024-04-01T00:00:00Z'), type: 'Coursework', description: 'Shakespeare Essay', teacherId: 'T11' },
     ],
     finance: [
         { id: 'FIN11', studentId: 'STU101', studentName: 'Sofia Oliveira', description: 'Annual Fees', totalAmount: 85000, amountPaid: 85000, dueDate: '2024-01-30', status: 'Paid' },
     ],
-    syllabi: [], admissions: [], assets: [], exams: [], attendance: [], events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'], audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'], expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], activityLogs: [], messages: [], savedReports: [], examBoards: ['Internal', 'Cambridge', 'IEB'], deployedTests: [], lessonPlans: [], savedTests: [], schoolGroups: {}
+    activityLogs: [
+        { id: 'LOG101', timestamp: new Date('2024-05-18T09:00:00Z'), schoolId: 'maplewood', user: 'Beatriz Silva', role: 'Admin', action: 'Create', details: 'Added new team: Varsity Lions' }
+    ],
+    syllabi: [], admissions: [], assets: [], exams: [], attendance: [], events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'], audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'], expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], messages: [], savedReports: [], examBoards: ['Internal', 'Cambridge', 'IEB'], deployedTests: [], lessonPlans: [], savedTests: [], schoolGroups: {}
 };
 
 const miniArteData: SchoolData = {
@@ -531,7 +538,8 @@ const miniArteData: SchoolData = {
     schoolGroups: {
       'miniarte_group': ['miniarte', 'miniarte_matola', 'miniarte_beira'],
     },
-    syllabi: [], admissions: [], assets: [], exams: [], attendance: [], events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'], audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'], expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], activityLogs: [], messages: [], savedReports: [], examBoards: ['Internal', 'Cambridge', 'IEB'], deployedTests: [], lessonPlans: [], savedTests: []
+    activityLogs: [],
+    syllabi: [], admissions: [], assets: [], exams: [], attendance: [], events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'], audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'], expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], messages: [], savedReports: [], examBoards: ['Internal', 'Cambridge', 'IEB'], deployedTests: [], lessonPlans: [], savedTests: []
 };
 
 const miniArteMatolaData: SchoolData = {
@@ -546,6 +554,7 @@ const miniArteMatolaData: SchoolData = {
     kioskConfig: defaultKioskConfig,
   },
   schoolGroups: {},
+  activityLogs: [],
 };
 
 const miniArteBeiraData: SchoolData = {
@@ -560,6 +569,7 @@ const miniArteBeiraData: SchoolData = {
     kioskConfig: defaultKioskConfig,
   },
   schoolGroups: {},
+  activityLogs: [],
 };
 
 export const initialSchoolData: Record<string, SchoolData> = {
