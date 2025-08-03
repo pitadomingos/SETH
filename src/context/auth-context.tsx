@@ -104,6 +104,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       sessionStorage.setItem('role', targetUser.role);
       if(targetUser.schoolId) {
         sessionStorage.setItem('schoolId', targetUser.schoolId);
+      } else {
+        sessionStorage.removeItem('schoolId');
       }
       router.push('/dashboard');
     }
