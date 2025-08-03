@@ -1,4 +1,7 @@
 'use server';
 
-// This file is intentionally left empty. The AI flows have been removed for stability.
-// We are keeping this file to avoid breaking imports in other parts of the codebase.
+import { generateLessonPlan, GenerateLessonPlanParams } from "@/ai/flows/lesson-planner-flow";
+
+export async function generateLessonPlanAction(params: GenerateLessonPlanParams) {
+    return await generateLessonPlan(params);
+}
