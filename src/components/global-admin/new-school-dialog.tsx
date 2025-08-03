@@ -18,6 +18,7 @@ import { useAuth } from '@/context/auth-context';
 import { updateSchoolProfileAction } from '@/app/actions/update-school-action';
 import { deleteSchoolAction } from '@/app/actions/delete-school-action';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription as AlertDialogDesc, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { DropdownMenuItem } from '../ui/dropdown-menu';
 
 
 const schoolSchema = z.object({
@@ -149,9 +150,9 @@ export function EditSchoolDialog({ school }: { school: SchoolProfile }) {
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
-            </DialogTrigger>
+             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIsOpen(true); }}>
+                <Edit className="mr-2 h-4 w-4" /> Edit Details
+            </DropdownMenuItem>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Edit School: {school.name}</DialogTitle>
@@ -219,7 +220,9 @@ export function DeleteSchoolDialog({ schoolId, schoolName, removeSchool }: { sch
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                 <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:bg-destructive/10">
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete School
+                </DropdownMenuItem>
             </AlertDialogTrigger>
             <AlertDialogContent>
                 <AlertDialogHeader>
@@ -230,7 +233,7 @@ export function DeleteSchoolDialog({ schoolId, schoolName, removeSchool }: { sch
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
