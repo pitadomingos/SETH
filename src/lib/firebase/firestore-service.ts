@@ -1,8 +1,7 @@
 
-import { doc, setDoc, updateDoc, collection, getDocs, getFirestore } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from './config';
-import { type SchoolData, type NewSchoolData, type SchoolProfile } from '@/context/school-data-context';
-import { mockUsers } from '@/lib/mock-data';
+import { type SchoolData, type NewSchoolData, type SchoolProfile, mockUsers } from '@/lib/mock-data';
 
 export async function getSchoolsFromFirestore(): Promise<Record<string, SchoolData>> {
     const schoolsCollection = collection(db, 'schools');
@@ -35,7 +34,7 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
     
     const adminUser = {
       user: {
-        username: data.email,
+        username: data.email.split('@')[0],
         name: data.head,
         role: 'Admin',
         email: data.email,
@@ -74,7 +73,7 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
     await setDoc(doc(db, 'schools', schoolId), newSchoolData);
     
     // Add the new admin user to the mock users for the session
-    mockUsers[data.email] = adminUser;
+    mockUsers[adminUser.user.username] = adminUser;
     
     console.log(`Successfully created school data in Firestore: ${schoolId}.`);
 
