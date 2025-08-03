@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { FileText as FileTextIcon, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse, Sparkles, BookOpen, User, Check, Lightbulb, TrendingUp, BrainCircuit } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { useSchoolData, Grade } from "@/context/school-data-context";
+import { useSchoolData, Grade, Student } from "@/context/school-data-context";
 import { useToast } from '@/hooks/use-toast';
 import { Pie, PieChart, Cell } from 'recharts';
 import {
