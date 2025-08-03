@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { success: false, message: 'Invalid username or password' };
   };
   
-  const impersonateUser = (username: string, targetRole: Role) => {
+  const impersonateUser = (email: string, targetRole: Role) => {
     const originalUserString = sessionStorage.getItem('user');
     const originalRole = sessionStorage.getItem('role');
     const originalSchoolId = sessionStorage.getItem('schoolId');
@@ -94,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if(originalSchoolId) sessionStorage.setItem('originalSchoolId', originalSchoolId!);
     }
     
-    const userRecord = Object.values(mockUsers).find(u => u.user.email === username);
+    const userRecord = Object.values(mockUsers).find(u => u.user.email === email);
     if(userRecord) {
       const targetUser = userRecord.user;
       setUser(targetUser);
