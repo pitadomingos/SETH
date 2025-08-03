@@ -49,7 +49,7 @@ const studentAnalysisPrompt = ai.definePrompt({
     **Student Name:** {{studentName}}
 
     **Academic Data:**
-    Here are the student's recent grades. A passing grade is 10/20.
+    Here are the student's recent grades. A passing grade is 12/20.
     {{#each grades}}
     - Subject: {{subject}}, Grade: {{grade}} on "{{description}}" ({{type}})
     {{/each}}

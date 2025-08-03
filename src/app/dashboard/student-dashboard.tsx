@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { FileText as FileTextIcon, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse, Sparkles, BookOpen, User, Check, Lightbulb, TrendingUp } from "lucide-react";
+import { FileText as FileTextIcon, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse, Sparkles, BookOpen, User, Check, Lightbulb, TrendingUp, BrainCircuit } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData, Grade } from "@/context/school-data-context";
 import { useToast } from '@/hooks/use-toast';
@@ -86,7 +86,7 @@ function StudentAIAdvisor({ student, grades, attendanceSummary }) {
                 description: g.description,
             }));
 
-            const attendanceData = Object.entries(attendanceSummary).map(([status, count]) => ({ status, count }));
+            const attendanceData = Object.entries(attendanceSummary).map(([status, count]) => ({ status, count: count as number }));
 
             const result = await analyzeStudentPerformanceAction({
                 studentName: student.name,
