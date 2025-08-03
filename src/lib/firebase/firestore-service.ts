@@ -2,34 +2,31 @@
 import { doc, setDoc, updateDoc, collection, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from './config';
 import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers } from '@/lib/mock-data';
+import { sendEmail } from '@/lib/email-service';
 
 // --- Email Simulation ---
 async function sendWelcomeEmail(adminUser: { username: string, profile: UserProfile }, schoolName: string): Promise<void> {
     const appUrl = window.location.origin;
-    const emailBody = `
-        Dear ${adminUser.profile.user.name},
-
-        Welcome to EduDesk!
-
-        Your new account for ${schoolName} has been created. You can log in using the following temporary credentials:
-
-        App Link: ${appUrl}
-        Username: ${adminUser.username}
-        Password: ${adminUser.profile.password}
-
-        We recommend that you change your password upon your first login.
-
-        Best regards,
-        The EduDesk Team
+    const emailHtml = `
+        <p>Dear ${adminUser.profile.user.name},</p>
+        <p>Welcome to EduDesk!</p>
+        <p>Your new account for <strong>${schoolName}</strong> has been created. You can log in using the following temporary credentials:</p>
+        <ul>
+            <li><strong>App Link:</strong> <a href="${appUrl}">${appUrl}</a></li>
+            <li><strong>Username:</strong> ${adminUser.username}</li>
+            <li><strong>Password:</strong> ${adminUser.profile.password}</li>
+        </ul>
+        <p>We recommend that you change your password upon your first login.</p>
+        <br/>
+        <p>Best regards,</p>
+        <p>The EduDesk Team</p>
     `;
 
-    // In a real app, this would use an email service like Nodemailer or SendGrid.
-    // For this prototype, we'll log it to the console.
-    console.log("--- SIMULATED EMAIL ---");
-    console.log(`To: ${adminUser.profile.user.email}`);
-    console.log(`Subject: Welcome to EduDesk - Your Admin Account for ${schoolName}`);
-    console.log(emailBody.trim());
-    console.log("-----------------------");
+    await sendEmail({
+        to: adminUser.profile.user.email,
+        subject: `Welcome to EduDesk - Your Admin Account for ${schoolName}`,
+        html: emailHtml,
+    });
 }
 
 
