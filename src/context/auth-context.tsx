@@ -30,7 +30,7 @@ interface AuthContextType {
   isLoading: boolean;
   mockUsers: Record<string, UserProfile>;
   addUser: (username: string, profile: UserProfile) => void;
-  impersonateUser: (username: string, role: Role) => void;
+  impersonateUser: (email: string, role: Role) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -99,7 +99,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if(originalSchoolId) sessionStorage.setItem('originalSchoolId', originalSchoolId!);
     }
     
+    // Corrected logic: Find user by email, not username.
     const userRecord = Object.values(mockUsers).find(u => u.user.email === email);
+    
     if(userRecord) {
       const targetUser = userRecord.user;
       setUser(targetUser);
@@ -133,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         sessionStorage.removeItem('originalUser');
         sessionStorage.removeItem('originalRole');
         sessionStorage.removeItem('originalSchoolId');
-        router.push('/dashboard/global-admin');
+        router.push('/dashboard/global-admin/all-schools');
     } else {
         setUser(null);
         setRole(null);
