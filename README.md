@@ -30,12 +30,21 @@ This application simulates a comprehensive educational ecosystem designed to ser
 
 To run this prototype:
 
-1.  **Start the development server:**
+1.  **Set up Firebase:**
+    *   Go to the [Firebase Console](https://console.firebase.google.com/) and create a new project.
+    *   In your new project, go to the **Build** section and click on **Firestore Database**.
+    *   Click **Create database**.
+    *   Select **Start in production mode** (we will update the rules).
+    *   Choose a Firestore location (e.g., `us-central`).
+    *   **IMPORTANT:** Ensure you are using **Native mode**, not Datastore mode.
+    *   This app will automatically update your security rules for development.
+
+2.  **Start the development server:**
     ```bash
     npm run dev
     ```
-2.  Open your browser to `http://localhost:9002`.
-3.  Use the credentials provided on the login page to explore the different user roles.
+3.  Open your browser to `http://localhost:9002`.
+4.  Use the credentials provided on the login page to explore the different user roles.
     -   **Developer/Global Admin:** `developer` / `dev123`
     -   **Premium Admin (Maplewood):** Log in as `admin3`
     -   **Northwood Admin:** `admin1`
