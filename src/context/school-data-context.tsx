@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect, useMe
 import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabus, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, SchoolProfile, DeployedTest, SavedTest, NewMessageData, NewAdmissionData } from '@/lib/mock-data';
 import { useAuth } from './auth-context';
 import type { Role } from './auth-context';
+import { getSchoolsFromFirestore } from '@/lib/firebase/firestore-service';
 
 export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, SyllabusTopic, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, DeployedTest, SavedTest, NewMessageData, NewAdmissionData } from '@/lib/mock-data';
 
@@ -104,9 +105,25 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading data. In a real app, this would be an async fetch.
-    setData(initialSchoolData);
-    setIsLoading(false);
+    const fetchSchoolData = async () => {
+        setIsLoading(true);
+        try {
+            const firestoreData = await getSchoolsFromFirestore();
+            if (Object.keys(firestoreData).length > 0) {
+                setData(firestoreData);
+            } else {
+                // Fallback to mock data if Firestore is empty
+                setData(initialSchoolData);
+            }
+        } catch (error) {
+            console.error("Failed to fetch school data, falling back to mock data.", error);
+            setData(initialSchoolData);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    fetchSchoolData();
   }, []);
 
   const addLog = useCallback((schoolId: string, action: string, details: string) => {
@@ -135,6 +152,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [user, role]);
 
   const schoolId = useMemo(() => {
+    // Global admin has no schoolId, but we might need a context for some actions.
+    // However, most components check role === 'GlobalAdmin' and fetch all data.
     if (role === 'GlobalAdmin') return null;
     return authSchoolId;
   }, [authSchoolId, role]);

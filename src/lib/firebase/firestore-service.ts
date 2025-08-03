@@ -1,8 +1,19 @@
 
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, collection, getDocs, getFirestore } from 'firebase/firestore';
 import { db } from './config';
 import { type SchoolData, type NewSchoolData, type SchoolProfile } from '@/context/school-data-context';
 import { mockUsers } from '@/lib/mock-data';
+
+export async function getSchoolsFromFirestore(): Promise<Record<string, SchoolData>> {
+    const schoolsCollection = collection(db, 'schools');
+    const schoolSnapshot = await getDocs(schoolsCollection);
+    const schoolList = schoolSnapshot.docs.reduce((acc, doc) => {
+        acc[doc.id] = doc.data() as SchoolData;
+        return acc;
+    }, {} as Record<string, SchoolData>);
+    return schoolList;
+}
+
 
 export async function createSchoolInFirestore(data: NewSchoolData, groupId?: string): Promise<SchoolData> {
     const schoolId = data.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15);
@@ -19,7 +30,7 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         status: 'Active',
         schoolLevel: 'Full',
         gradeCapacity: { "1": 30, "2": 30, "3": 30, "4": 30, "5": 30, "6": 35, "7": 35, "8": 35, "9": 40, "10": 40, "11": 40, "12": 40 },
-        kioskConfig: { showDashboard: true, showLeaderboard: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false },
+        kioskConfig: { showDashboard: true, showLeaderboard: true, showTeacherLeaderboard: true, showAllSchools: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false },
     };
     
     const adminUser = {
@@ -60,7 +71,7 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         schoolGroups: {},
     };
     
-    // await setDoc(doc(db, 'schools', schoolId), newSchoolData);
+    await setDoc(doc(db, 'schools', schoolId), newSchoolData);
     
     // Add the new admin user to the mock users for the session
     mockUsers[data.email] = adminUser;
@@ -82,7 +93,7 @@ export async function updateSchoolInFirestore(schoolId: string, data: Partial<Sc
       }
     }
     
-    // await updateDoc(schoolRef, updateData);
+    await updateDoc(schoolRef, updateData);
     
     console.log(`Successfully updated school profile in Firestore: ${schoolId}`);
     return true;
