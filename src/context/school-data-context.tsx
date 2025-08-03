@@ -57,6 +57,8 @@ interface SchoolDataContextType {
     addAsset: (asset: Omit<any, 'id'>) => void;
     addLessonAttendance: (courseId: string, date: string, studentStatuses: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => void;
     addClass: (classData: Omit<Class, 'id'>) => void;
+    updateClass: (id: string, data: Partial<Class>) => void;
+    deleteClass: (id: string) => void;
     addEvent: (event: Omit<Event, 'id' | 'schoolName'>) => void;
     addGrade: (grade: Omit<Grade, 'id' | 'date' | 'teacherId'>) => boolean;
     recordPayment: (feeId: string, amount: number) => void;
@@ -70,6 +72,7 @@ interface SchoolDataContextType {
     addCompetitionResult: (competitionId: string, result: Competition['result']) => void;
     addTeacher: (teacher: Omit<Teacher, 'id' | 'status'>) => void;
     updateTeacher: (id: string, data: Partial<Teacher>) => void;
+    deleteTeacher: (id: string) => void;
     addKioskMedia: (media: Omit<KioskMedia, 'id'|'createdAt'>) => void;
     removeKioskMedia: (id: string) => void;
     updateSchoolProfile: (data: Partial<SchoolProfile>, schoolId?: string) => void;
@@ -128,12 +131,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     fetchSchoolData();
   }, []);
 
-  const addLog = useCallback((schoolId: string, action: string, details: string) => {
+  const addLog = useCallback((schoolIdForLog: string, action: string, details: string) => {
     if(!user || !role) return;
     const newLog: ActivityLog = {
       id: `LOG${Date.now()}`,
       timestamp: new Date(),
-      schoolId: schoolId,
+      schoolId: schoolIdForLog,
       user: user.name,
       role: role,
       action: action,
@@ -143,10 +146,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setData(prevData => {
         if (!prevData) return null;
         const newData = { ...prevData };
-        if (newData[schoolId]) {
-            newData[schoolId] = {
-                ...newData[schoolId],
-                activityLogs: [...newData[schoolId].activityLogs, newLog],
+        // For Global Admins, log to the "system" (northwood) school to avoid cluttering other schools' logs
+        const targetSchoolId = role === 'GlobalAdmin' ? 'northwood' : schoolIdForLog;
+        if (newData[targetSchoolId]) {
+            newData[targetSchoolId] = {
+                ...newData[targetSchoolId],
+                activityLogs: [newLog, ...newData[targetSchoolId].activityLogs],
             };
         }
         return newData;
@@ -252,6 +257,19 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
           return newData;
       });
   };
+
+  const deleteTeacher = (teacherId: string) => {
+    if (!schoolId) return;
+    setData(prev => {
+        if (!prev) return null;
+        const newData = { ...prev };
+        const school = newData[schoolId];
+        const teacherName = school.teachers.find(t => t.id === teacherId)?.name;
+        school.teachers = school.teachers.filter(t => t.id !== teacherId);
+        addLog(schoolId, 'Delete', `Deleted teacher: ${teacherName}`);
+        return newData;
+    });
+  };
   
   const addClass = (classData: Omit<Class, 'id'>) => {
     if (!schoolId) return;
@@ -263,6 +281,32 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
          addLog(schoolId, 'Create', `Created new class: ${classData.name}`);
          return newData;
      });
+  };
+
+   const updateClass = (id: string, classData: Partial<Class>) => {
+    if (!schoolId) return;
+    setData(prev => {
+        if (!prev) return null;
+        const newData = { ...prev };
+        const school = newData[schoolId];
+        school.classes = school.classes.map(c => c.id === id ? { ...c, ...classData } : c);
+        addLog(schoolId, 'Update', `Updated class: ${classData.name || id}`);
+        return newData;
+    });
+  };
+
+  const deleteClass = (id: string) => {
+    if (!schoolId) return;
+    setData(prev => {
+      if (!prev) return null;
+      const newData = { ...prev };
+      const school = newData[schoolId];
+      const className = school.classes.find(c => c.id === id)?.name;
+      school.classes = school.classes.filter(c => c.id !== id);
+      school.courses = school.courses.filter(c => c.classId !== id);
+      addLog(schoolId, 'Delete', `Deleted class: ${className}`);
+      return newData;
+    });
   };
   
   const addCourse = (course: Omit<Course, 'id'>) => {
@@ -881,9 +925,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     holidays: schoolData?.holidays || [],
     addSchool, removeSchool, addCourse, addSyllabus, updateSyllabusTopic, deleteSyllabusTopic,
     updateApplicationStatus, addStudentFromAdmission, addAsset, addLessonAttendance,
-    addClass, addEvent, addGrade, recordPayment, addFee, addExpense,
+    addClass, updateClass, deleteClass, addEvent, addGrade, recordPayment, addFee, addExpense,
     addTeam, deleteTeam, addPlayerToTeam, removePlayerFromTeam, addCompetition, addCompetitionResult,
-    addTeacher, updateTeacher, addKioskMedia, removeKioskMedia, updateSchoolProfile, addMessage, addAdmission,
+    addTeacher, updateTeacher, deleteTeacher, addKioskMedia, removeKioskMedia, updateSchoolProfile, addMessage, addAdmission,
     updateSchoolStatus, updateMessageStatus, updateStudentStatus, updateTeacherStatus, updateParentStatus,
     addTerm, addHoliday,
     addExamBoard, deleteExamBoard, addFeeDescription, deleteFeeDescription, addAudience, deleteAudience,
@@ -905,3 +949,5 @@ export const useSchoolData = () => {
   }
   return context;
 };
+
+    
