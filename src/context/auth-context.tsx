@@ -29,6 +29,7 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   mockUsers: Record<string, UserProfile>;
+  addUser: (username: string, profile: UserProfile) => void;
   impersonateUser: (username: string, role: Role) => void;
 }
 
@@ -80,6 +81,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: true };
     }
     return { success: false, message: 'Invalid username or password' };
+  };
+
+  const addUser = (username: string, profile: UserProfile) => {
+    setMockUsers(prev => ({...prev, [username]: profile }));
   };
   
   const impersonateUser = (email: string, targetRole: Role) => {
@@ -140,7 +145,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, schoolId, originalUser, login, logout, isLoading, mockUsers, impersonateUser }}>
+    <AuthContext.Provider value={{ user, role, schoolId, originalUser, login, logout, isLoading, mockUsers, addUser, impersonateUser }}>
       {children}
     </AuthContext.Provider>
   );

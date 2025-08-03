@@ -1,7 +1,7 @@
 
 import { doc, setDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from './config';
-import { type SchoolData, type NewSchoolData, type SchoolProfile, mockUsers } from '@/lib/mock-data';
+import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, mockUsers } from '@/lib/mock-data';
 
 export async function getSchoolsFromFirestore(): Promise<Record<string, SchoolData>> {
     const schoolsCollection = collection(db, 'schools');
@@ -14,7 +14,7 @@ export async function getSchoolsFromFirestore(): Promise<Record<string, SchoolDa
 }
 
 
-export async function createSchoolInFirestore(data: NewSchoolData, groupId?: string): Promise<SchoolData> {
+export async function createSchoolInFirestore(data: NewSchoolData, groupId?: string): Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile } }> {
     const schoolId = data.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15);
 
     const newSchoolProfile: SchoolProfile = {
@@ -32,9 +32,10 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         kioskConfig: { showDashboard: true, showLeaderboard: true, showTeacherLeaderboard: true, showAllSchools: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false },
     };
     
-    const adminUser = {
+    const adminUsername = data.email.split('@')[0];
+    const adminUser: UserProfile = {
       user: {
-        username: data.email.split('@')[0],
+        username: adminUsername,
         name: data.head,
         role: 'Admin',
         email: data.email,
@@ -72,12 +73,15 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
     
     await setDoc(doc(db, 'schools', schoolId), newSchoolData);
     
-    // Add the new admin user to the mock users for the session
-    mockUsers[adminUser.user.username] = adminUser;
+    if (groupId) {
+        // In a real app, you would update the school group document.
+        // For the prototype, this logic is handled client-side.
+        console.log(`School ${schoolId} associated with group ${groupId}.`);
+    }
     
     console.log(`Successfully created school data in Firestore: ${schoolId}.`);
 
-    return newSchoolData;
+    return { school: newSchoolData, adminUser: { username: adminUsername, profile: adminUser } };
 }
 
 

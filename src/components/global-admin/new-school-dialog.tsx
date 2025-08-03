@@ -9,11 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, PlusCircle } from 'lucide-react';
+import { Loader2, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { createSchool } from '@/app/actions/school-actions';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolData } from '@/context/school-data-context';
+import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
+import { useAuth } from '@/context/auth-context';
 
 const schoolSchema = z.object({
   name: z.string().min(3, "School name is required."),
@@ -30,7 +31,8 @@ type SchoolFormValues = z.infer<typeof schoolSchema>;
 export function NewSchoolDialog({ groupId }: { groupId?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
-  const { addSchool: addSchoolToContext } = useSchoolData(); // Renamed to avoid confusion
+  const { addSchool } = useSchoolData();
+  const { addUser } = useAuth();
 
   const form = useForm<SchoolFormValues>({
     resolver: zodResolver(schoolSchema),
@@ -49,10 +51,11 @@ export function NewSchoolDialog({ groupId }: { groupId?: string }) {
     const result = await createSchool(values, groupId);
 
     if (result) {
-        addSchoolToContext(result); // Update the context with the new school data
+        addSchool(result.school);
+        addUser(result.adminUser.username, result.adminUser.profile);
         toast({
             title: 'School Created!',
-            description: `School "${values.name}" has been added to the system.`,
+            description: `School "${values.name}" and its admin have been added.`,
         });
         form.reset();
         setIsOpen(false);
@@ -117,4 +120,14 @@ export function NewSchoolDialog({ groupId }: { groupId?: string }) {
       </DialogContent>
     </Dialog>
   );
+}
+
+export function EditSchoolDialog({ school }: { school: SchoolProfile }) {
+    // This is a placeholder for the real edit dialog.
+    // In a real app this would be a separate component or integrated into settings.
+    return (
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => alert(`Editing ${school.name}`)}>
+            <Edit className="h-4 w-4" />
+        </Button>
+    )
 }

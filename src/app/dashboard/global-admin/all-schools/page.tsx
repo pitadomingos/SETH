@@ -4,7 +4,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Building, Users, Presentation, Settings, Search, PlusCircle } from 'lucide-react';
+import { Loader2, Building, Users, Presentation, Settings, Search, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -124,11 +124,15 @@ export default function AllSchoolsPage() {
                         <span>{school.teachers.length} Teachers</span>
                     </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex justify-between items-center">
                     <Button variant="outline" className="w-full" onClick={() => handleManageSchool(school.profile.id)}>
                         <Settings className="mr-2 h-4 w-4" />
                         Manage School
                     </Button>
+                    <div className="flex">
+                        <Button variant="ghost" size="icon" disabled><Edit className="h-4 w-4"/></Button>
+                        <Button variant="ghost" size="icon" disabled><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                    </div>
                 </CardFooter>
             </Card>
         ))}
