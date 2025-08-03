@@ -1,7 +1,7 @@
 
 import { doc, setDoc, updateDoc, collection, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from './config';
-import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData } from '@/lib/mock-data';
+import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers } from '@/lib/mock-data';
 
 // --- Email Simulation ---
 async function sendWelcomeEmail(adminUser: { username: string, profile: UserProfile }, schoolName: string): Promise<void> {
@@ -43,12 +43,34 @@ export async function getSchoolsFromFirestore(): Promise<Record<string, SchoolDa
     return schoolList;
 }
 
+export async function getUsersFromFirestore(): Promise<Record<string, UserProfile>> {
+    const usersCollection = collection(db, 'users');
+    const userSnapshot = await getDocs(usersCollection);
+    if (userSnapshot.empty) {
+        return {};
+    }
+    const userList = userSnapshot.docs.reduce((acc, doc) => {
+        acc[doc.id] = doc.data() as UserProfile;
+        return acc;
+    }, {} as Record<string, UserProfile>);
+    return userList;
+}
+
 export async function seedInitialData(): Promise<void> {
     const batch = writeBatch(db);
+    
+    // Seed schools
     Object.entries(initialSchoolData).forEach(([schoolId, schoolData]) => {
         const schoolRef = doc(db, 'schools', schoolId);
         batch.set(schoolRef, schoolData);
     });
+
+    // Seed users
+    Object.entries(mockUsers).forEach(([username, userProfile]) => {
+        const userRef = doc(db, 'users', username);
+        batch.set(userRef, userProfile);
+    });
+
     await batch.commit();
 }
 
@@ -110,7 +132,13 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         schoolGroups: {},
     };
     
-    await setDoc(doc(db, 'schools', schoolId), newSchoolData);
+    const schoolDocRef = doc(db, 'schools', schoolId);
+    const userDocRef = doc(db, 'users', adminUsername);
+
+    const batch = writeBatch(db);
+    batch.set(schoolDocRef, newSchoolData);
+    batch.set(userDocRef, adminUser);
+    await batch.commit();
     
     if (groupId) {
         // In a real app, you would update the school group document.
@@ -118,14 +146,10 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         console.log(`School ${schoolId} associated with group ${groupId}.`);
     }
     
-    // In a real app, we would also create the user in Firebase Auth
-    // and store their profile in a 'users' collection in Firestore.
-    // For this prototype, the user is added to the in-memory state.
-    
     // Send the welcome email
     await sendWelcomeEmail({ username: adminUsername, profile: adminUser }, data.name);
     
-    console.log(`Successfully created school data in Firestore: ${schoolId}.`);
+    console.log(`Successfully created school data and admin user in Firestore: ${schoolId}.`);
 
     return { school: newSchoolData, adminUser: { username: adminUsername, profile: adminUser } };
 }

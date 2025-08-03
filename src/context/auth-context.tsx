@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { mockUsers, UserProfile } from '@/lib/mock-data';
 import type { Role } from './auth-context';
+import { getUsersFromFirestore } from '@/lib/firebase/firestore-service';
 
 export type { Role } from './auth-context';
 
@@ -30,7 +31,6 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   impersonateUser: (email: string, role: Role) => void;
-  mockUsers: Record<string, UserProfile>;
   addUser: (username: string, profile: UserProfile) => void;
 }
 
@@ -52,7 +52,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const storedRole = sessionStorage.getItem('role') as Role;
       const storedSchoolId = sessionStorage.getItem('schoolId');
       const storedOriginalUser = sessionStorage.getItem('originalUser');
-      const storedUsers = sessionStorage.getItem('users');
       
       if (storedUser && storedRole) {
         setUser(JSON.parse(storedUser));
@@ -62,12 +61,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if(storedOriginalUser) {
         setOriginalUser(JSON.parse(storedOriginalUser));
       }
-      if (storedUsers) {
-        setUsers(JSON.parse(storedUsers));
-      } else {
-        setUsers(mockUsers);
-        sessionStorage.setItem('users', JSON.stringify(mockUsers));
-      }
     } catch (error) {
       console.error('Failed to parse user from sessionStorage', error);
       sessionStorage.clear();
@@ -76,7 +69,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (username: string, pass: string): Promise<LoginResult> => {
-    const userRecord = users[username];
+    // On login, always fetch the freshest user list from the database
+    const firestoreUsers = await getUsersFromFirestore();
+    const userSource = Object.keys(firestoreUsers).length > 0 ? firestoreUsers : mockUsers;
+
+    const userRecord = userSource[username];
     if (userRecord && userRecord.password === pass) {
       const loggedInUser = userRecord.user;
       setUser(loggedInUser);
@@ -92,13 +89,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { success: false, message: 'Invalid username or password' };
   };
 
+  // This function is now mostly for client-side state updates after the DB has been written to.
   const addUser = (username: string, profile: UserProfile) => {
-    const newUsers = {...users, [username]: profile};
-    setUsers(newUsers);
-    sessionStorage.setItem('users', JSON.stringify(newUsers));
+    setUsers(prev => ({...prev, [username]: profile }));
   }
   
-  const impersonateUser = (email: string, targetRole: Role) => {
+  const impersonateUser = async (email: string, targetRole: Role) => {
     if (!user) return;
 
     if (!sessionStorage.getItem('originalUser')) {
@@ -106,7 +102,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         sessionStorage.setItem('originalUser', JSON.stringify(user));
     }
 
-    const userRecord = Object.values(users).find(u => u.user.email === email && u.user.role === targetRole);
+    // Always fetch the freshest user list from the database before impersonating
+    const allUsers = await getUsersFromFirestore();
+    const userRecord = Object.values(allUsers).find(u => u.user.email === email && u.user.role === targetRole);
     
     if (userRecord) {
         const targetUser = userRecord.user;
@@ -156,7 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, schoolId, originalUser, login, logout, isLoading, impersonateUser, mockUsers: users, addUser }}>
+    <AuthContext.Provider value={{ user, role, schoolId, originalUser, login, logout, isLoading, impersonateUser, addUser }}>
       {children}
     </AuthContext.Provider>
   );
