@@ -15,6 +15,10 @@ import { createSchool } from '@/app/actions/school-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
 import { useAuth } from '@/context/auth-context';
+import { updateSchoolProfileAction } from '@/app/actions/update-school-action';
+import { deleteSchoolAction } from '@/app/actions/delete-school-action';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription as AlertDialogDesc, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 
 const schoolSchema = z.object({
   name: z.string().min(3, "School name is required."),
@@ -123,11 +127,112 @@ export function NewSchoolDialog({ groupId }: { groupId?: string }) {
 }
 
 export function EditSchoolDialog({ school }: { school: SchoolProfile }) {
-    // This is a placeholder for the real edit dialog.
-    // In a real app this would be a separate component or integrated into settings.
+    const { updateSchoolProfile } = useSchoolData();
+    const { toast } = useToast();
+    const [isOpen, setIsOpen] = useState(false);
+    
+    const form = useForm<SchoolFormValues>({
+        resolver: zodResolver(schoolSchema),
+        defaultValues: school
+    });
+
+    async function onSubmit(values: SchoolFormValues) {
+        const result = await updateSchoolProfileAction(school.id, values);
+        if (result.success) {
+            updateSchoolProfile(values, school.id);
+            toast({ title: 'School Updated!', description: `Details for ${values.name} have been saved.`});
+            setIsOpen(false);
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to update school.' });
+        }
+    }
+
     return (
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => alert(`Editing ${school.name}`)}>
-            <Edit className="h-4 w-4" />
-        </Button>
-    )
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>Edit School: {school.name}</DialogTitle>
+                </DialogHeader>
+                <Form {...form}>
+                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>School Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="head" render={({ field }) => ( <FormItem><FormLabel>Head of School</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    </div>
+                    <FormField control={form.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    </div>
+                    <FormField control={form.control} name="motto" render={({ field }) => ( <FormItem><FormLabel>School Motto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="tier" render={({ field }) => ( 
+                        <FormItem>
+                            <FormLabel>Subscription Tier</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select Tier" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Starter">Starter</SelectItem>
+                                    <SelectItem value="Pro">Pro</SelectItem>
+                                    <SelectItem value="Premium">Premium</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem> 
+                    )} />
+                    <DialogFooter className="mt-4">
+                    <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+                    <Button type="submit" disabled={form.formState.isSubmitting}>
+                        {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Changes
+                    </Button>
+                    </DialogFooter>
+                </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+export function DeleteSchoolDialog({ schoolId, schoolName, removeSchool }: { schoolId: string, schoolName: string, removeSchool: (schoolId: string) => void }) {
+    const { toast } = useToast();
+    
+    const handleDelete = async () => {
+        const result = await deleteSchoolAction(schoolId);
+        if (result.success) {
+            removeSchool(schoolId);
+            toast({
+                title: 'School Deleted',
+                description: `${schoolName} has been permanently removed from the system.`,
+            });
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: `Failed to delete ${schoolName}.`,
+            });
+        }
+    };
+    
+    return (
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDesc>
+                        This action cannot be undone. This will permanently delete the school "{schoolName}" and all associated data, including its administrator account.
+                    </AlertDialogDesc>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
 }

@@ -4,7 +4,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Building, Users, Presentation, Settings, Search, PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { Loader2, Building, Users, Presentation, Settings, Search, PlusCircle } from 'lucide-react';
 import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -12,11 +12,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { NewSchoolDialog } from '@/components/global-admin/new-school-dialog';
+import { NewSchoolDialog, EditSchoolDialog, DeleteSchoolDialog } from '@/components/global-admin/new-school-dialog';
 
 export default function ManageSchoolsPage() {
   const { role, user, isLoading: authLoading, impersonateUser } = useAuth();
-  const { allSchoolData, isLoading: schoolLoading, schoolGroups, updateSchoolStatus } = useSchoolData();
+  const { allSchoolData, isLoading: schoolLoading, schoolGroups, updateSchoolStatus, removeSchool } = useSchoolData();
   const router = useRouter();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -155,8 +155,8 @@ export default function ManageSchoolsPage() {
                         Manage School
                     </Button>
                     <div className="flex">
-                        <Button variant="ghost" size="icon" disabled><Edit className="h-4 w-4"/></Button>
-                        <Button variant="ghost" size="icon" disabled><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                        <EditSchoolDialog school={school.profile} />
+                        <DeleteSchoolDialog schoolId={school.profile.id} schoolName={school.profile.name} removeSchool={removeSchool} />
                     </div>
                 </CardFooter>
             </Card>

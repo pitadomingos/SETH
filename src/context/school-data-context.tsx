@@ -47,6 +47,7 @@ interface SchoolDataContextType {
 
     // --- Action Functions ---
     addSchool: (schoolData: SchoolData) => void;
+    removeSchool: (schoolId: string) => void;
     addCourse: (course: Omit<Course, 'id'>) => void;
     addSyllabus: (syllabus: Omit<Syllabus, 'id' | 'topics'>) => void;
     updateSyllabusTopic: (subject: string, grade: string, topic: any) => void;
@@ -187,6 +188,23 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             ...prev,
             [newSchoolData.profile.id]: newSchoolData
         }
+    });
+  };
+
+  const removeSchool = (schoolIdToRemove: string) => {
+    setData(prev => {
+        if (!prev) return null;
+        const newData = { ...prev };
+        delete newData[schoolIdToRemove];
+        // Also remove from any school groups
+        for (const schoolKey in newData) {
+            if (newData[schoolKey].schoolGroups) {
+                for (const groupId in newData[schoolKey].schoolGroups) {
+                    newData[schoolKey].schoolGroups[groupId] = newData[schoolKey].schoolGroups[groupId].filter(id => id !== schoolIdToRemove);
+                }
+            }
+        }
+        return newData;
     });
   };
 
@@ -861,7 +879,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     expenseCategories: schoolData?.expenseCategories || [],
     terms: schoolData?.terms || [],
     holidays: schoolData?.holidays || [],
-    addSchool, addCourse, addSyllabus, updateSyllabusTopic, deleteSyllabusTopic,
+    addSchool, removeSchool, addCourse, addSyllabus, updateSyllabusTopic, deleteSyllabusTopic,
     updateApplicationStatus, addStudentFromAdmission, addAsset, addLessonAttendance,
     addClass, addEvent, addGrade, recordPayment, addFee, addExpense,
     addTeam, deleteTeam, addPlayerToTeam, removePlayerFromTeam, addCompetition, addCompetitionResult,
