@@ -1,8 +1,8 @@
 
 'use client';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
-import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabus, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, SchoolProfile, DeployedTest, SavedTest, NewMessageData, NewAdmissionData } from '@/lib/mock-data';
-import { useAuth } from './auth-context';
+import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabus, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, SchoolProfile, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, mockUsers, UserProfile } from '@/lib/mock-data';
+import { useAuth, User } from './auth-context';
 import type { Role } from './auth-context';
 import { getSchoolsFromFirestore } from '@/lib/firebase/firestore-service';
 
@@ -11,6 +11,7 @@ export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, Syllab
 interface SchoolDataContextType {
     // --- Data States ---
     allSchoolData: Record<string, SchoolData> | null;
+    users: Record<string, UserProfile>;
     schoolProfile: SchoolProfile | null;
     studentsData: Student[];
     teachersData: Teacher[];
@@ -46,6 +47,7 @@ interface SchoolDataContextType {
     isLoading: boolean;
 
     // --- Action Functions ---
+    addSchool: (schoolData: SchoolData, adminUser: { username: string, profile: UserProfile }) => void;
     addCourse: (course: Omit<Course, 'id'>) => void;
     addSyllabus: (syllabus: Omit<Syllabus, 'id' | 'topics'>) => void;
     updateSyllabusTopic: (subject: string, grade: string, topic: any) => void;
@@ -78,7 +80,6 @@ interface SchoolDataContextType {
     updateStudentStatus: (schoolId: string, studentId: string, status: Student['status']) => void;
     updateTeacherStatus: (schoolId: string, teacherId: string, status: Teacher['status']) => void;
     updateParentStatus: (parentEmail: string, status: 'Active' | 'Suspended') => void;
-    addSchool: (schoolData: SchoolData) => void;
     addBehavioralAssessment: (assessment: Omit<any, 'id' | 'date'>) => void;
     
     // Academic Year
@@ -99,9 +100,10 @@ interface SchoolDataContextType {
 
 const SchoolDataContext = createContext<SchoolDataContextType | undefined>(undefined);
 
-export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
+const SchoolDataWrapper = ({ children }: { children: ReactNode }) => {
   const { user, role, schoolId: authSchoolId } = useAuth();
   const [data, setData] = useState<Record<string, SchoolData> | null>(null);
+  const [users, setUsers] = useState<Record<string, UserProfile>>(mockUsers);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -112,7 +114,6 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             if (Object.keys(firestoreData).length > 0) {
                 setData(firestoreData);
             } else {
-                // Fallback to mock data if Firestore is empty
                 setData(initialSchoolData);
             }
         } catch (error) {
@@ -152,15 +153,13 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [user, role]);
 
   const schoolId = useMemo(() => {
-    // Global admin has no schoolId, but we might need a context for some actions.
-    // However, most components check role === 'GlobalAdmin' and fetch all data.
     if (role === 'GlobalAdmin') return null;
     return authSchoolId;
   }, [authSchoolId, role]);
 
   const schoolData = useMemo(() => {
     if (!data) return null;
-    if (role === 'GlobalAdmin') return data.northwood; // Global admin context is northwood for prototype
+    if (role === 'GlobalAdmin') return data.northwood;
     if (!schoolId) return null;
     return data[schoolId];
   }, [schoolId, data, role]);
@@ -181,7 +180,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     return schoolData?.students || [];
   }, [role, user, schoolData, allStudents]);
   
-  const addSchool = (newSchoolData: SchoolData) => {
+  const addSchool = (newSchoolData: SchoolData, adminUser: { username: string, profile: UserProfile }) => {
     setData(prev => {
         if (!prev) return { [newSchoolData.profile.id]: newSchoolData };
         return {
@@ -189,6 +188,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             [newSchoolData.profile.id]: newSchoolData
         }
     });
+    setUsers(prev => ({...prev, [adminUser.username]: adminUser.profile}));
   };
 
   const updateSchoolProfile = (profileData: Partial<SchoolProfile>, targetSchoolId?: string) => {
@@ -599,11 +599,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const addMessage = (message: NewMessageData) => {
     if(!data || !user || !role) return;
   
-    // Determine the sender's school. If GlobalAdmin, they don't have one.
-    const senderSchoolId = role === 'GlobalAdmin' ? 'northwood' : user.schoolId; // Use a default for global admin
+    const senderSchoolId = role === 'GlobalAdmin' ? 'northwood' : user.schoolId;
     if (!senderSchoolId) return;
 
-    // Find recipient's school
     let recipientSchoolId: string | undefined = undefined;
     for (const sId in data) {
         if (data[sId].profile.email === message.recipientUsername || data[sId].teachers.some(t => t.email === message.recipientUsername)) {
@@ -613,7 +611,6 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }
     if (!recipientSchoolId) return;
   
-    // Find recipient's details
     const recipientUser = Object.values(data).flatMap(d => d.teachers).find(u => u.email === message.recipientUsername);
     const recipientName = recipientUser?.name || data[recipientSchoolId]?.profile.head || 'Admin';
     const recipientRole = recipientUser ? 'Teacher' : 'Admin';
@@ -638,12 +635,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       if (!prev) return null;
       const newData = {...prev};
       
-      // Add to sender's message list
       if (newData[senderSchoolId]) {
         newData[senderSchoolId].messages.push(newMessage);
       }
   
-      // Add to recipient's message list if they are in a different school context
       if (recipientSchoolId && recipientSchoolId !== senderSchoolId) {
           newData[recipientSchoolId].messages.push(newMessage);
       }
@@ -731,7 +726,6 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [parentStatusOverrides, setParentStatusOverrides] = useState<Record<string, 'Active' | 'Suspended'>>({});
   const updateParentStatus = (parentEmail: string, status: 'Active' | 'Suspended') => {
     setParentStatusOverrides(prev => ({...prev, [parentEmail]: status}));
-    // In a real app, you'd also log this.
   };
   
   const addExamBoard = (board: string) => {
@@ -822,6 +816,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const value = {
     isLoading,
+    allSchoolData: data,
+    users,
     schoolProfile: schoolData?.profile || null,
     studentsData,
     teachersData: schoolData?.teachers || [],
@@ -857,27 +853,22 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }, [schoolData, data, role]),
     messages: schoolData?.messages || [],
     savedReports: schoolData?.savedReports || [],
-    allSchoolData: data,
     schoolGroups,
     parentStatusOverrides,
     deployedTests: schoolData?.deployedTests || [],
     savedTests: schoolData?.savedTests || [],
-
-    // Dropdowns
     examBoards: schoolData?.examBoards || [],
     feeDescriptions: schoolData?.feeDescriptions || [],
     audiences: schoolData?.audiences || [],
     expenseCategories: schoolData?.expenseCategories || [],
     terms: schoolData?.terms || [],
     holidays: schoolData?.holidays || [],
-    
-    // Actions
-    addCourse, addSyllabus, updateSyllabusTopic, deleteSyllabusTopic,
+    addSchool, addCourse, addSyllabus, updateSyllabusTopic, deleteSyllabusTopic,
     updateApplicationStatus, addStudentFromAdmission, addAsset, addLessonAttendance,
     addClass, addEvent, addGrade, recordPayment, addFee, addExpense,
     addTeam, deleteTeam, addPlayerToTeam, removePlayerFromTeam, addCompetition, addCompetitionResult,
     addTeacher, updateTeacher, addKioskMedia, removeKioskMedia, updateSchoolProfile, addMessage, addAdmission,
-    updateSchoolStatus, updateMessageStatus, updateStudentStatus, updateTeacherStatus, updateParentStatus, addSchool,
+    updateSchoolStatus, updateMessageStatus, updateStudentStatus, updateTeacherStatus, updateParentStatus,
     addTerm, addHoliday,
     addExamBoard, deleteExamBoard, addFeeDescription, deleteFeeDescription, addAudience, deleteAudience,
     addSavedReport,
@@ -890,6 +881,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     </SchoolDataContext.Provider>
   );
 };
+
+export const SchoolDataProvider = ({ children }: { children: ReactNode }) => (
+    <SchoolDataWrapper>{children}</SchoolDataWrapper>
+);
 
 export const useSchoolData = () => {
   const context = useContext(SchoolDataContext);

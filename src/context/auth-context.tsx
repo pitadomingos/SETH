@@ -3,9 +3,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { mockUsers as initialMockUsers, UserProfile } from '@/lib/mock-data';
+import { mockUsers, UserProfile } from '@/lib/mock-data';
+import type { Role } from './auth-context';
 
-export type Role = 'Admin' | 'Teacher' | 'Student' | 'Parent' | 'GlobalAdmin';
+export type { Role } from './auth-context';
 
 export interface User {
   username: string;
@@ -28,9 +29,9 @@ interface AuthContextType {
   login: (username: string, pass: string) => Promise<LoginResult>;
   logout: () => void;
   isLoading: boolean;
-  mockUsers: Record<string, UserProfile>;
-  addUser: (username: string, profile: UserProfile) => void;
   impersonateUser: (email: string, role: Role) => void;
+  mockUsers?: Record<string, UserProfile>;
+  addUser?: (username: string, profile: UserProfile) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,7 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [schoolId, setSchoolId] = useState<string | null>(null);
   const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [mockUsers, setMockUsers] = useState(initialMockUsers);
+  const [users, setUsers] = useState<Record<string, UserProfile>>(mockUsers);
   const router = useRouter();
 
   useEffect(() => {
@@ -67,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (username: string, pass: string): Promise<LoginResult> => {
-    const userRecord = mockUsers[username];
+    const userRecord = users[username];
     if (userRecord && userRecord.password === pass) {
       const loggedInUser = userRecord.user;
       setUser(loggedInUser);
@@ -84,19 +85,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addUser = (username: string, profile: UserProfile) => {
-    setMockUsers(prev => ({...prev, [username]: profile }));
-  };
+    setUsers(prev => ({...prev, [username]: profile}));
+  }
   
   const impersonateUser = (email: string, targetRole: Role) => {
-    if (!user) return; // Can't impersonate if not logged in.
-    
-    // Ensure we are not already impersonating
+    if (!user) return;
+
     if (!sessionStorage.getItem('originalUser')) {
         setOriginalUser(user);
         sessionStorage.setItem('originalUser', JSON.stringify(user));
     }
 
-    const userRecord = Object.values(mockUsers).find(u => u.user.email === email);
+    const userRecord = Object.values(users).find(u => u.user.email === email && u.user.role === targetRole);
     
     if (userRecord) {
         const targetUser = userRecord.user;
@@ -112,7 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         router.push('/dashboard');
     } else {
-        console.error(`Impersonation failed: Could not find user with email ${email}`);
+        console.error(`Impersonation failed: Could not find user with email ${email} and role ${targetRole}`);
     }
   };
 
@@ -146,7 +146,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, schoolId, originalUser, login, logout, isLoading, mockUsers, addUser, impersonateUser }}>
+    <AuthContext.Provider value={{ user, role, schoolId, originalUser, login, logout, isLoading, impersonateUser, mockUsers: users, addUser }}>
       {children}
     </AuthContext.Provider>
   );

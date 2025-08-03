@@ -109,6 +109,10 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         console.log(`School ${schoolId} associated with group ${groupId}.`);
     }
     
+    // In a real app, we would also create the user in Firebase Auth
+    // and store their profile in a 'users' collection in Firestore.
+    // For this prototype, the user is added to the in-memory state.
+    
     // Send the welcome email
     await sendWelcomeEmail({ username: adminUsername, profile: adminUser }, data.name);
     

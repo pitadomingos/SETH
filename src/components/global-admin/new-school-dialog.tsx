@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { createSchool } from '@/app/actions/school-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
-import { useAuth } from '@/context/auth-context';
 
 const schoolSchema = z.object({
   name: z.string().min(3, "School name is required."),
@@ -32,7 +31,6 @@ export function NewSchoolDialog({ groupId }: { groupId?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   const { addSchool } = useSchoolData();
-  const { addUser } = useAuth();
 
   const form = useForm<SchoolFormValues>({
     resolver: zodResolver(schoolSchema),
@@ -51,8 +49,7 @@ export function NewSchoolDialog({ groupId }: { groupId?: string }) {
     const result = await createSchool(values, groupId);
 
     if (result) {
-        addSchool(result.school);
-        addUser(result.adminUser.username, result.adminUser.profile);
+        addSchool(result.school, result.adminUser);
         toast({
             title: 'School Created!',
             description: `School "${values.name}" and its admin have been added.`,

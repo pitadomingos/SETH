@@ -2,8 +2,7 @@
 'use client';
 
 import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/context/auth-context';
-import { SchoolDataProvider } from '@/context/school-data-context';
+import { AppProviders } from '@/components/layout/app-providers';
 import { ThemeProvider } from '@/components/layout/theme-provider';
 import { cn } from '@/lib/utils';
 import './globals.css';
@@ -35,11 +34,9 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
         >
-          <AuthProvider>
-            <SchoolDataProvider>
-              {children}
-            </SchoolDataProvider>
-          </AuthProvider>
+          <AppProviders>
+            {children}
+          </AppProviders>
           <Toaster />
         </ThemeProvider>
       </body>
