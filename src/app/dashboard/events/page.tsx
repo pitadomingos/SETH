@@ -131,7 +131,10 @@ export default function EventsPage() {
   const { events, studentsData, teachersData, coursesData, classesData } = useSchoolData();
   const { role, user } = useAuth();
   const [date, setDate] = React.useState<Date | undefined>(undefined);
-  const eventDates = events.map(event => event.date);
+  
+  const eventDates = React.useMemo(() => {
+    return events.map(event => event.date.toDate ? event.date.toDate() : new Date(event.date));
+  }, [events]);
 
   const student = React.useMemo(() => {
     if (role !== 'Student' || !user?.email) return null;
@@ -144,7 +147,8 @@ export default function EventsPage() {
   }, [role, user, teachersData]);
 
   const displayedEvents = React.useMemo(() => {
-    const sortedEvents = [...events].sort((a, b) => a.date.getTime() - b.date.getTime());
+    const sortedEvents = [...events].map(e => ({...e, date: e.date.toDate ? e.date.toDate() : new Date(e.date)}))
+                                    .sort((a, b) => a.date.getTime() - b.date.getTime());
     
     let filteredByRole = sortedEvents;
 

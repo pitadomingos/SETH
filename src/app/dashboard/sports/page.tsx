@@ -292,6 +292,8 @@ function CompetitionCard({ competition, team }: { competition: Competition, team
     }
   };
 
+  const competitionDate = competition.date.toDate ? competition.date.toDate() : new Date(competition.date);
+
   return (
     <li className="flex flex-wrap items-center justify-between gap-4 p-4 border rounded-lg">
       <div className="flex-1">
@@ -311,10 +313,10 @@ function CompetitionCard({ competition, team }: { competition: Competition, team
       </div>
       <div className="w-full sm:w-auto flex items-center gap-4 mt-3 sm:mt-0">
           <div className="text-sm text-right flex-1">
-              <p>{format(competition.date, 'EEEE, MMM d')}</p>
+              <p>{format(competitionDate, 'EEEE, MMM d')}</p>
               <p className="text-muted-foreground">{competition.time} at {competition.location}</p>
           </div>
-          {new Date(competition.date) < new Date() && !competition.result && <RecordResultDialog competition={competition} team={team} />}
+          {competitionDate < new Date() && !competition.result && <RecordResultDialog competition={competition} team={team} />}
       </div>
     </li>
   )
@@ -335,8 +337,8 @@ export default function SportsPage() {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
   
-  const upcomingCompetitions = competitionsData.filter(c => c.date >= new Date()).sort((a, b) => a.date.getTime() - b.date.getTime());
-  const pastCompetitions = competitionsData.filter(c => c.date < new Date()).sort((a, b) => b.date.getTime() - a.date.getTime());
+  const upcomingCompetitions = competitionsData.filter(c => (c.date.toDate ? c.date.toDate() : new Date(c.date)) >= new Date()).sort((a, b) => (a.date.toDate ? a.date.toDate() : new Date(a.date)).getTime() - (b.date.toDate ? b.date.toDate() : new Date(b.date)).getTime());
+  const pastCompetitions = competitionsData.filter(c => (c.date.toDate ? c.date.toDate() : new Date(c.date)) < new Date()).sort((a, b) => (b.date.toDate ? b.date.toDate() : new Date(b.date)).getTime() - (a.date.toDate ? a.date.toDate() : new Date(a.date)).getTime());
 
   return (
     <div className="space-y-6 animate-in fade-in-50">

@@ -1,3 +1,4 @@
+
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
@@ -171,7 +172,8 @@ function AssignedTests({ student, studentClass }) {
             .filter(dt => dt.classId === studentClass.id && !dt.submissions.some(s => s.studentId === student.id))
             .map(dt => {
                 const testDetails = savedTests.find(st => st.id === dt.testId);
-                return { ...dt, ...testDetails };
+                const deadlineDate = dt.deadline.toDate ? dt.deadline.toDate() : new Date(dt.deadline);
+                return { ...dt, ...testDetails, deadline: deadlineDate };
             })
             .sort((a,b) => a.deadline.getTime() - b.deadline.getTime());
     }, [student, studentClass, deployedTests, savedTests]);
@@ -199,7 +201,7 @@ function AssignedTests({ student, studentClass }) {
                              <Button size="sm">Take Test</Button>
                            </Link>
                            <p className="text-xs text-muted-foreground mt-1">
-                                Due {format(new Date(test.deadline), 'MMM d, yyyy')}
+                                Due {format(test.deadline, 'MMM d, yyyy')}
                            </p>
                         </div>
                     </li>
