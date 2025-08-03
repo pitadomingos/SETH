@@ -41,7 +41,11 @@ export default function ActivityLogsPage() {
   }, [role, isLoading, router]);
 
   const sortedLogs = useMemo(() => {
-    return [...activityLogs].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return [...activityLogs].sort((a, b) => {
+        const dateA = a.timestamp.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+        const dateB = b.timestamp.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+        return dateB.getTime() - dateA.getTime();
+    });
   }, [activityLogs]);
 
   const filteredLogs = useMemo(() => {
@@ -98,7 +102,7 @@ export default function ActivityLogsPage() {
                     <TableBody>
                         {filteredLogs.map(log => (
                             <TableRow key={log.id}>
-                                <TableCell className="text-muted-foreground text-xs">{formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}</TableCell>
+                                <TableCell className="text-muted-foreground text-xs">{formatDistanceToNow(log.timestamp.toDate ? log.timestamp.toDate() : new Date(log.timestamp), { addSuffix: true })}</TableCell>
                                 {role === 'GlobalAdmin' && <TableCell className="font-medium">{getSchoolName(log.schoolId)}</TableCell>}
                                 <TableCell>
                                     <div className="flex items-center gap-2">
