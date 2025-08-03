@@ -1,3 +1,4 @@
+
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -77,7 +78,11 @@ export default function LessonPlannerPage() {
     // 3. Get recent performance for those students in this subject
     const recentGrades = grades
         .filter(g => studentIds.includes(g.studentId) && g.subject === selectedCourse.subject)
-        .sort((a,b) => b.date.getTime() - a.date.getTime())
+        .sort((a,b) => {
+            const dateA = a.date.toDate ? a.date.toDate() : new Date(a.date);
+            const dateB = b.date.toDate ? b.date.toDate() : new Date(b.date);
+            return dateB.getTime() - dateA.getTime();
+        })
         .slice(0, 20); // Get last 20 grades for context
 
     const performanceSummary = recentGrades.map(g => {
