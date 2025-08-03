@@ -1,4 +1,3 @@
-
 // src/lib/firebase/config.ts
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
@@ -23,7 +22,7 @@ if (!getApps().length) {
     app = getApp();
 }
 
-const db = getFirestore(app);
+const db = getFirestore(app, 'edudesk');
 const auth = getAuth(app);
 const storage = getStorage(app);
 
