@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { FeatureLock } from '@/components/layout/feature-lock';
 
 export default function AiReportsPage() {
-  const { role, isLoading: authLoading } = useAuth();
+  const { role, isLoading: authLoading } from 'useAuth';
   const router = useRouter();
   const { schoolProfile, isLoading: dataLoading } = useSchoolData();
 
@@ -41,13 +41,13 @@ export default function AiReportsPage() {
       </header>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><BrainCircuit /> Feature Removed</CardTitle>
+          <CardTitle className="flex items-center gap-2"><BrainCircuit /> Feature Not Implemented</CardTitle>
           <CardDescription>
-            The AI Reports feature has been temporarily removed to ensure application stability. The functionality will be restored in a future update.
+            The AI Reports UI is in place, but the underlying AI flow is not yet connected.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">We apologize for any inconvenience.</p>
+          <p className="text-muted-foreground">This feature will be enabled in a future update.</p>
         </CardContent>
       </Card>
     </div>

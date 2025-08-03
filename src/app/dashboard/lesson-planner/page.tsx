@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { FeatureLock } from '@/components/layout/feature-lock';
 
 export default function LessonPlannerPage() {
-  const { role, isLoading: authLoading } = useAuth();
+  const { role, isLoading: authLoading } from 'useAuth';
   const router = useRouter();
   const { schoolProfile, isLoading: dataLoading } = useSchoolData();
 
@@ -41,13 +41,13 @@ export default function LessonPlannerPage() {
       </header>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><PenSquare /> Feature Removed</CardTitle>
+          <CardTitle className="flex items-center gap-2"><PenSquare /> Feature Not Implemented</CardTitle>
           <CardDescription>
-            The AI Lesson Planner feature has been temporarily removed to ensure application stability. The functionality will be restored in a future update.
+            The AI Lesson Planner UI is in place, but the underlying AI flow is not yet connected.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">We apologize for any inconvenience.</p>
+          <p className="text-muted-foreground">This feature will be enabled in a future update.</p>
         </CardContent>
       </Card>
     </div>
