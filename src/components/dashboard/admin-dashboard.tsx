@@ -205,7 +205,7 @@ function AttendanceTrendChart() {
 
     const chartData = useMemo(() => {
         const attendanceByDate = attendance.reduce((acc, record) => {
-            const date = record.date;
+            const date = record.date.toDate ? record.date.toDate().toISOString().split('T')[0] : new Date(record.date).toISOString().split('T')[0];
             if (!acc[date]) {
                 acc[date] = { present: 0, late: 0, absent: 0, sick: 0 };
             }
@@ -290,7 +290,8 @@ function GradePerformanceChart() {
 
     const chartData = useMemo(() => {
         const gradesByMonth = grades.reduce((acc, grade) => {
-            const month = format(grade.date, 'yyyy-MM');
+            const gradeDate = grade.date.toDate ? grade.date.toDate() : new Date(grade.date);
+            const month = format(gradeDate, 'yyyy-MM');
             if (!acc[month]) {
                 acc[month] = [];
             }
