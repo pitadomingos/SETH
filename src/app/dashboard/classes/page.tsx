@@ -3,7 +3,7 @@
 import { useSchoolData, Class as ClassType } from '@/context/school-data-context';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Presentation, MapPin, UserPlus, Loader2, School, Sigma } from 'lucide-react';
+import { Users, Presentation, MapPin, UserPlus, Loader2, School, Sigma, Edit, MoreHorizontal, Trash2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, LabelList } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription as AlertDialogDesc, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const classSchema = z.object({
   name: z.string().min(3, "Class name is required."),
@@ -26,30 +28,39 @@ const classSchema = z.object({
 });
 type ClassFormValues = z.infer<typeof classSchema>;
 
-function NewClassDialog() {
-    const { addClass, teachersData } = useSchoolData();
+function ClassFormDialog({ classItem, children }: { classItem?: ClassType, children: React.ReactNode }) {
+    const { addClass, updateClass, teachersData } = useSchoolData();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const isEditMode = !!classItem;
     
     const form = useForm<ClassFormValues>({
         resolver: zodResolver(classSchema),
-        defaultValues: { name: '', grade: '', teacher: '', students: 0, room: '' }
+        defaultValues: isEditMode ? classItem : { name: '', grade: '', teacher: '', students: 0, room: '' }
     });
     
+    useEffect(() => {
+        if (isEditMode) {
+            form.reset(classItem);
+        }
+    }, [classItem, isEditMode, form]);
+
     function onSubmit(values: ClassFormValues) {
-        addClass(values);
+        if(isEditMode) {
+            updateClass(classItem.id, values);
+        } else {
+            addClass(values);
+        }
         form.reset();
         setIsDialogOpen(false);
     }
     
     return (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-                <Button><UserPlus className="mr-2 h-4 w-4" />Create Class</Button>
-            </DialogTrigger>
+            <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Create New Class Section</DialogTitle>
-                    <DialogDescription>Define a new group of students (e.g., a homeroom section).</DialogDescription>
+                    <DialogTitle>{isEditMode ? `Edit ${classItem.name}` : 'Create New Class Section'}</DialogTitle>
+                    <DialogDescription>{isEditMode ? 'Update the details for this class section.' : 'Define a new group of students (e.g., a homeroom section).'}</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -62,7 +73,7 @@ function NewClassDialog() {
                         </div>
                         <DialogFooter className="col-span-2 mt-4">
                             <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                            <Button type="submit" disabled={form.formState.isSubmitting}> {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create Class</Button>
+                            <Button type="submit" disabled={form.formState.isSubmitting}> {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isEditMode ? 'Save Changes' : 'Create Class'}</Button>
                         </DialogFooter>
                     </form>
                 </Form>
@@ -70,6 +81,28 @@ function NewClassDialog() {
         </Dialog>
     )
 }
+
+function DeleteClassDialog({ classItem, children }: { classItem: ClassType, children: React.ReactNode}) {
+    const { deleteClass } = useSchoolData();
+    return (
+        <AlertDialog>
+            <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDesc>
+                        This will permanently delete the class "{classItem.name}". This action cannot be undone. Associated courses will also be removed.
+                    </AlertDialogDesc>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => deleteClass(classItem.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+}
+
 
 function StudentsPerClassChart() {
   const { classesData } = useSchoolData();
@@ -146,7 +179,7 @@ export default function ClassesPage() {
                     <h2 className="text-3xl font-bold tracking-tight">Class Management</h2>
                     <p className="text-muted-foreground">Manage class sections and student groups.</p>
                 </div>
-                 <NewClassDialog />
+                 <ClassFormDialog><Button><UserPlus className="mr-2 h-4 w-4" />Create Class</Button></ClassFormDialog>
             </header>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -172,7 +205,16 @@ export default function ClassesPage() {
                         <CardHeader>
                             <div className="flex justify-between items-start">
                                 <CardTitle>{classItem.name}</CardTitle>
+                                <div className="flex items-center gap-2">
                                 <span className="px-3 py-1 bg-primary text-primary-foreground text-sm rounded-full">Grade {classItem.grade}</span>
+                                 <DropdownMenu>
+                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        <ClassFormDialog classItem={classItem}><DropdownMenuItem onSelect={(e) => e.preventDefault()}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem></ClassFormDialog>
+                                        <DeleteClassDialog classItem={classItem}><DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem></DeleteClassDialog>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                </div>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-3 flex-grow">

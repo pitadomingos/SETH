@@ -3,7 +3,7 @@
 import { useSchoolData, Teacher } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Loader2, MoreHorizontal, Edit, Search, Presentation, CheckCircle, XCircle, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
+import { UserPlus, Loader2, MoreHorizontal, Edit, Search, Presentation, CheckCircle, XCircle, Briefcase, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
@@ -14,11 +14,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, LabelList } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription as AlertDialogDesc, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const PAGE_SIZE = 10;
 
@@ -35,30 +36,39 @@ const teacherSchema = z.object({
 
 type TeacherFormValues = z.infer<typeof teacherSchema>;
 
-function NewTeacherDialog() {
-    const { addTeacher, subjects } = useSchoolData();
+function TeacherFormDialog({ teacher, children }: { teacher?: Teacher, children: React.ReactNode }) {
+    const { addTeacher, updateTeacher, subjects } = useSchoolData();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    
+    const isEditMode = !!teacher;
+
     const form = useForm<TeacherFormValues>({
         resolver: zodResolver(teacherSchema),
-        defaultValues: { name: '', subject: '', email: '', phone: '', address: '', experience: '', qualifications: '', sex: 'Male' }
+        defaultValues: isEditMode ? teacher : { name: '', subject: '', email: '', phone: '', address: '', experience: '', qualifications: '', sex: 'Male' }
     });
+    
+    useEffect(() => {
+        if (isEditMode) {
+            form.reset(teacher);
+        }
+    }, [teacher, form, isEditMode]);
 
     function onSubmit(values: TeacherFormValues) {
-        addTeacher(values);
+        if (isEditMode) {
+            updateTeacher(teacher.id, values);
+        } else {
+            addTeacher(values);
+        }
         form.reset();
         setIsDialogOpen(false);
     }
     
     return (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-                <Button><UserPlus className="mr-2 h-4 w-4" />Add Teacher</Button>
-            </DialogTrigger>
+            <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Add New Teacher</DialogTitle>
-                    <DialogDescription>Enter the details for the new teacher.</DialogDescription>
+                    <DialogTitle>{isEditMode ? `Edit ${teacher.name}` : 'Add New Teacher'}</DialogTitle>
+                    <DialogDescription>{isEditMode ? `Update the details for this teacher.` : 'Enter the details for the new teacher.'}</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-4 py-4">
@@ -81,7 +91,7 @@ function NewTeacherDialog() {
                         <FormField control={form.control} name="qualifications" render={({ field }) => ( <FormItem><FormLabel>Qualifications</FormLabel><FormControl><Input placeholder="e.g., M.Ed." {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <DialogFooter className="col-span-2 mt-4">
                             <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                            <Button type="submit" disabled={form.formState.isSubmitting}> {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Add Teacher</Button>
+                            <Button type="submit" disabled={form.formState.isSubmitting}> {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isEditMode ? 'Save Changes' : 'Add Teacher'}</Button>
                         </DialogFooter>
                     </form>
                 </Form>
@@ -90,71 +100,26 @@ function NewTeacherDialog() {
     )
 }
 
-function EditTeacherDialog({ teacher }: { teacher: Teacher }) {
-    const { updateTeacher, subjects } = useSchoolData();
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-    const form = useForm<TeacherFormValues>({
-        resolver: zodResolver(teacherSchema),
-        defaultValues: { ...teacher }
-    });
-    
-    useEffect(() => {
-        if(teacher) form.reset(teacher);
-    }, [teacher, form]);
-
-    function onSubmit(values: TeacherFormValues) {
-        updateTeacher(teacher.id, values);
-        setIsDialogOpen(false);
-    }
+function DeleteTeacherDialog({ teacher, children }: { teacher: Teacher, children: React.ReactNode }) {
+    const { deleteTeacher } = useSchoolData();
 
     return (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                    <span className="sr-only">Open menu</span>
-                    <MoreHorizontal className="h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsDialogOpen(true)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-            <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>Edit Teacher: {teacher.name}</DialogTitle>
-                    <DialogDescription>Update the details for this teacher.</DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-4 py-4">
-                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                         <FormField control={form.control} name="sex" render={({ field }) => ( <FormItem><FormLabel>Sex</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="subject" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Subject</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select Subject" /></SelectTrigger></FormControl>
-                                    <SelectContent>{subjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="experience" render={({ field }) => ( <FormItem><FormLabel>Experience</FormLabel><FormControl><Input placeholder="e.g., 5 years" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="qualifications" render={({ field }) => ( <FormItem><FormLabel>Qualifications</FormLabel><FormControl><Input placeholder="e.g., M.Ed." {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <DialogFooter className="col-span-2 mt-4">
-                            <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                            <Button type="submit" disabled={form.formState.isSubmitting}> {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Changes</Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
-    )
+        <AlertDialog>
+            <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDesc>
+                        This action will permanently delete the teacher "{teacher.name}". This action cannot be undone.
+                    </AlertDialogDesc>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => deleteTeacher(teacher.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
 }
 
 function TeachersBySubjectChart() {
@@ -267,7 +232,7 @@ export default function TeachersPage() {
                     <h2 className="text-3xl font-bold tracking-tight">Teacher Management</h2>
                     <p className="text-muted-foreground">Manage teacher information and assignments.</p>
                 </div>
-                 <NewTeacherDialog />
+                 <TeacherFormDialog><Button><UserPlus className="mr-2 h-4 w-4" />Add Teacher</Button></TeacherFormDialog>
             </header>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -333,7 +298,12 @@ export default function TeachersPage() {
                                     <TableCell>{teacher.qualifications}</TableCell>
                                     <TableCell className="text-right">
                                         <DropdownMenu>
-                                            <EditTeacherDialog teacher={teacher} />
+                                            <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <TeacherFormDialog teacher={teacher}><DropdownMenuItem onSelect={(e) => e.preventDefault()}><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem></TeacherFormDialog>
+                                                <DropdownMenuSeparator />
+                                                <DeleteTeacherDialog teacher={teacher}><DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem></DeleteTeacherDialog>
+                                            </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
