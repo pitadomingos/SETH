@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { FileText as FileTextIcon, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse, Sparkles, BookOpen, User, Check, Lightbulb, TrendingUp, BrainCircuit } from "lucide-react";
+import { FileText as FileTextIcon, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse, Sparkles, BookOpen, User, Check, Lightbulb, TrendingUp, BrainCircuit } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData, Grade, Student } from "@/context/school-data-context";
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +21,7 @@ import {
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import Image from 'next/image';
-import { formatGradeDisplay, calculateAge } from '@/lib/utils';
+import { formatGradeDisplay } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { EndOfTermReportDialog } from '@/components/dashboard/end-of-term-report';
 import { analyzeStudentPerformanceAction } from '@/app/actions/ai-actions';
@@ -191,7 +191,8 @@ function AttendanceBreakdownChart({ studentId }) {
   const studentAttendance = attendance.filter(a => a.studentId === studentId);
   
   const breakdown = studentAttendance.reduce((acc, record) => {
-    acc[record.status.toLowerCase()] = (acc[record.status.toLowerCase()] || 0) + 1;
+    const statusKey = record.status.toLowerCase();
+    acc[statusKey] = (acc[statusKey] || 0) + 1;
     return acc;
   }, { present: 0, late: 0, absent: 0, sick: 0});
 
@@ -363,7 +364,8 @@ export default function StudentDashboard() {
     if (!studentId) return { present: 0, late: 0, absent: 0, sick: 0 };
     const records = attendance.filter(a => a.studentId === studentId);
     return records.reduce((acc, record) => {
-      acc[record.status.toLowerCase()] = (acc[record.status.toLowerCase()] || 0) + 1;
+      const statusKey = record.status.toLowerCase();
+      acc[statusKey] = (acc[statusKey] || 0) + 1;
       return acc;
     }, { present: 0, late: 0, absent: 0, sick: 0 });
   }, [attendance, studentId]);
@@ -396,6 +398,10 @@ export default function StudentDashboard() {
       description: "Your official transcript is being prepared. (This is a demo feature)",
     });
   };
+  
+  if (!student) {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -404,10 +410,10 @@ export default function StudentDashboard() {
         <p className="text-muted-foreground">Welcome back, {user?.name}</p>
       </header>
       
-       {student && <CompletionStatusAlert 
+       <CompletionStatusAlert 
           hasPassed={hasPassed}
           areAllFeesPaid={areAllFeesPaid}
-       />}
+       />
       
        <div className="grid gap-6 lg:grid-cols-3">
           <StudentAIAdvisor student={student} grades={studentGrades} attendanceSummary={studentAttendanceSummary} />
@@ -424,13 +430,11 @@ export default function StudentDashboard() {
                 <CardDescription>An overview of your performance in each subject.</CardDescription>
             </CardHeader>
             <CardContent>
-                {student && <MyCourses student={student} studentCourses={studentCourses} grades={grades} schoolProfile={schoolProfile} teachersData={teachersData} />}
+                <MyCourses student={student} studentCourses={studentCourses} grades={grades} schoolProfile={schoolProfile} teachersData={teachersData} />
             </CardContent>
-             {student && (
-                <CardFooter>
-                    <EndOfTermReportDialog student={student} />
-                </CardFooter>
-            )}
+            <CardFooter>
+                <EndOfTermReportDialog student={student} />
+            </CardFooter>
         </Card>
 
        <Card>
