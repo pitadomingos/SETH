@@ -1,12 +1,13 @@
+
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { FileText as FileTextIcon, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse } from "lucide-react";
+import { FileText as FileTextIcon, Award, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse, Sparkles, BookOpen, User, Check, Lightbulb, TrendingUp } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { useSchoolData } from "@/context/school-data-context";
+import { useSchoolData, Grade } from "@/context/school-data-context";
 import { useToast } from '@/hooks/use-toast';
 import { Pie, PieChart, Cell } from 'recharts';
 import {
@@ -23,26 +24,135 @@ import Image from 'next/image';
 import { formatGradeDisplay, calculateAge } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { EndOfTermReportDialog } from '@/components/dashboard/end-of-term-report';
+import { analyzeStudentPerformanceAction } from '@/app/actions/ai-actions';
+import { StudentAnalysis } from '@/ai/flows/student-analysis-flow';
 
-const calculateAverageNumericGrade = (studentId: string, grades: any[]) => {
+const calculateAverageNumericGrade = (studentId: string, grades: Grade[], subject?: string) => {
     if (!studentId || !grades) return 0;
-    const studentGrades = grades.filter(g => g.studentId === studentId);
+    const studentGrades = subject 
+        ? grades.filter(g => g.studentId === studentId && g.subject === subject)
+        : grades.filter(g => g.studentId === studentId);
+        
     if (studentGrades.length === 0) return 0;
     const totalPoints = studentGrades.reduce((acc, g) => acc + parseFloat(g.grade), 0);
     return (totalPoints / studentGrades.length);
 };
 
-function AIFailureAnalysis({ student, grades, attendanceSummary }) {
-  return (
-    <div className="space-y-4 text-sm">
-      <div>
-        <AlertTitle className="mb-2">AI-Powered Academic Analysis</AlertTitle>
-        <AlertDescription>The AI analysis feature is temporarily unavailable. Please contact your teacher or school administrator for guidance on your academic standing and suggestions for improvement.</AlertDescription>
-      </div>
-    </div>
-  );
+function MyCourses({ student, studentCourses, grades, schoolProfile, teachersData }) {
+    if (studentCourses.length === 0) {
+        return (
+            <Card>
+                <CardHeader><CardTitle>My Courses</CardTitle></CardHeader>
+                <CardContent><p className="text-muted-foreground">You are not enrolled in any courses yet.</p></CardContent>
+            </Card>
+        );
+    }
+    
+    return (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {studentCourses.map(course => {
+                const teacher = teachersData.find(t => t.id === course.teacherId);
+                const avgGrade = calculateAverageNumericGrade(student.id, grades, course.subject);
+                return (
+                    <Card key={course.id}>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-xl"><BookOpen className="text-primary"/> {course.subject}</CardTitle>
+                            {teacher && <CardDescription className="flex items-center gap-2"><User className="h-4 w-4"/> {teacher.name}</CardDescription>}
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground">Your Average Grade</p>
+                            <p className="text-4xl font-bold">{formatGradeDisplay(avgGrade, schoolProfile?.gradingSystem)}</p>
+                        </CardContent>
+                    </Card>
+                )
+            })}
+        </div>
+    )
 }
 
+function StudentAIAdvisor({ student, grades, attendanceSummary }) {
+    const [analysis, setAnalysis] = useState<StudentAnalysis | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+
+    const handleAnalysis = async () => {
+        setIsLoading(true);
+        setAnalysis(null);
+        try {
+            const gradeData = grades.map(g => ({
+                subject: g.subject,
+                grade: g.grade,
+                type: g.type,
+                description: g.description,
+            }));
+
+            const attendanceData = Object.entries(attendanceSummary).map(([status, count]) => ({ status, count }));
+
+            const result = await analyzeStudentPerformanceAction({
+                studentName: student.name,
+                grades: gradeData,
+                attendance: attendanceData,
+            });
+            setAnalysis(result);
+        } catch (e) {
+            console.error("AI Analysis failed:", e);
+            toast({ variant: 'destructive', title: 'Analysis Failed', description: 'Could not get AI-powered recommendations.' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Card className="lg:col-span-2">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> Your AI Academic Advisor</CardTitle>
+                <CardDescription>Get personalized insights and recommendations based on your performance.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                {!analysis && (
+                    <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+                        <p className="text-muted-foreground mb-4">Click the button below to analyze your recent grades and attendance.</p>
+                        <Button onClick={handleAnalysis} disabled={isLoading}>
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                            Analyze My Performance
+                        </Button>
+                    </div>
+                )}
+                {analysis && (
+                    <div className="space-y-6">
+                         <div className="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 className="font-semibold flex items-center gap-2 mb-2"><Check className="text-green-500"/> Strengths</h3>
+                                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                                    {analysis.strengths.map((s,i) => <li key={i}>{s}</li>)}
+                                </ul>
+                            </div>
+                             <div>
+                                <h3 className="font-semibold flex items-center gap-2 mb-2"><TrendingUp className="text-orange-500"/> Areas for Improvement</h3>
+                                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                                    {analysis.areasForImprovement.map((a,i) => <li key={i}>{a}</li>)}
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold flex items-center gap-2 mb-2"><Lightbulb className="text-yellow-500"/> Recommendations</h3>
+                             <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                                {analysis.recommendations.map((r,i) => <li key={i}>{r}</li>)}
+                            </ul>
+                        </div>
+                    </div>
+                )}
+            </CardContent>
+            {analysis && (
+                <CardFooter>
+                    <Button variant="outline" onClick={() => setAnalysis(null)}>
+                        Start a New Analysis
+                    </Button>
+                </CardFooter>
+            )}
+        </Card>
+    )
+}
 
 function RankCard({ studentId }) {
     const { studentsData, grades } = useSchoolData();
@@ -125,7 +235,7 @@ function AttendanceBreakdownChart({ studentId }) {
   );
 }
 
-function CompletionStatusAlert({ student, hasPassed, areAllFeesPaid, grades, attendanceSummary }) {
+function CompletionStatusAlert({ hasPassed, areAllFeesPaid }) {
   if (hasPassed && areAllFeesPaid) {
     return (
       <Alert>
@@ -142,7 +252,8 @@ function CompletionStatusAlert({ student, hasPassed, areAllFeesPaid, grades, att
     return (
       <Alert variant="destructive">
         <XCircle className="h-4 w-4" />
-        <AIFailureAnalysis student={student} grades={grades} attendanceSummary={attendanceSummary} />
+        <AlertTitle>Academic Requirements Not Met</AlertTitle>
+        <AlertDescription>Your average grade is below the passing requirement. Please use the AI Advisor below for recommendations on how to improve. You cannot download official documents at this time.</AlertDescription>
       </Alert>
     );
   }
@@ -171,7 +282,8 @@ function AssignedTests({ student, studentClass }) {
             .filter(dt => dt.classId === studentClass.id && !dt.submissions.some(s => s.studentId === student.id))
             .map(dt => {
                 const testDetails = savedTests.find(st => st.id === dt.testId);
-                return { ...dt, ...testDetails };
+                const deadlineDate = dt.deadline.toDate ? dt.deadline.toDate() : new Date(dt.deadline);
+                return { ...dt, ...testDetails, deadline: deadlineDate };
             })
             .sort((a,b) => a.deadline.getTime() - b.deadline.getTime());
     }, [student, studentClass, deployedTests, savedTests]);
@@ -181,7 +293,7 @@ function AssignedTests({ student, studentClass }) {
     }
 
     return (
-        <Card className="lg:col-span-2">
+        <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><ListChecks /> Assigned Tests</CardTitle>
                 <CardDescription>Tests you need to complete.</CardDescription>
@@ -199,7 +311,7 @@ function AssignedTests({ student, studentClass }) {
                              <Button size="sm">Take Test</Button>
                            </Link>
                            <p className="text-xs text-muted-foreground mt-1">
-                                Due {format(new Date(test.deadline), 'MMM d, yyyy')}
+                                Due {format(test.deadline, 'MMM d, yyyy')}
                            </p>
                         </div>
                     </li>
@@ -221,6 +333,8 @@ export default function StudentDashboard() {
     attendance,
     schoolProfile,
     classesData,
+    coursesData,
+    teachersData
   } = useSchoolData();
   
   const student = useMemo(() => {
@@ -234,6 +348,11 @@ export default function StudentDashboard() {
     if (!student) return null;
     return classesData.find(c => c.grade === student.grade && c.name.split('-')[1].trim() === student.class);
   }, [student, classesData]);
+
+  const studentCourses = useMemo(() => {
+    if (!studentClass) return [];
+    return coursesData.filter(c => c.classId === studentClass.id);
+  }, [studentClass, coursesData]);
   
   const studentGrades = useMemo(() => {
     if (!studentId) return [];
@@ -286,39 +405,33 @@ export default function StudentDashboard() {
       </header>
       
        {student && <CompletionStatusAlert 
-          student={student}
           hasPassed={hasPassed}
-          areAllFeesPaid={areAllFeesPaid} 
-          grades={studentGrades}
-          attendanceSummary={studentAttendanceSummary}
+          areAllFeesPaid={areAllFeesPaid}
        />}
       
-       <div className="grid gap-6 lg:grid-cols-2">
+       <div className="grid gap-6 lg:grid-cols-3">
+          <StudentAIAdvisor student={student} grades={studentGrades} attendanceSummary={studentAttendanceSummary} />
           <RankCard studentId={studentId} />
-          <AttendanceBreakdownChart studentId={studentId} />
+       </div>
+       <div className="grid gap-6 lg:grid-cols-2">
           <AssignedTests student={student} studentClass={studentClass} />
-        <Card>
+          <AttendanceBreakdownChart studentId={studentId} />
+        </div>
+
+       <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Award /> Recent Grades</CardTitle>
-                <CardDescription>Your latest academic results.</CardDescription>
+                <CardTitle>My Courses & Progress</CardTitle>
+                <CardDescription>An overview of your performance in each subject.</CardDescription>
             </CardHeader>
             <CardContent>
-                <ul className="space-y-3">
-                {studentGrades.slice(0, 4).map((grade, index) => (
-                    <li key={index} className="flex justify-between items-center text-sm p-2 bg-muted rounded-md">
-                    <p className="font-medium">{grade.subject}</p>
-                    <Badge variant={grade.grade.startsWith('A') || parseFloat(grade.grade) >= 18 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
-                    </li>
-                ))}
-                </ul>
+                {student && <MyCourses student={student} studentCourses={studentCourses} grades={grades} schoolProfile={schoolProfile} teachersData={teachersData} />}
             </CardContent>
-            {student && (
+             {student && (
                 <CardFooter>
                     <EndOfTermReportDialog student={student} />
                 </CardFooter>
             )}
         </Card>
-      </div>
 
        <Card>
             <CardHeader>
