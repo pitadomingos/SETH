@@ -53,16 +53,21 @@ const completedTasks = [
 ];
 
 const upcomingFeatures = [
-  'Group functionalities into clear sidebar categories with collapsible sections.',
-  'Implement bulk user/class import for Admins.',
-  'Create a flexible custom report generator for financial and academic data.',
-  'Add an approval workflow with history for financial transactions.',
-  'Enhance the grade entry system to support concepts, weights, and modules per national standards.',
-  'Develop list export (PDF/DOCX) for students, classes, and grades with custom branding.',
-  'Integrate a notification center for students for grades, absences, and events.',
-  'Implement multi-language support (Portuguese/English) with a quick-toggle menu.',
-  'Add a "Back" button for consistent navigation within modules.',
   'Connect mock data to a real database (e.g., Firestore) to enable persistence.',
+  'Implement full CRUD (Create, Read, Update, Delete) on all management pages.',
+  'Group all functionalities into clear sidebar categories with collapsible sections.',
+  'Enhance mobile-first responsive design for a seamless experience on phones and tablets.',
+  'Add a "Back" button for consistent navigation within modules.',
+  'Implement multi-language support (Portuguese/English) with a quick-toggle menu.',
+  'Implement batch user/class import for Admins.',
+  'Create a flexible custom report generator for financial and academic data.',
+  'Implement a site-wide notification and communication hub for students and parents.',
+  'Develop list export (PDF/DOCX) for students, classes, and grades with custom branding.',
+  'Enhance the grade entry system to support concepts, weights, and modules per national standards.',
+  'Build out analytics for the student test-taking results for teachers.',
+  'Introduce student-centric features like goal setting and digital portfolios.',
+  'Add an approval workflow with history for financial transactions.',
+  'Develop district, provincial, and national data views for higher-level administration.',
 ];
 
 export default function TodoListPage() {
@@ -115,7 +120,7 @@ export default function TodoListPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Clock className="text-accent" />Upcoming Features ({upcomingFeatures.length})</CardTitle>
-            <CardDescription>The next set of features to be developed, based on stakeholder feedback.</CardDescription>
+            <CardDescription>The next set of features to be developed, based on stakeholder feedback and priorities.</CardDescription>
           </CardHeader>
           <CardContent>
              <ul className="space-y-3">
