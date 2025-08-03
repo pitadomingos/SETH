@@ -22,16 +22,16 @@ const AttendanceRecordSchema = z.object({
     count: z.number(),
 });
 
-export const AnalyzeStudentPerformanceParamsSchema = z.object({
+const AnalyzeStudentPerformanceParamsSchema = z.object({
   studentName: z.string().describe("The name of the student being analyzed."),
   grades: z.array(GradeSchema).describe("An array of the student's recent grades."),
   attendance: z.array(AttendanceRecordSchema).describe("A summary of the student's attendance."),
 });
 export type AnalyzeStudentPerformanceParams = z.infer<typeof AnalyzeStudentPerformanceParamsSchema>;
 
-export const StudentAnalysisSchema = z.object({
+const StudentAnalysisSchema = z.object({
     strengths: z.array(z.string()).describe("A list of 2-3 academic strengths identified from the data."),
-    areasForImprovement: z.array(z.string()).describe("A list of 2-3 specific areas where the student could improve."),
+    areasForImprovement: z.array(z.string()).describe("A list of 2-3 specific, concrete areas where the student could improve."),
     recommendations: z.array(z.string()).describe("A list of 3-4 concrete, actionable recommendations for the student to improve their performance."),
 });
 export type StudentAnalysis = z.infer<typeof StudentAnalysisSchema>;
