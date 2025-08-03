@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -110,7 +111,9 @@ function ClassPerformanceTrendChart({ teacherCourses }) {
     const relevantGrades = grades.filter(g => teacherStudentIds.has(g.studentId));
     
     const gradesByMonth = relevantGrades.reduce((acc, grade) => {
-        const month = format(grade.date, 'yyyy-MM');
+        // Firestore timestamps need to be converted to JS Dates
+        const gradeDate = grade.date.toDate ? grade.date.toDate() : new Date(grade.date);
+        const month = format(gradeDate, 'yyyy-MM');
         if (!acc[month]) {
             acc[month] = [];
         }
