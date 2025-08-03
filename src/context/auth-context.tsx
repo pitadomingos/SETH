@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [schoolId, setSchoolId] = useState<string | null>(null);
   const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [users, setUsers] = useState<Record<string, UserProfile>>(mockUsers);
+  const [users, setUsers] = useState<Record<string, UserProfile>>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -52,6 +52,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const storedRole = sessionStorage.getItem('role') as Role;
       const storedSchoolId = sessionStorage.getItem('schoolId');
       const storedOriginalUser = sessionStorage.getItem('originalUser');
+      const storedUsers = sessionStorage.getItem('users');
+      
       if (storedUser && storedRole) {
         setUser(JSON.parse(storedUser));
         setRole(storedRole);
@@ -59,6 +61,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       if(storedOriginalUser) {
         setOriginalUser(JSON.parse(storedOriginalUser));
+      }
+      if (storedUsers) {
+        setUsers(JSON.parse(storedUsers));
+      } else {
+        setUsers(mockUsers);
+        sessionStorage.setItem('users', JSON.stringify(mockUsers));
       }
     } catch (error) {
       console.error('Failed to parse user from sessionStorage', error);
@@ -85,7 +93,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addUser = (username: string, profile: UserProfile) => {
-    setUsers(prev => ({...prev, [username]: profile}));
+    const newUsers = {...users, [username]: profile};
+    setUsers(newUsers);
+    sessionStorage.setItem('users', JSON.stringify(newUsers));
   }
   
   const impersonateUser = (email: string, targetRole: Role) => {
