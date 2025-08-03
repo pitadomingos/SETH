@@ -11,7 +11,6 @@ export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, Syllab
 interface SchoolDataContextType {
     // --- Data States ---
     allSchoolData: Record<string, SchoolData> | null;
-    users: Record<string, UserProfile>;
     schoolProfile: SchoolProfile | null;
     studentsData: Student[];
     teachersData: Teacher[];
@@ -47,7 +46,7 @@ interface SchoolDataContextType {
     isLoading: boolean;
 
     // --- Action Functions ---
-    addSchool: (schoolData: SchoolData, adminUser: { username: string, profile: UserProfile }) => void;
+    addSchool: (schoolData: SchoolData) => void;
     addCourse: (course: Omit<Course, 'id'>) => void;
     addSyllabus: (syllabus: Omit<Syllabus, 'id' | 'topics'>) => void;
     updateSyllabusTopic: (subject: string, grade: string, topic: any) => void;
@@ -100,10 +99,9 @@ interface SchoolDataContextType {
 
 const SchoolDataContext = createContext<SchoolDataContextType | undefined>(undefined);
 
-const SchoolDataWrapper = ({ children }: { children: ReactNode }) => {
+export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { user, role, schoolId: authSchoolId } = useAuth();
   const [data, setData] = useState<Record<string, SchoolData> | null>(null);
-  const [users, setUsers] = useState<Record<string, UserProfile>>(mockUsers);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -180,7 +178,7 @@ const SchoolDataWrapper = ({ children }: { children: ReactNode }) => {
     return schoolData?.students || [];
   }, [role, user, schoolData, allStudents]);
   
-  const addSchool = (newSchoolData: SchoolData, adminUser: { username: string, profile: UserProfile }) => {
+  const addSchool = (newSchoolData: SchoolData) => {
     setData(prev => {
         if (!prev) return { [newSchoolData.profile.id]: newSchoolData };
         return {
@@ -188,7 +186,6 @@ const SchoolDataWrapper = ({ children }: { children: ReactNode }) => {
             [newSchoolData.profile.id]: newSchoolData
         }
     });
-    setUsers(prev => ({...prev, [adminUser.username]: adminUser.profile}));
   };
 
   const updateSchoolProfile = (profileData: Partial<SchoolProfile>, targetSchoolId?: string) => {
@@ -306,7 +303,7 @@ const SchoolDataWrapper = ({ children }: { children: ReactNode }) => {
               }
               return s;
           });
-          addLog(schoolId, 'Delete', `Deleted a topic from ${subject} syllabus`);
+          addLog(schoolId, 'Delete', `Deleted a topic from ${subject} syllabus}`);
           return newData;
       });
   };
@@ -817,7 +814,6 @@ const SchoolDataWrapper = ({ children }: { children: ReactNode }) => {
   const value = {
     isLoading,
     allSchoolData: data,
-    users,
     schoolProfile: schoolData?.profile || null,
     studentsData,
     teachersData: schoolData?.teachers || [],
@@ -881,10 +877,6 @@ const SchoolDataWrapper = ({ children }: { children: ReactNode }) => {
     </SchoolDataContext.Provider>
   );
 };
-
-export const SchoolDataProvider = ({ children }: { children: ReactNode }) => (
-    <SchoolDataWrapper>{children}</SchoolDataWrapper>
-);
 
 export const useSchoolData = () => {
   const context = useContext(SchoolDataContext);

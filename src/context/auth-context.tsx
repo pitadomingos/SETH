@@ -30,8 +30,8 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   impersonateUser: (email: string, role: Role) => void;
-  mockUsers?: Record<string, UserProfile>;
-  addUser?: (username: string, profile: UserProfile) => void;
+  mockUsers: Record<string, UserProfile>;
+  addUser: (username: string, profile: UserProfile) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
