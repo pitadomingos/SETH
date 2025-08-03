@@ -111,8 +111,7 @@ function ClassPerformanceTrendChart({ teacherCourses }) {
     const relevantGrades = grades.filter(g => teacherStudentIds.has(g.studentId));
     
     const gradesByMonth = relevantGrades.reduce((acc, grade) => {
-        // Firestore timestamps need to be converted to JS Dates
-        const gradeDate = grade.date.toDate ? grade.date.toDate() : new Date(grade.date);
+        const gradeDate = grade.date?.toDate ? grade.date.toDate() : new Date(grade.date);
         const month = format(gradeDate, 'yyyy-MM');
         if (!acc[month]) {
             acc[month] = [];
