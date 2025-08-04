@@ -4,7 +4,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData, Class, Course, Syllabus, Grade, Student } from '@/context/school-data-context';
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { Loader2, PenSquare, Sparkles, Printer, AlertTriangle, Book, Flask, Target, ClipboardCheck, List } from 'lucide-react';
+import { Loader2, PenSquare, Sparkles, Printer, AlertTriangle, Book, FlaskConical, Target, ClipboardCheck, List } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { FeatureLock } from '@/components/layout/feature-lock';
 import { Button } from '@/components/ui/button';
@@ -212,7 +212,7 @@ export default function LessonPlannerPage() {
                             <p className="text-sm text-muted-foreground mt-1">{dayPlan.objective}</p>
                           </div>
                           <div className="p-3 bg-muted/50 rounded-md">
-                            <p className="font-semibold text-sm flex items-center gap-2"><Flask className="h-4 w-4"/>Activities</p>
+                            <p className="font-semibold text-sm flex items-center gap-2"><FlaskConical className="h-4 w-4"/>Activities</p>
                              <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground mt-2">
                                 {dayPlan.activities.map((act, j) => <li key={j}>{act}</li>)}
                             </ol>
