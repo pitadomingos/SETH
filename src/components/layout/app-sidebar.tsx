@@ -46,6 +46,7 @@ import {
     History,
     CalendarCheck,
     Tv,
+    Package, // Added missing icon export
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -120,7 +121,7 @@ export const roleLinks: Record<Role, NavItem[]> = {
         { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
         { href: '/dashboard/events', label: 'Events', icon: Calendar },
         { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
-        { href: '/dashboard/assets', label: 'Assets', icon: Briefcase },
+        { href: '/dashboard/assets', label: 'Assets', icon: Package },
         { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
         { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
       ],
