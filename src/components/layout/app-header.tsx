@@ -1,4 +1,3 @@
-
 'use client';
 import {
   DropdownMenu,
@@ -13,11 +12,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, User, Bell, GraduationCap, ArrowLeftFromLine } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import Link from 'next/link';
+import Link from 'next-intl/link';
 import { ThemeToggle } from './theme-toggle';
 import { useSchoolData } from '@/context/school-data-context';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '../ui/badge';
+import { LanguageToggle } from './language-toggle';
 
 export function AppHeader({ className }: { className?: string }) {
   const { user, logout, originalUser } = useAuth();
@@ -47,6 +47,7 @@ export function AppHeader({ className }: { className?: string }) {
                 </Button>
             </div>
         )}
+        <LanguageToggle />
         <ThemeToggle />
         {!originalUser && (
             <>

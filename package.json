@@ -44,6 +44,7 @@
     "genkit": "latest",
     "lucide-react": "^0.475.0",
     "next": "15.3.3",
+    "next-intl": "latest",
     "next-themes": "^0.3.0",
     "nodemailer": "^6.9.14",
     "patch-package": "^8.0.0",
