@@ -56,7 +56,8 @@ import {
     Database,
     Languages,
 } from 'lucide-react';
-import { usePathname, Link } from 'next-intl/navigation';
+import { usePathname } from 'next-intl/navigation';
+import { Link } from 'next-intl/navigation';
 import { type LucideIcon } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useMemo } from 'react';

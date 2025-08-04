@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import Link from 'next/link';
+import { Link } from 'next-intl/navigation';
 import { FileText as FileTextIcon, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse, Sparkles, BookOpen, User, Check, Lightbulb, TrendingUp, BrainCircuit } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData, Grade, Student } from "@/context/school-data-context";
@@ -289,6 +289,10 @@ function AssignedTests({ student, studentClass }) {
             .sort((a,b) => a.deadline.getTime() - b.deadline.getTime());
     }, [student, studentClass, deployedTests, savedTests]);
 
+    if (assigned.length === 0) {
+        return null;
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -296,30 +300,24 @@ function AssignedTests({ student, studentClass }) {
                 <CardDescription>Tests you need to complete.</CardDescription>
             </CardHeader>
             <CardContent>
-                {assigned.length > 0 ? (
-                    <ul className="space-y-3">
-                    {assigned.slice(0, 4).map(test => (
-                        <li key={test.id} className="flex justify-between items-center text-sm p-3 bg-muted rounded-md">
-                            <div>
-                                <p className="font-semibold">{test.topic}</p>
-                                <p className="text-xs text-muted-foreground">{test.subject}</p>
-                            </div>
-                            <div className="text-right">
-                               <Link href={`/dashboard/test/${test.id}`} passHref>
-                                 <Button size="sm">Take Test</Button>
-                               </Link>
-                               <p className="text-xs text-muted-foreground mt-1">
-                                    Due {format(test.deadline, 'MMM d, yyyy')}
-                               </p>
-                            </div>
-                        </li>
-                    ))}
-                    </ul>
-                ) : (
-                    <div className="text-center text-muted-foreground py-8">
-                        You have no pending tests. Great job!
-                    </div>
-                )}
+                <ul className="space-y-3">
+                {assigned.slice(0, 4).map(test => (
+                    <li key={test.id} className="flex justify-between items-center text-sm p-3 bg-muted rounded-md">
+                        <div>
+                            <p className="font-semibold">{test.topic}</p>
+                            <p className="text-xs text-muted-foreground">{test.subject}</p>
+                        </div>
+                        <div className="text-right">
+                           <Link href={`/dashboard/test/${test.id}`} passHref>
+                             <Button size="sm">Take Test</Button>
+                           </Link>
+                           <p className="text-xs text-muted-foreground mt-1">
+                                Due {format(test.deadline, 'MMM d, yyyy')}
+                           </p>
+                        </div>
+                    </li>
+                ))}
+                </ul>
             </CardContent>
         </Card>
     );
@@ -528,4 +526,3 @@ export default function StudentDashboard() {
     </div>
   );
 }
-
