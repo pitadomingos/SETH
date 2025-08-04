@@ -16,7 +16,7 @@ export default function TakeTestPage() {
     const params = useParams();
     const router = useRouter();
     const { user } = useAuth();
-    const { deployedTests, savedTests, studentsData, addGrade } = useSchoolData();
+    const { deployedTests, savedTests, studentsData, addGrade, addTestSubmission } = useSchoolData();
     const { toast } = useToast();
     const form = useForm();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,6 +50,10 @@ export default function TakeTestPage() {
         
         const student = studentsData.find(s => s.email === user.email);
         if(student) {
+            // Record the submission to prevent re-taking the test
+            addTestSubmission(deployed.id, student.id, score);
+            
+            // Add the grade to the gradebook
             addGrade({
                 studentId: student.id,
                 subject: saved.subject,
@@ -57,10 +61,6 @@ export default function TakeTestPage() {
                 type: 'Test',
                 description: `AI Test: ${saved.topic}`,
             });
-
-            // This part would normally be a server-side update.
-            // For the prototype, we assume this submission is recorded.
-            // A full implementation would update the deployedTests array.
         }
 
         toast({

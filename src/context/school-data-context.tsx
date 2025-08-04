@@ -67,6 +67,7 @@ interface SchoolDataContextType {
     deleteClass: (id: string) => Promise<void>;
     addEvent: (event: Omit<Event, 'id' | 'schoolName'>) => void;
     addGrade: (grade: Omit<Grade, 'id' | 'date' | 'teacherId'>) => boolean;
+    addTestSubmission: (testId: string, studentId: string, score: number) => void;
     recordPayment: (feeId: string, amount: number) => void;
     addFee: (fee: Omit<FinanceRecord, 'id' | 'studentName' | 'status' | 'amountPaid'>) => void;
     addExpense: (expense: Omit<Expense, 'id'>) => void;
@@ -552,6 +553,25 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     return true;
   };
   
+  const addTestSubmission = (testId: string, studentId: string, score: number) => {
+    if (!schoolId) return;
+    setData(prevData => {
+        if (!prevData) return null;
+        const newData = { ...prevData };
+        const school = newData[schoolId];
+        const testIndex = school.deployedTests.findIndex(t => t.id === testId);
+        if (testIndex > -1) {
+            school.deployedTests[testIndex].submissions.push({
+                studentId,
+                score,
+                submittedAt: new Date(),
+            });
+        }
+        addLog(schoolId, 'Create', `Student ${studentId} submitted test ${testId}`);
+        return newData;
+    });
+  };
+
   const recordPayment = (feeId: string, amount: number) => {
     if (!schoolId) return;
     setData(prev => {
@@ -1004,7 +1024,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     announceAwards,
     addSchool, removeSchool, addCourse, addSyllabus, updateSyllabusTopic, deleteSyllabusTopic,
     updateApplicationStatus, addStudentFromAdmission, addAsset, addLessonAttendance,
-    addClass, updateClass, deleteClass, addEvent, addGrade, recordPayment, addFee, addExpense,
+    addClass, updateClass, deleteClass, addEvent, addGrade, addTestSubmission, recordPayment, addFee, addExpense,
     addTeam, deleteTeam, addPlayerToTeam, removePlayerFromTeam, addCompetition, addCompetitionResult,
     addTeacher, updateTeacher, deleteTeacher, addKioskMedia, removeKioskMedia, updateSchoolProfile, addMessage, addAdmission,
     updateSchoolStatus, updateMessageStatus, updateStudentStatus, updateTeacherStatus, updateParentStatus,
