@@ -10,6 +10,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { useAuth, Role } from '@/context/auth-context';
 import { 
@@ -193,6 +194,7 @@ export function AppSidebar() {
   const { role, user } = useAuth();
   const pathname = usePathname();
   const { schoolProfile, schoolGroups } = useSchoolData();
+  const { setOpenMobile } = useSidebar();
 
   const isPremiumAdmin = useMemo(() => {
     if (role !== 'Admin' || !user?.schoolId || !schoolGroups) return false;
@@ -248,7 +250,7 @@ export function AppSidebar() {
                                 : link.href;
                                 return (
                                     <SidebarMenuItem key={link.href}>
-                                        <Link href={finalHref} passHref target={link.target}>
+                                        <Link href={finalHref} passHref target={link.target} onClick={() => setOpenMobile(false)}>
                                             <SidebarMenuButton asChild isActive={pathname === finalHref} tooltip={link.label}>
                                                 <span><link.icon className="h-4 w-4" /><span>{link.label}</span></span>
                                             </SidebarMenuButton>
@@ -266,7 +268,7 @@ export function AppSidebar() {
             
             return (
               <SidebarMenuItem key={item.href}>
-                <Link href={finalHref} passHref target={item.target}>
+                <Link href={finalHref} passHref target={item.target} onClick={() => setOpenMobile(false)}>
                   <SidebarMenuButton asChild isActive={pathname === finalHref} tooltip={item.label}>
                     <span><item.icon className="h-4 w-4" /><span>{item.label}</span></span>
                   </SidebarMenuButton>
