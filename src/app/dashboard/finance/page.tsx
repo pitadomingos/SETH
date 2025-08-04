@@ -1,337 +1,133 @@
-
 'use client';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { useRouter } from 'next/navigation';
-import { useSchoolData, FinanceRecord } from '@/context/school-data-context';
-import { DollarSign, TrendingDown, Hourglass, PlusCircle, Loader2, CreditCard, Receipt, Calendar as CalendarIcon, Eye, BarChart2, Search, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useSchoolData, NewAdmissionData, Competition, Team, Student, Grade } from '@/context/school-data-context';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { cn, formatCurrency } from '@/lib/utils';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartConfig,
+} from '@/components/ui/chart';
+import { Bar, BarChart } from 'recharts';
+import { getGpaFromNumeric, formatGradeDisplay } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { cn, formatCurrency } from '@/lib/utils';
-import Image from 'next/image';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Textarea } from '../ui/textarea';
+import { analyzeStudentPerformanceAction } from '@/app/actions/ai-actions';
+import { StudentAnalysis } from '@/ai/flows/student-analysis-flow';
 
 
-// --- Fee Management ---
-const paymentSchema = z.object({
-  amount: z.coerce.number().positive("Payment amount must be a positive number."),
+const applicationSchema = z.object({
+  schoolId: z.string({ required_error: "Please select a school to apply to."}),
+  name: z.string().min(2, "Applicant name must be at least 2 characters."),
+  dateOfBirth: z.date({ required_error: "Date of birth is required." }),
+  sex: z.enum(['Male', 'Female'], { required_error: "Please select a gender." }),
+  appliedFor: z.string().min(1, "Please specify the grade being applied for."),
+  formerSchool: z.string().min(2, "Please enter the name of the former school."),
+  gradesSummary: z.string().min(10, "Please provide a brief summary of previous grades.").optional(),
 });
-type PaymentFormValues = z.infer<typeof paymentSchema>;
+type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
-const newTransactionSchema = z.object({
-    studentId: z.string({ required_error: "Please select a student." }),
-    description: z.string({ required_error: "Please select a fee description." }),
-    totalAmount: z.coerce.number().positive("Amount must be a positive number."),
-    dueDate: z.date({ required_error: "A due date is required."}),
-});
-type NewTransactionFormValues = z.infer<typeof newTransactionSchema>;
-
-// --- Expense & Income Management ---
-const financialRecordSchema = z.object({
-    type: z.enum(['Income', 'Expense']),
-    description: z.string().min(3, "Description is required."),
-    category: z.string().min(2, "Category is required."),
-    amount: z.coerce.number().positive("Amount must be positive."),
-    date: z.date({ required_error: "A date is required."}),
-    proofUrl: z.string().optional(),
-});
-type FinancialRecordFormValues = z.infer<typeof financialRecordSchema>;
-
-
-// --- Dialog Components ---
-
-function NewTransactionDialog() {
-  const { studentsData, feeDescriptions, addFee } = useSchoolData();
+function NewApplicationDialog() {
+  const { addAdmission, allSchoolData } = useSchoolData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-  const form = useForm<NewTransactionFormValues>({
-    resolver: zodResolver(newTransactionSchema),
-    defaultValues: {
-        studentId: '',
-        description: '',
-        totalAmount: 0,
-    }
+  const form = useForm<ApplicationFormValues>({
+    resolver: zodResolver(applicationSchema),
   });
 
-  async function onSubmit(values: NewTransactionFormValues) {
-    await addFee({
-      ...values,
-      dueDate: format(values.dueDate, 'yyyy-MM-dd')
+  const selectedSchoolId = form.watch('schoolId');
+  const selectedGradeStr = form.watch('appliedFor');
+
+  const vacancies = useMemo(() => {
+    if (!selectedSchoolId || !selectedGradeStr) return null;
+    const school = allSchoolData?.[selectedSchoolId];
+    if (!school) return null;
+
+    const gradeNumber = selectedGradeStr.replace('Grade ', '');
+    const capacity = school.profile.gradeCapacity?.[gradeNumber] ?? 0;
+    const currentStudents = school.students.filter(s => s.grade === gradeNumber).length;
+
+    return Math.max(0, capacity - currentStudents);
+  }, [selectedSchoolId, selectedGradeStr, allSchoolData]);
+
+  function onSubmit(values: ApplicationFormValues) {
+    addAdmission({
+      schoolId: values.schoolId,
+      name: values.name,
+      dateOfBirth: format(values.dateOfBirth, 'yyyy-MM-dd'),
+      sex: values.sex,
+      appliedFor: values.appliedFor,
+      formerSchool: values.formerSchool,
+      gradesSummary: values.gradesSummary || 'N/A',
+    });
+    toast({
+      title: 'Application Submitted',
+      description: `The application for ${values.name} has been sent to the school for review.`,
     });
     form.reset();
     setIsDialogOpen(false);
   }
 
-  return (
-     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline"><Receipt className="mr-2 h-4 w-4" />New Fee</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[480px]">
-        <DialogHeader>
-          <DialogTitle>Create New Fee Transaction</DialogTitle>
-          <DialogDescription>
-            Create a new fee record for a student. It will be added to their account.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <FormField
-              control={form.control}
-              name="studentId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Student</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a student" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {studentsData.map(student => (
-                        <SelectItem key={student.id} value={student.id}>{student.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a fee description" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {feeDescriptions.map(desc => (
-                        <SelectItem key={desc} value={desc}>{desc}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="totalAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Total Amount</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" placeholder="e.g., 1200.00" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="dueDate"
-              render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                  <FormLabel>Due Date</FormLabel>
-                  <Popover>
-                      <PopoverTrigger asChild>
-                      <FormControl>
-                          <Button
-                          variant={"outline"}
-                          className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                          )}
-                          >
-                          {field.value ? format(field.value, "PPP") : (
-                              <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                      </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                      />
-                      </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                  </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="secondary">Cancel</Button>
-              </DialogClose>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Fee
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-function FinancialRecordDialog({ type, children }: { type: 'Income' | 'Expense', children: React.ReactNode }) {
-  const { addExpense } = useSchoolData();
-  const [isOpen, setIsOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const form = useForm<FinancialRecordFormValues>({
-    resolver: zodResolver(financialRecordSchema),
-    defaultValues: {
-      type: type,
-      description: '',
-      amount: 0,
-      category: '',
-      proofUrl: '',
-    }
-  });
-
-  useEffect(() => {
-    if (isOpen) {
-      form.reset({
-        type: type,
-        description: '',
-        amount: 0,
-        category: '',
-        proofUrl: '',
-      });
-    }
-  }, [isOpen, type, form]);
-
-  const onSubmit = async (values: FinancialRecordFormValues) => {
-    await addExpense({ // Using addExpense for both as it's a generic ledger entry
-      ...values,
-      date: format(values.date, 'yyyy-MM-dd'),
-    });
-    form.reset();
-    setIsOpen(false);
-  }
-
-  const onOpenChange = (open: boolean) => {
-    if (!open) form.reset();
-    setIsOpen(open);
-  }
-  
-  const title = type === 'Income' ? 'Record New Income' : 'Record New Expense';
-  const dialogDesc = type === 'Income'
-    ? 'Enter details for miscellaneous school income (e.g., donations, grants).'
-    : 'Enter details for a school expense.';
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{dialogDesc}</DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder={type === 'Income' ? 'e.g., Alumni Donation' : 'e.g., Teacher Salaries - August'} {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="amount" render={({ field }) => ( <FormItem><FormLabel>Amount</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="category" render={({ field }) => ( <FormItem><FormLabel>Category</FormLabel><FormControl><Input placeholder={type === 'Income' ? 'e.g., Fundraising' : 'e.g., Operational'} {...field} /></FormControl><FormMessage /></FormItem> )} />
-            </div>
-            <FormField control={form.control} name="date" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )} />
-            <div>
-              <FormLabel>Proof/Receipt (Optional)</FormLabel>
-              <Input type="file" ref={fileInputRef} className="mt-2" onChange={() => form.setValue('proofUrl', `https://placehold.co/400x200.png?v=${Date.now()}`)}/>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-              <Button type="submit">Save Record</Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-function RecordPaymentDialog({ fee, onRecordPayment }: { fee: FinanceRecord, onRecordPayment: (feeId: string, amount: number) => void }) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const balanceDue = fee.totalAmount - fee.amountPaid;
-  const { schoolProfile } = useSchoolData();
-
-  const form = useForm<PaymentFormValues>({
-    resolver: zodResolver(paymentSchema),
-    defaultValues: {
-      amount: balanceDue,
-    },
-  });
-
-  async function onSubmit(values: PaymentFormValues) {
-    await onRecordPayment(fee.id, values.amount);
-    form.reset();
-    setIsDialogOpen(false);
-  }
+  const schoolList = allSchoolData ? Object.values(allSchoolData).map(s => s.profile) : [];
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" disabled={fee.totalAmount - fee.amountPaid <= 0}>
-          <Receipt className="mr-2 h-4 w-4" /> Record Payment
-        </Button>
+        <Button><UserPlus className="mr-2 h-4 w-4" /> New Application</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Record Payment for {fee.studentName}</DialogTitle>
+          <DialogTitle>Apply for a New Child</DialogTitle>
           <DialogDescription>
-            Fee for "{fee.description}". Balance due: {formatCurrency(balanceDue, schoolProfile?.currency)}
+            Fill out this form to submit a new admission application to a school.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+            <FormField control={form.control} name="schoolId" render={({ field }) => ( <FormItem><FormLabel>School to Apply To</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select School" /></SelectTrigger></FormControl><SelectContent>{schoolList.map(school => <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Child's Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+                <FormField control={form.control} name="sex" render={({ field }) => ( <FormItem><FormLabel>Sex</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+            </div>
+            <FormField control={form.control} name="appliedFor" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Payment Amount</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" placeholder="e.g., 50.00" {...field} />
-                  </FormControl>
-                  <FormMessage />
+                    <FormLabel>Applying for Grade</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedSchoolId}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select Grade" /></SelectTrigger></FormControl>
+                        <SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(g => <SelectItem key={g} value={`Grade ${g}`}>Grade {g}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <FormMessage />
                 </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="secondary">Cancel</Button>
-              </DialogClose>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Payment
-              </Button>
+            )} />
+             {vacancies !== null && (
+                <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md border">
+                    Available Vacancies for this grade: <span className="font-bold text-primary">{vacancies}</span>
+                    {vacancies === 0 && " (Applications will be added to the waitlist)"}
+                </div>
+            )}
+            <FormField control={form.control} name="formerSchool" render={({ field }) => ( <FormItem><FormLabel>Previous School</FormLabel><FormControl><Input placeholder="e.g., Eastwood Elementary" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="gradesSummary" render={({ field }) => ( <FormItem><FormLabel>Previous Grades Summary</FormLabel><FormControl><Textarea placeholder="Briefly describe academic performance, e.g., 'Consistent A grades in Math and Science, B in English.'" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            
+            <DialogFooter className="sticky bottom-0 bg-background pt-4 pr-0">
+              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+              <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit Application</Button>
             </DialogFooter>
           </form>
         </Form>
@@ -340,69 +136,188 @@ function RecordPaymentDialog({ fee, onRecordPayment }: { fee: FinanceRecord, onR
   );
 }
 
-function ViewProofDialog({ proofUrl, description }: { proofUrl: string, description: string}) {
+
+function AIGeneratedAdvice({ child, grades, attendance }) {
+  const [analysis, setAnalysis] = useState<StudentAnalysis | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleAnalysis = async () => {
+    setIsLoading(true);
+    setAnalysis(null);
+    try {
+      const gradeData = grades.map(g => ({
+        subject: g.subject,
+        grade: g.grade,
+        type: g.type,
+        description: g.description,
+      }));
+
+      const attendanceData = Object.entries(attendance).map(([status, count]) => ({
+        status,
+        count: count as number,
+      }));
+
+      const result = await analyzeStudentPerformanceAction({
+        studentName: child.name,
+        grades: gradeData,
+        attendance: attendanceData,
+      });
+      setAnalysis(result);
+    } catch (e) {
+      console.error('AI Analysis failed:', e);
+      toast({
+        variant: 'destructive',
+        title: 'Analysis Failed',
+        description: 'Could not get AI-powered recommendations.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Proof of Payment</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <div className="py-4">
-          <Image src={proofUrl} alt={`Proof for ${description}`} width={400} height={200} className="rounded-md mx-auto" data-ai-hint="receipt invoice" />
-        </div>
-      </DialogContent>
-    </Dialog>
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> AI-Powered Insights</CardTitle>
+        <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {!analysis && (
+          <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+            <p className="text-muted-foreground mb-4">Click below to analyze your child's recent performance.</p>
+            <Button onClick={handleAnalysis} disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+              Analyze Performance
+            </Button>
+          </div>
+        )}
+        {analysis && (
+          <div className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-semibold flex items-center gap-2 mb-2"><Check className="text-green-500"/> Strengths</h3>
+                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                  {analysis.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold flex items-center gap-2 mb-2"><TrendingUp className="text-orange-500"/> Areas for Improvement</h3>
+                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                  {analysis.areasForImprovement.map((a, i) => <li key={i}>{a}</li>)}
+                </ul>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-semibold flex items-center gap-2 mb-2"><Lightbulb className="text-yellow-500"/> Recommendations for You</h3>
+              <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                {analysis.recommendations.map((r, i) => <li key={i}>{r}</li>)}
+              </ul>
+            </div>
+          </div>
+        )}
+      </CardContent>
+       {analysis && (
+        <CardFooter>
+          <Button variant="outline" onClick={() => setAnalysis(null)}>
+            Start New Analysis
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
   )
 }
 
-// --- Charting ---
-function ExpenseAllocationChart({ expenses }) {
+function GradeDistribution({ grades }) {
   const chartData = useMemo(() => {
-    if (!expenses) return [];
-    const totalsByCategory = expenses
-      .filter(e => e.type === 'Expense')
-      .reduce((acc, expense) => {
-        acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
-        return acc;
-      }, {});
-    return Object.entries(totalsByCategory).map(([category, total]) => ({ category, total }));
-  }, [expenses]);
+    return grades.map(grade => ({
+      subject: grade.subject,
+      gpa: getGpaFromNumeric(parseFloat(grade.grade))
+    }));
+  }, [grades]);
 
   const chartConfig = {
-    total: {
-      label: "Total Expenses",
-      color: "hsl(var(--chart-1))",
+    gpa: {
+      label: 'GPA',
+      color: 'hsl(var(--chart-2))',
     },
   } satisfies ChartConfig;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Expense Allocations</CardTitle>
-        <CardDescription>Total spending by category this year.</CardDescription>
+        <CardTitle className="flex items-center gap-2"><BarChart2 /> Grade Distribution</CardTitle>
+        <CardDescription>Performance by subject based on GPA.</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
-          <BarChart data={chartData} layout="vertical" margin={{ left: 10 }}>
-            <CartesianGrid horizontal={false} />
-            <YAxis dataKey="category" type="category" tickLine={false} axisLine={false} tickMargin={10} width={80} />
-            <XAxis type="number" hide />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="total" fill="var(--color-total)" radius={4} />
-          </BarChart>
-        </ChartContainer>
+        {grades.length > 0 ? (
+          <ChartContainer config={chartConfig} className="h-48 w-full">
+            <BarChart data={chartData} margin={{ top: 20 }}>
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="gpa" fill="var(--color-gpa)" radius={4} />
+            </BarChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex items-center justify-center h-48 text-muted-foreground">
+            <p>No grade data available.</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
 }
 
-// --- Status and Role Views ---
+function ParentSportsActivities() {
+    const { studentsData, teamsData, competitionsData } = useSchoolData();
 
-const getStatusInfo = (fee: FinanceRecord) => {
+    const upcomingCompetitions = useMemo(() => {
+        const childrenIds = studentsData.map(c => c.id);
+        const childrenTeams = teamsData.filter(t => t.playerIds.some(pId => childrenIds.includes(pId)));
+        const teamMap = new Map(childrenTeams.map(t => [t.id, t]));
+        
+        return competitionsData
+            .filter(c => (c.date instanceof Date ? c.date : new Date(c.date)) >= new Date() && teamMap.has(c.ourTeamId))
+            .map(c => ({
+                ...c,
+                date: c.date instanceof Date ? c.date : new Date(c.date),
+                team: teamMap.get(c.ourTeamId),
+                players: studentsData.filter(s => teamMap.get(c.ourTeamId)?.playerIds.includes(s.id))
+            }))
+            .sort((a,b) => a.date.getTime() - b.date.getTime());
+    }, [studentsData, teamsData, competitionsData]);
+
+    if (upcomingCompetitions.length === 0) return null;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Trophy /> My Children's Sports</CardTitle>
+                <CardDescription>Upcoming games and competitions for your children.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ul className="space-y-4">
+                    {upcomingCompetitions.map(comp => (
+                        <li key={comp.id} className="flex items-start gap-4">
+                            <div className="flex flex-col items-center p-2 bg-muted rounded-md w-14">
+                                <span className="font-bold text-lg">{format(comp.date, 'dd')}</span>
+                                <span className="text-xs uppercase">{format(comp.date, 'MMM')}</span>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold">{comp.team?.name} vs {comp.opponent}</h4>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                    <div className="flex items-center gap-2"><User className="h-3 w-3"/><span>Player(s): {comp.players.map(p => p.name).join(', ')}</span></div>
+                                    <div className="flex items-center gap-2"><CalendarIcon className="h-3 w-3"/><span>{format(comp.date, 'EEEE')} at {comp.time}</span></div>
+                                </div>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </CardContent>
+        </Card>
+    );
+}
+
+const getStatusInfo = (fee) => {
     const balance = fee.totalAmount - fee.amountPaid;
     const isOverdue = new Date(fee.dueDate) < new Date() && balance > 0;
 
@@ -418,289 +333,160 @@ const getStatusInfo = (fee: FinanceRecord) => {
     return { text: 'Pending', variant: 'outline' as const };
 };
 
-function AdminFinanceView() {
-  const { financeData, recordPayment, expensesData, schoolProfile } = useSchoolData();
-  const [feeSearchTerm, setFeeSearchTerm] = useState('');
-  const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
-  
-  const filteredFinanceData = useMemo(() => {
-    return financeData.filter(item => 
-      item.studentName.toLowerCase().includes(feeSearchTerm.toLowerCase())
-    );
-  }, [financeData, feeSearchTerm]);
+export default function ParentDashboard() {
+  const { user } = useAuth();
+  const { studentsData, grades, attendance, financeData, schoolProfile, isLoading: schoolDataLoading } = useSchoolData();
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
-  const filteredExpenses = useMemo(() => {
-    return expensesData.filter(item => 
-      item.description.toLowerCase().includes(expenseSearchTerm.toLowerCase()) ||
-      item.category.toLowerCase().includes(expenseSearchTerm.toLowerCase())
-    );
-  }, [expensesData, expenseSearchTerm]);
+  useEffect(() => {
+    if (!selectedChildId && studentsData.length > 0) {
+      setSelectedChildId(studentsData[0].id);
+    }
+  }, [studentsData, selectedChildId]);
 
-  const now = new Date();
-  const totalRevenue = financeData.reduce((acc, f) => acc + f.amountPaid, 0);
+  const selectedChild = useMemo(() => studentsData.find(c => c.id === selectedChildId), [selectedChildId, studentsData]);
+
+  const childGrades = useMemo(() => {
+    if (!selectedChildId) return [];
+    return grades.filter(g => g.studentId === selectedChildId);
+  }, [grades, selectedChildId]);
+
+  const childAttendance = useMemo(() => {
+      if (!selectedChildId) return {};
+      return attendance.filter(a => a.studentId === selectedChildId).reduce((acc, record) => {
+          const statusKey = record.status.toLowerCase();
+          acc[statusKey] = (acc[statusKey] || 0) + 1;
+          return acc;
+      }, {});
+  }, [attendance, selectedChildId]);
   
-  const pendingFees = financeData
-    .filter(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) >= now)
-    .reduce((acc, f) => acc + (f.totalAmount - f.amountPaid), 0);
-  
-  const overdueFees = financeData
-    .filter(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < now)
-    .reduce((acc, f) => acc + (f.totalAmount - f.amountPaid), 0);
-  
-  const totalExpenses = expensesData.filter(e => e.type === 'Expense').reduce((acc, e) => acc + e.amount, 0);
-  const totalOtherIncome = expensesData.filter(e => e.type === 'Income').reduce((acc, e) => acc + e.amount, 0);
+  const childFinanceSummary = useMemo(() => {
+    if (!selectedChildId) return null;
+    const childFees = financeData.filter(f => f.studentId === selectedChildId);
+    if (childFees.length === 0) return null;
+    // Prioritize showing an overdue fee, then a partially paid/pending one.
+    const overdue = childFees.find(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < new Date());
+    if (overdue) return overdue;
+    const pending = childFees.find(f => f.totalAmount - f.amountPaid > 0);
+    if (pending) return pending;
+    return childFees[0]; // Otherwise show the first one (likely a paid one)
+  }, [financeData, selectedChildId]);
+
+  if (schoolDataLoading) {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  if (!studentsData || studentsData.length === 0) {
+    return (
+       <div className="space-y-6">
+        <header className="flex flex-wrap gap-4 justify-between items-center">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+              <p className="text-muted-foreground">Welcome, {user?.name}.</p>
+            </div>
+            <NewApplicationDialog />
+        </header>
+        <Card>
+            <CardHeader>
+            <CardTitle>No Student Data Found</CardTitle>
+            </CardHeader>
+            <CardContent>
+            <p>No student information is linked to your account. You can submit an application for a new child to a school.</p>
+            </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap gap-2 justify-between items-center">
+      <header className="flex flex-wrap gap-4 justify-between items-center">
         <div>
-            <h2 className="text-3xl font-bold tracking-tight">Finance</h2>
-            <p className="text-muted-foreground">Manage school finances, fees, and expenses.</p>
+          <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+          <p className="text-muted-foreground">Welcome, {user?.name}. Here is an overview for your children.</p>
         </div>
-        <div className="flex gap-2">
-            <NewTransactionDialog />
-            <FinancialRecordDialog type="Income"><Button><ArrowUpCircle className="mr-2 h-4 w-4" /> Add Income</Button></FinancialRecordDialog>
-            <FinancialRecordDialog type="Expense"><Button variant="destructive"><ArrowDownCircle className="mr-2 h-4 w-4" /> Add Expense</Button></FinancialRecordDialog>
-        </div>
+        <NewApplicationDialog />
       </header>
 
-       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue (Fees)</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-500">{formatCurrency(totalRevenue, schoolProfile?.currency)}</div>
-            <p className="text-xs text-muted-foreground">From student fee payments</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Fees</CardTitle>
-            <Hourglass className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-500">{formatCurrency(pendingFees, schoolProfile?.currency)}</div>
-            <p className="text-xs text-muted-foreground">Outstanding balance, not overdue</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overdue Fees</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-500">{formatCurrency(overdueFees, schoolProfile?.currency)}</div>
-            <p className="text-xs text-muted-foreground">Outstanding balance, past due date</p>
-          </CardContent>
-        </Card>
-         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Operational Balance</CardTitle>
-            <BarChart2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalOtherIncome - totalExpenses, schoolProfile?.currency)}</div>
-            <p className="text-xs text-muted-foreground">Other Income minus Expenses</p>
-          </CardContent>
-        </Card>
+      <div>
+        <h3 className="text-lg font-medium mb-2">Select a Child</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {studentsData.map(child => (
+            <Card 
+              key={child.id} 
+              onClick={() => setSelectedChildId(child.id)}
+              className={cn(
+                'cursor-pointer transition-all hover:shadow-md hover:border-primary/50',
+                selectedChildId === child.id ? 'border-primary ring-2 ring-primary/50' : 'border-border'
+              )}
+            >
+              <CardHeader>
+                <CardTitle>{child.name}</CardTitle>
+                <CardDescription>{child.schoolName}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Grade {child.grade} - {child.class}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
       
-      <Tabs defaultValue="fees">
-        <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="fees">Student Fee Collections</TabsTrigger>
-            <TabsTrigger value="ledger">Income & Expense Ledger</TabsTrigger>
-        </TabsList>
-        <TabsContent value="fees" className="mt-6">
-          <Card>
-            <CardHeader>
-                <CardTitle>Fee Collection Status</CardTitle>
-                <CardDescription>An overview of student fee payments.</CardDescription>
-                <div className="relative pt-4">
-                  <Search className="absolute left-2.5 top-6.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Search by student name..."
-                    className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
-                    value={feeSearchTerm}
-                    onChange={(e) => setFeeSearchTerm(e.target.value)}
-                  />
-                </div>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Student</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead className="text-right">Balance</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredFinanceData.map(item => {
-                            const balance = item.totalAmount - item.amountPaid;
-                            const status = getStatusInfo(item);
-                            return (
-                              <TableRow key={item.id}>
-                                  <TableCell className="font-medium">{item.studentName}</TableCell>
-                                  <TableCell>{item.description}</TableCell>
-                                  <TableCell className="text-right font-medium">{formatCurrency(balance, schoolProfile?.currency)}</TableCell>
-                                  <TableCell><Badge variant={status.variant}>{status.text}</Badge></TableCell>
-                                  <TableCell className="text-right">
-                                      <RecordPaymentDialog fee={item} onRecordPayment={recordPayment} />
-                                  </TableCell>
-                              </TableRow>
-                            );
-                        })}
-                         {filteredFinanceData.length === 0 && (
-                          <TableRow><TableCell colSpan={5} className="h-24 text-center">No records found matching your search.</TableCell></TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="ledger" className="mt-6">
-           <Card>
-                <CardHeader>
-                    <CardTitle>Income & Expense Ledger</CardTitle>
-                    <CardDescription>A log of all miscellaneous income and expenses.</CardDescription>
-                    <div className="relative pt-4">
-                      <Search className="absolute left-2.5 top-6.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="search"
-                        placeholder="Search by description or category..."
-                        className="w-full rounded-lg bg-background pl-8 md:w-[300px]"
-                        value={expenseSearchTerm}
-                        onChange={(e) => setExpenseSearchTerm(e.target.value)}
-                      />
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead>Category</TableHead>
-                                <TableHead className="text-right">Amount</TableHead>
-                                <TableHead className="text-center">Proof</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredExpenses.map(expense => (
-                              <TableRow key={expense.id}>
-                                  <TableCell>{expense.date}</TableCell>
-                                  <TableCell>
-                                    <Badge variant={expense.type === 'Income' ? 'secondary' : 'destructive'}>{expense.type}</Badge>
-                                  </TableCell>
-                                  <TableCell className="font-medium">{expense.description}</TableCell>
-                                  <TableCell><Badge variant="outline">{expense.category}</Badge></TableCell>
-                                  <TableCell className="text-right font-mono">{formatCurrency(expense.amount, schoolProfile?.currency)}</TableCell>
-                                  <TableCell className="text-center">
-                                    {expense.proofUrl ? <ViewProofDialog proofUrl={expense.proofUrl} description={expense.description} /> : '-'}
-                                  </TableCell>
-                              </TableRow>
-                            ))}
-                             {filteredExpenses.length === 0 && (
-                              <TableRow><TableCell colSpan={6} className="h-24 text-center">No records found matching your search.</TableCell></TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-}
-
-function ParentFinanceView() {
-    const { studentsData, financeData, schoolProfile } = useSchoolData();
-
-    return (
-        <div className="space-y-6">
-            <header>
-                <h2 className="text-3xl font-bold tracking-tight">Family Fee Portal</h2>
-                <p className="text-muted-foreground">Manage tuition and fee payments for your children.</p>
-            </header>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Fee Status per Child</CardTitle>
-                    <CardDescription>An overview of current and upcoming fee payments for your family.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Child's Name</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead className="text-right">Total Due</TableHead>
-                                <TableHead className="text-right">Amount Paid</TableHead>
-                                <TableHead className="text-right">Balance</TableHead>
-                                <TableHead>Due Date</TableHead>
-                                <TableHead>Status</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {studentsData.map(child => {
-                                const feesForChild = financeData.filter(f => f.studentId === child.id);
-                                if (feesForChild.length === 0) {
-                                    return (
-                                        <TableRow key={child.id}>
-                                            <TableCell className="font-medium">{child.name}</TableCell>
-                                            <TableCell colSpan={6} className="text-muted-foreground text-center">No fee information available for {child.name}</TableCell>
-                                        </TableRow>
-                                    );
-                                }
-                                return feesForChild.map(feeInfo => {
-                                    const balance = feeInfo.totalAmount - feeInfo.amountPaid;
-                                    const status = getStatusInfo(feeInfo);
-                                    return (
-                                      <TableRow key={feeInfo.id}>
-                                          <TableCell className="font-medium">{child.name}</TableCell>
-                                          <TableCell>{feeInfo.description}</TableCell>
-                                          <TableCell className="text-right">{formatCurrency(feeInfo.totalAmount, schoolProfile?.currency)}</TableCell>
-                                          <TableCell className="text-right">{formatCurrency(feeInfo.amountPaid, schoolProfile?.currency)}</TableCell>
-                                          <TableCell className="text-right font-medium">{formatCurrency(balance, schoolProfile?.currency)}</TableCell>
-                                          <TableCell>{feeInfo.dueDate}</TableCell>
-                                          <TableCell><Badge variant={status.variant}>{status.text}</Badge></TableCell>
-                                      </TableRow>
-                                    );
-                                });
-                            })}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+      {selectedChild ? (
+        <div className="space-y-6 animate-in fade-in-25">
+           <div className="grid gap-6 lg:grid-cols-3">
+            {selectedChild && <AIGeneratedAdvice child={selectedChild} grades={childGrades} attendance={childAttendance} />}
+             <div className="space-y-6">
+                <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><DollarSign /> Fee Status</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                    {childFinanceSummary ? (
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid, schoolProfile?.currency)}</span></p>
+                                <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
+                            </div>
+                            <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">No fee information available.</p>
+                    )}
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><GraduationCap /> Recent Grades</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-2">
+                            {childGrades.length > 0 ? childGrades.slice(0, 3).map((grade, index) => {
+                              const numericGrade = parseFloat(grade.grade);
+                              return (
+                                <li key={index} className="flex justify-between items-center text-sm">
+                                    <span className="font-medium">{grade.subject}</span>
+                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
+                                </li>
+                              )
+                            }) : <p className="text-muted-foreground text-sm">No recent grades.</p>}
+                        </ul>
+                    </CardContent>
+                </Card>
+              </div>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <GradeDistribution grades={childGrades} />
+            <ParentSportsActivities />
+          </div>
         </div>
-    );
-}
-
-export default function FinancePage() {
-  const { role, isLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && role !== 'Admin' && role !== 'Parent') {
-      router.push('/dashboard');
-    }
-  }, [role, isLoading, router]);
-
-  if (isLoading || (role !== 'Admin' && role !== 'Parent')) {
-    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
-  
-  return (
-    <div className="animate-in fade-in-50">
-        {role === 'Admin' && <AdminFinanceView />}
-        {role === 'Parent' && <ParentFinanceView />}
+      ) : (
+        <Card>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            <p>Please select a child to view their details.</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
-
-    

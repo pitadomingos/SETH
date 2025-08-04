@@ -1,307 +1,492 @@
-
 'use client';
-import * as React from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { useAuth } from '@/context/auth-context';
+import { useSchoolData, NewAdmissionData, Competition, Team, Student, Grade } from '@/context/school-data-context';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { cn, formatCurrency } from '@/lib/utils';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartConfig,
+} from '@/components/ui/chart';
+import { Bar, BarChart } from 'recharts';
+import { getGpaFromNumeric, formatGradeDisplay } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Calendar } from '@/components/ui/calendar';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { useSchoolData } from '@/context/school-data-context';
-import { useAuth } from '@/context/auth-context';
-import { Building, MapPin, Users, PlusCircle, Loader2, Calendar as CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Textarea } from '../ui/textarea';
+import { analyzeStudentPerformanceAction } from '@/app/actions/ai-actions';
+import { StudentAnalysis } from '@/ai/flows/student-analysis-flow';
 
-const eventSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters."),
-  date: z.date({ required_error: "An event date is required." }),
-  location: z.string().min(2, "Location is required."),
-  organizer: z.string().min(2, "Organizer is required."),
-  audience: z.string({ required_error: "Audience is required." }),
-  type: z.string({ required_error: "Event type is required." }),
+
+const applicationSchema = z.object({
+  schoolId: z.string({ required_error: "Please select a school to apply to."}),
+  name: z.string().min(2, "Applicant name must be at least 2 characters."),
+  dateOfBirth: z.date({ required_error: "Date of birth is required." }),
+  sex: z.enum(['Male', 'Female'], { required_error: "Please select a gender." }),
+  appliedFor: z.string().min(1, "Please specify the grade being applied for."),
+  formerSchool: z.string().min(2, "Please enter the name of the former school."),
+  gradesSummary: z.string().min(10, "Please provide a brief summary of previous grades.").optional(),
 });
-type EventFormValues = z.infer<typeof eventSchema>;
+type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
-function NewEventDialog() {
-    const { addEvent, audiences } = useSchoolData();
-    const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-    const { toast } = useToast();
-    
-    const form = useForm<EventFormValues>({
-        resolver: zodResolver(eventSchema),
-        defaultValues: { type: 'Academic' },
+function NewApplicationDialog() {
+  const { addAdmission, allSchoolData } = useSchoolData();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<ApplicationFormValues>({
+    resolver: zodResolver(applicationSchema),
+  });
+
+  const selectedSchoolId = form.watch('schoolId');
+  const selectedGradeStr = form.watch('appliedFor');
+
+  const vacancies = useMemo(() => {
+    if (!selectedSchoolId || !selectedGradeStr) return null;
+    const school = allSchoolData?.[selectedSchoolId];
+    if (!school) return null;
+
+    const gradeNumber = selectedGradeStr.replace('Grade ', '');
+    const capacity = school.profile.gradeCapacity?.[gradeNumber] ?? 0;
+    const currentStudents = school.students.filter(s => s.grade === gradeNumber).length;
+
+    return Math.max(0, capacity - currentStudents);
+  }, [selectedSchoolId, selectedGradeStr, allSchoolData]);
+
+  function onSubmit(values: ApplicationFormValues) {
+    addAdmission({
+      schoolId: values.schoolId,
+      name: values.name,
+      dateOfBirth: format(values.dateOfBirth, 'yyyy-MM-dd'),
+      sex: values.sex,
+      appliedFor: values.appliedFor,
+      formerSchool: values.formerSchool,
+      gradesSummary: values.gradesSummary || 'N/A',
     });
+    toast({
+      title: 'Application Submitted',
+      description: `The application for ${values.name} has been sent to the school for review.`,
+    });
+    form.reset();
+    setIsDialogOpen(false);
+  }
 
-    function onSubmit(values: EventFormValues) {
-        addEvent(values);
-        toast({
-            title: "Event Scheduled",
-            description: `${values.title} has been added to the calendar.`
-        });
-        form.reset();
-        setIsDialogOpen(false);
-    }
-    
-    return (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-                <Button><PlusCircle className="mr-2 h-4 w-4" /> New Event</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Schedule New Event</DialogTitle>
-                    <DialogDescription>Enter the details for the new school event.</DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                        <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Event Title</FormLabel><FormControl><Input placeholder="e.g., Annual Science Fair" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="date" render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                            <FormLabel>Date</FormLabel>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                <FormControl>
-                                    <Button
-                                    variant={"outline"}
-                                    className={cn("w-full pl-3 text-left font-normal",!field.value && "text-muted-foreground")}
-                                    >
-                                    {field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button>
-                                </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                                </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                            </FormItem>
-                        )} />
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g., Main Hall" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="organizer" render={({ field }) => ( <FormItem><FormLabel>Organizer</FormLabel><FormControl><Input placeholder="e.g., Science Dept." {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        </div>
-                        <FormField control={form.control} name="audience" render={({ field }) => ( 
-                            <FormItem>
-                                <FormLabel>Audience</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select audience" /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        {audiences.map(aud => <SelectItem key={aud} value={aud}>{aud}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem> 
-                        )} />
-                        <FormField control={form.control} name="type" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Event Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="Academic">Academic</SelectItem>
-                                        <SelectItem value="Sports">Sports</SelectItem>
-                                        <SelectItem value="Cultural">Cultural</SelectItem>
-                                        <SelectItem value="Meeting">Meeting</SelectItem>
-                                        <SelectItem value="Holiday">Holiday</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <DialogFooter className="mt-4">
-                            <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                            <Button type="submit" disabled={form.formState.isSubmitting}> {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Schedule Event</Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
-    )
-}
-
-export default function EventsPage() {
-  const { events, studentsData, teachersData, coursesData, classesData } = useSchoolData();
-  const { role, user } = useAuth();
-  const [date, setDate] = React.useState<Date | undefined>(undefined);
-  
-  const eventDates = React.useMemo(() => {
-    return events.map(event => event.date.toDate ? event.date.toDate() : new Date(event.date));
-  }, [events]);
-
-  const student = React.useMemo(() => {
-    if (role !== 'Student' || !user?.email) return null;
-    return studentsData.find(s => s.email === user.email);
-  }, [role, user, studentsData]);
-
-  const teacher = React.useMemo(() => {
-    if (role !== 'Teacher' || !user?.email) return null;
-    return teachersData.find(t => t.email === user.email);
-  }, [role, user, teachersData]);
-
-  const displayedEvents = React.useMemo(() => {
-    const sortedEvents = [...events].map(e => ({...e, date: e.date.toDate ? e.date.toDate() : new Date(e.date)}))
-                                    .sort((a, b) => a.date.getTime() - b.date.getTime());
-    
-    let filteredByRole = sortedEvents;
-
-    if (role === 'Student' && student) {
-      filteredByRole = sortedEvents.filter(event => {
-        const audience = event.audience.toLowerCase();
-        const studentGrade = parseInt(student.grade, 10);
-        if (audience.includes('all student')) return true;
-        if (audience.includes('whole school')) return true;
-        
-        if (audience.includes('grades')) {
-            const matches = audience.match(/(\d+)-(\d+)/);
-            if (matches) {
-                const min = parseInt(matches[1], 10);
-                const max = parseInt(matches[2], 10);
-                if (!isNaN(min) && !isNaN(max) && studentGrade >= min && studentGrade <= max) {
-                    return true;
-                }
-            }
-        }
-        if (audience.includes(`grade ${student.grade}`)) return true;
-
-        return false;
-      });
-    }
-
-    if (role === 'Teacher' && teacher) {
-        const teacherClassIds = coursesData.filter(c => c.teacherId === teacher.id).map(c => c.classId);
-        const teacherGrades = classesData.filter(c => teacherClassIds.includes(c.id)).map(c => parseInt(c.grade, 10));
-
-        filteredByRole = sortedEvents.filter(event => {
-            const audience = event.audience.toLowerCase();
-            if (audience.includes('teacher')) return true;
-            if (audience.includes('all staff')) return true;
-            if (audience.includes('whole school')) return true;
-
-            const gradeMatch = audience.match(/grade (\d+)/);
-            if (gradeMatch) {
-                const eventGrade = parseInt(gradeMatch[1], 10);
-                if (teacherGrades.includes(eventGrade)) return true;
-            }
-
-             const rangeMatch = audience.match(/grades (\d+)-(\d+)/);
-            if (rangeMatch) {
-                const min = parseInt(rangeMatch[1], 10);
-                const max = parseInt(rangeMatch[2], 10);
-                if (teacherGrades.some(g => g >= min && g <= max)) return true;
-            }
-            return false;
-        });
-    }
-
-    if (role === 'Parent' && user) {
-      const children = studentsData.filter(s => s.parentEmail === user.email);
-      const childrenGrades = [...new Set(children.map(c => parseInt(c.grade, 10)))];
-      
-      filteredByRole = sortedEvents.filter(event => {
-        const audience = event.audience.toLowerCase();
-        if (audience.includes('parent')) return true;
-        if (audience.includes('whole school')) return true;
-
-        if (childrenGrades.some(childGrade => audience.includes(`grade ${childGrade}`))) return true;
-        
-        const rangeMatch = audience.match(/grades (\d+)-(\d+)/);
-        if (rangeMatch) {
-            const min = parseInt(rangeMatch[1], 10);
-            const max = parseInt(rangeMatch[2], 10);
-            if (childrenGrades.some(g => g >= min && g <= max)) return true;
-        }
-
-        return false;
-      });
-    }
-
-
-    if (date) {
-      return filteredByRole.filter(e => e.date.toDateString() === date.toDateString());
-    }
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return filteredByRole.filter(e => e.date >= today);
-  }, [date, events, role, user, student, teacher, studentsData, teachersData, coursesData, classesData]);
+  const schoolList = allSchoolData ? Object.values(allSchoolData).map(s => s.profile) : [];
 
   return (
-    <div className="space-y-6 animate-in fade-in-50">
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-            <h2 className="text-3xl font-bold tracking-tight">School Events</h2>
-            <p className="text-muted-foreground">Stay up-to-date with important school dates and events.</p>
-        </div>
-        {role === 'Admin' && <NewEventDialog />}
-      </header>
-      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-        <Card>
-          <CardContent className="p-0 flex justify-center">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="p-4"
-              modifiers={{
-                event: eventDates,
-              }}
-              modifiersClassNames={{
-                event: 'bg-primary text-primary-foreground rounded-full',
-              }}
-            />
-          </CardContent>
-        </Card>
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>
-              {date ? `Events for ${format(date, 'PPP')}` : 'Upcoming Events'}
-            </CardTitle>
-            <CardDescription>
-              {date ? 'A list of events for the selected day. Click the date again to see all upcoming events.' : 'A list of key upcoming dates and events.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {displayedEvents.length > 0 ? (
-              <ul className="space-y-4">
-                {displayedEvents.map((event) => (
-                  <li key={event.id} className="flex items-start gap-4">
-                    <div className="flex flex-col items-center p-2 bg-muted rounded-md w-14">
-                      <span className="font-bold text-lg">{format(event.date, 'dd')}</span>
-                      <span className="text-xs uppercase">{format(event.date, 'MMM')}</span>
-                    </div>
-                    <div>
-                        <p className="font-semibold">{event.title}</p>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
-                            <span>{format(event.date, 'EEEE')}</span>
-                            <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /><span>{event.location}</span></div>
-                            <div className="flex items-center gap-1.5"><Users className="h-3 w-3" /><span>For: {event.audience}</span></div>
-                        </div>
-                        {role === 'Parent' && event.schoolName && (
-                            <div className="flex items-center text-xs text-primary font-medium mt-1.5">
-                                <Building className="mr-1.5 h-3 w-3" />
-                                <span>{event.schoolName}</span>
-                            </div>
-                        )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-                <p className="text-center text-muted-foreground py-10">
-                  {date ? 'No events scheduled for this day.' : 'No upcoming events.'}
-                </p>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Button><UserPlus className="mr-2 h-4 w-4" /> New Application</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Apply for a New Child</DialogTitle>
+          <DialogDescription>
+            Fill out this form to submit a new admission application to a school.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+            <FormField control={form.control} name="schoolId" render={({ field }) => ( <FormItem><FormLabel>School to Apply To</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select School" /></SelectTrigger></FormControl><SelectContent>{schoolList.map(school => <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Child's Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+                <FormField control={form.control} name="sex" render={({ field }) => ( <FormItem><FormLabel>Sex</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+            </div>
+            <FormField control={form.control} name="appliedFor" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Applying for Grade</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedSchoolId}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select Grade" /></SelectTrigger></FormControl>
+                        <SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(g => <SelectItem key={g} value={`Grade ${g}`}>Grade {g}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+            )} />
+             {vacancies !== null && (
+                <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md border">
+                    Available Vacancies for this grade: <span className="font-bold text-primary">{vacancies}</span>
+                    {vacancies === 0 && " (Applications will be added to the waitlist)"}
+                </div>
             )}
-          </CardContent>
+            <FormField control={form.control} name="formerSchool" render={({ field }) => ( <FormItem><FormLabel>Previous School</FormLabel><FormControl><Input placeholder="e.g., Eastwood Elementary" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="gradesSummary" render={({ field }) => ( <FormItem><FormLabel>Previous Grades Summary</FormLabel><FormControl><Textarea placeholder="Briefly describe academic performance, e.g., 'Consistent A grades in Math and Science, B in English.'" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            
+            <DialogFooter className="sticky bottom-0 bg-background pt-4 pr-0">
+              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+              <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit Application</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+function AIGeneratedAdvice({ child, grades, attendance }) {
+  const [analysis, setAnalysis] = useState<StudentAnalysis | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleAnalysis = async () => {
+    setIsLoading(true);
+    setAnalysis(null);
+    try {
+      const gradeData = grades.map(g => ({
+        subject: g.subject,
+        grade: g.grade,
+        type: g.type,
+        description: g.description,
+      }));
+
+      const attendanceData = Object.entries(attendance).map(([status, count]) => ({
+        status,
+        count: count as number,
+      }));
+
+      const result = await analyzeStudentPerformanceAction({
+        studentName: child.name,
+        grades: gradeData,
+        attendance: attendanceData,
+      });
+      setAnalysis(result);
+    } catch (e) {
+      console.error('AI Analysis failed:', e);
+      toast({
+        variant: 'destructive',
+        title: 'Analysis Failed',
+        description: 'Could not get AI-powered recommendations.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> AI-Powered Insights</CardTitle>
+        <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {!analysis && (
+          <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+            <p className="text-muted-foreground mb-4">Click below to analyze your child's recent performance.</p>
+            <Button onClick={handleAnalysis} disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+              Analyze Performance
+            </Button>
+          </div>
+        )}
+        {analysis && (
+          <div className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-semibold flex items-center gap-2 mb-2"><Check className="text-green-500"/> Strengths</h3>
+                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                  {analysis.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold flex items-center gap-2 mb-2"><TrendingUp className="text-orange-500"/> Areas for Improvement</h3>
+                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                  {analysis.areasForImprovement.map((a, i) => <li key={i}>{a}</li>)}
+                </ul>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-semibold flex items-center gap-2 mb-2"><Lightbulb className="text-yellow-500"/> Recommendations for You</h3>
+              <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                {analysis.recommendations.map((r, i) => <li key={i}>{r}</li>)}
+              </ul>
+            </div>
+          </div>
+        )}
+      </CardContent>
+       {analysis && (
+        <CardFooter>
+          <Button variant="outline" onClick={() => setAnalysis(null)}>
+            Start New Analysis
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
+  )
+}
+
+function GradeDistribution({ grades }) {
+  const chartData = useMemo(() => {
+    return grades.map(grade => ({
+      subject: grade.subject,
+      gpa: getGpaFromNumeric(parseFloat(grade.grade))
+    }));
+  }, [grades]);
+
+  const chartConfig = {
+    gpa: {
+      label: 'GPA',
+      color: 'hsl(var(--chart-2))',
+    },
+  } satisfies ChartConfig;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><BarChart2 /> Grade Distribution</CardTitle>
+        <CardDescription>Performance by subject based on GPA.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {grades.length > 0 ? (
+          <ChartContainer config={chartConfig} className="h-48 w-full">
+            <BarChart data={chartData} margin={{ top: 20 }}>
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="gpa" fill="var(--color-gpa)" radius={4} />
+            </BarChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex items-center justify-center h-48 text-muted-foreground">
+            <p>No grade data available.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function ParentSportsActivities() {
+    const { studentsData, teamsData, competitionsData } = useSchoolData();
+
+    const upcomingCompetitions = useMemo(() => {
+        const childrenIds = studentsData.map(c => c.id);
+        const childrenTeams = teamsData.filter(t => t.playerIds.some(pId => childrenIds.includes(pId)));
+        const teamMap = new Map(childrenTeams.map(t => [t.id, t]));
+        
+        return competitionsData
+            .filter(c => (c.date instanceof Date ? c.date : new Date(c.date)) >= new Date() && teamMap.has(c.ourTeamId))
+            .map(c => ({
+                ...c,
+                date: c.date instanceof Date ? c.date : new Date(c.date),
+                team: teamMap.get(c.ourTeamId),
+                players: studentsData.filter(s => teamMap.get(c.ourTeamId)?.playerIds.includes(s.id))
+            }))
+            .sort((a,b) => a.date.getTime() - b.date.getTime());
+    }, [studentsData, teamsData, competitionsData]);
+
+    if (upcomingCompetitions.length === 0) return null;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Trophy /> My Children's Sports</CardTitle>
+                <CardDescription>Upcoming games and competitions for your children.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ul className="space-y-4">
+                    {upcomingCompetitions.map(comp => (
+                        <li key={comp.id} className="flex items-start gap-4">
+                            <div className="flex flex-col items-center p-2 bg-muted rounded-md w-14">
+                                <span className="font-bold text-lg">{format(comp.date, 'dd')}</span>
+                                <span className="text-xs uppercase">{format(comp.date, 'MMM')}</span>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold">{comp.team?.name} vs {comp.opponent}</h4>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                    <div className="flex items-center gap-2"><User className="h-3 w-3"/><span>Player(s): {comp.players.map(p => p.name).join(', ')}</span></div>
+                                    <div className="flex items-center gap-2"><CalendarIcon className="h-3 w-3"/><span>{format(comp.date, 'EEEE')} at {comp.time}</span></div>
+                                </div>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </CardContent>
+        </Card>
+    );
+}
+
+const getStatusInfo = (fee) => {
+    const balance = fee.totalAmount - fee.amountPaid;
+    const isOverdue = new Date(fee.dueDate) < new Date() && balance > 0;
+
+    if (balance <= 0) {
+        return { text: 'Paid', variant: 'secondary' as const };
+    }
+    if (isOverdue) {
+        return { text: 'Overdue', variant: 'destructive' as const };
+    }
+     if (fee.amountPaid > 0) {
+        return { text: 'Partially Paid', variant: 'outline' as const };
+    }
+    return { text: 'Pending', variant: 'outline' as const };
+};
+
+export default function ParentDashboard() {
+  const { user } = useAuth();
+  const { studentsData, grades, attendance, financeData, schoolProfile, isLoading: schoolDataLoading } = useSchoolData();
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedChildId && studentsData.length > 0) {
+      setSelectedChildId(studentsData[0].id);
+    }
+  }, [studentsData, selectedChildId]);
+
+  const selectedChild = useMemo(() => studentsData.find(c => c.id === selectedChildId), [selectedChildId, studentsData]);
+
+  const childGrades = useMemo(() => {
+    if (!selectedChildId) return [];
+    return grades.filter(g => g.studentId === selectedChildId);
+  }, [grades, selectedChildId]);
+
+  const childAttendance = useMemo(() => {
+      if (!selectedChildId) return {};
+      return attendance.filter(a => a.studentId === selectedChildId).reduce((acc, record) => {
+          const statusKey = record.status.toLowerCase();
+          acc[statusKey] = (acc[statusKey] || 0) + 1;
+          return acc;
+      }, {});
+  }, [attendance, selectedChildId]);
+  
+  const childFinanceSummary = useMemo(() => {
+    if (!selectedChildId) return null;
+    const childFees = financeData.filter(f => f.studentId === selectedChildId);
+    if (childFees.length === 0) return null;
+    // Prioritize showing an overdue fee, then a partially paid/pending one.
+    const overdue = childFees.find(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < new Date());
+    if (overdue) return overdue;
+    const pending = childFees.find(f => f.totalAmount - f.amountPaid > 0);
+    if (pending) return pending;
+    return childFees[0]; // Otherwise show the first one (likely a paid one)
+  }, [financeData, selectedChildId]);
+
+  if (schoolDataLoading) {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  if (!studentsData || studentsData.length === 0) {
+    return (
+       <div className="space-y-6">
+        <header className="flex flex-wrap gap-4 justify-between items-center">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+              <p className="text-muted-foreground">Welcome, {user?.name}.</p>
+            </div>
+            <NewApplicationDialog />
+        </header>
+        <Card>
+            <CardHeader>
+            <CardTitle>No Student Data Found</CardTitle>
+            </CardHeader>
+            <CardContent>
+            <p>No student information is linked to your account. You can submit an application for a new child to a school.</p>
+            </CardContent>
         </Card>
       </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <header className="flex flex-wrap gap-4 justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+          <p className="text-muted-foreground">Welcome, {user?.name}. Here is an overview for your children.</p>
+        </div>
+        <NewApplicationDialog />
+      </header>
+
+      <div>
+        <h3 className="text-lg font-medium mb-2">Select a Child</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {studentsData.map(child => (
+            <Card 
+              key={child.id} 
+              onClick={() => setSelectedChildId(child.id)}
+              className={cn(
+                'cursor-pointer transition-all hover:shadow-md hover:border-primary/50',
+                selectedChildId === child.id ? 'border-primary ring-2 ring-primary/50' : 'border-border'
+              )}
+            >
+              <CardHeader>
+                <CardTitle>{child.name}</CardTitle>
+                <CardDescription>{child.schoolName}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Grade {child.grade} - {child.class}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+      
+      {selectedChild ? (
+        <div className="space-y-6 animate-in fade-in-25">
+           <div className="grid gap-6 lg:grid-cols-3">
+            {selectedChild && <AIGeneratedAdvice child={selectedChild} grades={childGrades} attendance={childAttendance} />}
+             <div className="space-y-6">
+                <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><DollarSign /> Fee Status</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                    {childFinanceSummary ? (
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid, schoolProfile?.currency)}</span></p>
+                                <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
+                            </div>
+                            <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">No fee information available.</p>
+                    )}
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><GraduationCap /> Recent Grades</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-2">
+                            {childGrades.length > 0 ? childGrades.slice(0, 3).map((grade, index) => {
+                              const numericGrade = parseFloat(grade.grade);
+                              return (
+                                <li key={index} className="flex justify-between items-center text-sm">
+                                    <span className="font-medium">{grade.subject}</span>
+                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
+                                </li>
+                              )
+                            }) : <p className="text-muted-foreground text-sm">No recent grades.</p>}
+                        </ul>
+                    </CardContent>
+                </Card>
+              </div>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <GradeDistribution grades={childGrades} />
+            <ParentSportsActivities />
+          </div>
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            <p>Please select a child to view their details.</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

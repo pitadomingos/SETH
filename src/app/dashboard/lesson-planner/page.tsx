@@ -1,234 +1,490 @@
-
 'use client';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { useRouter } from 'next/navigation';
-import { useSchoolData, Class, Course, Syllabus, Grade, Student } from '@/context/school-data-context';
-import { useEffect, useState, useMemo, useRef } from 'react';
-import { Loader2, PenSquare, Sparkles, Printer, AlertTriangle, Book, FlaskConical, Target, ClipboardCheck, List } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { FeatureLock } from '@/components/layout/feature-lock';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useSchoolData, NewAdmissionData, Competition, Team, Student, Grade } from '@/context/school-data-context';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useReactToPrint } from 'react-to-print';
-import { generateLessonPlanAction } from '@/app/actions/ai-actions';
-import { GenerateLessonPlanParams, LessonPlan } from '@/ai/flows/lesson-planner-flow';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Separator } from '@/components/ui/separator';
+import { cn, formatCurrency } from '@/lib/utils';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartConfig,
+} from '@/components/ui/chart';
+import { Bar, BarChart } from 'recharts';
+import { getGpaFromNumeric, formatGradeDisplay } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Textarea } from '../ui/textarea';
+import { analyzeStudentPerformanceAction } from '@/app/actions/ai-actions';
+import { StudentAnalysis } from '@/ai/flows/student-analysis-flow';
 
-export default function LessonPlannerPage() {
-  const { role, user, isLoading: authLoading } = useAuth();
-  const router = useRouter();
-  const { schoolProfile, isLoading: dataLoading, coursesData, classesData, teachersData, syllabi, grades, studentsData } = useSchoolData();
+
+const applicationSchema = z.object({
+  schoolId: z.string({ required_error: "Please select a school to apply to."}),
+  name: z.string().min(2, "Applicant name must be at least 2 characters."),
+  dateOfBirth: z.date({ required_error: "Date of birth is required." }),
+  sex: z.enum(['Male', 'Female'], { required_error: "Please select a gender." }),
+  appliedFor: z.string().min(1, "Please specify the grade being applied for."),
+  formerSchool: z.string().min(2, "Please enter the name of the former school."),
+  gradesSummary: z.string().min(10, "Please provide a brief summary of previous grades.").optional(),
+});
+type ApplicationFormValues = z.infer<typeof applicationSchema>;
+
+function NewApplicationDialog() {
+  const { addAdmission, allSchoolData } = useSchoolData();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
-  
-  const [selectedCourseId, setSelectedCourseId] = useState('');
-  const [generatedPlan, setGeneratedPlan] = useState<LessonPlan | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const componentRef = useRef(null);
 
-  const handlePrint = useReactToPrint({
-    content: () => componentRef.current,
-    documentTitle: generatedPlan?.title || 'Lesson Plan',
+  const form = useForm<ApplicationFormValues>({
+    resolver: zodResolver(applicationSchema),
   });
 
-  const isLoading = authLoading || dataLoading;
+  const selectedSchoolId = form.watch('schoolId');
+  const selectedGradeStr = form.watch('appliedFor');
 
-  const teacher = useMemo(() => {
-    if (!user) return null;
-    return teachersData.find(t => t.email === user.email);
-  }, [user, teachersData]);
-  
-  const teacherCourses = useMemo(() => {
-    if (!teacher) return [];
-    return coursesData.filter(c => c.teacherId === teacher.id);
-  }, [teacher, coursesData]);
-  
-  const teacherClasses = useMemo(() => {
-    if (!teacherCourses.length) return [];
-    const classIds = new Set(teacherCourses.map(c => c.classId));
-    return classesData.filter(c => classIds.has(c.id));
-  }, [teacherCourses, classesData]);
+  const vacancies = useMemo(() => {
+    if (!selectedSchoolId || !selectedGradeStr) return null;
+    const school = allSchoolData?.[selectedSchoolId];
+    if (!school) return null;
 
-  const selectedCourse = teacherCourses.find(c => c.id === selectedCourseId);
-  const selectedClass = classesData.find(c => c.id === selectedCourse?.classId);
+    const gradeNumber = selectedGradeStr.replace('Grade ', '');
+    const capacity = school.profile.gradeCapacity?.[gradeNumber] ?? 0;
+    const currentStudents = school.students.filter(s => s.grade === gradeNumber).length;
 
-  useEffect(() => {
-    if (!isLoading && role !== 'Teacher') {
-      router.push('/dashboard');
-    }
-  }, [role, isLoading, router]);
-  
-  const handleGeneratePlan = async () => {
-    if (!selectedCourse || !selectedClass) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Please select a valid course and class.' });
-        return;
-    }
-    setIsGenerating(true);
-    setGeneratedPlan(null);
-    setError(null);
-    
-    const relevantSyllabus = syllabi.find(s => s.subject === selectedCourse.subject && s.grade === selectedClass.grade);
-    const classStudents = studentsData.filter(s => s.grade === selectedClass.grade && s.class === selectedClass.name.split('-')[1].trim());
-    const studentIds = classStudents.map(s => s.id);
+    return Math.max(0, capacity - currentStudents);
+  }, [selectedSchoolId, selectedGradeStr, allSchoolData]);
 
-    const recentGrades = grades
-        .filter(g => studentIds.includes(g.studentId) && g.subject === selectedCourse.subject)
-        .sort((a,b) => {
-            const dateA = a.date.toDate ? a.date.toDate() : new Date(a.date);
-            const dateB = b.date.toDate ? b.date.toDate() : new Date(b.date);
-            return dateB.getTime() - dateA.getTime();
-        })
-        .slice(0, 20); 
-
-    const performanceSummary = recentGrades.map(g => {
-        const studentName = studentsData.find(s => s.id === g.studentId)?.name || 'Unknown Student';
-        return { studentName, grade: g.grade, description: g.description };
+  function onSubmit(values: ApplicationFormValues) {
+    addAdmission({
+      schoolId: values.schoolId,
+      name: values.name,
+      dateOfBirth: format(values.dateOfBirth, 'yyyy-MM-dd'),
+      sex: values.sex,
+      appliedFor: values.appliedFor,
+      formerSchool: values.formerSchool,
+      gradesSummary: values.gradesSummary || 'N/A',
     });
+    toast({
+      title: 'Application Submitted',
+      description: `The application for ${values.name} has been sent to the school for review.`,
+    });
+    form.reset();
+    setIsDialogOpen(false);
+  }
 
-    const params: GenerateLessonPlanParams = {
-        subject: selectedCourse.subject,
-        grade: selectedClass.grade,
-        syllabusTopics: relevantSyllabus?.topics.map(t => `Week ${t.week}: ${t.topic}`) || [],
-        recentStudentPerformance: performanceSummary
-    };
+  const schoolList = allSchoolData ? Object.values(allSchoolData).map(s => s.profile) : [];
 
+  return (
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Button><UserPlus className="mr-2 h-4 w-4" /> New Application</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Apply for a New Child</DialogTitle>
+          <DialogDescription>
+            Fill out this form to submit a new admission application to a school.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+            <FormField control={form.control} name="schoolId" render={({ field }) => ( <FormItem><FormLabel>School to Apply To</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select School" /></SelectTrigger></FormControl><SelectContent>{schoolList.map(school => <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Child's Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+                <FormField control={form.control} name="sex" render={({ field }) => ( <FormItem><FormLabel>Sex</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+            </div>
+            <FormField control={form.control} name="appliedFor" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Applying for Grade</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedSchoolId}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select Grade" /></SelectTrigger></FormControl>
+                        <SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(g => <SelectItem key={g} value={`Grade ${g}`}>Grade {g}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+            )} />
+             {vacancies !== null && (
+                <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md border">
+                    Available Vacancies for this grade: <span className="font-bold text-primary">{vacancies}</span>
+                    {vacancies === 0 && " (Applications will be added to the waitlist)"}
+                </div>
+            )}
+            <FormField control={form.control} name="formerSchool" render={({ field }) => ( <FormItem><FormLabel>Previous School</FormLabel><FormControl><Input placeholder="e.g., Eastwood Elementary" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="gradesSummary" render={({ field }) => ( <FormItem><FormLabel>Previous Grades Summary</FormLabel><FormControl><Textarea placeholder="Briefly describe academic performance, e.g., 'Consistent A grades in Math and Science, B in English.'" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            
+            <DialogFooter className="sticky bottom-0 bg-background pt-4 pr-0">
+              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+              <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit Application</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+function AIGeneratedAdvice({ child, grades, attendance }) {
+  const [analysis, setAnalysis] = useState<StudentAnalysis | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleAnalysis = async () => {
+    setIsLoading(true);
+    setAnalysis(null);
     try {
-        const plan = await generateLessonPlanAction(params);
-        setGeneratedPlan(plan);
-    } catch(e) {
-        console.error(e);
-        setError('Failed to generate lesson plan. The AI service may be temporarily unavailable.');
-        toast({ variant: 'destructive', title: 'Generation Failed', description: 'Could not generate the lesson plan.' });
+      const gradeData = grades.map(g => ({
+        subject: g.subject,
+        grade: g.grade,
+        type: g.type,
+        description: g.description,
+      }));
+
+      const attendanceData = Object.entries(attendance).map(([status, count]) => ({
+        status,
+        count: count as number,
+      }));
+
+      const result = await analyzeStudentPerformanceAction({
+        studentName: child.name,
+        grades: gradeData,
+        attendance: attendanceData,
+      });
+      setAnalysis(result);
+    } catch (e) {
+      console.error('AI Analysis failed:', e);
+      toast({
+        variant: 'destructive',
+        title: 'Analysis Failed',
+        description: 'Could not get AI-powered recommendations.',
+      });
     } finally {
-        setIsGenerating(false);
+      setIsLoading(false);
     }
   };
 
-  if (isLoading) {
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> AI-Powered Insights</CardTitle>
+        <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {!analysis && (
+          <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+            <p className="text-muted-foreground mb-4">Click below to analyze your child's recent performance.</p>
+            <Button onClick={handleAnalysis} disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+              Analyze Performance
+            </Button>
+          </div>
+        )}
+        {analysis && (
+          <div className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-semibold flex items-center gap-2 mb-2"><Check className="text-green-500"/> Strengths</h3>
+                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                  {analysis.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold flex items-center gap-2 mb-2"><TrendingUp className="text-orange-500"/> Areas for Improvement</h3>
+                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                  {analysis.areasForImprovement.map((a, i) => <li key={i}>{a}</li>)}
+                </ul>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-semibold flex items-center gap-2 mb-2"><Lightbulb className="text-yellow-500"/> Recommendations for You</h3>
+              <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                {analysis.recommendations.map((r, i) => <li key={i}>{r}</li>)}
+              </ul>
+            </div>
+          </div>
+        )}
+      </CardContent>
+       {analysis && (
+        <CardFooter>
+          <Button variant="outline" onClick={() => setAnalysis(null)}>
+            Start New Analysis
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
+  )
+}
+
+function GradeDistribution({ grades }) {
+  const chartData = useMemo(() => {
+    return grades.map(grade => ({
+      subject: grade.subject,
+      gpa: getGpaFromNumeric(parseFloat(grade.grade))
+    }));
+  }, [grades]);
+
+  const chartConfig = {
+    gpa: {
+      label: 'GPA',
+      color: 'hsl(var(--chart-2))',
+    },
+  } satisfies ChartConfig;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><BarChart2 /> Grade Distribution</CardTitle>
+        <CardDescription>Performance by subject based on GPA.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {grades.length > 0 ? (
+          <ChartContainer config={chartConfig} className="h-48 w-full">
+            <BarChart data={chartData} margin={{ top: 20 }}>
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="gpa" fill="var(--color-gpa)" radius={4} />
+            </BarChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex items-center justify-center h-48 text-muted-foreground">
+            <p>No grade data available.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function ParentSportsActivities() {
+    const { studentsData, teamsData, competitionsData } = useSchoolData();
+
+    const upcomingCompetitions = useMemo(() => {
+        const childrenIds = studentsData.map(c => c.id);
+        const childrenTeams = teamsData.filter(t => t.playerIds.some(pId => childrenIds.includes(pId)));
+        const teamMap = new Map(childrenTeams.map(t => [t.id, t]));
+        
+        return competitionsData
+            .filter(c => (c.date instanceof Date ? c.date : new Date(c.date)) >= new Date() && teamMap.has(c.ourTeamId))
+            .map(c => ({
+                ...c,
+                date: c.date instanceof Date ? c.date : new Date(c.date),
+                team: teamMap.get(c.ourTeamId),
+                players: studentsData.filter(s => teamMap.get(c.ourTeamId)?.playerIds.includes(s.id))
+            }))
+            .sort((a,b) => a.date.getTime() - b.date.getTime());
+    }, [studentsData, teamsData, competitionsData]);
+
+    if (upcomingCompetitions.length === 0) return null;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Trophy /> My Children's Sports</CardTitle>
+                <CardDescription>Upcoming games and competitions for your children.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ul className="space-y-4">
+                    {upcomingCompetitions.map(comp => (
+                        <li key={comp.id} className="flex items-start gap-4">
+                            <div className="flex flex-col items-center p-2 bg-muted rounded-md w-14">
+                                <span className="font-bold text-lg">{format(comp.date, 'dd')}</span>
+                                <span className="text-xs uppercase">{format(comp.date, 'MMM')}</span>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold">{comp.team?.name} vs {comp.opponent}</h4>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                    <div className="flex items-center gap-2"><User className="h-3 w-3"/><span>Player(s): {comp.players.map(p => p.name).join(', ')}</span></div>
+                                    <div className="flex items-center gap-2"><CalendarIcon className="h-3 w-3"/><span>{format(comp.date, 'EEEE')} at {comp.time}</span></div>
+                                </div>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </CardContent>
+        </Card>
+    );
+}
+
+const getStatusInfo = (fee) => {
+    const balance = fee.totalAmount - fee.amountPaid;
+    const isOverdue = new Date(fee.dueDate) < new Date() && balance > 0;
+
+    if (balance <= 0) {
+        return { text: 'Paid', variant: 'secondary' as const };
+    }
+    if (isOverdue) {
+        return { text: 'Overdue', variant: 'destructive' as const };
+    }
+     if (fee.amountPaid > 0) {
+        return { text: 'Partially Paid', variant: 'outline' as const };
+    }
+    return { text: 'Pending', variant: 'outline' as const };
+};
+
+export default function ParentDashboard() {
+  const { user } = useAuth();
+  const { studentsData, grades, attendance, financeData, schoolProfile, isLoading: schoolDataLoading } = useSchoolData();
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedChildId && studentsData.length > 0) {
+      setSelectedChildId(studentsData[0].id);
+    }
+  }, [studentsData, selectedChildId]);
+
+  const selectedChild = useMemo(() => studentsData.find(c => c.id === selectedChildId), [selectedChildId, studentsData]);
+
+  const childGrades = useMemo(() => {
+    if (!selectedChildId) return [];
+    return grades.filter(g => g.studentId === selectedChildId);
+  }, [grades, selectedChildId]);
+
+  const childAttendance = useMemo(() => {
+      if (!selectedChildId) return {};
+      return attendance.filter(a => a.studentId === selectedChildId).reduce((acc, record) => {
+          const statusKey = record.status.toLowerCase();
+          acc[statusKey] = (acc[statusKey] || 0) + 1;
+          return acc;
+      }, {});
+  }, [attendance, selectedChildId]);
+  
+  const childFinanceSummary = useMemo(() => {
+    if (!selectedChildId) return null;
+    const childFees = financeData.filter(f => f.studentId === selectedChildId);
+    if (childFees.length === 0) return null;
+    // Prioritize showing an overdue fee, then a partially paid/pending one.
+    const overdue = childFees.find(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < new Date());
+    if (overdue) return overdue;
+    const pending = childFees.find(f => f.totalAmount - f.amountPaid > 0);
+    if (pending) return pending;
+    return childFees[0]; // Otherwise show the first one (likely a paid one)
+  }, [financeData, selectedChildId]);
+
+  if (schoolDataLoading) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
-  
-  if (role !== 'Teacher') {
-     return <div className="flex h-full items-center justify-center"><p>Access Denied</p></div>;
-  }
 
-  if (schoolProfile?.tier === 'Starter') {
-    return <FeatureLock featureName="AI Lesson Planner" />;
+  if (!studentsData || studentsData.length === 0) {
+    return (
+       <div className="space-y-6">
+        <header className="flex flex-wrap gap-4 justify-between items-center">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+              <p className="text-muted-foreground">Welcome, {user?.name}.</p>
+            </div>
+            <NewApplicationDialog />
+        </header>
+        <Card>
+            <CardHeader>
+            <CardTitle>No Student Data Found</CardTitle>
+            </CardHeader>
+            <CardContent>
+            <p>No student information is linked to your account. You can submit an application for a new child to a school.</p>
+            </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in-50">
-       <header>
-        <h2 className="text-3xl font-bold tracking-tight">AI-Powered Weekly Lesson Planner</h2>
-        <p className="text-muted-foreground">Generate, save, and print performance-aware weekly lesson plans for your classes.</p>
+    <div className="space-y-6">
+      <header className="flex flex-wrap gap-4 justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+          <p className="text-muted-foreground">Welcome, {user?.name}. Here is an overview for your children.</p>
+        </div>
+        <NewApplicationDialog />
       </header>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><PenSquare /> Generate a New Plan</CardTitle>
-          <CardDescription>
-            Select a course to generate a tailored lesson plan. The AI will consider the syllabus and recent student performance.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-           <div className="flex flex-wrap items-center gap-4">
-            <Select onValueChange={setSelectedCourseId} value={selectedCourseId}>
-              <SelectTrigger className="w-full md:w-[280px]">
-                <SelectValue placeholder="Select a course..." />
-              </SelectTrigger>
-              <SelectContent>
-                {teacherCourses.map(c => (
-                    <SelectItem key={c.id} value={c.id}>
-                        {classesData.find(cls => cls.id === c.classId)?.name} - {c.subject}
-                    </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={handleGeneratePlan} disabled={isGenerating || !selectedCourseId}>
-                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4"/>}
-                Generate Lesson Plan
-            </Button>
-           </div>
-        </CardContent>
-      </Card>
-      
-      {error && (
-        <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
 
-      {generatedPlan && (
+      <div>
+        <h3 className="text-lg font-medium mb-2">Select a Child</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {studentsData.map(child => (
+            <Card 
+              key={child.id} 
+              onClick={() => setSelectedChildId(child.id)}
+              className={cn(
+                'cursor-pointer transition-all hover:shadow-md hover:border-primary/50',
+                selectedChildId === child.id ? 'border-primary ring-2 ring-primary/50' : 'border-border'
+              )}
+            >
+              <CardHeader>
+                <CardTitle>{child.name}</CardTitle>
+                <CardDescription>{child.schoolName}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Grade {child.grade} - {child.class}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+      
+      {selectedChild ? (
+        <div className="space-y-6 animate-in fade-in-25">
+           <div className="grid gap-6 lg:grid-cols-3">
+            {selectedChild && <AIGeneratedAdvice child={selectedChild} grades={childGrades} attendance={childAttendance} />}
+             <div className="space-y-6">
+                <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><DollarSign /> Fee Status</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                    {childFinanceSummary ? (
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid, schoolProfile?.currency)}</span></p>
+                                <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
+                            </div>
+                            <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">No fee information available.</p>
+                    )}
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><GraduationCap /> Recent Grades</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-2">
+                            {childGrades.length > 0 ? childGrades.slice(0, 3).map((grade, index) => {
+                              const numericGrade = parseFloat(grade.grade);
+                              return (
+                                <li key={index} className="flex justify-between items-center text-sm">
+                                    <span className="font-medium">{grade.subject}</span>
+                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
+                                </li>
+                              )
+                            }) : <p className="text-muted-foreground text-sm">No recent grades.</p>}
+                        </ul>
+                    </CardContent>
+                </Card>
+              </div>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <GradeDistribution grades={childGrades} />
+            <ParentSportsActivities />
+          </div>
+        </div>
+      ) : (
         <Card>
-            <CardHeader>
-                <div className="flex flex-wrap justify-between items-start gap-2">
-                    <div>
-                        <CardTitle className="text-2xl">{generatedPlan.title}</CardTitle>
-                        <CardDescription>
-                            A week-long plan for {selectedClass?.name} ({selectedCourse?.subject}).
-                        </CardDescription>
-                    </div>
-                    <Button variant="outline" onClick={handlePrint}>
-                        <Printer className="mr-2 h-4 w-4" /> Print Plan
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent className="print:p-0">
-                <div ref={componentRef} className="space-y-6">
-                    <div className="grid gap-6 md:grid-cols-2">
-                        <Card className="bg-muted/30">
-                            <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Target/> Weekly Objectives</CardTitle></CardHeader>
-                            <CardContent>
-                                <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                                    {generatedPlan.weeklyObjectives.map((obj, i) => <li key={i}>{obj}</li>)}
-                                </ul>
-                            </CardContent>
-                        </Card>
-                         <Card className="bg-muted/30">
-                            <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><List/> Materials Needed</CardTitle></CardHeader>
-                            <CardContent>
-                               <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                                    {generatedPlan.materialsNeeded.map((mat, i) => <li key={i}>{mat}</li>)}
-                                </ul>
-                            </CardContent>
-                        </Card>
-                    </div>
-                    <Separator/>
-                    <div>
-                      <h3 className="text-xl font-semibold mb-4">Daily Breakdown</h3>
-                      <Accordion type="multiple" defaultValue={['item-0']} className="w-full space-y-2">
-                        {generatedPlan.dailyPlans.map((dayPlan, i) => (
-                          <AccordionItem value={`item-${i}`} key={i} className="border-b-0 rounded-lg bg-background border">
-                            <AccordionTrigger className="p-4 font-semibold text-lg hover:no-underline">
-                               Day {i+1}: {dayPlan.day} - {dayPlan.topic}
-                            </AccordionTrigger>
-                            <AccordionContent className="p-4 pt-0 space-y-4">
-                              <div className="p-3 bg-muted/50 rounded-md">
-                                <p className="font-semibold text-sm flex items-center gap-2"><Book className="h-4 w-4"/>Objective</p>
-                                <p className="text-sm text-muted-foreground mt-1">{dayPlan.objective}</p>
-                              </div>
-                              <div className="p-3 bg-muted/50 rounded-md">
-                                <p className="font-semibold text-sm flex items-center gap-2"><FlaskConical className="h-4 w-4"/>Activities</p>
-                                 <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground mt-2">
-                                    {dayPlan.activities.map((act, j) => <li key={j}>{act}</li>)}
-                                </ol>
-                              </div>
-                              <div className="p-3 bg-muted/50 rounded-md">
-                                <p className="font-semibold text-sm flex items-center gap-2"><ClipboardCheck className="h-4 w-4"/>Assessment</p>
-                                 <p className="text-sm text-muted-foreground mt-1">{dayPlan.assessment}</p>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    </div>
-                </div>
-            </CardContent>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            <p>Please select a child to view their details.</p>
+          </CardContent>
         </Card>
       )}
     </div>

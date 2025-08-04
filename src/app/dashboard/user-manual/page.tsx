@@ -1,213 +1,492 @@
-
 'use client';
-import { useAuth, Role } from '@/context/auth-context';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2, List, Gem, MonitorPlay, Download, BrainCircuit, Users, FileText, LifeBuoy, User, GitBranch, Tv, Building, Mail, Trophy } from 'lucide-react';
-import { type LucideIcon } from 'lucide-react';
-import { roleLinks, type NavLink } from '@/components/layout/app-sidebar';
+import { useEffect, useState, useMemo } from 'react';
+import { useAuth } from '@/context/auth-context';
+import { useSchoolData, NewAdmissionData, Competition, Team, Student, Grade } from '@/context/school-data-context';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { cn, formatCurrency } from '@/lib/utils';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartConfig,
+} from '@/components/ui/chart';
+import { Bar, BarChart } from 'recharts';
+import { getGpaFromNumeric, formatGradeDisplay } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Textarea } from '../ui/textarea';
+import { analyzeStudentPerformanceAction } from '@/app/actions/ai-actions';
+import { StudentAnalysis } from '@/ai/flows/student-analysis-flow';
 
-const userGuides: Record<string, { icon: LucideIcon, title: string, points: string[] }> = {
-  GlobalAdmin: {
-    icon: Globe,
-    title: 'Developer / System Owner Guide',
-    points: [
-      'System Dashboard: Get a high-level overview of network-wide statistics and run AI-powered analyses across multiple schools.',
-      'All Schools Management: View and provision new schools. From here, you can manage a school\'s status (Active, Suspended) and switch context to manage a school directly using the "Log in as user" feature.',
-      'Inbox: Receive, view, and track messages from School Administrators across the network.',
-      'Global User Management: Access dedicated pages to view and manage every student and parent account across the entire network, including suspending access.',
-      'EduDesk Awards: Configure prizes and announce the annual system-wide awards for top-performing schools, students, and teachers. Click on any winner to get a detailed AI analysis of their success.',
-      'Public Kiosk: Access and view the public-facing kiosk display for your corporate headquarters. This includes marketing slides and network-wide data.',
-      'System Settings: A dedicated page to configure global settings, such as which slides are visible on the corporate kiosk display.',
-      'Activity Logs: View a global feed of all significant actions taken by users across all schools for complete system oversight.',
-      'Project Proposal: Review the high-level business and development proposal for EduDesk.',
-      'System Documentation: Access technical documentation about the application\'s architecture and technology stack.',
-      'To-Do List: View the project\'s development progress and upcoming features.',
-    ],
-  },
-  Admin: {
-    icon: ShieldCheck,
-    title: 'School Administrator Guide',
-    points: [
-        'Dashboard: Get a high-level overview of your school\'s statistics. You can also contact the developer from here.',
-        'Premium Dashboard: If your school has a Premium subscription, your dashboard shows a multi-school management view. You can see aggregate stats for your group, add new schools to it, and manage each school individually.',
-        'AI Academic Reports: Access a suite of AI-powered reports, including a School-Wide Analysis, Class Performance breakdowns, a list of Struggling Students, and data-driven Teacher Performance reviews.',
-        'School Profile: View and edit your school\'s core information like name, address, and contact details. Upload a school logo and manage your subscription plan.',
-        'Academics: A central hub to manage both course schedules and curriculum syllabi. Define courses, assign them to classes and teachers, and manage the syllabus topics for each subject and grade.',
-        'Students & Teachers: View and manage student and teacher profiles. New teachers can be added, and students are enrolled automatically through Admissions.',
-        'Classes: Define and manage student groups (e.g., "Class 9-A").',
-        'Admissions: Review and process new student applications. Approving an application automatically creates the student\'s record and links them to their parent\'s account.',
-        'Finance: Track school-wide revenue and expenses. Record partial or full payments for student fees and create new ad-hoc fee transactions.',
-        'Sports: Create sports teams, assign coaches, and manage player rosters. You can also delete teams, which will remove associated competitions.',
-        'Assets: Manage school equipment and resources.',
-        'Examinations: Schedule and manage official examinations.',
-        'Kiosk Showcase: Manage the media (images/videos) and configure the slides for your school\'s public-facing kiosk display.',
-        'Settings: A central place to manage users, configure the academic calendar (terms & holidays), and define system-wide data like currency, exam boards, and fee descriptions.',
-        'Messaging, Events, Leaderboards, Profile: Standard modules for communication, scheduling, tracking, and personal settings.',
-        'Activity Logs: View a log of all significant actions taken by users within your school. This feed is specific to your school only.',
-    ]
-  },
-  Teacher: {
-    icon: PenSquare,
-    title: 'Teacher Guide',
-    points: [
-      'Dashboard: Quickly access common tasks, view your courses, see upcoming deadlines, and run AI analysis on your classes. You can also contact your School Administrator from here.',
-      'Take Attendance: A dedicated interface to mark attendance for each of your lessons, including statuses like Present, Late, Absent, and Sick.',
-      'AI Lesson Planner: Generate performance-aware weekly lesson plans based on the official syllabus. Plans are automatically saved and can be printed.',
-      'AI Test Generator: Create, save, and deploy ad-hoc tests based on syllabus topics. View results and AI analysis for completed tests.',
-      'Grading: Access a dedicated gradebook to enter grades for students in your classes. These grades are instantly reflected throughout the app.',
-      'Behavioral Assessments: Periodically assess students on non-academic traits like respect, participation, social skills, and conduct. This data contributes to holistic student reports.',
-      'Schedules: View your teaching schedule based on the courses assigned to you.',
-      'Leaderboards: Check academic rankings to see how students are performing.',
-      'Profile: View your personal information.',
-    ]
-  },
-  Student: {
-    icon: GraduationCap,
-    title: 'Student Guide',
-    points: [
-      'Dashboard: See a summary of your academic progress, upcoming assignments, recent grades, an overview of your attendance, and your current school rank.',
-      'End of Term Report: Download a comprehensive report card that includes your grades, attendance summary, and behavioral assessments from your teachers.',
-      'Take Assigned Tests: View tests assigned to you on your dashboard, complete them through a dedicated interface, and receive your AI-generated score immediately upon submission.',
-      'Schedules: Check your course schedule, see your teachers, and track your progress in each class.',
-      'Leaderboards: See where you rank among your peers in overall, class, and subject-specific leaderboards.',
-      'Events: Stay up-to-date with important school events and holidays.',
-      'Completion Documents: Preview and download your official certificate and transcript. Access is granted only after all academic (passing grades) and financial (paid fees) requirements have been met.',
-      'AI-Powered Guidance: If you do not meet academic requirements, the system provides an AI-generated analysis of your record and offers encouraging suggestions for how to prepare for re-sits.',
-      'Profile: View your personal details.',
-    ]
-  },
-  Parent: {
-    icon: HeartHandshake,
-    title: 'Parent Guide',
-    points: [
-      'Dashboard: Get a complete overview of your children\'s school life. Click on a child\'s card to update the dashboard with their specific information.',
-      'End of Term Report: Download a comprehensive report card for your selected child, including their grades, attendance, and behavioral assessments.',
-      'New Child Applications: Submit new admission applications for your other children. The form will show you available vacancies for the selected grade.',
-      'AI-Powered Insights: Receive AI-generated advice based on grades and attendance data on how to support your selected child\'s learning, including their strengths and areas for improvement.',
-      'Finance Portal: View detailed fee information for each child, including total amount, amount paid, and outstanding balance.',
-      'Leaderboards: View a personalized report of your children\'s academic rankings in their school, class, and subjects.',
-      'Events: Keep track of important school events, with clear labels for which school an event belongs to.',
-      'Profile: View your personal details.',
-    ]
-  },
-};
 
-export default function UserManualPage() {
-  const { role, isLoading } = useAuth();
+const applicationSchema = z.object({
+  schoolId: z.string({ required_error: "Please select a school to apply to."}),
+  name: z.string().min(2, "Applicant name must be at least 2 characters."),
+  dateOfBirth: z.date({ required_error: "Date of birth is required." }),
+  sex: z.enum(['Male', 'Female'], { required_error: "Please select a gender." }),
+  appliedFor: z.string().min(1, "Please specify the grade being applied for."),
+  formerSchool: z.string().min(2, "Please enter the name of the former school."),
+  gradesSummary: z.string().min(10, "Please provide a brief summary of previous grades.").optional(),
+});
+type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
-  if (isLoading) {
-    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+function NewApplicationDialog() {
+  const { addAdmission, allSchoolData } = useSchoolData();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<ApplicationFormValues>({
+    resolver: zodResolver(applicationSchema),
+  });
+
+  const selectedSchoolId = form.watch('schoolId');
+  const selectedGradeStr = form.watch('appliedFor');
+
+  const vacancies = useMemo(() => {
+    if (!selectedSchoolId || !selectedGradeStr) return null;
+    const school = allSchoolData?.[selectedSchoolId];
+    if (!school) return null;
+
+    const gradeNumber = selectedGradeStr.replace('Grade ', '');
+    const capacity = school.profile.gradeCapacity?.[gradeNumber] ?? 0;
+    const currentStudents = school.students.filter(s => s.grade === gradeNumber).length;
+
+    return Math.max(0, capacity - currentStudents);
+  }, [selectedSchoolId, selectedGradeStr, allSchoolData]);
+
+  function onSubmit(values: ApplicationFormValues) {
+    addAdmission({
+      schoolId: values.schoolId,
+      name: values.name,
+      dateOfBirth: format(values.dateOfBirth, 'yyyy-MM-dd'),
+      sex: values.sex,
+      appliedFor: values.appliedFor,
+      formerSchool: values.formerSchool,
+      gradesSummary: values.gradesSummary || 'N/A',
+    });
+    toast({
+      title: 'Application Submitted',
+      description: `The application for ${values.name} has been sent to the school for review.`,
+    });
+    form.reset();
+    setIsDialogOpen(false);
   }
-  
-  const handlePrint = () => {
-    window.print();
+
+  const schoolList = allSchoolData ? Object.values(allSchoolData).map(s => s.profile) : [];
+
+  return (
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Button><UserPlus className="mr-2 h-4 w-4" /> New Application</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Apply for a New Child</DialogTitle>
+          <DialogDescription>
+            Fill out this form to submit a new admission application to a school.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+            <FormField control={form.control} name="schoolId" render={({ field }) => ( <FormItem><FormLabel>School to Apply To</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select School" /></SelectTrigger></FormControl><SelectContent>{schoolList.map(school => <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Child's Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+                <FormField control={form.control} name="sex" render={({ field }) => ( <FormItem><FormLabel>Sex</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+            </div>
+            <FormField control={form.control} name="appliedFor" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Applying for Grade</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedSchoolId}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select Grade" /></SelectTrigger></FormControl>
+                        <SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(g => <SelectItem key={g} value={`Grade ${g}`}>Grade {g}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+            )} />
+             {vacancies !== null && (
+                <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md border">
+                    Available Vacancies for this grade: <span className="font-bold text-primary">{vacancies}</span>
+                    {vacancies === 0 && " (Applications will be added to the waitlist)"}
+                </div>
+            )}
+            <FormField control={form.control} name="formerSchool" render={({ field }) => ( <FormItem><FormLabel>Previous School</FormLabel><FormControl><Input placeholder="e.g., Eastwood Elementary" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="gradesSummary" render={({ field }) => ( <FormItem><FormLabel>Previous Grades Summary</FormLabel><FormControl><Textarea placeholder="Briefly describe academic performance, e.g., 'Consistent A grades in Math and Science, B in English.'" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            
+            <DialogFooter className="sticky bottom-0 bg-background pt-4 pr-0">
+              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+              <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit Application</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+function AIGeneratedAdvice({ child, grades, attendance }) {
+  const [analysis, setAnalysis] = useState<StudentAnalysis | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleAnalysis = async () => {
+    setIsLoading(true);
+    setAnalysis(null);
+    try {
+      const gradeData = grades.map(g => ({
+        subject: g.subject,
+        grade: g.grade,
+        type: g.type,
+        description: g.description,
+      }));
+
+      const attendanceData = Object.entries(attendance).map(([status, count]) => ({
+        status,
+        count: count as number,
+      }));
+
+      const result = await analyzeStudentPerformanceAction({
+        studentName: child.name,
+        grades: gradeData,
+        attendance: attendanceData,
+      });
+      setAnalysis(result);
+    } catch (e) {
+      console.error('AI Analysis failed:', e);
+      toast({
+        variant: 'destructive',
+        title: 'Analysis Failed',
+        description: 'Could not get AI-powered recommendations.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const guide = role ? userGuides[role] : null;
-  const GuideIcon = guide?.icon;
-  
   return (
-    <div className="space-y-6 animate-in fade-in-50">
-      <header className="flex flex-wrap items-center justify-between gap-2 print:hidden">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">User Manual</h2>
-          <p className="text-muted-foreground">A guide on how to use EduDesk, tailored for your role.</p>
-        </div>
-        <Button onClick={handlePrint}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
-      </header>
-      
-      {role === 'GlobalAdmin' ? (
-       <div className="space-y-6">
-        <p className="text-muted-foreground print:hidden">A comprehensive guide for all user roles in the EduDesk system.</p>
-        {Object.entries(userGuides).map(([roleKey, guide]) => {
-          const GuideIcon = guide.icon;
-          const menuItems = roleLinks[roleKey as Role] || [];
-          const uniqueMenuItems = menuItems.filter((link, index, self) =>
-            index === self.findIndex((l) => l.href === link.href)
-          );
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> AI-Powered Insights</CardTitle>
+        <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {!analysis && (
+          <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+            <p className="text-muted-foreground mb-4">Click below to analyze your child's recent performance.</p>
+            <Button onClick={handleAnalysis} disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+              Analyze Performance
+            </Button>
+          </div>
+        )}
+        {analysis && (
+          <div className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-semibold flex items-center gap-2 mb-2"><Check className="text-green-500"/> Strengths</h3>
+                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                  {analysis.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold flex items-center gap-2 mb-2"><TrendingUp className="text-orange-500"/> Areas for Improvement</h3>
+                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                  {analysis.areasForImprovement.map((a, i) => <li key={i}>{a}</li>)}
+                </ul>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-semibold flex items-center gap-2 mb-2"><Lightbulb className="text-yellow-500"/> Recommendations for You</h3>
+              <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                {analysis.recommendations.map((r, i) => <li key={i}>{r}</li>)}
+              </ul>
+            </div>
+          </div>
+        )}
+      </CardContent>
+       {analysis && (
+        <CardFooter>
+          <Button variant="outline" onClick={() => setAnalysis(null)}>
+            Start New Analysis
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
+  )
+}
 
-          return (
-            <Card key={guide.title} className="break-inside-avoid">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <GuideIcon className="h-6 w-6 text-primary" />
-                  <CardTitle className="text-2xl">{guide.title}</CardTitle>
-                </div>
-                <CardDescription>Key features and functionalities available to this role.</CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-8 md:grid-cols-2">
-                <div>
-                  <h4 className="font-semibold mb-3">Core Features</h4>
-                  <ul className="list-disc space-y-3 pl-6 text-muted-foreground">
-                    {guide.points.map((point, index) => (
-                      <li key={index}>{point}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-3 flex items-center gap-2"><List className="h-4 w-4"/> Sidebar Menu</h4>
-                  <div className="space-y-2 p-3 bg-muted rounded-md">
-                    {uniqueMenuItems.map((item, index) => {
-                      if ('links' in item) {
-                        return (
-                          <div key={item.title}>
-                            <p className="font-semibold mt-2">{item.title}</p>
-                            <div className="pl-4">
-                            {item.links.map(subItem => {
-                                const ItemIcon = subItem.icon;
-                                return (
-                                  <div key={subItem.href} className="flex items-center gap-3 text-sm mt-1">
-                                    <ItemIcon className="h-4 w-4 text-muted-foreground" />
-                                    <span>{subItem.label}</span>
-                                  </div>
-                                )
-                            })}
-                            </div>
-                          </div>
-                        )
-                      }
-                      const ItemIcon = item.icon;
-                      return (
-                        <div key={item.href} className="flex items-center gap-3 text-sm">
-                          <ItemIcon className="h-4 w-4 text-muted-foreground" />
-                          <span>{item.label}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    ) : (
-      <Card>
-        {guide && GuideIcon ? (
-           <>
+function GradeDistribution({ grades }) {
+  const chartData = useMemo(() => {
+    return grades.map(grade => ({
+      subject: grade.subject,
+      gpa: getGpaFromNumeric(parseFloat(grade.grade))
+    }));
+  }, [grades]);
+
+  const chartConfig = {
+    gpa: {
+      label: 'GPA',
+      color: 'hsl(var(--chart-2))',
+    },
+  } satisfies ChartConfig;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><BarChart2 /> Grade Distribution</CardTitle>
+        <CardDescription>Performance by subject based on GPA.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {grades.length > 0 ? (
+          <ChartContainer config={chartConfig} className="h-48 w-full">
+            <BarChart data={chartData} margin={{ top: 20 }}>
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="gpa" fill="var(--color-gpa)" radius={4} />
+            </BarChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex items-center justify-center h-48 text-muted-foreground">
+            <p>No grade data available.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function ParentSportsActivities() {
+    const { studentsData, teamsData, competitionsData } = useSchoolData();
+
+    const upcomingCompetitions = useMemo(() => {
+        const childrenIds = studentsData.map(c => c.id);
+        const childrenTeams = teamsData.filter(t => t.playerIds.some(pId => childrenIds.includes(pId)));
+        const teamMap = new Map(childrenTeams.map(t => [t.id, t]));
+        
+        return competitionsData
+            .filter(c => (c.date instanceof Date ? c.date : new Date(c.date)) >= new Date() && teamMap.has(c.ourTeamId))
+            .map(c => ({
+                ...c,
+                date: c.date instanceof Date ? c.date : new Date(c.date),
+                team: teamMap.get(c.ourTeamId),
+                players: studentsData.filter(s => teamMap.get(c.ourTeamId)?.playerIds.includes(s.id))
+            }))
+            .sort((a,b) => a.date.getTime() - b.date.getTime());
+    }, [studentsData, teamsData, competitionsData]);
+
+    if (upcomingCompetitions.length === 0) return null;
+
+    return (
+        <Card>
             <CardHeader>
-                <div className="flex items-center gap-3">
-                  <GuideIcon className="h-6 w-6 text-primary" />
-                  <CardTitle className="text-2xl">{guide.title}</CardTitle>
-                </div>
-                <CardDescription>Key features and functionalities available to you. The application is designed to be fully responsive on desktops, tablets, and mobile devices.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Trophy /> My Children's Sports</CardTitle>
+                <CardDescription>Upcoming games and competitions for your children.</CardDescription>
             </CardHeader>
             <CardContent>
-                <ul className="list-disc space-y-3 pl-6 text-muted-foreground">
-                    {guide.points.map((point, index) => (
-                        <li key={index}>{point}</li>
+                <ul className="space-y-4">
+                    {upcomingCompetitions.map(comp => (
+                        <li key={comp.id} className="flex items-start gap-4">
+                            <div className="flex flex-col items-center p-2 bg-muted rounded-md w-14">
+                                <span className="font-bold text-lg">{format(comp.date, 'dd')}</span>
+                                <span className="text-xs uppercase">{format(comp.date, 'MMM')}</span>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold">{comp.team?.name} vs {comp.opponent}</h4>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                    <div className="flex items-center gap-2"><User className="h-3 w-3"/><span>Player(s): {comp.players.map(p => p.name).join(', ')}</span></div>
+                                    <div className="flex items-center gap-2"><CalendarIcon className="h-3 w-3"/><span>{format(comp.date, 'EEEE')} at {comp.time}</span></div>
+                                </div>
+                            </div>
+                        </li>
                     ))}
                 </ul>
             </CardContent>
-           </>
-        ) : (
-            <CardContent className="p-6 text-center text-muted-foreground">
-                <p>User guide not available for your role.</p>
+        </Card>
+    );
+}
+
+const getStatusInfo = (fee) => {
+    const balance = fee.totalAmount - fee.amountPaid;
+    const isOverdue = new Date(fee.dueDate) < new Date() && balance > 0;
+
+    if (balance <= 0) {
+        return { text: 'Paid', variant: 'secondary' as const };
+    }
+    if (isOverdue) {
+        return { text: 'Overdue', variant: 'destructive' as const };
+    }
+     if (fee.amountPaid > 0) {
+        return { text: 'Partially Paid', variant: 'outline' as const };
+    }
+    return { text: 'Pending', variant: 'outline' as const };
+};
+
+export default function ParentDashboard() {
+  const { user } = useAuth();
+  const { studentsData, grades, attendance, financeData, schoolProfile, isLoading: schoolDataLoading } = useSchoolData();
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedChildId && studentsData.length > 0) {
+      setSelectedChildId(studentsData[0].id);
+    }
+  }, [studentsData, selectedChildId]);
+
+  const selectedChild = useMemo(() => studentsData.find(c => c.id === selectedChildId), [selectedChildId, studentsData]);
+
+  const childGrades = useMemo(() => {
+    if (!selectedChildId) return [];
+    return grades.filter(g => g.studentId === selectedChildId);
+  }, [grades, selectedChildId]);
+
+  const childAttendance = useMemo(() => {
+      if (!selectedChildId) return {};
+      return attendance.filter(a => a.studentId === selectedChildId).reduce((acc, record) => {
+          const statusKey = record.status.toLowerCase();
+          acc[statusKey] = (acc[statusKey] || 0) + 1;
+          return acc;
+      }, {});
+  }, [attendance, selectedChildId]);
+  
+  const childFinanceSummary = useMemo(() => {
+    if (!selectedChildId) return null;
+    const childFees = financeData.filter(f => f.studentId === selectedChildId);
+    if (childFees.length === 0) return null;
+    // Prioritize showing an overdue fee, then a partially paid/pending one.
+    const overdue = childFees.find(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < new Date());
+    if (overdue) return overdue;
+    const pending = childFees.find(f => f.totalAmount - f.amountPaid > 0);
+    if (pending) return pending;
+    return childFees[0]; // Otherwise show the first one (likely a paid one)
+  }, [financeData, selectedChildId]);
+
+  if (schoolDataLoading) {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  if (!studentsData || studentsData.length === 0) {
+    return (
+       <div className="space-y-6">
+        <header className="flex flex-wrap gap-4 justify-between items-center">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+              <p className="text-muted-foreground">Welcome, {user?.name}.</p>
+            </div>
+            <NewApplicationDialog />
+        </header>
+        <Card>
+            <CardHeader>
+            <CardTitle>No Student Data Found</CardTitle>
+            </CardHeader>
+            <CardContent>
+            <p>No student information is linked to your account. You can submit an application for a new child to a school.</p>
             </CardContent>
-        )}
-      </Card>
-    )}
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <header className="flex flex-wrap gap-4 justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+          <p className="text-muted-foreground">Welcome, {user?.name}. Here is an overview for your children.</p>
+        </div>
+        <NewApplicationDialog />
+      </header>
+
+      <div>
+        <h3 className="text-lg font-medium mb-2">Select a Child</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {studentsData.map(child => (
+            <Card 
+              key={child.id} 
+              onClick={() => setSelectedChildId(child.id)}
+              className={cn(
+                'cursor-pointer transition-all hover:shadow-md hover:border-primary/50',
+                selectedChildId === child.id ? 'border-primary ring-2 ring-primary/50' : 'border-border'
+              )}
+            >
+              <CardHeader>
+                <CardTitle>{child.name}</CardTitle>
+                <CardDescription>{child.schoolName}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Grade {child.grade} - {child.class}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+      
+      {selectedChild ? (
+        <div className="space-y-6 animate-in fade-in-25">
+           <div className="grid gap-6 lg:grid-cols-3">
+            {selectedChild && <AIGeneratedAdvice child={selectedChild} grades={childGrades} attendance={childAttendance} />}
+             <div className="space-y-6">
+                <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><DollarSign /> Fee Status</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                    {childFinanceSummary ? (
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid, schoolProfile?.currency)}</span></p>
+                                <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
+                            </div>
+                            <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">No fee information available.</p>
+                    )}
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><GraduationCap /> Recent Grades</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-2">
+                            {childGrades.length > 0 ? childGrades.slice(0, 3).map((grade, index) => {
+                              const numericGrade = parseFloat(grade.grade);
+                              return (
+                                <li key={index} className="flex justify-between items-center text-sm">
+                                    <span className="font-medium">{grade.subject}</span>
+                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
+                                </li>
+                              )
+                            }) : <p className="text-muted-foreground text-sm">No recent grades.</p>}
+                        </ul>
+                    </CardContent>
+                </Card>
+              </div>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <GradeDistribution grades={childGrades} />
+            <ParentSportsActivities />
+          </div>
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            <p>Please select a child to view their details.</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

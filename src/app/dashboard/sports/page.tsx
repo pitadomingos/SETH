@@ -1,437 +1,492 @@
-
 'use client';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/context/auth-context';
-import { useRouter } from 'next/navigation';
-import { useSchoolData, Team, Competition, Student } from '@/context/school-data-context';
-import { Trophy, Users, PlusCircle, Loader2, User as UserIcon, X, Calendar as CalendarIcon, Clock, MapPin, Swords, Trash2, Check, Award, History } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
+import { useAuth } from '@/context/auth-context';
+import { useSchoolData, NewAdmissionData, Competition, Team, Student, Grade } from '@/context/school-data-context';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { cn, formatCurrency } from '@/lib/utils';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartConfig,
+} from '@/components/ui/chart';
+import { Bar, BarChart } from 'recharts';
+import { getGpaFromNumeric, formatGradeDisplay } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Textarea } from '../ui/textarea';
+import { analyzeStudentPerformanceAction } from '@/app/actions/ai-actions';
+import { StudentAnalysis } from '@/ai/flows/student-analysis-flow';
 
 
-const teamSchema = z.object({
-  name: z.string().min(3, "Team name must be at least 3 characters."),
-  icon: z.string().emoji({ message: "Please enter a single, valid emoji." }).max(2, "Please enter a single emoji."),
-  coach: z.string({ required_error: "Please select a coach for the team." }),
+const applicationSchema = z.object({
+  schoolId: z.string({ required_error: "Please select a school to apply to."}),
+  name: z.string().min(2, "Applicant name must be at least 2 characters."),
+  dateOfBirth: z.date({ required_error: "Date of birth is required." }),
+  sex: z.enum(['Male', 'Female'], { required_error: "Please select a gender." }),
+  appliedFor: z.string().min(1, "Please specify the grade being applied for."),
+  formerSchool: z.string().min(2, "Please enter the name of the former school."),
+  gradesSummary: z.string().min(10, "Please provide a brief summary of previous grades.").optional(),
 });
-type TeamFormValues = z.infer<typeof teamSchema>;
+type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
-const competitionSchema = z.object({
-  title: z.string().min(3, "Title is required."),
-  ourTeamId: z.string({ required_error: "Please select a team." }),
-  opponent: z.string().min(2, "Opponent name is required."),
-  date: z.date({ required_error: "A date is required." }),
-  time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format (HH:MM)."),
-  location: z.string().min(3, "Location is required."),
-});
-type CompetitionFormValues = z.infer<typeof competitionSchema>;
-
-const resultSchema = z.object({
-  ourScore: z.coerce.number().int().min(0, "Score must be positive."),
-  opponentScore: z.coerce.number().int().min(0, "Score must be positive."),
-});
-type ResultFormValues = z.infer<typeof resultSchema>;
-
-function NewTeamDialog() {
-    const { addTeam, teachersData } = useSchoolData();
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    
-    const form = useForm<TeamFormValues>({
-        resolver: zodResolver(teamSchema),
-        defaultValues: { name: '', icon: '', coach: '' }
-    });
-
-    function onSubmit(values: TeamFormValues) {
-        addTeam(values);
-        form.reset();
-        setIsDialogOpen(false);
-    }
-    
-    return (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-                <Button><PlusCircle className="mr-2 h-4 w-4" /> Add Team</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Create New Sports Team</DialogTitle>
-                    <DialogDescription>Enter the details for the new team.</DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Team Name</FormLabel><FormControl><Input placeholder="e.g., Varsity Eagles" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="icon" render={({ field }) => ( <FormItem><FormLabel>Team Icon (Emoji)</FormLabel><FormControl><Input placeholder="e.g., 🦅" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="coach" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Coach</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a coach" /></SelectTrigger></FormControl>
-                                    <SelectContent>{teachersData.map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}</SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <DialogFooter className="col-span-2 mt-4">
-                            <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                            <Button type="submit" disabled={form.formState.isSubmitting}> {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create Team</Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
-    )
-}
-
-function NewCompetitionDialog() {
-    const { addCompetition, teamsData } = useSchoolData();
-    const [isOpen, setIsOpen] = useState(false);
-
-    const form = useForm<CompetitionFormValues>({
-        resolver: zodResolver(competitionSchema),
-        defaultValues: {
-            title: '',
-            ourTeamId: '',
-            opponent: '',
-            time: '14:00',
-            location: '',
-        },
-    });
-
-    function onSubmit(values: CompetitionFormValues) {
-        addCompetition(values);
-        form.reset();
-        setIsOpen(false);
-    }
-    
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Schedule Competition</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>Schedule New Competition</DialogTitle>
-                    <DialogDescription>Enter the details for the upcoming sports event.</DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="title" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Event Title</FormLabel><FormControl><Input placeholder="e.g., Regional Finals" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="ourTeamId" render={({ field }) => ( <FormItem><FormLabel>Our Team</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select Team" /></SelectTrigger></FormControl><SelectContent>{teamsData.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="opponent" render={({ field }) => ( <FormItem><FormLabel>Opponent</FormLabel><FormControl><Input placeholder="e.g., Rival High" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                             <FormField control={form.control} name="date" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="time" render={({ field }) => ( <FormItem><FormLabel>Time</FormLabel><FormControl><Input placeholder="HH:MM" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        </div>
-                        <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g., Central Stadium" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <DialogFooter className="mt-4">
-                            <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                            <Button type="submit" disabled={form.formState.isSubmitting}> {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Schedule</Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-function RecordResultDialog({ competition, team }: { competition: Competition, team?: Team }) {
-    const { addCompetitionResult } = useSchoolData();
-    const [isOpen, setIsOpen] = useState(false);
-
-    const form = useForm<ResultFormValues>({
-        resolver: zodResolver(resultSchema),
-        defaultValues: { ourScore: 0, opponentScore: 0 }
-    });
-
-    function onSubmit(values: ResultFormValues) {
-        addCompetitionResult(competition.id, values);
-        form.reset();
-        setIsOpen(false);
-    }
-    
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm"><Award className="mr-2 h-4 w-4" /> Record Result</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Record Competition Result</DialogTitle>
-                    <DialogDescription>
-                        {team?.name || 'Our Team'} vs {competition.opponent}
-                    </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="ourScore" render={({ field }) => ( <FormItem><FormLabel>{team?.name || 'Our Score'}</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="opponentScore" render={({ field }) => ( <FormItem><FormLabel>Opponent Score</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        </div>
-                        <DialogFooter className="mt-4">
-                            <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                            <Button type="submit">Save Result</Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-function DeleteTeamDialog({ team, onDelete }: { team: Team; onDelete: (teamId: string) => void; }) {
-  return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="destructive" size="sm">
-          <Trash2 className="mr-2 h-4 w-4" /> Delete Team
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This will permanently delete the team "{team.name}" and any competitions it is scheduled for. This action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => onDelete(team.id)}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            Yes, delete team
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
-
-function ManageTeamDialog({ team, students, allTeams, addPlayerToTeam, removePlayerFromTeam, deleteTeam }: { team: Team, students: Student[], allTeams: Team[], addPlayerToTeam: (teamId: string, studentId: string) => void, removePlayerFromTeam: (teamId: string, studentId: string) => void, deleteTeam: (teamId: string) => void }) {
+function NewApplicationDialog() {
+  const { addAdmission, allSchoolData } = useSchoolData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [studentToAdd, setStudentToAdd] = useState('');
+  const { toast } = useToast();
 
-  const teamPlayers = students.filter(s => team.playerIds.includes(s.id));
-  
-  const allPlayerIds = allTeams.flatMap(t => t.playerIds);
-  const availableStudents = students.filter(s => !allPlayerIds.includes(s.id));
+  const form = useForm<ApplicationFormValues>({
+    resolver: zodResolver(applicationSchema),
+  });
 
-  const handleAddPlayer = () => {
-    if (studentToAdd) {
-      addPlayerToTeam(team.id, studentToAdd);
-      setStudentToAdd('');
-    }
-  };
+  const selectedSchoolId = form.watch('schoolId');
+  const selectedGradeStr = form.watch('appliedFor');
+
+  const vacancies = useMemo(() => {
+    if (!selectedSchoolId || !selectedGradeStr) return null;
+    const school = allSchoolData?.[selectedSchoolId];
+    if (!school) return null;
+
+    const gradeNumber = selectedGradeStr.replace('Grade ', '');
+    const capacity = school.profile.gradeCapacity?.[gradeNumber] ?? 0;
+    const currentStudents = school.students.filter(s => s.grade === gradeNumber).length;
+
+    return Math.max(0, capacity - currentStudents);
+  }, [selectedSchoolId, selectedGradeStr, allSchoolData]);
+
+  function onSubmit(values: ApplicationFormValues) {
+    addAdmission({
+      schoolId: values.schoolId,
+      name: values.name,
+      dateOfBirth: format(values.dateOfBirth, 'yyyy-MM-dd'),
+      sex: values.sex,
+      appliedFor: values.appliedFor,
+      formerSchool: values.formerSchool,
+      gradesSummary: values.gradesSummary || 'N/A',
+    });
+    toast({
+      title: 'Application Submitted',
+      description: `The application for ${values.name} has been sent to the school for review.`,
+    });
+    form.reset();
+    setIsDialogOpen(false);
+  }
+
+  const schoolList = allSchoolData ? Object.values(allSchoolData).map(s => s.profile) : [];
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">Manage Team</Button>
+        <Button><UserPlus className="mr-2 h-4 w-4" /> New Application</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Manage {team.name}</DialogTitle>
-          <DialogDescription>Add or remove players from the team roster.</DialogDescription>
+          <DialogTitle>Apply for a New Child</DialogTitle>
+          <DialogDescription>
+            Fill out this form to submit a new admission application to a school.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-            <div>
-              <h4 className="font-semibold mb-2 text-sm">Current Players ({teamPlayers.length})</h4>
-              <ul className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                {teamPlayers.map(player => (
-                  <li key={player.id} className="flex justify-between items-center bg-muted p-2 rounded-md">
-                    <span>{player.name}</span>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removePlayerFromTeam(team.id, player.id)}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </li>
-                ))}
-                {teamPlayers.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No players on this team yet.</p>}
-              </ul>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+            <FormField control={form.control} name="schoolId" render={({ field }) => ( <FormItem><FormLabel>School to Apply To</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select School" /></SelectTrigger></FormControl><SelectContent>{schoolList.map(school => <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Child's Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+                <FormField control={form.control} name="sex" render={({ field }) => ( <FormItem><FormLabel>Sex</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
             </div>
-            <div className="mt-4">
-               <h4 className="font-semibold mb-2 text-sm">Add New Player</h4>
-               <div className="flex gap-2">
-                <Select onValueChange={setStudentToAdd} value={studentToAdd}>
-                  <SelectTrigger><SelectValue placeholder="Select a student..." /></SelectTrigger>
-                  <SelectContent>
-                    {availableStudents.map(s => <SelectItem key={s.id} value={s.id}>{s.name} (Grade {s.grade})</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <Button onClick={handleAddPlayer} disabled={!studentToAdd}>Add</Button>
-               </div>
-            </div>
-        </div>
-        <DialogFooter className="flex-col sm:flex-row sm:justify-between items-center border-t pt-4">
-           <DeleteTeamDialog team={team} onDelete={deleteTeam} />
-           <DialogClose asChild><Button>Done</Button></DialogClose>
-        </DialogFooter>
+            <FormField control={form.control} name="appliedFor" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Applying for Grade</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedSchoolId}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select Grade" /></SelectTrigger></FormControl>
+                        <SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(g => <SelectItem key={g} value={`Grade ${g}`}>Grade {g}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+            )} />
+             {vacancies !== null && (
+                <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md border">
+                    Available Vacancies for this grade: <span className="font-bold text-primary">{vacancies}</span>
+                    {vacancies === 0 && " (Applications will be added to the waitlist)"}
+                </div>
+            )}
+            <FormField control={form.control} name="formerSchool" render={({ field }) => ( <FormItem><FormLabel>Previous School</FormLabel><FormControl><Input placeholder="e.g., Eastwood Elementary" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="gradesSummary" render={({ field }) => ( <FormItem><FormLabel>Previous Grades Summary</FormLabel><FormControl><Textarea placeholder="Briefly describe academic performance, e.g., 'Consistent A grades in Math and Science, B in English.'" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            
+            <DialogFooter className="sticky bottom-0 bg-background pt-4 pr-0">
+              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+              <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit Application</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
-function CompetitionCard({ competition, team }: { competition: Competition, team?: Team }) {
-  const getOutcomeBadge = (outcome: 'Win' | 'Loss' | 'Draw') => {
-    switch(outcome) {
-      case 'Win': return <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Win</Badge>;
-      case 'Loss': return <Badge variant="destructive">Loss</Badge>;
-      case 'Draw': return <Badge variant="outline">Draw</Badge>;
+
+function AIGeneratedAdvice({ child, grades, attendance }) {
+  const [analysis, setAnalysis] = useState<StudentAnalysis | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleAnalysis = async () => {
+    setIsLoading(true);
+    setAnalysis(null);
+    try {
+      const gradeData = grades.map(g => ({
+        subject: g.subject,
+        grade: g.grade,
+        type: g.type,
+        description: g.description,
+      }));
+
+      const attendanceData = Object.entries(attendance).map(([status, count]) => ({
+        status,
+        count: count as number,
+      }));
+
+      const result = await analyzeStudentPerformanceAction({
+        studentName: child.name,
+        grades: gradeData,
+        attendance: attendanceData,
+      });
+      setAnalysis(result);
+    } catch (e) {
+      console.error('AI Analysis failed:', e);
+      toast({
+        variant: 'destructive',
+        title: 'Analysis Failed',
+        description: 'Could not get AI-powered recommendations.',
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const competitionDate = competition.date.toDate ? competition.date.toDate() : new Date(competition.date);
-
   return (
-    <li className="flex flex-wrap items-center justify-between gap-4 p-4 border rounded-lg">
-      <div className="flex-1">
-        <h3 className="font-semibold text-lg">{competition.title}</h3>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-            {team && <span className="text-2xl">{team.icon}</span>}
-            <span>{team?.name || 'School Team'}</span>
-            <Swords className="h-4 w-4 text-primary" />
-            <span>{competition.opponent}</span>
-        </div>
-        {competition.result && (
-          <div className="mt-2 text-sm flex items-center gap-2">
-            <span className="font-bold">{competition.result.ourScore} - {competition.result.opponentScore}</span>
-            {getOutcomeBadge(competition.result.outcome)}
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> AI-Powered Insights</CardTitle>
+        <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {!analysis && (
+          <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+            <p className="text-muted-foreground mb-4">Click below to analyze your child's recent performance.</p>
+            <Button onClick={handleAnalysis} disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+              Analyze Performance
+            </Button>
           </div>
         )}
-      </div>
-      <div className="w-full sm:w-auto flex items-center gap-4 mt-3 sm:mt-0">
-          <div className="text-sm text-right flex-1">
-              <p>{format(competitionDate, 'EEEE, MMM d')}</p>
-              <p className="text-muted-foreground">{competition.time} at {competition.location}</p>
+        {analysis && (
+          <div className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-semibold flex items-center gap-2 mb-2"><Check className="text-green-500"/> Strengths</h3>
+                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                  {analysis.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold flex items-center gap-2 mb-2"><TrendingUp className="text-orange-500"/> Areas for Improvement</h3>
+                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                  {analysis.areasForImprovement.map((a, i) => <li key={i}>{a}</li>)}
+                </ul>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-semibold flex items-center gap-2 mb-2"><Lightbulb className="text-yellow-500"/> Recommendations for You</h3>
+              <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                {analysis.recommendations.map((r, i) => <li key={i}>{r}</li>)}
+              </ul>
+            </div>
           </div>
-          {competitionDate < new Date() && !competition.result && <RecordResultDialog competition={competition} team={team} />}
-      </div>
-    </li>
+        )}
+      </CardContent>
+       {analysis && (
+        <CardFooter>
+          <Button variant="outline" onClick={() => setAnalysis(null)}>
+            Start New Analysis
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
   )
 }
 
-export default function SportsPage() {
-  const { role, isLoading } = useAuth();
-  const { teamsData, studentsData, addPlayerToTeam, removePlayerFromTeam, competitionsData, deleteTeam } = useSchoolData();
-  const router = useRouter();
+function GradeDistribution({ grades }) {
+  const chartData = useMemo(() => {
+    return grades.map(grade => ({
+      subject: grade.subject,
+      gpa: getGpaFromNumeric(parseFloat(grade.grade))
+    }));
+  }, [grades]);
 
-  useEffect(() => {
-    if (!isLoading && role !== 'Admin') {
-      router.push('/dashboard');
-    }
-  }, [role, isLoading, router]);
-
-  if (isLoading || role !== 'Admin') {
-    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
-  
-  const upcomingCompetitions = competitionsData.filter(c => (c.date.toDate ? c.date.toDate() : new Date(c.date)) >= new Date()).sort((a, b) => (a.date.toDate ? a.date.toDate() : new Date(a.date)).getTime() - (b.date.toDate ? b.date.toDate() : new Date(b.date)).getTime());
-  const pastCompetitions = competitionsData.filter(c => (c.date.toDate ? c.date.toDate() : new Date(c.date)) < new Date()).sort((a, b) => (b.date.toDate ? b.date.toDate() : new Date(b.date)).getTime() - (a.date.toDate ? a.date.toDate() : new Date(a.date)).getTime());
+  const chartConfig = {
+    gpa: {
+      label: 'GPA',
+      color: 'hsl(var(--chart-2))',
+    },
+  } satisfies ChartConfig;
 
   return (
-    <div className="space-y-6 animate-in fade-in-50">
-      <header className="flex flex-wrap gap-2 justify-between items-center">
-        <div>
-            <h2 className="text-3xl font-bold tracking-tight">Sports</h2>
-            <p className="text-muted-foreground">Manage sports activities, teams, and competitions.</p>
-        </div>
-        <div className="flex gap-2">
-            <NewTeamDialog />
-            <NewCompetitionDialog />
-        </div>
-      </header>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><BarChart2 /> Grade Distribution</CardTitle>
+        <CardDescription>Performance by subject based on GPA.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {grades.length > 0 ? (
+          <ChartContainer config={chartConfig} className="h-48 w-full">
+            <BarChart data={chartData} margin={{ top: 20 }}>
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="gpa" fill="var(--color-gpa)" radius={4} />
+            </BarChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex items-center justify-center h-48 text-muted-foreground">
+            <p>No grade data available.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
 
+function ParentSportsActivities() {
+    const { studentsData, teamsData, competitionsData } = useSchoolData();
+
+    const upcomingCompetitions = useMemo(() => {
+        const childrenIds = studentsData.map(c => c.id);
+        const childrenTeams = teamsData.filter(t => t.playerIds.some(pId => childrenIds.includes(pId)));
+        const teamMap = new Map(childrenTeams.map(t => [t.id, t]));
+        
+        return competitionsData
+            .filter(c => (c.date instanceof Date ? c.date : new Date(c.date)) >= new Date() && teamMap.has(c.ourTeamId))
+            .map(c => ({
+                ...c,
+                date: c.date instanceof Date ? c.date : new Date(c.date),
+                team: teamMap.get(c.ourTeamId),
+                players: studentsData.filter(s => teamMap.get(c.ourTeamId)?.playerIds.includes(s.id))
+            }))
+            .sort((a,b) => a.date.getTime() - b.date.getTime());
+    }, [studentsData, teamsData, competitionsData]);
+
+    if (upcomingCompetitions.length === 0) return null;
+
+    return (
         <Card>
             <CardHeader>
-                <CardTitle>School Teams</CardTitle>
-                <CardDescription>Overview of all official school sports teams.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Trophy /> My Children's Sports</CardTitle>
+                <CardDescription>Upcoming games and competitions for your children.</CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {teamsData.map(team => (
-                    <Card key={team.id} className="flex flex-col">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-3">
-                                <span className="text-4xl">{team.icon}</span>
-                                <span className="flex-1">{team.name}</span>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3 flex-grow">
-                            <div className="flex items-center text-sm text-muted-foreground">
-                                <Users className="mr-3 h-4 w-4" />
-                                <span>{team.playerIds.length} Players</span>
+            <CardContent>
+                <ul className="space-y-4">
+                    {upcomingCompetitions.map(comp => (
+                        <li key={comp.id} className="flex items-start gap-4">
+                            <div className="flex flex-col items-center p-2 bg-muted rounded-md w-14">
+                                <span className="font-bold text-lg">{format(comp.date, 'dd')}</span>
+                                <span className="text-xs uppercase">{format(comp.date, 'MMM')}</span>
                             </div>
-                            <div className="flex items-center text-sm text-muted-foreground">
-                                <UserIcon className="mr-3 h-4 w-4" />
-                                <span>Coach: {team.coach}</span>
+                            <div>
+                                <h4 className="font-semibold">{comp.team?.name} vs {comp.opponent}</h4>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                    <div className="flex items-center gap-2"><User className="h-3 w-3"/><span>Player(s): {comp.players.map(p => p.name).join(', ')}</span></div>
+                                    <div className="flex items-center gap-2"><CalendarIcon className="h-3 w-3"/><span>{format(comp.date, 'EEEE')} at {comp.time}</span></div>
+                                </div>
                             </div>
-                        </CardContent>
-                        <CardFooter>
-                           <ManageTeamDialog
-                                team={team}
-                                students={studentsData}
-                                allTeams={teamsData}
-                                addPlayerToTeam={addPlayerToTeam}
-                                removePlayerFromTeam={removePlayerFromTeam}
-                                deleteTeam={deleteTeam}
-                            />
-                        </CardFooter>
-                    </Card>
-                ))}
-                 {teamsData.length === 0 && (
-                    <p className="text-muted-foreground col-span-full text-center py-8">No sports teams have been created yet.</p>
-                )}
+                        </li>
+                    ))}
+                </ul>
             </CardContent>
         </Card>
+    );
+}
 
-      <Card>
-        <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Trophy /> Upcoming Competitions</CardTitle>
-            <CardDescription>A list of scheduled sports events and competitions.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            {upcomingCompetitions.length > 0 ? (
-                <ul className="space-y-4">
-                    {upcomingCompetitions.map(comp => {
-                        const team = teamsData.find(t => t.id === comp.ourTeamId);
-                        return <CompetitionCard key={comp.id} competition={comp} team={team} />;
-                    })}
-                </ul>
-            ) : (
-                <p className="text-muted-foreground text-center py-8">No upcoming sports events scheduled.</p>
-            )}
-        </CardContent>
-      </Card>
+const getStatusInfo = (fee) => {
+    const balance = fee.totalAmount - fee.amountPaid;
+    const isOverdue = new Date(fee.dueDate) < new Date() && balance > 0;
+
+    if (balance <= 0) {
+        return { text: 'Paid', variant: 'secondary' as const };
+    }
+    if (isOverdue) {
+        return { text: 'Overdue', variant: 'destructive' as const };
+    }
+     if (fee.amountPaid > 0) {
+        return { text: 'Partially Paid', variant: 'outline' as const };
+    }
+    return { text: 'Pending', variant: 'outline' as const };
+};
+
+export default function ParentDashboard() {
+  const { user } = useAuth();
+  const { studentsData, grades, attendance, financeData, schoolProfile, isLoading: schoolDataLoading } = useSchoolData();
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedChildId && studentsData.length > 0) {
+      setSelectedChildId(studentsData[0].id);
+    }
+  }, [studentsData, selectedChildId]);
+
+  const selectedChild = useMemo(() => studentsData.find(c => c.id === selectedChildId), [selectedChildId, studentsData]);
+
+  const childGrades = useMemo(() => {
+    if (!selectedChildId) return [];
+    return grades.filter(g => g.studentId === selectedChildId);
+  }, [grades, selectedChildId]);
+
+  const childAttendance = useMemo(() => {
+      if (!selectedChildId) return {};
+      return attendance.filter(a => a.studentId === selectedChildId).reduce((acc, record) => {
+          const statusKey = record.status.toLowerCase();
+          acc[statusKey] = (acc[statusKey] || 0) + 1;
+          return acc;
+      }, {});
+  }, [attendance, selectedChildId]);
+  
+  const childFinanceSummary = useMemo(() => {
+    if (!selectedChildId) return null;
+    const childFees = financeData.filter(f => f.studentId === selectedChildId);
+    if (childFees.length === 0) return null;
+    // Prioritize showing an overdue fee, then a partially paid/pending one.
+    const overdue = childFees.find(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < new Date());
+    if (overdue) return overdue;
+    const pending = childFees.find(f => f.totalAmount - f.amountPaid > 0);
+    if (pending) return pending;
+    return childFees[0]; // Otherwise show the first one (likely a paid one)
+  }, [financeData, selectedChildId]);
+
+  if (schoolDataLoading) {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  if (!studentsData || studentsData.length === 0) {
+    return (
+       <div className="space-y-6">
+        <header className="flex flex-wrap gap-4 justify-between items-center">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+              <p className="text-muted-foreground">Welcome, {user?.name}.</p>
+            </div>
+            <NewApplicationDialog />
+        </header>
+        <Card>
+            <CardHeader>
+            <CardTitle>No Student Data Found</CardTitle>
+            </CardHeader>
+            <CardContent>
+            <p>No student information is linked to your account. You can submit an application for a new child to a school.</p>
+            </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <header className="flex flex-wrap gap-4 justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+          <p className="text-muted-foreground">Welcome, {user?.name}. Here is an overview for your children.</p>
+        </div>
+        <NewApplicationDialog />
+      </header>
+
+      <div>
+        <h3 className="text-lg font-medium mb-2">Select a Child</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {studentsData.map(child => (
+            <Card 
+              key={child.id} 
+              onClick={() => setSelectedChildId(child.id)}
+              className={cn(
+                'cursor-pointer transition-all hover:shadow-md hover:border-primary/50',
+                selectedChildId === child.id ? 'border-primary ring-2 ring-primary/50' : 'border-border'
+              )}
+            >
+              <CardHeader>
+                <CardTitle>{child.name}</CardTitle>
+                <CardDescription>{child.schoolName}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Grade {child.grade} - {child.class}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
       
-      <Card>
-        <CardHeader>
-            <CardTitle className="flex items-center gap-2"><History /> Competition Results</CardTitle>
-            <CardDescription>A record of past competitions and their outcomes.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            {pastCompetitions.length > 0 ? (
-                <ul className="space-y-4">
-                    {pastCompetitions.map(comp => {
-                        const team = teamsData.find(t => t.id === comp.ourTeamId);
-                        return <CompetitionCard key={comp.id} competition={comp} team={team} />;
-                    })}
-                </ul>
-            ) : (
-                <p className="text-muted-foreground text-center py-8">No past competitions found.</p>
-            )}
-        </CardContent>
-      </Card>
+      {selectedChild ? (
+        <div className="space-y-6 animate-in fade-in-25">
+           <div className="grid gap-6 lg:grid-cols-3">
+            {selectedChild && <AIGeneratedAdvice child={selectedChild} grades={childGrades} attendance={childAttendance} />}
+             <div className="space-y-6">
+                <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><DollarSign /> Fee Status</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                    {childFinanceSummary ? (
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid, schoolProfile?.currency)}</span></p>
+                                <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
+                            </div>
+                            <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">No fee information available.</p>
+                    )}
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><GraduationCap /> Recent Grades</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-2">
+                            {childGrades.length > 0 ? childGrades.slice(0, 3).map((grade, index) => {
+                              const numericGrade = parseFloat(grade.grade);
+                              return (
+                                <li key={index} className="flex justify-between items-center text-sm">
+                                    <span className="font-medium">{grade.subject}</span>
+                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
+                                </li>
+                              )
+                            }) : <p className="text-muted-foreground text-sm">No recent grades.</p>}
+                        </ul>
+                    </CardContent>
+                </Card>
+              </div>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <GradeDistribution grades={childGrades} />
+            <ParentSportsActivities />
+          </div>
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            <p>Please select a child to view their details.</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
