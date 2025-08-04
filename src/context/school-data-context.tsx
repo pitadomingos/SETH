@@ -34,6 +34,7 @@ interface SchoolDataContextType {
     parentStatusOverrides: Record<string, 'Active' | 'Suspended'>;
     deployedTests: DeployedTest[];
     savedTests: SavedTest[];
+    awardsAnnounced: boolean;
     
     // --- Dropdown Data ---
     subjects: string[];
@@ -46,6 +47,7 @@ interface SchoolDataContextType {
     isLoading: boolean;
 
     // --- Action Functions ---
+    announceAwards: () => void;
     addSchool: (schoolData: SchoolData) => void;
     removeSchool: (schoolId: string) => void;
     addCourse: (course: Omit<Course, 'id'>) => void;
@@ -107,6 +109,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { user, role, schoolId: authSchoolId } = useAuth();
   const [data, setData] = useState<Record<string, SchoolData> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [awardsAnnounced, setAwardsAnnounced] = useState(false);
 
   useEffect(() => {
     const fetchSchoolData = async () => {
@@ -119,10 +122,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
                 firestoreData = await getSchoolsFromFirestore(); // Re-fetch after seeding
             }
             setData(firestoreData);
+            setAwardsAnnounced(firestoreData['northwood']?.profile.kioskConfig.showAwardWinner || false);
         } catch (error) {
             console.error("Failed to fetch or seed school data.", error);
             // Fallback to mock data in case of severe firestore error
             setData(initialSchoolData);
+            setAwardsAnnounced(initialSchoolData['northwood']?.profile.kioskConfig.showAwardWinner || false);
         } finally {
             setIsLoading(false);
         }
@@ -130,6 +135,19 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
     fetchSchoolData();
   }, []);
+
+  const announceAwards = () => {
+    setAwardsAnnounced(true);
+    setData(prevData => {
+        if (!prevData) return null;
+        const newData = { ...prevData };
+        Object.keys(newData).forEach(schoolId => {
+            newData[schoolId].profile.kioskConfig.showAwardWinner = true;
+        });
+        return newData;
+    });
+    addLog('northwood', 'Announcement', 'Annual awards have been announced network-wide.');
+  };
 
   const addLog = useCallback((schoolIdForLog: string, action: string, details: string) => {
     if(!user || !role) return;
@@ -917,12 +935,14 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     parentStatusOverrides,
     deployedTests: schoolData?.deployedTests || [],
     savedTests: schoolData?.savedTests || [],
+    awardsAnnounced,
     examBoards: schoolData?.examBoards || [],
     feeDescriptions: schoolData?.feeDescriptions || [],
     audiences: schoolData?.audiences || [],
     expenseCategories: schoolData?.expenseCategories || [],
     terms: schoolData?.terms || [],
     holidays: schoolData?.holidays || [],
+    announceAwards,
     addSchool, removeSchool, addCourse, addSyllabus, updateSyllabusTopic, deleteSyllabusTopic,
     updateApplicationStatus, addStudentFromAdmission, addAsset, addLessonAttendance,
     addClass, updateClass, deleteClass, addEvent, addGrade, recordPayment, addFee, addExpense,
@@ -930,7 +950,6 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     addTeacher, updateTeacher, deleteTeacher, addKioskMedia, removeKioskMedia, updateSchoolProfile, addMessage, addAdmission,
     updateSchoolStatus, updateMessageStatus, updateStudentStatus, updateTeacherStatus, updateParentStatus,
     addTerm, addHoliday,
-    addExamBoard, deleteExamBoard, addFeeDescription, deleteFeeDescription, addAudience, deleteAudience,
     addSavedReport,
     addBehavioralAssessment,
   };
@@ -949,5 +968,3 @@ export const useSchoolData = () => {
   }
   return context;
 };
-
-    
