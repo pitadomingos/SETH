@@ -10,7 +10,7 @@ import { Loader2, Trophy, School, User, Sparkles, BrainCircuit, Gift, DollarSign
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getGpaFromNumeric } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 
 function AIEvaluationDialog({ winner, category }) {
     const [analysis, setAnalysis] = useState(null);
