@@ -1,13 +1,12 @@
-
 'use client';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabus, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, SchoolProfile, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, mockUsers, UserProfile, SyllabusTopic } from '@/lib/mock-data';
 import { useAuth, User } from './auth-context';
 import type { Role } from './auth-context';
-import { getSchoolsFromFirestore, seedInitialData, addFeeToFirestore, recordPaymentInFirestore, addExpenseToFirestore } from '@/lib/firebase/firestore-service';
+import { getSchoolsFromFirestore, seedInitialData } from '@/lib/firebase/firestore-service';
 import { getGpaFromNumeric } from '@/lib/utils';
 import { updateSchoolProfileAction } from '@/app/actions/update-school-action';
-import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction, addSyllabusAction, addCourseAction, updateCourseAction, deleteCourseFromFirestore, addFeeAction, recordPaymentAction, addExpenseAction } from '@/app/actions/school-actions';
+import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction, addSyllabusAction, addCourseAction, updateCourseAction, deleteCourseFromFirestore, addFeeAction, recordPaymentAction, addExpenseAction, addTeamAction, deleteTeamAction, addPlayerToTeamAction, removePlayerFromTeamAction, addCompetitionAction, addCompetitionResultAction } from '@/app/actions/school-actions';
 
 
 export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, SyllabusTopic, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, DeployedTest, SavedTest, NewMessageData, NewAdmissionData } from '@/lib/mock-data';
@@ -71,12 +70,12 @@ interface SchoolDataContextType {
     recordPayment: (feeId: string, amount: number) => Promise<void>;
     addFee: (fee: Omit<FinanceRecord, 'id' | 'studentName' | 'status' | 'amountPaid'>) => Promise<void>;
     addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
-    addTeam: (team: Omit<Team, 'id' | 'playerIds'>) => void;
-    deleteTeam: (teamId: string) => void;
-    addPlayerToTeam: (teamId: string, studentId: string) => void;
-    removePlayerFromTeam: (teamId: string, studentId: string) => void;
-    addCompetition: (competition: Omit<Competition, 'id'>) => void;
-    addCompetitionResult: (competitionId: string, result: Competition['result']) => void;
+    addTeam: (team: Omit<Team, 'id' | 'playerIds'>) => Promise<void>;
+    deleteTeam: (teamId: string) => Promise<void>;
+    addPlayerToTeam: (teamId: string, studentId: string) => Promise<void>;
+    removePlayerFromTeam: (teamId: string, studentId: string) => Promise<void>;
+    addCompetition: (competition: Omit<Competition, 'id'>) => Promise<void>;
+    addCompetitionResult: (competitionId: string, result: Competition['result']) => Promise<void>;
     addTeacher: (teacher: Omit<Teacher, 'id' | 'status'>) => Promise<void>;
     updateTeacher: (id: string, data: Partial<Teacher>) => Promise<void>;
     deleteTeacher: (id: string) => Promise<void>;
@@ -578,14 +577,14 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const recordPayment = async (feeId: string, amount: number) => {
     if (!schoolId) return;
-    const updatedFee = await recordPaymentInFirestore(schoolId, feeId, amount);
-    if (updatedFee) {
+    const result = await recordPaymentAction(schoolId, feeId, amount);
+    if (result.success && result.fee) {
         setData(prev => {
             if (!prev) return null;
             const newData = { ...prev };
             const school = newData[schoolId];
-            school.finance = school.finance.map(f => f.id === feeId ? updatedFee : f);
-            addLog(schoolId, 'Update', `Recorded payment of ${amount} for fee ${updatedFee.description}`);
+            school.finance = school.finance.map(f => f.id === feeId ? result.fee! : f);
+            addLog(schoolId, 'Update', `Recorded payment of ${amount} for fee ${result.fee.description}`);
             return newData;
         });
     }
@@ -596,13 +595,13 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const student = schoolData?.students.find(s => s.id === fee.studentId);
     if (!student) return;
 
-    const newFee = await addFeeToFirestore(schoolId, fee, student.name);
+    const result = await addFeeAction(schoolId, fee, student.name);
 
-    if (newFee) {
+    if (result.success && result.fee) {
         setData(prev => {
             if (!prev) return null;
             const newData = { ...prev };
-            newData[schoolId].finance.push(newFee);
+            newData[schoolId].finance.push(result.fee!);
             addLog(schoolId, 'Create', `Created new fee for ${student.name}: ${fee.description}`);
             return newData;
         });
@@ -611,104 +610,114 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const addExpense = async (expense: Omit<Expense, 'id'>) => {
     if(!schoolId) return;
-    const newExpense = await addExpenseToFirestore(schoolId, expense);
-    if(newExpense) {
+    const result = await addExpenseAction(schoolId, expense);
+    if(result.success && result.expense) {
         setData(prev => {
           if (!prev) return null;
           const newData = { ...prev };
-          newData[schoolId].expenses.push(newExpense);
+          newData[schoolId].expenses.push(result.expense!);
           addLog(schoolId, 'Create', `Added expense: ${expense.description}`);
           return newData;
       });
     }
   };
   
-  const addTeam = (team: Omit<Team, 'id' | 'playerIds'>) => {
+  const addTeam = async (team: Omit<Team, 'id' | 'playerIds'>) => {
     if (!schoolId) return;
-    const newTeam: Team = { id: `TM${Date.now()}`, playerIds: [], ...team };
-    setData(prev => {
-      if (!prev) return null;
-      const newData = { ...prev };
-      newData[schoolId].teams.push(newTeam);
-      addLog(schoolId, 'Create', `Created new sports team: ${team.name}`);
-      return newData;
-    });
+    const result = await addTeamAction(schoolId, team);
+    if (result.success && result.team) {
+      setData(prev => {
+        if (!prev) return null;
+        const newData = { ...prev };
+        newData[schoolId].teams.push(result.team!);
+        addLog(schoolId, 'Create', `Created new sports team: ${team.name}`);
+        return newData;
+      });
+    }
   };
   
-  const deleteTeam = (teamId: string) => {
+  const deleteTeam = async (teamId: string) => {
     if (!schoolId) return;
-    setData(prev => {
-      if (!prev) return null;
-      const newData = { ...prev };
-      const school = newData[schoolId];
-      const teamName = school.teams.find(t => t.id === teamId)?.name;
-      school.teams = school.teams.filter(t => t.id !== teamId);
-      school.competitions = school.competitions.filter(c => c.ourTeamId !== teamId);
-      addLog(schoolId, 'Delete', `Deleted team: ${teamName}`);
-      return newData;
-    });
+    const result = await deleteTeamAction(schoolId, teamId);
+    if (result.success) {
+      setData(prev => {
+        if (!prev) return null;
+        const newData = { ...prev };
+        const school = newData[schoolId];
+        const teamName = school.teams.find(t => t.id === teamId)?.name;
+        school.teams = school.teams.filter(t => t.id !== teamId);
+        school.competitions = school.competitions.filter(c => c.ourTeamId !== teamId);
+        addLog(schoolId, 'Delete', `Deleted team: ${teamName}`);
+        return newData;
+      });
+    }
   };
 
-  const addPlayerToTeam = (teamId: string, studentId: string) => {
+  const addPlayerToTeam = async (teamId: string, studentId: string) => {
       if(!schoolId) return;
-      setData(prev => {
-          if (!prev) return null;
-          const newData = {...prev};
-          const school = newData[schoolId];
-          school.teams = school.teams.map(t => {
-              if (t.id === teamId && !t.playerIds.includes(studentId)) {
-                  t.playerIds.push(studentId);
-              }
-              return t;
-          });
-          return newData;
-      });
+      const result = await addPlayerToTeamAction(schoolId, teamId, studentId);
+      if (result.success) {
+        setData(prev => {
+            if (!prev) return null;
+            const newData = {...prev};
+            const school = newData[schoolId];
+            school.teams = school.teams.map(t => {
+                if (t.id === teamId && !t.playerIds.includes(studentId)) {
+                    t.playerIds.push(studentId);
+                }
+                return t;
+            });
+            return newData;
+        });
+      }
   };
   
-  const removePlayerFromTeam = (teamId: string, studentId: string) => {
+  const removePlayerFromTeam = async (teamId: string, studentId: string) => {
       if(!schoolId) return;
-      setData(prev => {
-          if (!prev) return null;
-          const newData = {...prev};
-          const school = newData[schoolId];
-          school.teams = school.teams.map(t => {
-              if (t.id === teamId) {
-                  t.playerIds = t.playerIds.filter(id => id !== studentId);
-              }
-              return t;
-          });
-          return newData;
-      });
+      const result = await removePlayerFromTeamAction(schoolId, teamId, studentId);
+      if (result.success) {
+        setData(prev => {
+            if (!prev) return null;
+            const newData = {...prev};
+            const school = newData[schoolId];
+            school.teams = school.teams.map(t => {
+                if (t.id === teamId) {
+                    t.playerIds = t.playerIds.filter(id => id !== studentId);
+                }
+                return t;
+            });
+            return newData;
+        });
+      }
   };
   
-  const addCompetition = (competition: Omit<Competition, 'id'>) => {
+  const addCompetition = async (competition: Omit<Competition, 'id'>) => {
     if(!schoolId) return;
-    const newCompetition: Competition = { id: `CMP${Date.now()}`, ...competition };
-    setData(prev => {
-        if (!prev) return null;
-        const newData = {...prev};
-        newData[schoolId].competitions.push(newCompetition);
-        addLog(schoolId, 'Create', `Scheduled competition: ${competition.title}`);
-        return newData;
-    });
+    const result = await addCompetitionAction(schoolId, competition);
+    if (result.success && result.competition) {
+      setData(prev => {
+          if (!prev) return null;
+          const newData = {...prev};
+          newData[schoolId].competitions.push(result.competition!);
+          addLog(schoolId, 'Create', `Scheduled competition: ${competition.title}`);
+          return newData;
+      });
+    }
   };
   
-  const addCompetitionResult = (competitionId: string, result: Competition['result']) => {
+  const addCompetitionResult = async (competitionId: string, result: Competition['result']) => {
     if (!schoolId) return;
-    setData(prev => {
-      if (!prev) return null;
-      const newData = { ...prev };
-      const school = newData[schoolId];
-      school.competitions = school.competitions.map(c => {
-        if (c.id === competitionId) {
-            const outcome = result.ourScore > result.opponentScore ? 'Win' : result.ourScore < result.opponentScore ? 'Loss' : 'Draw';
-            return { ...c, result: {...result, outcome} };
-        }
-        return c;
+    const actionResult = await addCompetitionResultAction(schoolId, competitionId, result);
+    if (actionResult.success && actionResult.competition) {
+      setData(prev => {
+        if (!prev) return null;
+        const newData = { ...prev };
+        const school = newData[schoolId];
+        school.competitions = school.competitions.map(c => c.id === competitionId ? actionResult.competition! : c);
+        addLog(schoolId, 'Update', `Recorded result for competition ${competitionId}`);
+        return newData;
       });
-      addLog(schoolId, 'Update', `Recorded result for competition ${competitionId}`);
-      return newData;
-    });
+    }
   };
   
   const addBehavioralAssessment = (assessment: Omit<any, 'id'|'date'>) => {
@@ -1045,3 +1054,4 @@ export const useSchoolData = () => {
   }
   return context;
 };
+

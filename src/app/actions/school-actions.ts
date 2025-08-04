@@ -1,10 +1,8 @@
-
-
 'use server';
 
-import { NewSchoolData, SchoolData, UserProfile, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense } from '@/context/school-data-context';
+import { NewSchoolData, SchoolData, UserProfile, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition } from '@/context/school-data-context';
 import { revalidatePath } from 'next/cache';
-import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore, updateSyllabusTopicInFirestore, deleteSyllabusTopicFromFirestore, addSyllabusToFirestore, addCourseToFirestore, updateCourseInFirestore, deleteCourseFromFirestore, addFeeToFirestore, recordPaymentInFirestore, addExpenseToFirestore } from '@/lib/firebase/firestore-service';
+import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore, updateSyllabusTopicInFirestore, deleteSyllabusTopicFromFirestore, addSyllabusToFirestore, addCourseToFirestore, updateCourseInFirestore, deleteCourseFromFirestore, addFeeToFirestore, recordPaymentInFirestore, addExpenseToFirestore, addTeamToFirestore, deleteTeamFromFirestore, addPlayerToTeamInFirestore, removePlayerFromTeamInFirestore, addCompetitionToFirestore, addCompetitionResultInFirestore } from '@/lib/firebase/firestore-service';
 
 export async function createSchool(data: NewSchoolData, groupId?: string): Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile } } | null> {
     try {
@@ -188,4 +186,74 @@ export async function addExpenseAction(schoolId: string, expenseData: Omit<Expen
     }
 }
 
+
+// Sports Actions
+export async function addTeamAction(schoolId: string, teamData: Omit<Team, 'id' | 'playerIds'>): Promise<{ success: boolean, team?: Team, error?: string }> {
+    try {
+        const newTeam = await addTeamToFirestore(schoolId, teamData);
+        revalidatePath('/dashboard/sports');
+        return { success: true, team: newTeam };
+    } catch (e) {
+        console.error("Failed to add team:", e);
+        return { success: false, error: 'Server error adding team.' };
+    }
+}
+
+export async function deleteTeamAction(schoolId: string, teamId: string): Promise<{ success: boolean, error?: string }> {
+    try {
+        await deleteTeamFromFirestore(schoolId, teamId);
+        revalidatePath('/dashboard/sports');
+        return { success: true };
+    } catch (e) {
+        console.error("Failed to delete team:", e);
+        return { success: false, error: 'Server error deleting team.' };
+    }
+}
+
+export async function addPlayerToTeamAction(schoolId: string, teamId: string, studentId: string): Promise<{ success: boolean, error?: string }> {
+    try {
+        await addPlayerToTeamInFirestore(schoolId, teamId, studentId);
+        revalidatePath('/dashboard/sports');
+        return { success: true };
+    } catch (e) {
+        console.error("Failed to add player:", e);
+        return { success: false, error: 'Server error adding player.' };
+    }
+}
+
+export async function removePlayerFromTeamAction(schoolId: string, teamId: string, studentId: string): Promise<{ success: boolean, error?: string }> {
+    try {
+        await removePlayerFromTeamInFirestore(schoolId, teamId, studentId);
+        revalidatePath('/dashboard/sports');
+        return { success: true };
+    } catch (e) {
+        console.error("Failed to remove player:", e);
+        return { success: false, error: 'Server error removing player.' };
+    }
+}
+
+export async function addCompetitionAction(schoolId: string, competitionData: Omit<Competition, 'id'>): Promise<{ success: boolean, competition?: Competition, error?: string }> {
+    try {
+        const newCompetition = await addCompetitionToFirestore(schoolId, competitionData);
+        revalidatePath('/dashboard/sports');
+        return { success: true, competition: newCompetition };
+    } catch (e) {
+        console.error("Failed to add competition:", e);
+        return { success: false, error: 'Server error adding competition.' };
+    }
+}
+
+export async function addCompetitionResultAction(schoolId: string, competitionId: string, result: Competition['result']): Promise<{ success: boolean, competition?: Competition, error?: string }> {
+    try {
+        const updatedCompetition = await addCompetitionResultInFirestore(schoolId, competitionId, result);
+        if (updatedCompetition) {
+            revalidatePath('/dashboard/sports');
+            return { success: true, competition: updatedCompetition };
+        }
+        return { success: false, error: 'Competition not found.' };
+    } catch (e) {
+        console.error("Failed to add result:", e);
+        return { success: false, error: 'Server error adding result.' };
+    }
+}
     

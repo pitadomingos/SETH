@@ -1,8 +1,6 @@
-
-
 import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from './config';
-import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, SyllabusTopic, Course, FinanceRecord, Expense } from '@/lib/mock-data';
+import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition } from '@/lib/mock-data';
 import { sendEmail } from '@/lib/email-service';
 
 // --- Email Simulation ---
@@ -402,4 +400,95 @@ export async function addExpenseToFirestore(schoolId: string, expenseData: Omit<
     return newExpense;
 }
 
+// --- Sports CRUD ---
+export async function addTeamToFirestore(schoolId: string, teamData: Omit<Team, 'id' | 'playerIds'>): Promise<Team> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const newTeam: Team = {
+        id: `TM${Date.now()}`,
+        playerIds: [],
+        ...teamData
+    };
+    await updateDoc(schoolRef, {
+        teams: arrayUnion(newTeam)
+    });
+    return newTeam;
+}
+
+export async function deleteTeamFromFirestore(schoolId: string, teamId: string): Promise<void> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const schoolSnapshot = await getDoc(schoolRef);
+    const schoolData = schoolSnapshot.data() as SchoolData;
+
+    const teamToDelete = schoolData.teams.find(t => t.id === teamId);
+    if (teamToDelete) {
+        const batch = writeBatch(db);
+        // Remove team
+        batch.update(schoolRef, { teams: arrayRemove(teamToDelete) });
+        // Remove associated competitions
+        const remainingCompetitions = schoolData.competitions.filter(c => c.ourTeamId !== teamId);
+        batch.update(schoolRef, { competitions: remainingCompetitions });
+        await batch.commit();
+    }
+}
+
+export async function addPlayerToTeamInFirestore(schoolId: string, teamId: string, studentId: string): Promise<void> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const schoolSnapshot = await getDoc(schoolRef);
+    const schoolData = schoolSnapshot.data() as SchoolData;
+    const updatedTeams = schoolData.teams.map(t => {
+        if (t.id === teamId && !t.playerIds.includes(studentId)) {
+            return { ...t, playerIds: [...t.playerIds, studentId] };
+        }
+        return t;
+    });
+    await updateDoc(schoolRef, { teams: updatedTeams });
+}
+
+export async function removePlayerFromTeamInFirestore(schoolId: string, teamId: string, studentId: string): Promise<void> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const schoolSnapshot = await getDoc(schoolRef);
+    const schoolData = schoolSnapshot.data() as SchoolData;
+    const updatedTeams = schoolData.teams.map(t => {
+        if (t.id === teamId) {
+            return { ...t, playerIds: t.playerIds.filter(id => id !== studentId) };
+        }
+        return t;
+    });
+    await updateDoc(schoolRef, { teams: updatedTeams });
+}
+
+export async function addCompetitionToFirestore(schoolId: string, competitionData: Omit<Competition, 'id'>): Promise<Competition> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const newCompetition: Competition = {
+        id: `CMP${Date.now()}`,
+        ...competitionData,
+        date: Timestamp.fromDate(competitionData.date),
+    };
+    await updateDoc(schoolRef, {
+        competitions: arrayUnion(newCompetition)
+    });
+    return { ...newCompetition, date: competitionData.date }; // return with JS Date
+}
+
+export async function addCompetitionResultInFirestore(schoolId: string, competitionId: string, result: Competition['result']): Promise<Competition | null> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const schoolSnapshot = await getDoc(schoolRef);
+    const schoolData = schoolSnapshot.data() as SchoolData;
+
+    let updatedCompetition: Competition | undefined;
+    const updatedCompetitions = schoolData.competitions.map(c => {
+        if (c.id === competitionId) {
+            const outcome = result.ourScore > result.opponentScore ? 'Win' : result.ourScore < result.opponentScore ? 'Loss' : 'Draw';
+            updatedCompetition = { ...c, result: { ...result, outcome } };
+            return updatedCompetition;
+        }
+        return c;
+    });
+
+    if (updatedCompetition) {
+        await updateDoc(schoolRef, { competitions: updatedCompetitions });
+        return { ...updatedCompetition, date: (updatedCompetition.date as any).toDate() }; // Convert back to JS Date
+    }
+    return null;
+}
     
