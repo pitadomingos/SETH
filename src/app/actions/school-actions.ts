@@ -1,8 +1,8 @@
 'use server';
 
-import { NewSchoolData, SchoolData, UserProfile, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition } from '@/context/school-data-context';
+import { NewSchoolData, SchoolData, UserProfile, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student } from '@/context/school-data-context';
 import { revalidatePath } from 'next/cache';
-import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore, updateSyllabusTopicInFirestore, deleteSyllabusTopicFromFirestore, addSyllabusToFirestore, addCourseToFirestore, updateCourseInFirestore, deleteCourseFromFirestore, addFeeToFirestore, recordPaymentInFirestore, addExpenseToFirestore, addTeamToFirestore, deleteTeamFromFirestore, addPlayerToTeamInFirestore, removePlayerFromTeamInFirestore, addCompetitionToFirestore, addCompetitionResultInFirestore } from '@/lib/firebase/firestore-service';
+import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore, updateSyllabusTopicInFirestore, deleteSyllabusTopicFromFirestore, addSyllabusToFirestore, addCourseToFirestore, updateCourseInFirestore, deleteCourseFromFirestore, addFeeToFirestore, recordPaymentInFirestore, addExpenseToFirestore, addTeamToFirestore, deleteTeamFromFirestore, addPlayerToTeamInFirestore, removePlayerFromTeamInFirestore, addCompetitionToFirestore, addCompetitionResultInFirestore, updateAdmissionStatusInFirestore, addStudentFromAdmissionInFirestore } from '@/lib/firebase/firestore-service';
 
 export async function createSchool(data: NewSchoolData, groupId?: string): Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile } } | null> {
     try {
@@ -254,6 +254,30 @@ export async function addCompetitionResultAction(schoolId: string, competitionId
     } catch (e) {
         console.error("Failed to add result:", e);
         return { success: false, error: 'Server error adding result.' };
+    }
+}
+
+// Admission Actions
+export async function updateAdmissionStatusAction(schoolId: string, admissionId: string, status: Admission['status']): Promise<{ success: boolean, error?: string }> {
+    try {
+        await updateAdmissionStatusInFirestore(schoolId, admissionId, status);
+        revalidatePath('/dashboard/admissions');
+        return { success: true };
+    } catch (e) {
+        console.error("Failed to update admission status:", e);
+        return { success: false, error: 'Server error updating admission status.' };
+    }
+}
+
+export async function addStudentFromAdmissionAction(schoolId: string, application: Admission): Promise<{ success: boolean, newStudent?: Student, error?: string }> {
+    try {
+        const newStudent = await addStudentFromAdmissionInFirestore(schoolId, application);
+        revalidatePath('/dashboard/admissions');
+        revalidatePath('/dashboard/students');
+        return { success: true, newStudent };
+    } catch (e) {
+        console.error("Failed to enroll student from admission:", e);
+        return { success: false, error: 'Server error enrolling student.' };
     }
 }
     

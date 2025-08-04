@@ -1,6 +1,6 @@
 import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from './config';
-import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition } from '@/lib/mock-data';
+import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student } from '@/lib/mock-data';
 import { sendEmail } from '@/lib/email-service';
 
 // --- Email Simulation ---
@@ -490,5 +490,44 @@ export async function addCompetitionResultInFirestore(schoolId: string, competit
         return { ...updatedCompetition, date: (updatedCompetition.date as any).toDate() }; // Convert back to JS Date
     }
     return null;
+}
+
+// --- Admission CRUD ---
+export async function updateAdmissionStatusInFirestore(schoolId: string, admissionId: string, status: Admission['status']): Promise<void> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const schoolSnapshot = await getDoc(schoolRef);
+    if (!schoolSnapshot.exists()) return;
+
+    const schoolData = schoolSnapshot.data() as SchoolData;
+    const updatedAdmissions = schoolData.admissions.map(a => a.id === admissionId ? { ...a, status } : a);
+
+    await updateDoc(schoolRef, { admissions: updatedAdmissions });
+}
+
+export async function addStudentFromAdmissionInFirestore(schoolId: string, application: Admission): Promise<Student> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const [grade, studentClass] = application.appliedFor.replace('Grade ', '').split('-');
+
+    const newStudent: Student = {
+        id: `STU${Date.now()}`,
+        name: application.name,
+        email: `${application.name.toLowerCase().replace(/\s+/g, '.')}@${schoolId}.edu`,
+        phone: `555-01${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`,
+        address: '123 Oak Avenue, Maputo',
+        sex: application.sex,
+        dateOfBirth: application.dateOfBirth,
+        grade: grade.trim(),
+        class: studentClass ? studentClass.trim() : 'A',
+        parentName: application.parentName,
+        parentEmail: application.parentEmail,
+        status: 'Active',
+        behavioralAssessments: [],
+    };
+
+    await updateDoc(schoolRef, {
+        students: arrayUnion(newStudent)
+    });
+
+    return newStudent;
 }
     

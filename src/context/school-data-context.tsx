@@ -6,7 +6,7 @@ import type { Role } from './auth-context';
 import { getSchoolsFromFirestore, seedInitialData } from '@/lib/firebase/firestore-service';
 import { getGpaFromNumeric } from '@/lib/utils';
 import { updateSchoolProfileAction } from '@/app/actions/update-school-action';
-import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction, addSyllabusAction, addCourseAction, updateCourseAction, deleteCourseFromFirestore, addFeeAction, recordPaymentAction, addExpenseAction, addTeamAction, deleteTeamAction, addPlayerToTeamAction, removePlayerFromTeamAction, addCompetitionAction, addCompetitionResultAction } from '@/app/actions/school-actions';
+import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction, addSyllabusAction, addCourseAction, updateCourseAction, deleteCourseFromFirestore, addFeeAction, recordPaymentAction, addExpenseAction, addTeamAction, deleteTeamAction, addPlayerToTeamAction, removePlayerFromTeamAction, addCompetitionAction, addCompetitionResultAction, updateAdmissionStatusAction, addStudentFromAdmissionAction } from '@/app/actions/school-actions';
 
 
 export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, SyllabusTopic, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, DeployedTest, SavedTest, NewMessageData, NewAdmissionData } from '@/lib/mock-data';
@@ -57,8 +57,8 @@ interface SchoolDataContextType {
     addSyllabus: (syllabus: Omit<Syllabus, 'id' | 'topics'>) => Promise<void>;
     updateSyllabusTopic: (subject: string, grade: string, topic: any) => Promise<void>;
     deleteSyllabusTopic: (subject: string, grade: string, topicId: string) => Promise<void>;
-    updateApplicationStatus: (id: string, status: Admission['status']) => void;
-    addStudentFromAdmission: (application: Admission) => void;
+    updateApplicationStatus: (id: string, status: Admission['status']) => Promise<void>;
+    addStudentFromAdmission: (application: Admission) => Promise<void>;
     addAsset: (asset: Omit<any, 'id'>) => void;
     addLessonAttendance: (courseId: string, date: string, studentStatuses: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => void;
     addClass: (classData: Omit<Class, 'id'>) => Promise<void>;
@@ -453,43 +453,33 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       }
   };
 
-  const updateApplicationStatus = (id: string, status: Admission['status']) => {
+  const updateApplicationStatus = async (id: string, status: Admission['status']) => {
       if (!schoolId) return;
-      setData(prev => {
-        if (!prev) return null;
-        const newData = { ...prev };
-        const school = newData[schoolId];
-        school.admissions = school.admissions.map(a => a.id === id ? { ...a, status } : a);
-        addLog(schoolId, 'Update', `Updated application ${id} status to ${status}`);
-        return newData;
-      });
-  };
-
-  const addStudentFromAdmission = (application: Admission) => {
-      if (!schoolId) return;
-      const [grade, studentClass] = application.appliedFor.replace('Grade ', '').split('-');
-      const newStudent: Student = {
-          id: `STU${Date.now()}`,
-          name: application.name,
-          email: `${application.name.toLowerCase().replace(' ', '.')}@${schoolId}.edu`,
-          phone: `555-01${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`,
-          address: '123 Oak Avenue',
-          sex: application.sex,
-          dateOfBirth: application.dateOfBirth,
-          grade: grade.trim(),
-          class: studentClass ? studentClass.trim() : 'A',
-          parentName: application.parentName,
-          parentEmail: application.parentEmail,
-          status: 'Active',
-          behavioralAssessments: [],
-      };
-      setData(prev => {
+      const result = await updateAdmissionStatusAction(schoolId, id, status);
+      if (result.success) {
+        setData(prev => {
           if (!prev) return null;
           const newData = { ...prev };
-          newData[schoolId].students.push(newStudent);
-          addLog(schoolId, 'Create', `Enrolled new student ${newStudent.name} from admission.`);
+          const school = newData[schoolId];
+          school.admissions = school.admissions.map(a => a.id === id ? { ...a, status } : a);
+          addLog(schoolId, 'Update', `Updated application ${id} status to ${status}`);
           return newData;
-      });
+        });
+      }
+  };
+
+  const addStudentFromAdmission = async (application: Admission) => {
+      if (!schoolId) return;
+      const result = await addStudentFromAdmissionAction(schoolId, application);
+      if (result.success && result.newStudent) {
+        setData(prev => {
+            if (!prev) return null;
+            const newData = { ...prev };
+            newData[schoolId].students.push(result.newStudent!);
+            addLog(schoolId, 'Create', `Enrolled new student ${result.newStudent.name} from admission.`);
+            return newData;
+        });
+      }
   };
   
   const addAsset = (asset: Omit<any, 'id'>) => {
@@ -1054,4 +1044,3 @@ export const useSchoolData = () => {
   }
   return context;
 };
-

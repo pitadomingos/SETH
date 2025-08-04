@@ -173,15 +173,15 @@ export default function AdmissionsPage() {
     return <FeatureLock featureName="Admissions" />;
   }
 
-  const handleStatusChange = (application: Admission, status: Admission['status']) => {
+  const handleStatusChange = async (application: Admission, status: Admission['status']) => {
+    await updateApplicationStatus(application.id, status);
     if (status === 'Approved') {
-        addStudentFromAdmission(application);
+        await addStudentFromAdmission(application);
         toast({
             title: "Student Enrolled",
             description: `${application.name} has been approved and added to the student roster.`,
         });
     }
-    updateApplicationStatus(application.id, status);
   };
 
   const stats = admissionsData.reduce((acc, curr) => {
