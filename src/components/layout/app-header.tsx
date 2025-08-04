@@ -19,7 +19,7 @@ import { useSchoolData } from '@/context/school-data-context';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '../ui/badge';
 
-export function AppHeader() {
+export function AppHeader({ className }: { className?: string }) {
   const { user, logout, originalUser } = useAuth();
   const { activityLogs } = useSchoolData();
   const initials = user?.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
@@ -30,10 +30,10 @@ export function AppHeader() {
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
       <div className="flex items-center gap-2">
         <SidebarTrigger className="md:hidden" />
-         <div className="hidden items-center gap-2 md:flex">
+         <Link href="/dashboard" className="hidden items-center gap-2 md:flex" aria-label="Go to dashboard">
             <GraduationCap className="h-6 w-6 text-primary" />
             <h1 className="text-xl font-semibold">EduDesk</h1>
-        </div>
+        </Link>
       </div>
       <div className="flex items-center gap-4">
         {originalUser && (
