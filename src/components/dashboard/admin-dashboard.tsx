@@ -232,7 +232,7 @@ function AttendanceTrendChart() {
 
             const dayData = attendanceByDate[dateStr];
             const total = dayData ? dayData.present + dayData.late + dayData.absent + dayData.sick : 0;
-            const rate = total > 0 ? ((dayData.present + dayData.late) / total) * 100 : 100;
+            const rate = total > 0 ? ((dayData.present + dayData.late) / total) * 100 : 0;
             
             return {
                 date: format(d, 'MMM d'),
