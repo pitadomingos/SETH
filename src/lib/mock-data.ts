@@ -1,4 +1,5 @@
 
+
 import { type Role } from "@/context/auth-context";
 
 // --- CORE DATA STRUCTURES ---
@@ -52,6 +53,12 @@ export interface SchoolProfile {
       showShowcase: boolean;
     };
     subscription: Subscription;
+    awards?: Array<{
+        year: number;
+        schoolOfTheYear: string; // schoolId
+        teacherOfTheYear: string; // teacherId
+        studentOfTheYear: string; // studentId
+    }>;
 }
 
 export interface Student {
@@ -188,6 +195,7 @@ export interface Expense {
     amount: number;
     date: string;
     proofUrl: string;
+    type: 'Income' | 'Expense';
 }
 
 export interface Team {
@@ -436,6 +444,7 @@ const northwoodData: SchoolData = {
         gradeCapacity: { "1": 30, "2": 30, "3": 30, "4": 30, "5": 30, "6": 35, "7": 35, "8": 35, "9": 40, "10": 40, "11": 40, "12": 40 },
         kioskConfig: defaultKioskConfig,
         subscription: { status: 'Paid', amount: 300, dueDate: '2025-01-01' },
+        awards: [],
     },
     students: [
         { id: 'STU001', name: 'Miguel Santos', email: 'miguel.santos@northwood.edu', phone: '840000001', address: 'Rua de Kassuende', sex: 'Male', dateOfBirth: '2008-05-10', grade: '10', class: 'A', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] },
@@ -468,7 +477,16 @@ const northwoodData: SchoolData = {
         { id: 'LOG001', timestamp: new Date('2024-05-20T10:00:00Z'), schoolId: 'northwood', user: 'Amelia Costa', role: 'Admin', action: 'Update', details: 'Updated school profile.' },
         { id: 'LOG002', timestamp: new Date('2024-05-19T14:30:00Z'), schoolId: 'northwood', user: 'Sérgio Almeida', role: 'Teacher', action: 'Create', details: 'Added new grade for Miguel Santos.' },
     ],
-    syllabi: [], admissions: [], assets: [], exams: [], attendance: [], events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'], audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'], expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], messages: [], savedReports: [], examBoards: ['Internal', 'Cambridge', 'IEB'], deployedTests: [], lessonPlans: [], savedTests: [], schoolGroups: {}
+    savedTests: [
+        { id: 'ST01', teacherId: 'T01', subject: 'Mathematics', topic: 'Algebra Basics', grade: '10', createdAt: new Date(), questions: [
+            { question: 'What is 2 + 2?', options: ['3', '4', '5'], correctAnswer: '4' },
+            { question: 'What is x in x + 5 = 10?', options: ['3', '4', '5'], correctAnswer: '5' },
+        ]},
+    ],
+    deployedTests: [
+        { id: 'DT01', testId: 'ST01', classId: 'C01', deadline: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000), submissions: [] }
+    ],
+    syllabi: [], admissions: [], assets: [], exams: [], attendance: [], events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'], audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'], expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], messages: [], savedReports: [], examBoards: ['Internal', 'Cambridge', 'IEB'], lessonPlans: [], schoolGroups: {}
 };
 
 const maplewoodData: SchoolData = {
