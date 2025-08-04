@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 // Charting imports
 import { Pie, PieChart, Cell, Bar, BarChart as RechartsBarChart, CartesianGrid, XAxis, YAxis, LabelList } from 'recharts';
@@ -40,16 +41,29 @@ type AssetFormValues = z.infer<typeof assetSchema>;
 function NewAssetDialog() {
     const { addAsset, teachersData } = useSchoolData();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const { toast } = useToast();
     
     const form = useForm<AssetFormValues>({
         resolver: zodResolver(assetSchema),
         defaultValues: { name: '', category: '', location: '', assignedTo: 'N/A', status: 'Available' }
     });
 
-    function onSubmit(values: AssetFormValues) {
-        addAsset(values);
-        form.reset();
-        setIsDialogOpen(false);
+    async function onSubmit(values: AssetFormValues) {
+        const result = await addAsset(values);
+        if (result.success) {
+            toast({
+                title: 'Asset Added',
+                description: `${values.name} has been added to the inventory.`,
+            });
+            form.reset();
+            setIsDialogOpen(false);
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: result.error || 'Could not add the asset.',
+            });
+        }
     }
     
     return (

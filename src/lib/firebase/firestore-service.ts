@@ -1,3 +1,4 @@
+
 import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from './config';
 import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student, Message, NewMessageData } from '@/lib/mock-data';
@@ -561,4 +562,17 @@ export async function sendMessageInFirestore(senderSchoolId: string, recipientSc
   
     await batch.commit();
     return newMessage;
+}
+
+// --- Asset CRUD ---
+export async function addAssetToFirestore(schoolId: string, assetData: Omit<any, 'id'>): Promise<any> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const newAsset = {
+        id: `ASSET${Date.now()}`,
+        ...assetData
+    };
+    await updateDoc(schoolRef, {
+        assets: arrayUnion(newAsset)
+    });
+    return newAsset;
 }

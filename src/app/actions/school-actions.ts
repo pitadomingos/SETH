@@ -1,8 +1,9 @@
+
 'use server';
 
 import { NewSchoolData, SchoolData, UserProfile, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student } from '@/context/school-data-context';
 import { revalidatePath } from 'next/cache';
-import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore, updateSyllabusTopicInFirestore, deleteSyllabusTopicFromFirestore, addSyllabusToFirestore, addCourseToFirestore, updateCourseInFirestore, deleteCourseFromFirestore, addFeeToFirestore, recordPaymentInFirestore, addExpenseToFirestore, addTeamToFirestore, deleteTeamFromFirestore, addPlayerToTeamInFirestore, removePlayerFromTeamInFirestore, addCompetitionToFirestore, addCompetitionResultInFirestore, updateAdmissionStatusInFirestore, addStudentFromAdmissionInFirestore } from '@/lib/firebase/firestore-service';
+import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore, updateSyllabusTopicInFirestore, deleteSyllabusTopicFromFirestore, addSyllabusToFirestore, addCourseToFirestore, updateCourseInFirestore, deleteCourseFromFirestore, addFeeToFirestore, recordPaymentInFirestore, addExpenseToFirestore, addTeamToFirestore, deleteTeamFromFirestore, addPlayerToTeamInFirestore, removePlayerFromTeamInFirestore, addCompetitionToFirestore, addCompetitionResultInFirestore, updateAdmissionStatusInFirestore, addStudentFromAdmissionInFirestore, addAssetToFirestore } from '@/lib/firebase/firestore-service';
 
 export async function createSchool(data: NewSchoolData, groupId?: string): Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile } } | null> {
     try {
@@ -280,4 +281,17 @@ export async function addStudentFromAdmissionAction(schoolId: string, applicatio
         return { success: false, error: 'Server error enrolling student.' };
     }
 }
+
+// Asset Action
+export async function addAssetAction(schoolId: string, assetData: Omit<any, 'id'>): Promise<{ success: boolean; asset?: any; error?: string }> {
+    try {
+        const newAsset = await addAssetToFirestore(schoolId, assetData);
+        revalidatePath('/dashboard/assets');
+        return { success: true, asset: newAsset };
+    } catch (e) {
+        console.error("Failed to add asset:", e);
+        return { success: false, error: 'Server error adding asset.' };
+    }
+}
     
+

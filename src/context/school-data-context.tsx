@@ -1,3 +1,4 @@
+
 'use client';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabus, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, SchoolProfile, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, mockUsers, UserProfile, SyllabusTopic } from '@/lib/mock-data';
@@ -6,7 +7,7 @@ import type { Role } from './auth-context';
 import { getSchoolsFromFirestore, seedInitialData } from '@/lib/firebase/firestore-service';
 import { getGpaFromNumeric } from '@/lib/utils';
 import { updateSchoolProfileAction } from '@/app/actions/update-school-action';
-import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction, addSyllabusAction, addCourseAction, updateCourseAction, deleteCourseFromFirestore, addFeeAction, recordPaymentAction, addExpenseAction, addTeamAction, deleteTeamAction, addPlayerToTeamAction, removePlayerFromTeamAction, addCompetitionAction, addCompetitionResultAction, updateAdmissionStatusAction, addStudentFromAdmissionAction } from '@/app/actions/school-actions';
+import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction, addSyllabusAction, addCourseAction, updateCourseAction, deleteCourseFromFirestore, addFeeAction, recordPaymentAction, addExpenseAction, addTeamAction, deleteTeamAction, addPlayerToTeamAction, removePlayerFromTeamAction, addCompetitionAction, addCompetitionResultAction, updateAdmissionStatusAction, addStudentFromAdmissionAction, addAssetAction } from '@/app/actions/school-actions';
 import { sendMessageAction } from '@/app/actions/messaging-actions';
 
 
@@ -23,6 +24,7 @@ interface SchoolDataContextType {
     syllabi: Syllabus[];
     admissionsData: Admission[];
     financeData: FinanceRecord[];
+    assetsData: any[];
     examsData: Exam[];
     grades: Grade[];
     attendance: Attendance[];
@@ -60,7 +62,7 @@ interface SchoolDataContextType {
     deleteSyllabusTopic: (subject: string, grade: string, topicId: string) => Promise<void>;
     updateApplicationStatus: (id: string, status: Admission['status']) => Promise<void>;
     addStudentFromAdmission: (application: Admission) => Promise<void>;
-    addAsset: (asset: Omit<any, 'id'>) => void;
+    addAsset: (asset: Omit<any, 'id'>) => Promise<{success: boolean, error?: string}>;
     addLessonAttendance: (courseId: string, date: string, studentStatuses: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => void;
     addClass: (classData: Omit<Class, 'id'>) => Promise<void>;
     updateClass: (id: string, data: Partial<Class>) => Promise<void>;
@@ -483,16 +485,20 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       }
   };
   
-  const addAsset = (asset: Omit<any, 'id'>) => {
-      if (!schoolId) return;
-      const newAsset = { id: `AST${Date.now()}`, ...asset };
-      setData(prev => {
-          if (!prev) return null;
-          const newData = { ...prev };
-          newData[schoolId].assets.push(newAsset);
-          addLog(schoolId, 'Create', `Added new asset: ${asset.name}`);
-          return newData;
-      });
+  const addAsset = async (asset: Omit<any, 'id'>) => {
+      if (!schoolId) return { success: false, error: 'School ID not found.'};
+      const result = await addAssetAction(schoolId, asset);
+      if (result.success && result.asset) {
+        setData(prev => {
+            if (!prev) return null;
+            const newData = { ...prev };
+            newData[schoolId].assets.push(result.asset!);
+            addLog(schoolId, 'Create', `Added new asset: ${asset.name}`);
+            return newData;
+        });
+        return { success: true };
+      }
+      return { success: false, error: result.error };
   };
   
   const addLessonAttendance = (courseId: string, date: string, studentStatuses: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => {
@@ -969,6 +975,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     syllabi: schoolData?.syllabi || [],
     admissionsData: schoolData?.admissions || [],
     financeData: schoolData?.finance || [],
+    assetsData: schoolData?.assets || [],
     examsData: schoolData?.exams || [],
     grades: schoolData?.grades || [],
     attendance: schoolData?.attendance || [],
@@ -1013,6 +1020,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     addTerm, addHoliday,
     addSavedReport,
     addBehavioralAssessment,
+    addExamBoard, deleteExamBoard, addFeeDescription, deleteFeeDescription, addAudience, deleteAudience
   };
 
   return (
