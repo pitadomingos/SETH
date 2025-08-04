@@ -97,6 +97,7 @@ export const roleLinks: Record<Role, NavItem[]> = {
         { href: '/kiosk/global', label: 'Public Kiosk', icon: Tv, dynamic: false, target: '_blank' },
         { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
         { href: '/dashboard/project-proposal', label: 'Project Proposal', icon: FileText },
+        { href: '/proposal-slides', label: 'Presentation Slides', icon: MonitorPlay, target: '_blank' },
         { href: '/dashboard/system-documentation', label: 'System Docs', icon: GitBranch },
         { href: '/dashboard/todo-list', label: 'To-Do List', icon: List },
       ]
