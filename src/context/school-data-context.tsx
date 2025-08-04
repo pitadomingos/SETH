@@ -4,8 +4,10 @@ import React, { createContext, useContext, useState, ReactNode, useEffect, useMe
 import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabus, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, SchoolProfile, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, mockUsers, UserProfile } from '@/lib/mock-data';
 import { useAuth, User } from './auth-context';
 import type { Role } from './auth-context';
-import { getSchoolsFromFirestore, seedInitialData } from '@/lib/firebase/firestore-service';
+import { getSchoolsFromFirestore, seedInitialData, updateSchoolInFirestore } from '@/lib/firebase/firestore-service';
 import { getGpaFromNumeric } from '@/lib/utils';
+import { updateSchoolProfileAction } from '@/app/actions/update-school-action';
+
 
 export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, SyllabusTopic, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, DeployedTest, SavedTest, NewMessageData, NewAdmissionData } from '@/lib/mock-data';
 
@@ -78,7 +80,7 @@ interface SchoolDataContextType {
     deleteTeacher: (id: string) => void;
     addKioskMedia: (media: Omit<KioskMedia, 'id'|'createdAt'>) => void;
     removeKioskMedia: (id: string) => void;
-    updateSchoolProfile: (data: Partial<SchoolProfile>, schoolId?: string) => void;
+    updateSchoolProfile: (data: Partial<SchoolProfile>, schoolId?: string) => Promise<boolean>;
     addMessage: (message: NewMessageData) => void;
     addAdmission: (admission: NewAdmissionData) => void;
     updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
@@ -137,7 +139,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     fetchSchoolData();
   }, []);
 
-  const announceAwards = () => {
+  const announceAwards = async () => {
     if (!data) return;
 
     // --- Calculate Winners ---
@@ -167,29 +169,17 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         return { ...student, avgGrade };
     })).sort((a, b) => b.avgGrade - a.avgGrade)[0];
 
+    const newAwardsRecord = {
+        year: new Date().getFullYear(),
+        schoolOfTheYear: schoolOfTheYear.id,
+        teacherOfTheYear: teacherOfTheYear.id,
+        studentOfTheYear: studentOfTheYear.id,
+    };
+    
     // --- Update State ---
     setAwardsAnnounced(true);
-    setData(prevData => {
-        if (!prevData) return null;
-        const newData = { ...prevData };
-        
-        // Enable kiosk mode for all schools
-        Object.keys(newData).forEach(schoolId => {
-            newData[schoolId].profile.kioskConfig.showAwardWinner = true;
-        });
-        
-        // Save the award record to the master school
-        if(newData['northwood']) {
-            const newAwardsRecord = {
-                year: new Date().getFullYear(),
-                schoolOfTheYear: schoolOfTheYear.id,
-                teacherOfTheYear: teacherOfTheYear.id,
-                studentOfTheYear: studentOfTheYear.id,
-            };
-            newData['northwood'].profile.awards = [...(newData['northwood'].profile.awards || []), newAwardsRecord];
-        }
-        return newData;
-    });
+    await updateSchoolProfile({ awards: [...(data['northwood'].profile.awards || []), newAwardsRecord], kioskConfig: {...data['northwood'].profile.kioskConfig, showAwardWinner: true} }, 'northwood');
+
     addLog('northwood', 'Announcement', 'Annual awards have been announced network-wide.');
   };
 
@@ -275,11 +265,14 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const updateSchoolProfile = (profileData: Partial<SchoolProfile>, targetSchoolId?: string) => {
+  const updateSchoolProfile = async (profileData: Partial<SchoolProfile>, targetSchoolId?: string): Promise<boolean> => {
     const sId = targetSchoolId || schoolId;
-    if (!sId) return;
+    if (!sId) return false;
 
-    setData(prev => {
+    const result = await updateSchoolProfileAction(sId, profileData);
+
+    if (result.success) {
+      setData(prev => {
         if (!prev) return null;
         const newData = { ...prev };
         if (newData[sId]) {
@@ -293,7 +286,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             addLog(sId, 'Update', 'Updated school profile information.');
         }
         return newData;
-    });
+      });
+      return true;
+    }
+    return false;
   };
   
   const addTeacher = (teacher: Omit<Teacher, 'id' | 'status'>) => {
@@ -937,7 +933,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       });
   };
 
-  const value = {
+  const value: SchoolDataContextType = {
     isLoading,
     allSchoolData: data,
     schoolProfile: schoolData?.profile || null,
@@ -1012,3 +1008,5 @@ export const useSchoolData = () => {
   }
   return context;
 };
+
+    

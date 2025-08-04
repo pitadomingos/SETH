@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Film, Image as ImageIcon, PlusCircle, Trash2, Video, Tv, Save, Briefcase, Lightbulb, Link as LinkIcon, Building } from 'lucide-react';
-import { useSchoolData, KioskMedia } from '@/context/school-data-context';
+import { useSchoolData, KioskMedia, SchoolProfile } from '@/context/school-data-context';
 import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { updateSchoolProfileAction } from '@/app/actions/update-school-action';
 
 const mediaSchema = z.object({
   title: z.string().min(3, "A title is required."),
@@ -114,13 +115,13 @@ export default function KioskShowcasePage() {
   const isLoading = authLoading || schoolLoading;
   const isGlobalAdmin = role === 'GlobalAdmin';
   
-  // Use a separate state for kiosk config to handle both global and school-specific cases.
-  const [kioskConfig, setKioskConfig] = useState(() => {
+  const [kioskConfig, setKioskConfig] = useState<SchoolProfile['kioskConfig']>(() => {
     if (isGlobalAdmin) {
         return allSchoolData?.['northwood']?.profile.kioskConfig || initialGlobalKioskConfig;
     }
     return schoolProfile?.kioskConfig || initialGlobalKioskConfig;
   });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (isGlobalAdmin) {
@@ -152,14 +153,22 @@ export default function KioskShowcasePage() {
     setKioskConfig(prev => ({ ...prev, [key]: checked }));
   };
 
-  const handleSaveKioskConfig = () => {
-     if (isGlobalAdmin && allSchoolData?.['northwood']) {
-         updateSchoolProfile({ kioskConfig }, 'northwood'); // Global config is stored on a "master" school for prototype
-         toast({ title: "Global Kiosk Settings Updated", description: "Your public kiosk display settings have been saved." });
+  const handleSaveKioskConfig = async () => {
+    setIsSaving(true);
+    let success = false;
+    
+    if (isGlobalAdmin && allSchoolData?.['northwood']) {
+         success = await updateSchoolProfile({ kioskConfig }, 'northwood');
+         if (success) toast({ title: "Global Kiosk Settings Updated", description: "Your public kiosk display settings have been saved." });
      } else if (schoolProfile) {
-        updateSchoolProfile({ kioskConfig });
-        toast({ title: "Kiosk Settings Updated", description: "Your public kiosk display settings have been saved." });
+        success = await updateSchoolProfile({ kioskConfig });
+        if (success) toast({ title: "Kiosk Settings Updated", description: "Your public kiosk display settings have been saved." });
     }
+    
+    if (!success) {
+      toast({ variant: 'destructive', title: "Save Failed", description: "Could not save kiosk settings. Please try again." });
+    }
+    setIsSaving(false);
   };
   
   const pageTitle = isGlobalAdmin ? 'Global Kiosk Management' : 'Kiosk Management';
@@ -251,7 +260,11 @@ export default function KioskShowcasePage() {
                   </>
                 )}
             </CardContent>
-            <CardFooter><Button onClick={handleSaveKioskConfig}><Save className="mr-2 h-4 w-4" /> Save Kiosk Settings</Button></CardFooter>
+            <CardFooter><Button onClick={handleSaveKioskConfig} disabled={isSaving}>
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Save Kiosk Settings
+              </Button>
+            </CardFooter>
         </Card>
       </div>
     </div>
