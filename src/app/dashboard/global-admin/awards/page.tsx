@@ -106,7 +106,7 @@ function AIEvaluationDialog({ winner, category }) {
 
 export default function AwardsPage() {
   const { role, isLoading: authLoading } = useAuth();
-  const { allSchoolData, isLoading: schoolLoading, announceAwards } = useSchoolData();
+  const { allSchoolData, isLoading: schoolLoading, announceAwards, awardsAnnounced } = useSchoolData();
   const router = useRouter();
   const { toast } = useToast();
   const isLoading = authLoading || schoolLoading;
@@ -117,57 +117,38 @@ export default function AwardsPage() {
     }
   }, [role, isLoading, router]);
 
-  const schoolOfTheYear = useMemo(() => {
+  const latestAwards = useMemo(() => {
     if (!allSchoolData) return null;
-    const schoolsWithScores = Object.values(allSchoolData).map(school => {
-      const avgGpa = school.grades.length > 0
-        ? school.grades.reduce((acc, g) => acc + getGpaFromNumeric(parseFloat(g.grade)), 0) / school.grades.length
-        : 0;
-      
-      const totalFees = school.finance.reduce((sum, f) => sum + f.totalAmount, 0);
-      const totalRevenue = school.finance.reduce((sum, f) => sum + f.amountPaid, 0);
-      const collectionRate = totalFees > 0 ? (totalRevenue / totalFees) : 1;
-      
-      const score = (avgGpa * 0.6) + (collectionRate * 0.4);
-
-      return { ...school.profile, score, avgGpa, collectionRate };
-    });
-
-    return schoolsWithScores.sort((a, b) => b.score - a.score)[0];
+    const masterSchool = allSchoolData['northwood'];
+    if (!masterSchool || !masterSchool.profile.awards || masterSchool.profile.awards.length === 0) {
+      return null;
+    }
+    return masterSchool.profile.awards[masterSchool.profile.awards.length - 1];
   }, [allSchoolData]);
+
+  const schoolOfTheYear = useMemo(() => {
+    if (!latestAwards || !allSchoolData) return null;
+    const schoolId = latestAwards.schoolOfTheYear;
+    const school = allSchoolData[schoolId];
+    if (!school) return null;
+    const avgGpa = school.grades.length > 0 ? school.grades.reduce((acc, g) => acc + getGpaFromNumeric(parseFloat(g.grade)), 0) / school.grades.length : 0;
+    const totalFees = school.finance.reduce((sum, f) => sum + f.totalAmount, 0);
+    const totalRevenue = school.finance.reduce((sum, f) => sum + f.amountPaid, 0);
+    const collectionRate = totalFees > 0 ? (totalRevenue / totalFees) : 1;
+    return { ...school.profile, avgGpa, collectionRate };
+  }, [latestAwards, allSchoolData]);
 
   const teacherOfTheYear = useMemo(() => {
-    if (!allSchoolData) return null;
-    return Object.values(allSchoolData).flatMap(school => school.teachers.map(teacher => {
-      const teacherCourses = school.courses.filter(c => c.teacherId === teacher.id);
-      const studentIds = new Set<string>();
-      teacherCourses.forEach(course => {
-          const classInfo = school.classes.find(c => c.id === course.classId);
-          if (classInfo) {
-            school.students
-              .filter(s => s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim())
-              .forEach(s => studentIds.add(s.id));
-          }
-      });
-      const teacherGrades = school.grades
-          .filter(g => studentIds.has(g.studentId) && g.subject === teacher.subject)
-          .map(g => parseFloat(g.grade));
-      const avgStudentGrade = teacherGrades.length > 0
-          ? teacherGrades.reduce((sum, g) => sum + g, 0) / teacherGrades.length
-          : 0;
-      
-      return { ...teacher, avgStudentGrade, schoolName: school.profile.name };
-    })).sort((a, b) => b.avgStudentGrade - a.avgStudentGrade)[0];
-  }, [allSchoolData]);
+    if (!latestAwards || !allSchoolData) return null;
+    const teacherId = latestAwards.teacherOfTheYear;
+    return Object.values(allSchoolData).flatMap(school => school.teachers.map(teacher => ({...teacher, schoolName: school.profile.name}))).find(t => t.id === teacherId);
+  }, [latestAwards, allSchoolData]);
 
   const studentOfTheYear = useMemo(() => {
-    if (!allSchoolData) return null;
-    return Object.values(allSchoolData).flatMap(school => school.students.map(student => {
-      const studentGrades = school.grades.filter(g => g.studentId === student.id);
-      const avgGrade = studentGrades.length > 0 ? studentGrades.reduce((acc, g) => acc + parseFloat(g.grade), 0) / studentGrades.length : 0;
-      return { ...student, avgGrade, schoolName: school.profile.name };
-    })).sort((a, b) => b.avgGrade - a.avgGrade)[0];
-  }, [allSchoolData]);
+    if (!latestAwards || !allSchoolData) return null;
+    const studentId = latestAwards.studentOfTheYear;
+    return Object.values(allSchoolData).flatMap(school => school.students.map(student => ({...student, schoolName: school.profile.name}))).find(s => s.id === studentId);
+  }, [latestAwards, allSchoolData]);
 
   const handleAnnounce = () => {
     announceAwards();
@@ -189,99 +170,106 @@ export default function AwardsPage() {
         <p className="text-muted-foreground">Recognizing excellence across the entire school network.</p>
       </header>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {schoolOfTheYear && (
-          <Card className="flex flex-col">
-            <CardHeader className="text-center">
-              <Trophy className="mx-auto h-12 w-12 text-amber-500" />
-              <CardTitle className="text-2xl mt-4">School of the Year</CardTitle>
+      {!awardsAnnounced && (
+        <Card className="text-center p-8">
+            <CardHeader>
+                <CardTitle>Awards Not Yet Announced</CardTitle>
+                <CardDescription>Click the button below to calculate and announce this year's winners. This action is irreversible for the current session.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow flex flex-col items-center justify-center text-center">
-                <Avatar className="h-24 w-24 mb-4">
-                    <AvatarImage src={schoolOfTheYear.logoUrl} alt={schoolOfTheYear.name} data-ai-hint="school logo"/>
-                    <AvatarFallback><School /></AvatarFallback>
-                </Avatar>
-                <h3 className="text-xl font-semibold">{schoolOfTheYear.name}</h3>
-                <p className="text-muted-foreground">{schoolOfTheYear.head}</p>
-                <div className="mt-4 flex gap-2">
-                    <Badge>Avg. GPA: {schoolOfTheYear.avgGpa.toFixed(2)}</Badge>
-                    <Badge variant="secondary">Fees: {(schoolOfTheYear.collectionRate * 100).toFixed(0)}% Paid</Badge>
-                </div>
+            <CardContent>
+                <Button onClick={handleAnnounce}>Announce Winners &amp; Prizes</Button>
             </CardContent>
-            <CardFooter>
-               <AIEvaluationDialog winner={schoolOfTheYear} category="School" />
-            </CardFooter>
-          </Card>
-        )}
-        {teacherOfTheYear && (
-            <Card className="flex flex-col">
-            <CardHeader className="text-center">
-              <AwardIcon className="mx-auto h-12 w-12 text-slate-500" />
-              <CardTitle className="text-2xl mt-4">Teacher of the Year</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-grow flex flex-col items-center justify-center text-center">
-                <Avatar className="h-24 w-24 mb-4">
-                    <AvatarImage src="" alt={teacherOfTheYear.name} data-ai-hint="profile picture"/>
-                    <AvatarFallback className="text-3xl">{teacherOfTheYear.name.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
-                </Avatar>
-                <h3 className="text-xl font-semibold">{teacherOfTheYear.name}</h3>
-                <p className="text-muted-foreground">{teacherOfTheYear.subject} - {teacherOfTheYear.schoolName}</p>
-                 <div className="mt-4 flex gap-2">
-                    <Badge>Avg. Student Grade: {teacherOfTheYear.avgStudentGrade.toFixed(2)}</Badge>
-                </div>
-            </CardContent>
-             <CardFooter>
-               <AIEvaluationDialog winner={teacherOfTheYear} category="Teacher" />
-            </CardFooter>
-          </Card>
-        )}
-        {studentOfTheYear && (
-            <Card className="flex flex-col">
-            <CardHeader className="text-center">
-              <User className="mx-auto h-12 w-12 text-cyan-600" />
-              <CardTitle className="text-2xl mt-4">Student of the Year</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-grow flex flex-col items-center justify-center text-center">
-                <Avatar className="h-24 w-24 mb-4">
-                    <AvatarImage src="" alt={studentOfTheYear.name} data-ai-hint="profile picture"/>
-                    <AvatarFallback className="text-3xl">{studentOfTheYear.name.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
-                </Avatar>
-                <h3 className="text-xl font-semibold">{studentOfTheYear.name}</h3>
-                <p className="text-muted-foreground">Grade {studentOfTheYear.grade} - {studentOfTheYear.schoolName}</p>
-                 <div className="mt-4 flex gap-2">
-                    <Badge>Avg. Grade: {studentOfTheYear.avgGrade.toFixed(2)}</Badge>
-                </div>
-            </CardContent>
-             <CardFooter>
-               <AIEvaluationDialog winner={studentOfTheYear} category="Student" />
-            </CardFooter>
-          </Card>
-        )}
-      </div>
+        </Card>
+      )}
 
-       <Card>
-        <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Gift /> Prize Management</CardTitle>
-            <CardDescription>Configure and announce the prizes for the award winners. This feature is for demonstration purposes.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-6 md:grid-cols-3">
-          <div className="p-4 rounded-lg border">
-            <h4 className="font-semibold mb-2">School of the Year Prize</h4>
-            <p className="text-sm text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4"/> $10,000 Technology Grant</p>
-          </div>
-          <div className="p-4 rounded-lg border">
-            <h4 className="font-semibold mb-2">Teacher of the Year Prize</h4>
-            <p className="text-sm text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4"/> $2,500 Professional Development Fund</p>
-          </div>
-          <div className="p-4 rounded-lg border">
-            <h4 className="font-semibold mb-2">Student of the Year Prize</h4>
-            <p className="text-sm text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4"/> $1,000 University Scholarship</p>
-          </div>
-        </CardContent>
-        <CardFooter>
-            <Button onClick={handleAnnounce}>Announce Winners &amp; Prizes</Button>
-        </CardFooter>
-       </Card>
+      {awardsAnnounced && (
+        <>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {schoolOfTheYear && (
+            <Card className="flex flex-col">
+                <CardHeader className="text-center">
+                <Trophy className="mx-auto h-12 w-12 text-amber-500" />
+                <CardTitle className="text-2xl mt-4">School of the Year</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-grow flex flex-col items-center justify-center text-center">
+                    <Avatar className="h-24 w-24 mb-4">
+                        <AvatarImage src={schoolOfTheYear.logoUrl} alt={schoolOfTheYear.name} data-ai-hint="school logo"/>
+                        <AvatarFallback><School /></AvatarFallback>
+                    </Avatar>
+                    <h3 className="text-xl font-semibold">{schoolOfTheYear.name}</h3>
+                    <p className="text-muted-foreground">{schoolOfTheYear.head}</p>
+                    <div className="mt-4 flex gap-2">
+                        <Badge>Avg. GPA: {schoolOfTheYear.avgGpa.toFixed(2)}</Badge>
+                        <Badge variant="secondary">Fees: {(schoolOfTheYear.collectionRate * 100).toFixed(0)}% Paid</Badge>
+                    </div>
+                </CardContent>
+                <CardFooter>
+                <AIEvaluationDialog winner={schoolOfTheYear} category="School" />
+                </CardFooter>
+            </Card>
+            )}
+            {teacherOfTheYear && (
+                <Card className="flex flex-col">
+                <CardHeader className="text-center">
+                <AwardIcon className="mx-auto h-12 w-12 text-slate-500" />
+                <CardTitle className="text-2xl mt-4">Teacher of the Year</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-grow flex flex-col items-center justify-center text-center">
+                    <Avatar className="h-24 w-24 mb-4">
+                        <AvatarImage src="" alt={teacherOfTheYear.name} data-ai-hint="profile picture"/>
+                        <AvatarFallback className="text-3xl">{teacherOfTheYear.name.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
+                    </Avatar>
+                    <h3 className="text-xl font-semibold">{teacherOfTheYear.name}</h3>
+                    <p className="text-muted-foreground">{teacherOfTheYear.subject} - {teacherOfTheYear.schoolName}</p>
+                </CardContent>
+                <CardFooter>
+                <AIEvaluationDialog winner={teacherOfTheYear} category="Teacher" />
+                </CardFooter>
+            </Card>
+            )}
+            {studentOfTheYear && (
+                <Card className="flex flex-col">
+                <CardHeader className="text-center">
+                <User className="mx-auto h-12 w-12 text-cyan-600" />
+                <CardTitle className="text-2xl mt-4">Student of the Year</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-grow flex flex-col items-center justify-center text-center">
+                    <Avatar className="h-24 w-24 mb-4">
+                        <AvatarImage src="" alt={studentOfTheYear.name} data-ai-hint="profile picture"/>
+                        <AvatarFallback className="text-3xl">{studentOfTheYear.name.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
+                    </Avatar>
+                    <h3 className="text-xl font-semibold">{studentOfTheYear.name}</h3>
+                    <p className="text-muted-foreground">Grade {studentOfTheYear.grade} - {studentOfTheYear.schoolName}</p>
+                </CardContent>
+                <CardFooter>
+                <AIEvaluationDialog winner={studentOfTheYear} category="Student" />
+                </CardFooter>
+            </Card>
+            )}
+        </div>
+
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Gift /> Prize Management</CardTitle>
+                <CardDescription>Prizes for the award winners.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6 md:grid-cols-3">
+            <div className="p-4 rounded-lg border">
+                <h4 className="font-semibold mb-2">School of the Year Prize</h4>
+                <p className="text-sm text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4"/> $10,000 Technology Grant</p>
+            </div>
+            <div className="p-4 rounded-lg border">
+                <h4 className="font-semibold mb-2">Teacher of the Year Prize</h4>
+                <p className="text-sm text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4"/> $2,500 Professional Development Fund</p>
+            </div>
+            <div className="p-4 rounded-lg border">
+                <h4 className="font-semibold mb-2">Student of the Year Prize</h4>
+                <p className="text-sm text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4"/> $1,000 University Scholarship</p>
+            </div>
+            </CardContent>
+        </Card>
+        </>
+      )}
     </div>
   );
 }

@@ -54,7 +54,7 @@ function KioskGlobalDashboardSlide({ allSchoolData }) {
                     <Image src="https://placehold.co/100x100.png" alt="EduManage Network Logo" width={80} height={80} className="object-cover" data-ai-hint="logo building"/>
                 </div>
                 <div>
-                    <h2 className="text-5xl font-bold">EduManage Network</h2>
+                    <h2 className="text-5xl font-bold">EduDesk Network</h2>
                     <p className="text-2xl text-muted-foreground">Showcasing Excellence Across All Schools</p>
                 </div>
             </header>
@@ -162,52 +162,47 @@ function KioskMarketingSlide({ title, description, icon: Icon, children }) {
 }
 
 function KioskAwardsSlide({ allSchoolData }) {
-    const schoolOfTheYear = useMemo(() => {
-        if (!allSchoolData) return null;
-        const schoolsWithScores = Object.values(allSchoolData).map(school => {
-            const avgGpa = school.grades.length > 0 ? school.grades.reduce((acc, g) => acc + getGpaFromNumeric(parseFloat(g.grade)), 0) / school.grades.length : 0;
-            const collectionRate = school.finance.length > 0 ? school.finance.reduce((acc, f) => acc + f.amountPaid, 0) / school.finance.reduce((acc, f) => acc + f.totalAmount, 0) : 1;
-            return { ...school.profile, score: (avgGpa * 0.6) + (collectionRate * 0.4) };
-        });
-        return schoolsWithScores.sort((a, b) => b.score - a.score)[0];
+    const latestAwards = useMemo(() => {
+        const masterSchool = allSchoolData['northwood'];
+        if (!masterSchool || !masterSchool.profile.awards || masterSchool.profile.awards.length === 0) return null;
+        return masterSchool.profile.awards[masterSchool.profile.awards.length - 1];
     }, [allSchoolData]);
 
+    const schoolOfTheYear = useMemo(() => {
+        if (!latestAwards || !allSchoolData) return null;
+        return allSchoolData[latestAwards.schoolOfTheYear]?.profile;
+    }, [latestAwards, allSchoolData]);
+
     const studentOfTheYear = useMemo(() => {
-        if (!allSchoolData) return null;
-        return Object.values(allSchoolData).flatMap(school => school.students.map(student => {
-            const studentGrades = school.grades.filter(g => g.studentId === student.id);
-            const avgGrade = studentGrades.length > 0 ? studentGrades.reduce((acc, g) => acc + parseFloat(g.grade), 0) / studentGrades.length : 0;
-            return { ...student, avgGrade, schoolName: school.profile.name };
-        })).sort((a, b) => b.avgGrade - a.avgGrade)[0];
-    }, [allSchoolData]);
+        if (!latestAwards || !allSchoolData) return null;
+        return Object.values(allSchoolData).flatMap(s => s.students).find(s => s.id === latestAwards.studentOfTheYear);
+    }, [latestAwards, allSchoolData]);
+
+    if (!latestAwards || !schoolOfTheYear || !studentOfTheYear) return null;
 
     return (
         <div className="p-8 h-full flex flex-col">
             <h2 className="text-6xl font-bold text-center mb-8 flex items-center justify-center gap-4"><Trophy className="text-amber-400" /> EduDesk Annual Awards</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1">
-                {schoolOfTheYear && (
-                    <Card className="flex flex-col items-center justify-center text-center p-8">
-                        <Trophy className="h-20 w-20 text-amber-400" />
-                        <CardTitle className="text-4xl mt-4">School of the Year</CardTitle>
-                        <CardDescription className="text-xl">Awarded for overall excellence</CardDescription>
-                        <Avatar className="h-32 w-32 my-6"><AvatarImage src={schoolOfTheYear.logoUrl} alt={schoolOfTheYear.name} data-ai-hint="school logo"/><AvatarFallback><School/></AvatarFallback></Avatar>
-                        <h3 className="text-4xl font-semibold">{schoolOfTheYear.name}</h3>
-                    </Card>
-                )}
-                 {studentOfTheYear && (
-                    <Card className="flex flex-col items-center justify-center text-center p-8">
-                        <Award className="h-20 w-20 text-slate-400" />
-                        <CardTitle className="text-4xl mt-4">Student of the Year</CardTitle>
-                        <CardDescription className="text-xl">Awarded for outstanding academic achievement</CardDescription>
-                        <Avatar className="h-32 w-32 my-6"><AvatarImage src="" alt={studentOfTheYear.name} data-ai-hint="profile picture" /><AvatarFallback className="text-5xl">{studentOfTheYear.name.split(' ').map(n=>n[0]).join('')}</AvatarFallback></Avatar>
-                        <h3 className="text-4xl font-semibold">{studentOfTheYear.name}</h3>
-                        <p className="text-2xl text-muted-foreground">{studentOfTheYear.schoolName}</p>
-                    </Card>
-                )}
+                <Card className="flex flex-col items-center justify-center text-center p-8">
+                    <Trophy className="h-20 w-20 text-amber-400" />
+                    <CardTitle className="text-4xl mt-4">School of the Year</CardTitle>
+                    <CardDescription className="text-xl">Awarded for overall excellence</CardDescription>
+                    <Avatar className="h-32 w-32 my-6"><AvatarImage src={schoolOfTheYear.logoUrl} alt={schoolOfTheYear.name} data-ai-hint="school logo"/><AvatarFallback><School/></AvatarFallback></Avatar>
+                    <h3 className="text-4xl font-semibold">{schoolOfTheYear.name}</h3>
+                </Card>
+                <Card className="flex flex-col items-center justify-center text-center p-8">
+                    <Award className="h-20 w-20 text-slate-400" />
+                    <CardTitle className="text-4xl mt-4">Student of the Year</CardTitle>
+                    <CardDescription className="text-xl">Awarded for outstanding academic achievement</CardDescription>
+                    <Avatar className="h-32 w-32 my-6"><AvatarImage src="" alt={studentOfTheYear.name} data-ai-hint="profile picture" /><AvatarFallback className="text-5xl">{studentOfTheYear.name.split(' ').map(n=>n[0]).join('')}</AvatarFallback></Avatar>
+                    <h3 className="text-4xl font-semibold">{studentOfTheYear.name}</h3>
+                </Card>
             </div>
         </div>
     );
 }
+
 
 // --- School-Specific Slides ---
 
@@ -308,7 +303,7 @@ function KioskPage({ allSchoolData }: { allSchoolData: Record<string, SchoolData
       const globalSlides = [];
       if(globalKioskConfig.showAwardWinner) globalSlides.push({ id: 'awards', component: <KioskAwardsSlide allSchoolData={allSchoolData} /> });
       if(globalKioskConfig.showShowcase) {
-          globalSlides.push({ id: 'marketing-who', component: <KioskMarketingSlide title="Who We Are" description="EduManage is a catalyst for educational transformation, empowering schools with AI-driven tools to reduce administrative overhead and elevate academic standards." icon={Lightbulb} /> });
+          globalSlides.push({ id: 'marketing-who', component: <KioskMarketingSlide title="Who We Are" description="EduDesk is a catalyst for educational transformation, empowering schools with AI-driven tools to reduce administrative overhead and elevate academic standards." icon={Lightbulb} /> });
           globalSlides.push({ id: 'marketing-goal', component: <KioskMarketingSlide title="Our Goal & Mission" description="Our mission is to make modern educational technology accessible and affordable for institutions across Southern Africa, fostering a new era of data-driven, efficient, and impactful education." icon={Briefcase} /> });
       }
       if(globalKioskConfig.showDashboard) globalSlides.push({ id: 'dashboard', component: <KioskGlobalDashboardSlide allSchoolData={allSchoolData} /> });
@@ -322,7 +317,7 @@ function KioskPage({ allSchoolData }: { allSchoolData: Record<string, SchoolData
       if(globalKioskConfig.showTeacherLeaderboard) globalSlides.push({ id: 'teacher-leaderboard', component: <KioskTeacherLeaderboardSlide allSchoolData={allSchoolData} /> });
       if(globalKioskConfig.showAllSchools) globalSlides.push({ id: 'all-schools', component: <AllSchoolsSlide allSchoolData={allSchoolData} /> });
       if(globalKioskConfig.showShowcase) {
-          globalSlides.push({ id: 'marketing-connect', component: <KioskMarketingSlide title="Join the EduManage Family" description="Connect your school to a powerful, unified ecosystem. Boost efficiency, empower your teachers, and unlock data-driven insights for student success." icon={LinkIcon}><p className="text-2xl mt-8">Contact us at +258 845479481 to request a demo.</p></KioskMarketingSlide> });
+          globalSlides.push({ id: 'marketing-connect', component: <KioskMarketingSlide title="Join the EduDesk Family" description="Connect your school to a powerful, unified ecosystem. Boost efficiency, empower your teachers, and unlock data-driven insights for student success." icon={LinkIcon}><p className="text-2xl mt-8">Contact us at +258 845479481 to request a demo.</p></KioskMarketingSlide> });
       }
       return globalSlides;
     }

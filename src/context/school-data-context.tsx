@@ -5,6 +5,7 @@ import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabu
 import { useAuth, User } from './auth-context';
 import type { Role } from './auth-context';
 import { getSchoolsFromFirestore, seedInitialData } from '@/lib/firebase/firestore-service';
+import { getGpaFromNumeric } from '@/lib/utils';
 
 export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, SyllabusTopic, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, DeployedTest, SavedTest, NewMessageData, NewAdmissionData } from '@/lib/mock-data';
 
@@ -122,12 +123,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
                 firestoreData = await getSchoolsFromFirestore(); // Re-fetch after seeding
             }
             setData(firestoreData);
-            setAwardsAnnounced(firestoreData['northwood']?.profile.kioskConfig.showAwardWinner || false);
+            setAwardsAnnounced(firestoreData['northwood']?.profile.awards && firestoreData['northwood'].profile.awards.length > 0);
         } catch (error) {
             console.error("Failed to fetch or seed school data.", error);
             // Fallback to mock data in case of severe firestore error
             setData(initialSchoolData);
-            setAwardsAnnounced(initialSchoolData['northwood']?.profile.kioskConfig.showAwardWinner || false);
+            setAwardsAnnounced(initialSchoolData['northwood']?.profile.awards && initialSchoolData['northwood'].profile.awards.length > 0);
         } finally {
             setIsLoading(false);
         }
@@ -137,16 +138,55 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const announceAwards = () => {
+    if (!data) return;
+
+    // --- Calculate Winners ---
+    const schoolOfTheYear = Object.values(data).map(school => {
+        const avgGpa = school.grades.length > 0 ? school.grades.reduce((acc, g) => acc + getGpaFromNumeric(parseFloat(g.grade)), 0) / school.grades.length : 0;
+        const collectionRate = school.finance.length > 0 ? school.finance.reduce((acc, f) => acc + f.amountPaid, 0) / school.finance.reduce((acc, f) => acc + f.totalAmount, 0) : 1;
+        return { ...school.profile, score: (avgGpa * 0.6) + (collectionRate * 0.4) };
+    }).sort((a, b) => b.score - a.score)[0];
+
+    const teacherOfTheYear = Object.values(data).flatMap(school => school.teachers.map(teacher => {
+        const teacherCourses = school.courses.filter(c => c.teacherId === teacher.id);
+        const studentIds = new Set<string>();
+        teacherCourses.forEach(course => {
+            const classInfo = school.classes.find(c => c.id === course.classId);
+            if (classInfo) {
+              school.students.filter(s => s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim()).forEach(s => studentIds.add(s.id));
+            }
+        });
+        const teacherGrades = school.grades.filter(g => studentIds.has(g.studentId) && g.subject === teacher.subject).map(g => parseFloat(g.grade));
+        const avgStudentGrade = teacherGrades.length > 0 ? teacherGrades.reduce((sum, g) => sum + g, 0) / teacherGrades.length : 0;
+        return { ...teacher, avgStudentGrade };
+    })).sort((a, b) => b.avgStudentGrade - a.avgStudentGrade)[0];
+
+    const studentOfTheYear = Object.values(data).flatMap(school => school.students.map(student => {
+        const studentGrades = school.grades.filter(g => g.studentId === student.id);
+        const avgGrade = studentGrades.length > 0 ? studentGrades.reduce((acc, g) => acc + parseFloat(g.grade), 0) / studentGrades.length : 0;
+        return { ...student, avgGrade };
+    })).sort((a, b) => b.avgGrade - a.avgGrade)[0];
+
+    // --- Update State ---
     setAwardsAnnounced(true);
     setData(prevData => {
         if (!prevData) return null;
         const newData = { ...prevData };
+        
+        // Enable kiosk mode for all schools
         Object.keys(newData).forEach(schoolId => {
             newData[schoolId].profile.kioskConfig.showAwardWinner = true;
         });
-        // Also update the 'master' school config for persistence
+        
+        // Save the award record to the master school
         if(newData['northwood']) {
-            newData['northwood'].profile.kioskConfig.showAwardWinner = true;
+            const newAwardsRecord = {
+                year: new Date().getFullYear(),
+                schoolOfTheYear: schoolOfTheYear.id,
+                teacherOfTheYear: teacherOfTheYear.id,
+                studentOfTheYear: studentOfTheYear.id,
+            };
+            newData['northwood'].profile.awards = [...(newData['northwood'].profile.awards || []), newAwardsRecord];
         }
         return newData;
     });
