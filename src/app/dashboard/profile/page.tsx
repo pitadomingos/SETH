@@ -10,7 +10,12 @@ import { Save, Share2, Copy, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useRef, useEffect } from 'react';
-import { uploadProfilePicture } from '@/app/actions/ai-actions';
+import { uploadProfilePicture } from '@/app/actions/storage-actions';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { updateUserProfileAction } from '@/app/actions/user-actions';
 
 
 function ShareDialog() {
@@ -66,19 +71,52 @@ function ShareDialog() {
   );
 }
 
+const profileFormSchema = z.object({
+  name: z.string().min(3, "Full name must be at least 3 characters."),
+  phone: z.string().optional(),
+});
+
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
+
 
 export default function ProfilePage() {
-    const { user, role, setUserProfilePicture } = useAuth();
+    const { user, role, setUserProfilePicture, updateUserProfile } = useAuth();
     const { toast } = useToast();
     const initials = user?.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleUpdateProfile = () => {
-        toast({
-            title: "Profile Updated",
-            description: "Your profile information has been saved (demo).",
+    const form = useForm<ProfileFormValues>({
+        resolver: zodResolver(profileFormSchema),
+        defaultValues: {
+            name: user?.name || '',
+            phone: user?.phone || '',
+        }
+    });
+
+    useEffect(() => {
+        form.reset({
+            name: user?.name || '',
+            phone: user?.phone || '',
         });
+    }, [user, form]);
+
+    async function onSubmit(values: ProfileFormValues) {
+        if (!user) return;
+        const result = await updateUserProfileAction(user.username, values);
+        if (result.success) {
+            updateUserProfile(values);
+            toast({
+                title: "Profile Updated",
+                description: "Your profile information has been saved.",
+            });
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Update Failed',
+                description: result.error || "Could not update your profile.",
+            });
+        }
     };
 
     const handlePictureChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,57 +171,80 @@ export default function ProfilePage() {
             </header>
             <div className="grid gap-6 md:grid-cols-2">
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Profile Information</CardTitle>
-                        <CardDescription>Changes made here are for demonstration and will not be saved.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-8 md:grid-cols-3">
-                        <div className="flex flex-col items-center gap-4 pt-4 md:col-span-1">
-                            <Avatar className="h-32 w-32 relative">
-                                <AvatarImage src={user?.profilePictureUrl || `https://placehold.co/200x200.png`} alt={user?.name} data-ai-hint="profile picture" />
-                                <AvatarFallback className="text-4xl">{initials}</AvatarFallback>
-                                {isUploading && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-                                        <Loader2 className="h-8 w-8 animate-spin text-white" />
-                                    </div>
-                                )}
-                            </Avatar>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                className="hidden"
-                                accept="image/*"
-                                onChange={handlePictureChange}
-                                disabled={isUploading}
-                            />
-                            <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                                Change Picture
-                            </Button>
-                        </div>
-                        <div className="space-y-4 md:col-span-2">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="fullName">Full Name</Label>
-                                    <Input id="fullName" defaultValue={user?.name} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="email">Email Address</Label>
-                                    <Input id="email" type="email" defaultValue={user?.email} />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="role">Role</Label>
-                                <Input id="role" defaultValue={role ?? ''} disabled />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="phone">Phone Number</Label>
-                                <Input id="phone" type="tel" placeholder="+1 (555) 123-4567" />
-                            </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="border-t px-6 py-4">
-                        <Button onClick={handleUpdateProfile}><Save className="mr-2 h-4 w-4" /> Update Profile</Button>
-                    </CardFooter>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)}>
+                      <CardHeader>
+                          <CardTitle>Profile Information</CardTitle>
+                          <CardDescription>Update your personal details below.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="grid gap-8 md:grid-cols-3">
+                          <div className="flex flex-col items-center gap-4 pt-4 md:col-span-1">
+                              <Avatar className="h-32 w-32 relative">
+                                  <AvatarImage src={user?.profilePictureUrl || `https://placehold.co/200x200.png`} alt={user?.name} data-ai-hint="profile picture" />
+                                  <AvatarFallback className="text-4xl">{initials}</AvatarFallback>
+                                  {isUploading && (
+                                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                                          <Loader2 className="h-8 w-8 animate-spin text-white" />
+                                      </div>
+                                  )}
+                              </Avatar>
+                              <input
+                                  type="file"
+                                  ref={fileInputRef}
+                                  className="hidden"
+                                  accept="image/*"
+                                  onChange={handlePictureChange}
+                                  disabled={isUploading}
+                              />
+                              <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                                  Change Picture
+                              </Button>
+                          </div>
+                          <div className="space-y-4 md:col-span-2">
+                              <FormField
+                                  control={form.control}
+                                  name="name"
+                                  render={({ field }) => (
+                                      <FormItem>
+                                          <FormLabel>Full Name</FormLabel>
+                                          <FormControl>
+                                              <Input placeholder="Your full name" {...field} />
+                                          </FormControl>
+                                          <FormMessage />
+                                      </FormItem>
+                                  )}
+                              />
+                              <div className="space-y-2">
+                                  <Label htmlFor="email">Email Address</Label>
+                                  <Input id="email" type="email" defaultValue={user?.email} disabled />
+                              </div>
+                              <div className="space-y-2">
+                                  <Label htmlFor="role">Role</Label>
+                                  <Input id="role" defaultValue={role ?? ''} disabled />
+                              </div>
+                               <FormField
+                                  control={form.control}
+                                  name="phone"
+                                  render={({ field }) => (
+                                      <FormItem>
+                                          <FormLabel>Phone Number</FormLabel>
+                                          <FormControl>
+                                              <Input placeholder="+1 (555) 123-4567" {...field} />
+                                          </FormControl>
+                                          <FormMessage />
+                                      </FormItem>
+                                  )}
+                              />
+                          </div>
+                      </CardContent>
+                      <CardFooter className="border-t px-6 py-4">
+                          <Button type="submit" disabled={form.formState.isSubmitting}>
+                              {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                              Update Profile
+                          </Button>
+                      </CardFooter>
+                    </form>
+                  </Form>
                 </Card>
 
                 <Card>

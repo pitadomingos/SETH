@@ -4,10 +4,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { mockUsers, UserProfile } from '@/lib/mock-data';
-import type { Role } from './auth-context';
 import { getUsersFromFirestore } from '@/lib/firebase/firestore-service';
 
-export type { Role } from './auth-context';
+export type Role = 'GlobalAdmin' | 'Admin' | 'Teacher' | 'Student' | 'Parent';
 
 export interface User {
   username: string;
@@ -16,6 +15,7 @@ export interface User {
   role: Role;
   schoolId?: string;
   profilePictureUrl?: string;
+  phone?: string;
 }
 
 interface LoginResult {
@@ -34,6 +34,7 @@ interface AuthContextType {
   impersonateUser: (email: string, role: Role) => void;
   addUser: (username: string, profile: UserProfile) => void;
   setUserProfilePicture: (url: string) => void;
+  updateUserProfile: (data: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -100,6 +101,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(updatedUser);
           sessionStorage.setItem('user', JSON.stringify(updatedUser));
       }
+  };
+  
+  const updateUserProfile = (data: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...data };
+      setUser(updatedUser);
+      sessionStorage.setItem('user', JSON.stringify(updatedUser));
+    }
   };
 
   // This function is now mostly for client-side state updates after the DB has been written to.
@@ -170,7 +179,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, schoolId, originalUser, login, logout, isLoading, impersonateUser, addUser, setUserProfilePicture }}>
+    <AuthContext.Provider value={{ user, role, schoolId, originalUser, login, logout, isLoading, impersonateUser, addUser, setUserProfilePicture, updateUserProfile }}>
       {children}
     </AuthContext.Provider>
   );
