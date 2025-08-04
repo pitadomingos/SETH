@@ -214,7 +214,7 @@ export function AppSidebar() {
             { href: '/dashboard/manage-schools', label: 'sidebar.manageSchools', icon: Building }
         ]
       }
-    ].sort((a,b) => a.href === '/dashboard' ? -1 : 1);
+    ].sort((a,b) => (a as NavLink).href === '/dashboard' ? -1 : 1);
   }
 
   // Filter out Pro features if on Starter plan

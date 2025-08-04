@@ -3,10 +3,9 @@
 import { SchoolDataProvider } from "@/context/school-data-context";
 import { AuthProvider } from "@/context/auth-context";
 import { ReactNode } from "react";
-import { NextIntlClientProvider, useMessages } from 'next-intl';
+import { NextIntlClientProvider, AbstractIntlMessages } from 'next-intl';
 
-export function AppProviders({ children, locale }: { children: ReactNode, locale: string }) {
-    const messages = useMessages();
+export function AppProviders({ children, messages, locale }: { children: ReactNode, messages: AbstractIntlMessages, locale: string }) {
     
     return (
         <NextIntlClientProvider locale={locale} messages={messages}>

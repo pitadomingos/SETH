@@ -15,16 +15,20 @@ export const metadata: Metadata = {
   description: "AI-Powered Multi-School Management Prototype",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
+  params: {locale}
 }: {
   children: React.ReactNode;
+  params: {locale: string};
 }) {
+  const messages = await getMessages();
+  
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body className={cn("min-h-screen bg-background font-sans antialiased", inter.variable)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <AppProviders>
+            <AppProviders locale={locale} messages={messages}>
               {children}
             </AppProviders>
           <Toaster />

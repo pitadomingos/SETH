@@ -19,10 +19,12 @@ import { useSchoolData } from '@/context/school-data-context';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '../ui/badge';
 import { LanguageToggle } from './language-toggle';
+import { useTranslations } from 'next-intl';
 
 export function AppHeader({ className }: { className?: string }) {
   const { user, logout, originalUser } = useAuth();
   const { activityLogs } = useSchoolData();
+  const t = useTranslations();
   const initials = user?.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
 
   const notifications = activityLogs.slice(0, 5);
@@ -40,11 +42,11 @@ export function AppHeader({ className }: { className?: string }) {
         {originalUser && (
             <div className='flex items-center gap-2'>
                 <p className='text-sm text-muted-foreground hidden md:block'>
-                   Impersonating <span className='font-semibold text-foreground'>{user?.name}</span>
+                   {t('impersonating')} <span className='font-semibold text-foreground'>{user?.name}</span>
                 </p>
                 <Button variant="outline" onClick={logout}>
                     <ArrowLeftFromLine className="mr-2 h-4 w-4" />
-                    Return to Admin
+                    {t('returnToAdmin')}
                 </Button>
             </div>
         )}
@@ -66,7 +68,7 @@ export function AppHeader({ className }: { className?: string }) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-80">
-                         <DropdownMenuLabel>Recent Notifications</DropdownMenuLabel>
+                         <DropdownMenuLabel>{t('recentNotifications')}</DropdownMenuLabel>
                          <DropdownMenuSeparator />
                          {notifications.length > 0 ? (
                             notifications.map(log => {
@@ -83,13 +85,13 @@ export function AppHeader({ className }: { className?: string }) {
                             })
                          ) : (
                             <div className="p-4 text-center text-sm text-muted-foreground">
-                                No new notifications.
+                                {t('noNewNotifications')}
                             </div>
                          )}
                          <DropdownMenuSeparator />
                          <DropdownMenuItem asChild>
                             <Link href="/dashboard/activity-logs">
-                                View All Logs
+                                {t('viewAllLogs')}
                             </Link>
                          </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -117,13 +119,13 @@ export function AppHeader({ className }: { className?: string }) {
                     <DropdownMenuItem asChild>
                     <Link href="/dashboard/profile">
                         <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
+                        <span>{t('profile')}</span>
                     </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={logout}>
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
+                    <span>{t('logout')}</span>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
                 </DropdownMenu>
