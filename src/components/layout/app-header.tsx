@@ -15,10 +15,16 @@ import { useAuth } from '@/context/auth-context';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { ThemeToggle } from './theme-toggle';
+import { useSchoolData } from '@/context/school-data-context';
+import { formatDistanceToNow } from 'date-fns';
+import { Badge } from '../ui/badge';
 
 export function AppHeader() {
   const { user, logout, originalUser } = useAuth();
+  const { activityLogs } = useSchoolData();
   const initials = user?.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+
+  const notifications = activityLogs.slice(0, 5);
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">
@@ -44,10 +50,46 @@ export function AppHeader() {
         <ThemeToggle />
         {!originalUser && (
             <>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                    <Bell className="h-4 w-4" />
-                    <span className="sr-only">Notifications</span>
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full relative">
+                            <Bell className="h-4 w-4" />
+                            {notifications.length > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                                </span>
+                            )}
+                            <span className="sr-only">Notifications</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-80">
+                         <DropdownMenuLabel>Recent Notifications</DropdownMenuLabel>
+                         <DropdownMenuSeparator />
+                         {notifications.length > 0 ? (
+                            notifications.map(log => (
+                                <DropdownMenuItem key={log.id} className="flex-col items-start gap-1">
+                                    <div className="flex justify-between w-full">
+                                        <Badge variant="outline">{log.action}</Badge>
+                                        <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}</p>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground whitespace-normal">{log.user} {log.details.toLowerCase()}</p>
+                                </DropdownMenuItem>
+                            ))
+                         ) : (
+                            <div className="p-4 text-center text-sm text-muted-foreground">
+                                No new notifications.
+                            </div>
+                         )}
+                         <DropdownMenuSeparator />
+                         <DropdownMenuItem asChild>
+                            <Link href="/dashboard/activity-logs">
+                                View All Logs
+                            </Link>
+                         </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
                 <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
