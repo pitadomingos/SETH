@@ -161,6 +161,54 @@ function KioskMarketingSlide({ title, description, icon: Icon, children }) {
     );
 }
 
+function KioskAwardsSlide({ allSchoolData }) {
+    const schoolOfTheYear = useMemo(() => {
+        if (!allSchoolData) return null;
+        const schoolsWithScores = Object.values(allSchoolData).map(school => {
+            const avgGpa = school.grades.length > 0 ? school.grades.reduce((acc, g) => acc + getGpaFromNumeric(parseFloat(g.grade)), 0) / school.grades.length : 0;
+            const collectionRate = school.finance.length > 0 ? school.finance.reduce((acc, f) => acc + f.amountPaid, 0) / school.finance.reduce((acc, f) => acc + f.totalAmount, 0) : 1;
+            return { ...school.profile, score: (avgGpa * 0.6) + (collectionRate * 0.4) };
+        });
+        return schoolsWithScores.sort((a, b) => b.score - a.score)[0];
+    }, [allSchoolData]);
+
+    const studentOfTheYear = useMemo(() => {
+        if (!allSchoolData) return null;
+        return Object.values(allSchoolData).flatMap(school => school.students.map(student => {
+            const studentGrades = school.grades.filter(g => g.studentId === student.id);
+            const avgGrade = studentGrades.length > 0 ? studentGrades.reduce((acc, g) => acc + parseFloat(g.grade), 0) / studentGrades.length : 0;
+            return { ...student, avgGrade, schoolName: school.profile.name };
+        })).sort((a, b) => b.avgGrade - a.avgGrade)[0];
+    }, [allSchoolData]);
+
+    return (
+        <div className="p-8 h-full flex flex-col">
+            <h2 className="text-6xl font-bold text-center mb-8 flex items-center justify-center gap-4"><Trophy className="text-amber-400" /> EduDesk Annual Awards</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1">
+                {schoolOfTheYear && (
+                    <Card className="flex flex-col items-center justify-center text-center p-8">
+                        <Trophy className="h-20 w-20 text-amber-400" />
+                        <CardTitle className="text-4xl mt-4">School of the Year</CardTitle>
+                        <CardDescription className="text-xl">Awarded for overall excellence</CardDescription>
+                        <Avatar className="h-32 w-32 my-6"><AvatarImage src={schoolOfTheYear.logoUrl} alt={schoolOfTheYear.name} data-ai-hint="school logo"/><AvatarFallback><School/></AvatarFallback></Avatar>
+                        <h3 className="text-4xl font-semibold">{schoolOfTheYear.name}</h3>
+                    </Card>
+                )}
+                 {studentOfTheYear && (
+                    <Card className="flex flex-col items-center justify-center text-center p-8">
+                        <Award className="h-20 w-20 text-slate-400" />
+                        <CardTitle className="text-4xl mt-4">Student of the Year</CardTitle>
+                        <CardDescription className="text-xl">Awarded for outstanding academic achievement</CardDescription>
+                        <Avatar className="h-32 w-32 my-6"><AvatarImage src="" alt={studentOfTheYear.name} data-ai-hint="profile picture" /><AvatarFallback className="text-5xl">{studentOfTheYear.name.split(' ').map(n=>n[0]).join('')}</AvatarFallback></Avatar>
+                        <h3 className="text-4xl font-semibold">{studentOfTheYear.name}</h3>
+                        <p className="text-2xl text-muted-foreground">{studentOfTheYear.schoolName}</p>
+                    </Card>
+                )}
+            </div>
+        </div>
+    );
+}
+
 // --- School-Specific Slides ---
 
 function SchoolDashboardSlide({ school }) {
@@ -245,18 +293,20 @@ function KioskPage({ allSchoolData }: { allSchoolData: Record<string, SchoolData
   const school = useMemo(() => allSchoolData?.[schoolId], [schoolId, allSchoolData]);
   const isGlobal = schoolId === 'global';
   
-  const globalKioskConfig = useMemo(() => ({
+  const globalKioskConfig = useMemo(() => (allSchoolData?.['northwood']?.profile?.kioskConfig || {
       showDashboard: true,
       showLeaderboard: true,
       showTeacherLeaderboard: true,
       showAllSchools: true,
       showShowcase: true,
-  }), []);
+      showAwardWinner: false,
+  }), [allSchoolData]);
 
   const slides = useMemo(() => {
     if (isGlobal) {
       if (!allSchoolData) return [];
       const globalSlides = [];
+      if(globalKioskConfig.showAwardWinner) globalSlides.push({ id: 'awards', component: <KioskAwardsSlide allSchoolData={allSchoolData} /> });
       if(globalKioskConfig.showShowcase) {
           globalSlides.push({ id: 'marketing-who', component: <KioskMarketingSlide title="Who We Are" description="EduManage is a catalyst for educational transformation, empowering schools with AI-driven tools to reduce administrative overhead and elevate academic standards." icon={Lightbulb} /> });
           globalSlides.push({ id: 'marketing-goal', component: <KioskMarketingSlide title="Our Goal & Mission" description="Our mission is to make modern educational technology accessible and affordable for institutions across Southern Africa, fostering a new era of data-driven, efficient, and impactful education." icon={Briefcase} /> });
@@ -281,6 +331,7 @@ function KioskPage({ allSchoolData }: { allSchoolData: Record<string, SchoolData
         const kioskConfig = school.profile.kioskConfig;
         if (!kioskConfig) return [];
         const schoolSlides = [];
+        if(kioskConfig.showAwardWinner) schoolSlides.push({ id: 'awards', component: <KioskAwardsSlide allSchoolData={{[school.profile.id]: school}} /> });
         if(kioskConfig.showDashboard) schoolSlides.push({ id: 'dashboard', component: <SchoolDashboardSlide school={school} /> });
         if(kioskConfig.showPerformers) {
           const topStudents = school.students.map(s => {
@@ -382,4 +433,3 @@ function KioskPageWrapper() {
 export default function KioskPageContainer() {
   return (<SchoolDataProvider><KioskPageWrapper /></SchoolDataProvider>);
 }
-

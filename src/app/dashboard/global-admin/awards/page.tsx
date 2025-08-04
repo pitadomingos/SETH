@@ -106,7 +106,7 @@ function AIEvaluationDialog({ winner, category }) {
 
 export default function AwardsPage() {
   const { role, isLoading: authLoading } = useAuth();
-  const { allSchoolData, isLoading: schoolLoading } = useSchoolData();
+  const { allSchoolData, isLoading: schoolLoading, announceAwards } = useSchoolData();
   const router = useRouter();
   const { toast } = useToast();
   const isLoading = authLoading || schoolLoading;
@@ -170,9 +170,10 @@ export default function AwardsPage() {
   }, [allSchoolData]);
 
   const handleAnnounce = () => {
+    announceAwards();
     toast({
       title: 'Winners Announced!',
-      description: 'A notification has been sent to all schools regarding the award winners.',
+      description: 'The awards are now live on dashboards and kiosks across the network.',
       duration: 5000,
     });
   };
