@@ -199,8 +199,18 @@ export function EditSchoolDialog({ school }: { school: SchoolProfile }) {
 
 export function DeleteSchoolDialog({ schoolId, schoolName, removeSchool }: { schoolId: string, schoolName: string, removeSchool: (schoolId: string) => void }) {
     const { toast } = useToast();
-    
+    const isSystemSchool = schoolId === 'northwood';
+
     const handleDelete = async () => {
+        if (isSystemSchool) {
+            toast({
+                variant: 'destructive',
+                title: 'Action Prohibited',
+                description: `"${schoolName}" is a core system record and cannot be deleted.`,
+            });
+            return;
+        }
+
         const result = await deleteSchoolAction(schoolId);
         if (result.success) {
             removeSchool(schoolId);
@@ -228,12 +238,17 @@ export function DeleteSchoolDialog({ schoolId, schoolName, removeSchool }: { sch
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDesc>
-                        This action cannot be undone. This will permanently delete the school "{schoolName}" and all associated data, including its administrator account.
+                        {isSystemSchool 
+                            ? `The school "${schoolName}" serves as the master record for system-wide settings and cannot be deleted.`
+                            : `This action cannot be undone. This will permanently delete the school "${schoolName}" and all associated data, including its administrator account.`
+                        }
                     </AlertDialogDesc>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                    {!isSystemSchool && (
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                    )}
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

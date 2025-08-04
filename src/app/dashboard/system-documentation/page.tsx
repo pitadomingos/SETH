@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Database, Layers, Cloud, KeyRound, Server, UploadCloud, GitBranch, FolderTree, Puzzle, UserCheck, BrainCircuit, Download } from 'lucide-react';
+import { Loader2, Database, Layers, Cloud, KeyRound, Server, UploadCloud, GitBranch, FolderTree, Puzzle, UserCheck, BrainCircuit, Download, Trophy } from 'lucide-react';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -123,6 +123,21 @@ export default function SystemDocumentationPage() {
             </CardContent>
         </Card>
       </div>
+
+       <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Trophy /> System-Wide Awards & Persistent State</CardTitle>
+          <CardDescription>How global settings like the annual awards are managed.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm text-muted-foreground">
+            <p>To ensure system-wide settings are persistent and not lost, the application uses a "master record" approach within the prototype's architecture.</p>
+            <ul className="list-disc pl-6 mt-1 space-y-2">
+                <li><b>Master Record:</b> The "Northwood High" school record serves as the central storage for global configurations. For example, the `awardsAnnounced` flag is stored in `northwood.profile.kioskConfig.showAwardWinner`.</li>
+                <li><b>State Initialization:</b> On application startup, the `SchoolDataProvider` reads this value from the Northwood record to determine if the awards have been announced, ensuring the state persists across sessions.</li>
+                <li><b>Safeguard:</b> To make this approach robust, the "Delete School" functionality is disabled for the Northwood High record, preventing accidental deletion of critical system settings.</li>
+            </ul>
+        </CardContent>
+      </Card>
       
       <Card>
         <CardHeader>
@@ -141,7 +156,7 @@ export default function SystemDocumentationPage() {
                 <Server className="h-4 w-4 text-accent mt-1 shrink-0" />
                 <div>
                     <h4 className="font-semibold text-card-foreground">2. Firestore Database & Data Modeling</h4>
-                    <p className="text-muted-foreground">Design and create Firestore collections for schools, users, students, grades, etc. This involves replacing the `mock-data.ts` file with real database collections.</p>
+                    <p className="text-muted-foreground">Design and create Firestore collections for schools, users, students, grades, etc. A dedicated `global_settings` collection will be created to replace the "master record" approach used in the prototype.</p>
                 </div>
             </div>
             <div className="flex items-start gap-3">
