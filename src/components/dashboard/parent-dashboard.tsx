@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
@@ -355,7 +354,8 @@ export default function ParentDashboard() {
   const childAttendance = useMemo(() => {
       if (!selectedChildId) return {};
       return attendance.filter(a => a.studentId === selectedChildId).reduce((acc, record) => {
-          acc[record.status] = (acc[record.status] || 0) + 1;
+          const statusKey = record.status.toLowerCase();
+          acc[statusKey] = (acc[statusKey] || 0) + 1;
           return acc;
       }, {});
   }, [attendance, selectedChildId]);
@@ -490,4 +490,3 @@ export default function ParentDashboard() {
     </div>
   );
 }
-

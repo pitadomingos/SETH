@@ -7,6 +7,7 @@ import { getSchoolsFromFirestore, seedInitialData } from '@/lib/firebase/firesto
 import { getGpaFromNumeric } from '@/lib/utils';
 import { updateSchoolProfileAction } from '@/app/actions/update-school-action';
 import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction, addSyllabusAction, addCourseAction, updateCourseAction, deleteCourseFromFirestore, addFeeAction, recordPaymentAction, addExpenseAction, addTeamAction, deleteTeamAction, addPlayerToTeamAction, removePlayerFromTeamAction, addCompetitionAction, addCompetitionResultAction, updateAdmissionStatusAction, addStudentFromAdmissionAction } from '@/app/actions/school-actions';
+import { sendMessageAction } from '@/app/actions/messaging-actions';
 
 
 export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, SyllabusTopic, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, DeployedTest, SavedTest, NewMessageData, NewAdmissionData } from '@/lib/mock-data';
@@ -82,7 +83,7 @@ interface SchoolDataContextType {
     addKioskMedia: (media: Omit<KioskMedia, 'id'|'createdAt'>) => void;
     removeKioskMedia: (id: string) => void;
     updateSchoolProfile: (data: Partial<SchoolProfile>, schoolId?: string) => Promise<boolean>;
-    addMessage: (message: NewMessageData) => void;
+    addMessage: (message: NewMessageData) => Promise<void>;
     addAdmission: (admission: NewAdmissionData) => void;
     updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
     updateMessageStatus: (messageId: string, status: Message['status']) => void;
@@ -751,56 +752,40 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       });
   };
   
-  const addMessage = (message: NewMessageData) => {
-    if(!data || !user || !role) return;
-  
+  const addMessage = async (messageData: NewMessageData) => {
+    if (!data || !user || !role) return;
+
     const senderSchoolId = role === 'GlobalAdmin' ? 'northwood' : user.schoolId;
     if (!senderSchoolId) return;
 
     let recipientSchoolId: string | undefined = undefined;
     for (const sId in data) {
-        if (data[sId].profile.email === message.recipientUsername || data[sId].teachers.some(t => t.email === message.recipientUsername)) {
-            recipientSchoolId = sId;
-            break;
-        }
+      const school = data[sId];
+      if (school.profile.email === messageData.recipientUsername || school.teachers.some(t => t.email === messageData.recipientUsername)) {
+        recipientSchoolId = sId;
+        break;
+      }
     }
     if (!recipientSchoolId) return;
-  
-    const recipientUser = Object.values(data).flatMap(d => d.teachers).find(u => u.email === message.recipientUsername);
-    const recipientName = recipientUser?.name || data[recipientSchoolId]?.profile.head || 'Admin';
-    const recipientRole = recipientUser ? 'Teacher' : 'Admin';
-  
-    const newMessage: Message = {
-        id: `MSG${Date.now()}`,
-        senderUsername: user.email,
-        senderName: user.name,
-        senderRole: role,
-        recipientUsername: message.recipientUsername,
-        recipientName: recipientName,
-        recipientRole: recipientRole,
-        subject: message.subject,
-        body: message.body,
-        timestamp: new Date(),
-        status: 'Pending',
-        attachmentUrl: message.attachmentUrl,
-        attachmentName: message.attachmentName,
-    };
-    
-    setData(prev => {
-      if (!prev) return null;
-      const newData = {...prev};
-      
-      if (newData[senderSchoolId]) {
-        newData[senderSchoolId].messages.push(newMessage);
-      }
-  
-      if (recipientSchoolId && recipientSchoolId !== senderSchoolId) {
-          newData[recipientSchoolId].messages.push(newMessage);
-      }
-      
-      addLog(senderSchoolId, 'Message', `Sent message to ${recipientName}`);
-      return newData;
-    });
+
+    const result = await sendMessageAction(senderSchoolId, recipientSchoolId, { ...messageData, senderName: user.name, senderRole: role });
+    if (result.success && result.message) {
+      setData(prev => {
+        if (!prev) return null;
+        const newData = { ...prev };
+        
+        if (newData[senderSchoolId]) {
+          newData[senderSchoolId].messages.push(result.message!);
+        }
+
+        if (recipientSchoolId && recipientSchoolId !== senderSchoolId) {
+          newData[recipientSchoolId].messages.push(result.message!);
+        }
+        
+        addLog(senderSchoolId, 'Message', `Sent message to ${result.message.recipientName}`);
+        return newData;
+      });
+    }
   };
   
   const addAdmission = (admission: NewAdmissionData) => {
