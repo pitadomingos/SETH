@@ -4,7 +4,7 @@
 import * as React from "react"
 import { Languages } from "lucide-react"
 import { useLocale } from "next-intl"
-import { usePathname, useRouter } from 'next-intl/navigation';
+import { usePathname, useRouter } from '@/navigation';
 
 import { Button } from "@/components/ui/button"
 import {
