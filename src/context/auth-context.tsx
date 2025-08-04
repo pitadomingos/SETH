@@ -15,6 +15,7 @@ export interface User {
   email: string;
   role: Role;
   schoolId?: string;
+  profilePictureUrl?: string;
 }
 
 interface LoginResult {
@@ -32,6 +33,7 @@ interface AuthContextType {
   isLoading: boolean;
   impersonateUser: (email: string, role: Role) => void;
   addUser: (username: string, profile: UserProfile) => void;
+  setUserProfilePicture: (url: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -75,7 +77,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const userRecord = userSource[username];
     if (userRecord && userRecord.password === pass) {
-      const loggedInUser = userRecord.user;
+      const loggedInUser: User = {
+          ...userRecord.user,
+          profilePictureUrl: `https://placehold.co/200x200.png?text=${userRecord.user.name.split(' ').map(n=>n[0]).join('')}`
+      };
       setUser(loggedInUser);
       setRole(loggedInUser.role);
       setSchoolId(loggedInUser.schoolId || null);
@@ -87,6 +92,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: true };
     }
     return { success: false, message: 'Invalid username or password' };
+  };
+
+  const setUserProfilePicture = (url: string) => {
+      if(user) {
+          const updatedUser = { ...user, profilePictureUrl: url };
+          setUser(updatedUser);
+          sessionStorage.setItem('user', JSON.stringify(updatedUser));
+      }
   };
 
   // This function is now mostly for client-side state updates after the DB has been written to.
@@ -107,7 +120,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userRecord = Object.values(allUsers).find(u => u.user.email === email && u.user.role === targetRole);
     
     if (userRecord) {
-        const targetUser = userRecord.user;
+        const targetUser: User = {
+          ...userRecord.user,
+          profilePictureUrl: `https://placehold.co/200x200.png?text=${userRecord.user.name.split(' ').map(n=>n[0]).join('')}`
+        };
         setUser(targetUser);
         setRole(targetUser.role);
         setSchoolId(targetUser.schoolId || null);
@@ -154,7 +170,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, schoolId, originalUser, login, logout, isLoading, impersonateUser, addUser }}>
+    <AuthContext.Provider value={{ user, role, schoolId, originalUser, login, logout, isLoading, impersonateUser, addUser, setUserProfilePicture }}>
       {children}
     </AuthContext.Provider>
   );

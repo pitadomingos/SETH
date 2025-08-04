@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Save, Share2, Copy } from 'lucide-react';
+import { Save, Share2, Copy, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { uploadProfilePicture } from '@/app/actions/ai-actions';
 
 
 function ShareDialog() {
@@ -17,10 +18,11 @@ function ShareDialog() {
   const referralLink = "https://eduddesk.app/demo-trial";
 
   const handleCopyLink = () => {
-    // In a real app, you'd use navigator.clipboard.writeText(referralLink)
-    toast({
-      title: "Link Copied!",
-      description: "You can now share the referral link.",
+    navigator.clipboard.writeText(referralLink).then(() => {
+        toast({
+            title: "Link Copied!",
+            description: "You can now share the referral link.",
+        });
     });
   };
 
@@ -66,27 +68,62 @@ function ShareDialog() {
 
 
 export default function ProfilePage() {
-    const { user, role } = useAuth();
+    const { user, role, setUserProfilePicture } = useAuth();
     const { toast } = useToast();
     const initials = user?.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
-    const [avatarUrl, setAvatarUrl] = useState(`https://placehold.co/200x200.png`);
+    const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleUpdateProfile = () => {
         toast({
             title: "Profile Updated",
-            description: "Your profile information has been saved.",
+            description: "Your profile information has been saved (demo).",
         });
     };
 
-    const handlePictureChange = () => {
-        const newAvatarUrl = `https://placehold.co/200x200.png?v=${Date.now()}`;
-        setAvatarUrl(newAvatarUrl);
-        toast({
-            title: "Picture Changed",
-            description: "Your new profile picture has been set (demo).",
-        });
-    }
+    const handlePictureChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !user) return;
+
+        setIsUploading(true);
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+            try {
+                const dataUrl = reader.result as string;
+                const newUrl = await uploadProfilePicture(user.username, dataUrl);
+
+                if (newUrl) {
+                    setUserProfilePicture(newUrl);
+                    toast({
+                        title: "Profile Picture Updated",
+                        description: "Your new profile picture has been saved.",
+                    });
+                } else {
+                    throw new Error("Upload failed to return a URL.");
+                }
+            } catch (error) {
+                console.error("Upload failed:", error);
+                toast({
+                    variant: 'destructive',
+                    title: "Upload Failed",
+                    description: "Could not update your profile picture. Please try again.",
+                });
+            } finally {
+                setIsUploading(false);
+            }
+        };
+        reader.onerror = (error) => {
+            console.error("File reading failed:", error);
+            toast({
+                variant: 'destructive',
+                title: "File Error",
+                description: "Could not read the selected file.",
+            });
+            setIsUploading(false);
+        };
+    };
 
     return (
         <div className="space-y-6 animate-in fade-in-50">
@@ -102,9 +139,14 @@ export default function ProfilePage() {
                     </CardHeader>
                     <CardContent className="grid gap-8 md:grid-cols-3">
                         <div className="flex flex-col items-center gap-4 pt-4 md:col-span-1">
-                            <Avatar className="h-32 w-32">
-                                <AvatarImage src={avatarUrl} alt={user?.name} data-ai-hint="profile picture" />
+                            <Avatar className="h-32 w-32 relative">
+                                <AvatarImage src={user?.profilePictureUrl || `https://placehold.co/200x200.png`} alt={user?.name} data-ai-hint="profile picture" />
                                 <AvatarFallback className="text-4xl">{initials}</AvatarFallback>
+                                {isUploading && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                                        <Loader2 className="h-8 w-8 animate-spin text-white" />
+                                    </div>
+                                )}
                             </Avatar>
                             <input
                                 type="file"
@@ -112,8 +154,11 @@ export default function ProfilePage() {
                                 className="hidden"
                                 accept="image/*"
                                 onChange={handlePictureChange}
+                                disabled={isUploading}
                             />
-                            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>Change Picture</Button>
+                            <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                                Change Picture
+                            </Button>
                         </div>
                         <div className="space-y-4 md:col-span-2">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
