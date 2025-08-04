@@ -90,7 +90,7 @@ export default function SystemDocumentationPage() {
                 <li><b>Initialization:</b> On app load, <code>SchoolDataProvider</code> fetches the entire dataset from Firestore. If the database is empty, it's automatically seeded from <code>/src/lib/mock-data.ts</code>.</li>
                 <li><b>Data Slicing & Isolation:</b> The context uses the authenticated user's role and school ID to "slice" the global dataset, providing each component with only the data it's authorized to see. This is critical for the multi-tenant architecture.</li>
                 <li><b>Server-Side Mutations:</b> When a user performs a CRUD action (e.g., adding a student), the UI calls a function in <code>SchoolDataProvider</code>. This function then invokes a Next.js Server Action.</li>
-                <li><b>Database Interaction:</b> The Server Action calls a corresponding function in <code>/src/lib/firebase/firestore-service.ts</code>, which executes the write, update, or delete operation in Firestore.</li>
+                <li><b>Database Interaction:</b> The Server Action calls a corresponding function in s<code>/src/lib/firebase/firestore-service.ts</code>, which executes the write, update, or delete operation in Firestore.</li>
                  <li><b>State Synchronization:</b> After a successful database operation, the local state in <code>SchoolDataProvider</code> is updated to match, ensuring the UI re-renders instantly to reflect the persistent change without needing a full data refetch.</li>
             </ol>
         </CardContent>
@@ -102,7 +102,7 @@ export default function SystemDocumentationPage() {
               <CardTitle className="flex items-center gap-2"><UserCheck /> Authentication & Authorization</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-muted-foreground">
-                <p>Authentication is handled by the <code>AuthProvider</code>, which simulates a login against user profiles in Firestore. Upon successful login, the user's role and school affiliation are stored in sessionStorage to persist the session.</p>
+                <p>Authentication is handled by the <code>AuthProvider</code>, which now validates against user profiles in Firestore. Upon successful login, the user's role and school affiliation are stored in sessionStorage to persist the session.</p>
                 <p>Role-based access control (RBAC) is implemented throughout the app, primarily in two ways:</p>
                 <ul className="list-disc pl-6 space-y-1">
                     <li><b>Page-Level:</b> Each page component checks the user's role from <code>useAuth()</code> and redirects if they are not authorized.</li>
@@ -173,7 +173,7 @@ export default function SystemDocumentationPage() {
                 <Database className="h-4 w-4 text-accent mt-1 shrink-0" />
                 <div>
                     <h4 className="font-semibold text-card-foreground">4. Firestore Service Layer</h4>
-                    <p className="text-muted-foreground">Located in <code>/lib/firebase/firestore-service.ts</code>, this layer abstracts the direct Firebase SDK calls. Server Actions call functions in this service to interact with the database, centralizing all Firestore logic.</p>
+                    <p className="text-muted-foreground">Located in s<code>/lib/firebase/firestore-service.ts</code>, this layer abstracts the direct Firebase SDK calls. Server Actions call functions in this service to interact with the database, centralizing all Firestore logic.</p>
                 </div>
             </div>
         </CardContent>

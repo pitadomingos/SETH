@@ -52,15 +52,12 @@ const completedTasks = [
   'Created a dedicated, full-screen presentation mode for the Project Proposal.',
   'Fixed Activity Log data isolation between Global Admins and School Admins.',
   'Implemented full CRUD operations for Teachers and Classes management modules.',
+  'Connected all core modules (Teachers, Classes, Admissions, Finance, Sports, etc.) to a persistent Firebase backend.',
+  'Grouped all functionalities into clear, collapsible sidebar categories.',
 ];
 
 const upcomingFeatures = [
-  // Foundational & Backend
-  'Connect mock data to a real database (e.g., Firestore) to enable persistence.',
-  'Re-enable and connect all AI functionalities to the new Firebase data layer.',
-  
   // UI/UX & Navigation
-  'Group all functionalities into clear sidebar categories with collapsible sections.',
   'Enhance mobile-first responsive design for a seamless experience on phones and tablets.',
   'Include a "Back" button in all modules for consistent navigation.',
   'Implement multi-language support (Portuguese/English) with a quick-toggle menu.',

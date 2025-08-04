@@ -184,8 +184,8 @@ export default function ProjectProposalPage() {
             <div className="flex items-start gap-4">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold shrink-0">1</span>
               <div>
-                <h4 className="font-semibold">Phase 1 (Q3 2025): Production Backend & Core Service</h4>
-                <p className="text-sm text-muted-foreground">Transition from mock data to a full Firebase backend (Firestore, Auth, Storage). Refactor all services and establish robust security rules for a multi-tenant architecture.</p>
+                <h4 className="font-semibold">Phase 1 (Completed): Production Backend & Core Services</h4>
+                <p className="text-sm text-muted-foreground">Transition from mock data to a full Firebase backend (Firestore, Auth, Storage) is complete. All core CRUD operations are persistent and governed by security rules.</p>
               </div>
             </div>
              <div className="flex items-start gap-4">
@@ -206,41 +206,41 @@ export default function ProjectProposalPage() {
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="secondary">
-                    <GitBranch className="mr-2 h-4 w-4" /> View Firebase Integration Roadmap
+                    <GitBranch className="mr-2 h-4 w-4" /> View Firebase Integration Details
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2"><Cloud /> Backend & Firebase Integration Roadmap</DialogTitle>
-                      <DialogDescription>A step-by-step plan to transition to a full Firebase backend.</DialogDescription>
+                      <DialogTitle className="flex items-center gap-2"><Cloud /> Backend & Firebase Integration Details</DialogTitle>
+                      <DialogDescription>An overview of the completed Firebase backend implementation.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
                         <div className="flex items-start gap-3">
                             <KeyRound className="h-5 w-5 text-accent mt-1 shrink-0" />
                             <div>
                                 <h4 className="font-semibold">1. Firebase Authentication</h4>
-                                <p className="text-sm text-muted-foreground">Replace the mock login system with Firebase Authentication. Implement email/password sign-up and sign-in, and manage user sessions and roles securely.</p>
+                                <p className="text-sm text-muted-foreground">The mock login system has been replaced with Firebase Authentication, securely managing user sessions and roles.</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3">
                             <Server className="h-5 w-5 text-accent mt-1 shrink-0" />
                             <div>
                                 <h4 className="font-semibold">2. Firestore Database & Data Modeling</h4>
-                                <p className="text-sm text-muted-foreground">Design and create Firestore collections for schools, users, students, grades, etc. Structure the data for efficient queries and scalability, replacing the <code>mock-data.ts</code> file.</p>
+                                <p className="text-sm text-muted-foreground">All application data is now stored in Firestore collections designed for efficient, multi-tenant queries. The `mock-data.ts` file is only used for initial database seeding.</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3">
                             <UploadCloud className="h-5 w-5 text-accent mt-1 shrink-0" />
                             <div>
                                 <h4 className="font-semibold">3. Cloud Storage & API Layer</h4>
-                                <p className="text-sm text-muted-foreground">Implement Firebase Storage for file uploads (e.g., logos, expense receipts). Create a set of server-side functions (e.g., Server Actions) to handle all Create, Read, Update, and Delete (CRUD) operations with Firestore and Storage, governed by security rules.</p>
+                                <p className="text-sm text-muted-foreground">Firebase Storage handles all file uploads. A robust API layer using Next.js Server Actions manages all Create, Read, Update, and Delete (CRUD) operations.</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3">
                             <Database className="h-5 w-5 text-accent mt-1 shrink-0" />
                             <div>
                                 <h4 className="font-semibold">4. Data Fetching & Mutation</h4>
-                                <p className="text-sm text-muted-foreground">Update the <code>SchoolDataProvider</code> to fetch data from the new API layer instead of local mock data. Wire up all forms and actions (e.g., adding a student, uploading a logo) to call the API for persistent changes.</p>
+                                <p className="text-sm text-muted-foreground">The `SchoolDataProvider` now fetches data directly from the live Firestore database and calls the API layer for all mutations, ensuring data persistence.</p>
                             </div>
                         </div>
                     </div>
