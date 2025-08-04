@@ -51,6 +51,4 @@ To run this prototype:
     -   **Northwood Teacher:** `teacher1`
     -   ...and more, as detailed on the login screen.
 
-This is a prototype environment. All data is mocked and will reset when the application is reloaded.
-
-  
+This application uses a live Firebase backend. All data is persistent. The application will auto-seed with initial data if the database is empty.

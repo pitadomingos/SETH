@@ -51,7 +51,9 @@ export default function SystemDocumentationPage() {
           <li><b>UI Components:</b> ShadCN UI, a collection of accessible and composable components built on Radix UI.</li>
           <li><b>Styling:</b> Tailwind CSS for a utility-first styling approach.</li>
           <li><b>AI Integration:</b> Google's Genkit framework with Gemini models for all AI-powered features.</li>
-          <li><b>Data Layer:</b> A hybrid approach using an initial data load from a mock file (`mock-data.ts`) with all subsequent state managed in-memory via React Context.</li>
+          <li><b>Database:</b> Google Firebase (Firestore) for a scalable, real-time NoSQL database.</li>
+           <li><b>Authentication:</b> Firebase Authentication for managing user identity and sessions.</li>
+           <li><b>File Storage:</b> Firebase Cloud Storage for handling all file uploads (e.g., logos, documents).</li>
         </CardContent>
       </Card>
 
@@ -63,14 +65,15 @@ export default function SystemDocumentationPage() {
         <CardContent className="space-y-4">
           <ul className="list-disc pl-6 text-sm text-muted-foreground space-y-2">
             <li><code>/src/app/dashboard/</code>: Contains all the application's pages, following the Next.js App Router file-based routing convention.</li>
+            <li><code>/src/app/actions/</code>: Contains all Next.js Server Actions used for server-side mutations.</li>
             <li><code>/src/components/</code>: Holds reusable React components, organized into `ui` (from ShadCN), `layout`, `dashboard`, etc.</li>
             <li><code>/src/context/</code>: Manages global state.
               <ul className="list-disc pl-6 mt-1">
                 <li><code>auth-context.tsx</code>: Handles user authentication, roles, and impersonation.</li>
-                <li><code>school-data-context.tsx</code>: Acts as the central in-memory database for the prototype.</li>
+                <li><code>school-data-context.tsx</code>: Acts as the central client-side data provider, fetching data and calling server actions.</li>
               </ul>
             </li>
-            <li><code>/src/lib/</code>: Contains utility functions (`utils.ts`), mock data (`mock-data.ts`), and Firebase service stubs.</li>
+            <li><code>/src/lib/</code>: Contains utility functions (`utils.ts`), mock data for seeding (`mock-data.ts`), and Firebase service functions.</li>
             <li><code>/src/ai/flows/</code>: Contains all the server-side Genkit flows that define the AI's capabilities.</li>
           </ul>
         </CardContent>
@@ -78,18 +81,18 @@ export default function SystemDocumentationPage() {
       
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Database /> Data Flow & State Management (In-Memory)</CardTitle>
-          <CardDescription>How the application manages its data during a session.</CardDescription>
+          <CardTitle className="flex items-center gap-2"><Database /> Data Flow & State Management</CardTitle>
+          <CardDescription>How the application manages and persists its data.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">For prototype stability and speed, EduDesk uses a "session-based" in-memory data store. Changes are **not** persisted between page reloads.</p>
+            <p className="text-sm text-muted-foreground">EduDesk uses a Firebase-backed, server-authoritative data model. All data is persistent and managed through a clear client-server flow.</p>
             <ol className="list-decimal pl-6 text-sm text-muted-foreground space-y-2">
-                <li><b>Initialization:</b> When the app first loads, <code>SchoolDataProvider</code> in <code>school-data-context.tsx</code> reads the entire dataset from <code>/src/lib/mock-data.ts</code> into React state variables.</li>
-                <li><b>Data Slicing & Isolation:</b> The context then uses the authenticated user's role and school ID to "slice" this global dataset, providing each component with only the data it's authorized to see (e.g., a teacher only sees their students). Global Admin activity logs are isolated to a specific school record to prevent them from appearing in individual school feeds.</li>
-                <li><b>In-Memory Mutations:</b> When a user performs an action (like adding a student), the corresponding function (e.g., <code>addStudent</code>) updates the state variable directly. It does **not** write back to the mock data file.</li>
-                <li><b>Re-rendering:</b> Because the data is in React state, any component consuming that data via the <code>useSchoolData</code> hook will automatically re-render to reflect the changes.</li>
+                <li><b>Initialization:</b> On app load, <code>SchoolDataProvider</code> fetches the entire dataset from Firestore. If the database is empty, it's automatically seeded from <code>/src/lib/mock-data.ts</code>.</li>
+                <li><b>Data Slicing & Isolation:</b> The context uses the authenticated user's role and school ID to "slice" the global dataset, providing each component with only the data it's authorized to see. This is critical for the multi-tenant architecture.</li>
+                <li><b>Server-Side Mutations:</b> When a user performs a CRUD action (e.g., adding a student), the UI calls a function in <code>SchoolDataProvider</code>. This function then invokes a Next.js Server Action.</li>
+                <li><b>Database Interaction:</b> The Server Action calls a corresponding function in <code>/src/lib/firebase/firestore-service.ts</code>, which executes the write, update, or delete operation in Firestore.</li>
+                 <li><b>State Synchronization:</b> After a successful database operation, the local state in <code>SchoolDataProvider</code> is updated to match, ensuring the UI re-renders instantly to reflect the persistent change without needing a full data refetch.</li>
             </ol>
-             <p className="text-sm text-muted-foreground">This architecture ensures a fast, responsive user experience for demonstration purposes and is designed for a straightforward transition to a persistent backend.</p>
         </CardContent>
       </Card>
       
@@ -99,7 +102,7 @@ export default function SystemDocumentationPage() {
               <CardTitle className="flex items-center gap-2"><UserCheck /> Authentication & Authorization</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-muted-foreground">
-                <p>Authentication is handled by <code>AuthProvider</code>. It uses the <code>mockUsers</code> object from `mock-data.ts` as its source of truth. The user's role and school affiliation are stored in sessionStorage to persist the login state.</p>
+                <p>Authentication is handled by the <code>AuthProvider</code>, which simulates a login against user profiles in Firestore. Upon successful login, the user's role and school affiliation are stored in sessionStorage to persist the session.</p>
                 <p>Role-based access control (RBAC) is implemented throughout the app, primarily in two ways:</p>
                 <ul className="list-disc pl-6 space-y-1">
                     <li><b>Page-Level:</b> Each page component checks the user's role from <code>useAuth()</code> and redirects if they are not authorized.</li>
@@ -130,9 +133,9 @@ export default function SystemDocumentationPage() {
           <CardDescription>How global settings like the annual awards are managed.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <p>To ensure system-wide settings are persistent and not lost, the application uses a "master record" approach within the prototype's architecture.</p>
+            <p>To ensure system-wide settings are persistent and not lost, the application uses a "master record" approach within its Firebase architecture.</p>
             <ul className="list-disc pl-6 mt-1 space-y-2">
-                <li><b>Master Record:</b> The "Northwood High" school record serves as the central storage for global configurations. For example, the `awardsAnnounced` flag is stored in `northwood.profile.kioskConfig.showAwardWinner`.</li>
+                <li><b>Master Record:</b> The "Northwood High" school record (`documentId: northwood`) serves as the central storage for global configurations. For example, the `awardsAnnounced` flag is stored in `northwood.profile.awards`.</li>
                 <li><b>State Initialization:</b> On application startup, the `SchoolDataProvider` reads this value from the Northwood record to determine if the awards have been announced, ensuring the state persists across sessions.</li>
                 <li><b>Safeguard:</b> To make this approach robust, the "Delete School" functionality is disabled for the Northwood High record, preventing accidental deletion of critical system settings.</li>
             </ul>
@@ -141,36 +144,36 @@ export default function SystemDocumentationPage() {
       
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><GitBranch /> Backend Integration Roadmap (Next Steps)</CardTitle>
-          <CardDescription>The path to transitioning from the mock data layer to a full Firebase backend.</CardDescription>
+          <CardTitle className="flex items-center gap-2"><GitBranch /> Backend Architecture</CardTitle>
+          <CardDescription>An overview of the server-side components and data persistence strategy.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
             <div className="flex items-start gap-3">
                 <KeyRound className="h-4 w-4 text-accent mt-1 shrink-0" />
                 <div>
                     <h4 className="font-semibold text-card-foreground">1. Firebase Authentication</h4>
-                    <p className="text-muted-foreground">Replace the mock login system with Firebase Authentication. Implement email/password sign-up and sign-in, and manage user sessions and roles securely.</p>
+                    <p className="text-muted-foreground">Manages all user identities, sessions, and provides the foundation for role-based access control. All user profiles are stored in Firestore.</p>
                 </div>
             </div>
             <div className="flex items-start gap-3">
                 <Server className="h-4 w-4 text-accent mt-1 shrink-0" />
                 <div>
                     <h4 className="font-semibold text-card-foreground">2. Firestore Database & Data Modeling</h4>
-                    <p className="text-muted-foreground">Design and create Firestore collections for schools, users, students, grades, etc. A dedicated `global_settings` collection will be created to replace the "master record" approach used in the prototype.</p>
+                    <p className="text-muted-foreground">A single `schools` collection holds all data. Each school is a document, and its related data (students, teachers, etc.) are stored in arrays within that document. This model simplifies data fetching and ensures tenancy.</p>
                 </div>
             </div>
             <div className="flex items-start gap-3">
                 <UploadCloud className="h-4 w-4 text-accent mt-1 shrink-0" />
                 <div>
-                    <h4 className="font-semibold text-card-foreground">3. Cloud Storage & API Layer</h4>
-                    <p className="text-muted-foreground">Implement Firebase Storage for file uploads (e.g., logos, expense receipts). Create a set of server-side functions (e.g., Server Actions or Cloud Functions) to handle all Create, Read, Update, and Delete (CRUD) operations with Firestore and Storage, governed by security rules.</p>
+                    <h4 className="font-semibold text-card-foreground">3. Next.js Server Actions</h4>
+                    <p className="text-muted-foreground">Serve as the primary API layer. All database mutations (CRUD operations) are handled through these server-side functions, ensuring that sensitive logic and database interaction code never runs on the client.</p>
                 </div>
             </div>
             <div className="flex items-start gap-3">
                 <Database className="h-4 w-4 text-accent mt-1 shrink-0" />
                 <div>
-                    <h4 className="font-semibold text-card-foreground">4. Data Fetching & Mutation</h4>
-                    <p className="text-muted-foreground">Update the `SchoolDataProvider` to fetch data from the new API layer instead of local mock data. All in-memory state manipulation functions (e.g., `addStudent`) must be refactored to call the new API layer, making all changes fully persistent.</p>
+                    <h4 className="font-semibold text-card-foreground">4. Firestore Service Layer</h4>
+                    <p className="text-muted-foreground">Located in <code>/lib/firebase/firestore-service.ts</code>, this layer abstracts the direct Firebase SDK calls. Server Actions call functions in this service to interact with the database, centralizing all Firestore logic.</p>
                 </div>
             </div>
         </CardContent>
