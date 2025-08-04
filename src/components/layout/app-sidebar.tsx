@@ -49,6 +49,11 @@ import {
     Package,
     Award,
     Club,
+    KeyRound,
+    Server,
+    UploadCloud,
+    Database,
+    Languages,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -84,6 +89,7 @@ export const roleLinks: Record<Role, NavItem[]> = {
       links: [
         { href: '/dashboard/global-admin/all-schools', label: 'All Schools', icon: Building },
         { href: '/dashboard/global-admin/inbox', label: 'Inbox', icon: Mail },
+        { href: '/dashboard/global-admin/finance', label: 'System Finance', icon: DollarSign },
         { href: '/dashboard/global-admin/students', label: 'All Students', icon: Users },
         { href: '/dashboard/global-admin/parents', label: 'All Parents', icon: HeartHandshake },
         { href: '/dashboard/global-admin/teachers', label: 'All Teachers', icon: Presentation },
