@@ -2,7 +2,7 @@
 'use client';
 import { useAuth, Role } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2, List, Gem, MonitorPlay, Download } from 'lucide-react';
+import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2, List, Gem, MonitorPlay, Download, BrainCircuit, Users, FileText, LifeBuoy, User, GitBranch, Tv, Building, Mail, Trophy } from 'lucide-react';
 import { type LucideIcon } from 'lucide-react';
 import { roleLinks, type NavLink } from '@/components/layout/app-sidebar';
 import { Button } from '@/components/ui/button';
@@ -149,9 +149,27 @@ export default function UserManualPage() {
                   <h4 className="font-semibold mb-3 flex items-center gap-2"><List className="h-4 w-4"/> Sidebar Menu</h4>
                   <div className="space-y-2 p-3 bg-muted rounded-md">
                     {uniqueMenuItems.map((item, index) => {
+                      if ('links' in item) {
+                        return (
+                          <div key={item.title}>
+                            <p className="font-semibold mt-2">{item.title}</p>
+                            <div className="pl-4">
+                            {item.links.map(subItem => {
+                                const ItemIcon = subItem.icon;
+                                return (
+                                  <div key={subItem.href} className="flex items-center gap-3 text-sm mt-1">
+                                    <ItemIcon className="h-4 w-4 text-muted-foreground" />
+                                    <span>{subItem.label}</span>
+                                  </div>
+                                )
+                            })}
+                            </div>
+                          </div>
+                        )
+                      }
                       const ItemIcon = item.icon;
                       return (
-                        <div key={index} className="flex items-center gap-3 text-sm">
+                        <div key={item.href} className="flex items-center gap-3 text-sm">
                           <ItemIcon className="h-4 w-4 text-muted-foreground" />
                           <span>{item.label}</span>
                         </div>

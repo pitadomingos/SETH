@@ -46,7 +46,9 @@ import {
     History,
     CalendarCheck,
     Tv,
-    Package, // Added missing icon export
+    Package,
+    Award,
+    Club,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
