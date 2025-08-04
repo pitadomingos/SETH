@@ -1,8 +1,8 @@
 
 
-import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from './config';
-import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers } from '@/lib/mock-data';
+import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class } from '@/lib/mock-data';
 import { sendEmail } from '@/lib/email-service';
 
 // --- Email Simulation ---
@@ -187,4 +187,82 @@ export async function updateSchoolInFirestore(schoolId: string, data: Partial<Sc
     console.error("Error updating school profile in Firestore:", error);
     return false;
   }
+}
+
+// --- Teacher CRUD ---
+
+export async function addTeacherToFirestore(schoolId: string, teacherData: Omit<Teacher, 'id' | 'status'>): Promise<Teacher> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const newTeacher: Teacher = {
+        id: `T${Date.now()}`,
+        status: 'Active',
+        ...teacherData
+    };
+    await updateDoc(schoolRef, {
+        teachers: arrayUnion(newTeacher)
+    });
+    return newTeacher;
+}
+
+export async function updateTeacherInFirestore(schoolId: string, teacherId: string, teacherData: Partial<Teacher>): Promise<void> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const schoolSnapshot = await getDoc(schoolRef);
+    const schoolData = schoolSnapshot.data() as SchoolData;
+    const updatedTeachers = schoolData.teachers.map(t => t.id === teacherId ? { ...t, ...teacherData } : t);
+    await updateDoc(schoolRef, { teachers: updatedTeachers });
+}
+
+export async function deleteTeacherFromFirestore(schoolId: string, teacherId: string): Promise<void> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const schoolSnapshot = await getDoc(schoolRef);
+    const schoolData = schoolSnapshot.data() as SchoolData;
+    const teacherToDelete = schoolData.teachers.find(t => t.id === teacherId);
+    if (teacherToDelete) {
+        await updateDoc(schoolRef, {
+            teachers: arrayRemove(teacherToDelete)
+        });
+    }
+}
+
+// --- Class CRUD ---
+
+export async function addClassToFirestore(schoolId: string, classData: Omit<Class, 'id'>): Promise<Class> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const newClass: Class = {
+        id: `C${Date.now()}`,
+        ...classData
+    };
+    await updateDoc(schoolRef, {
+        classes: arrayUnion(newClass)
+    });
+    return newClass;
+}
+
+export async function updateClassInFirestore(schoolId: string, classId: string, classData: Partial<Class>): Promise<void> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const schoolSnapshot = await getDoc(schoolRef);
+    const schoolData = schoolSnapshot.data() as SchoolData;
+    const updatedClasses = schoolData.classes.map(c => c.id === classId ? { ...c, ...classData } : c);
+    await updateDoc(schoolRef, { classes: updatedClasses });
+}
+
+export async function deleteClassFromFirestore(schoolId: string, classId: string): Promise<void> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const schoolSnapshot = await getDoc(schoolRef);
+    const schoolData = schoolSnapshot.data() as SchoolData;
+
+    const batch = writeBatch(db);
+    
+    // Remove the class
+    const classToDelete = schoolData.classes.find(c => c.id === classId);
+    if(classToDelete) {
+        const remainingClasses = schoolData.classes.filter(c => c.id !== classId);
+        batch.update(schoolRef, { classes: remainingClasses });
+    }
+
+    // Remove associated courses
+    const remainingCourses = schoolData.courses.filter(c => c.classId !== classId);
+    batch.update(schoolRef, { courses: remainingCourses });
+    
+    await batch.commit();
 }

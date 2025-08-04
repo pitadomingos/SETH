@@ -7,7 +7,7 @@ import { UserPlus, Loader2, MoreHorizontal, Edit, Search, Presentation, CheckCir
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFormState } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
@@ -46,17 +46,21 @@ function TeacherFormDialog({ teacher, children }: { teacher?: Teacher, children:
         defaultValues: isEditMode ? teacher : { name: '', subject: '', email: '', phone: '', address: '', experience: '', qualifications: '', sex: 'Male' }
     });
     
-    useEffect(() => {
-        if (isEditMode) {
-            form.reset(teacher);
-        }
-    }, [teacher, form, isEditMode]);
+    const { isSubmitting } = useFormState({ control: form.control });
 
-    function onSubmit(values: TeacherFormValues) {
-        if (isEditMode) {
-            updateTeacher(teacher.id, values);
+    useEffect(() => {
+        if (isEditMode && teacher) {
+            form.reset(teacher);
         } else {
-            addTeacher(values);
+            form.reset({ name: '', subject: '', email: '', phone: '', address: '', experience: '', qualifications: '', sex: 'Male' });
+        }
+    }, [teacher, form, isEditMode, isDialogOpen]);
+
+    async function onSubmit(values: TeacherFormValues) {
+        if (isEditMode && teacher) {
+            await updateTeacher(teacher.id, values);
+        } else {
+            await addTeacher(values);
         }
         form.reset();
         setIsDialogOpen(false);
@@ -67,7 +71,7 @@ function TeacherFormDialog({ teacher, children }: { teacher?: Teacher, children:
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{isEditMode ? `Edit ${teacher.name}` : 'Add New Teacher'}</DialogTitle>
+                    <DialogTitle>{isEditMode ? `Edit ${teacher?.name}` : 'Add New Teacher'}</DialogTitle>
                     <DialogDescription>{isEditMode ? `Update the details for this teacher.` : 'Enter the details for the new teacher.'}</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -91,7 +95,7 @@ function TeacherFormDialog({ teacher, children }: { teacher?: Teacher, children:
                         <FormField control={form.control} name="qualifications" render={({ field }) => ( <FormItem><FormLabel>Qualifications</FormLabel><FormControl><Input placeholder="e.g., M.Ed." {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <DialogFooter className="col-span-2 mt-4">
                             <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                            <Button type="submit" disabled={form.formState.isSubmitting}> {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isEditMode ? 'Save Changes' : 'Add Teacher'}</Button>
+                            <Button type="submit" disabled={isSubmitting}> {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isEditMode ? 'Save Changes' : 'Add Teacher'}</Button>
                         </DialogFooter>
                     </form>
                 </Form>

@@ -7,7 +7,7 @@ import { Users, Presentation, MapPin, UserPlus, Loader2, School, Sigma, Edit, Mo
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFormState } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
@@ -38,17 +38,21 @@ function ClassFormDialog({ classItem, children }: { classItem?: ClassType, child
         defaultValues: isEditMode ? classItem : { name: '', grade: '', teacher: '', students: 0, room: '' }
     });
     
-    useEffect(() => {
-        if (isEditMode) {
-            form.reset(classItem);
-        }
-    }, [classItem, isEditMode, form]);
+    const { isSubmitting } = useFormState({ control: form.control });
 
-    function onSubmit(values: ClassFormValues) {
-        if(isEditMode) {
-            updateClass(classItem.id, values);
+    useEffect(() => {
+        if (isEditMode && classItem) {
+            form.reset(classItem);
         } else {
-            addClass(values);
+            form.reset({ name: '', grade: '', teacher: '', students: 0, room: '' });
+        }
+    }, [classItem, isEditMode, form, isDialogOpen]);
+
+    async function onSubmit(values: ClassFormValues) {
+        if(isEditMode && classItem) {
+            await updateClass(classItem.id, values);
+        } else {
+            await addClass(values);
         }
         form.reset();
         setIsDialogOpen(false);
@@ -59,7 +63,7 @@ function ClassFormDialog({ classItem, children }: { classItem?: ClassType, child
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{isEditMode ? `Edit ${classItem.name}` : 'Create New Class Section'}</DialogTitle>
+                    <DialogTitle>{isEditMode ? `Edit ${classItem?.name}` : 'Create New Class Section'}</DialogTitle>
                     <DialogDescription>{isEditMode ? 'Update the details for this class section.' : 'Define a new group of students (e.g., a homeroom section).'}</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -73,7 +77,7 @@ function ClassFormDialog({ classItem, children }: { classItem?: ClassType, child
                         </div>
                         <DialogFooter className="col-span-2 mt-4">
                             <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                            <Button type="submit" disabled={form.formState.isSubmitting}> {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isEditMode ? 'Save Changes' : 'Create Class'}</Button>
+                            <Button type="submit" disabled={isSubmitting}> {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isEditMode ? 'Save Changes' : 'Create Class'}</Button>
                         </DialogFooter>
                     </form>
                 </Form>
