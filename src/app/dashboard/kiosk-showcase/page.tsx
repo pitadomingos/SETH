@@ -235,6 +235,7 @@ export default function KioskShowcasePage() {
                     <div className="flex items-center space-x-2"><Checkbox id="kiosk-leaderboard" checked={kioskConfig.showLeaderboard} onCheckedChange={(checked) => handleKioskConfigChange('showLeaderboard', checked as boolean)} /><Label htmlFor="kiosk-leaderboard">Show Top Student Leaderboard</Label></div>
                     <div className="flex items-center space-x-2"><Checkbox id="kiosk-teacher-leaderboard" checked={kioskConfig.showTeacherLeaderboard} onCheckedChange={(checked) => handleKioskConfigChange('showTeacherLeaderboard', checked as boolean)} /><Label htmlFor="kiosk-teacher-leaderboard">Show Top Teachers Leaderboard</Label></div>
                     <div className="flex items-center space-x-2"><Checkbox id="kiosk-all-schools" checked={kioskConfig.showAllSchools} onCheckedChange={(checked) => handleKioskConfigChange('showAllSchools', checked as boolean)} /><Label htmlFor="kiosk-all-schools">Show All Schools Slide</Label></div>
+                    <div className="flex items-center space-x-2"><Checkbox id="kiosk-awards" checked={kioskConfig.showAwardWinner} onCheckedChange={(checked) => handleKioskConfigChange('showAwardWinner', checked as boolean)} /><Label htmlFor="kiosk-awards">Show Annual Award Winners</Label></div>
                   </>
                 ) : (
                   <>
@@ -246,7 +247,7 @@ export default function KioskShowcasePage() {
                     <Label className="text-xs text-muted-foreground">Advanced Data Slides</Label>
                     <div className="flex items-center space-x-2"><Checkbox id="kiosk-attendance" checked={kioskConfig.showAttendance} onCheckedChange={(checked) => handleKioskConfigChange('showAttendance', checked as boolean)} /><Label htmlFor="kiosk-attendance">Show Attendance Trend Chart</Label></div>
                     <div className="flex items-center space-x-2"><Checkbox id="kiosk-academics" checked={kioskConfig.showAcademics} onCheckedChange={(checked) => handleKioskConfigChange('showAcademics', checked as boolean)} /><Label htmlFor="kiosk-academics">Show Academic Performance Charts</Label></div>
-                    <div className="flex items-center space-x-2"><Checkbox id="kiosk-awards" checked={kioskConfig.showAwards} onCheckedChange={(checked) => handleKioskConfigChange('showAwards', checked as boolean)} /><Label htmlFor="kiosk-awards">Show Annual Award Announcements</Label></div>
+                    <div className="flex items-center space-x-2"><Checkbox id="kiosk-awards" checked={kioskConfig.showAwardWinner} onCheckedChange={(checked) => handleKioskConfigChange('showAwardWinner', checked as boolean)} /><Label htmlFor="kiosk-awards">Show Annual Award Announcements</Label></div>
                   </>
                 )}
             </CardContent>
