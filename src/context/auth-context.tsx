@@ -125,7 +125,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     // Always fetch the freshest user list from the database before impersonating
-    const allUsers = await getUsersFromFirestore();
+    let allUsers = await getUsersFromFirestore();
+    if (Object.keys(allUsers).length === 0) {
+      allUsers = mockUsers;
+    }
+
     const userRecord = Object.values(allUsers).find(u => u.user.email === email && u.user.role === targetRole);
     
     if (userRecord) {
