@@ -1,5 +1,4 @@
 
-
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -68,8 +67,8 @@ function NewTransactionDialog() {
     }
   });
 
-  function onSubmit(values: NewTransactionFormValues) {
-    addFee({
+  async function onSubmit(values: NewTransactionFormValues) {
+    await addFee({
       ...values,
       dueDate: format(values.dueDate, 'yyyy-MM-dd')
     });
@@ -228,8 +227,8 @@ function FinancialRecordDialog({ type, children }: { type: 'Income' | 'Expense',
     }
   }, [isOpen, type, form]);
 
-  const onSubmit = (values: FinancialRecordFormValues) => {
-    addExpense({ // Using addExpense for both as it's a generic ledger entry
+  const onSubmit = async (values: FinancialRecordFormValues) => {
+    await addExpense({ // Using addExpense for both as it's a generic ledger entry
       ...values,
       date: format(values.date, 'yyyy-MM-dd'),
     });
@@ -237,7 +236,7 @@ function FinancialRecordDialog({ type, children }: { type: 'Income' | 'Expense',
     setIsOpen(false);
   }
 
-  const onOpenChange = (open) => {
+  const onOpenChange = (open: boolean) => {
     if (!open) form.reset();
     setIsOpen(open);
   }
@@ -290,8 +289,8 @@ function RecordPaymentDialog({ fee, onRecordPayment }: { fee: FinanceRecord, onR
     },
   });
 
-  function onSubmit(values: PaymentFormValues) {
-    onRecordPayment(fee.id, values.amount);
+  async function onSubmit(values: PaymentFormValues) {
+    await onRecordPayment(fee.id, values.amount);
     form.reset();
     setIsDialogOpen(false);
   }
@@ -329,7 +328,10 @@ function RecordPaymentDialog({ fee, onRecordPayment }: { fee: FinanceRecord, onR
               <DialogClose asChild>
                 <Button type="button" variant="secondary">Cancel</Button>
               </DialogClose>
-              <Button type="submit">Save Payment</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Payment
+              </Button>
             </DialogFooter>
           </form>
         </Form>
@@ -700,3 +702,5 @@ export default function FinancePage() {
     </div>
   );
 }
+
+    

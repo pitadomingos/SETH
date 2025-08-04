@@ -2,7 +2,7 @@
 
 import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from './config';
-import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, SyllabusTopic, Course } from '@/lib/mock-data';
+import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, SyllabusTopic, Course, FinanceRecord, Expense } from '@/lib/mock-data';
 import { sendEmail } from '@/lib/email-service';
 
 // --- Email Simulation ---
@@ -350,3 +350,56 @@ export async function deleteCourseFromFirestore(schoolId: string, courseId: stri
         });
     }
 }
+
+// --- Finance CRUD ---
+
+export async function addFeeToFirestore(schoolId: string, feeData: Omit<FinanceRecord, 'id' | 'studentName' | 'status' | 'amountPaid'>, studentName: string): Promise<FinanceRecord> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const newFee: FinanceRecord = {
+        id: `FIN${Date.now()}`,
+        studentName: studentName,
+        status: 'Pending',
+        amountPaid: 0,
+        ...feeData
+    };
+    await updateDoc(schoolRef, {
+        finance: arrayUnion(newFee)
+    });
+    return newFee;
+}
+
+export async function recordPaymentInFirestore(schoolId: string, feeId: string, amount: number): Promise<FinanceRecord | null> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const schoolDoc = await getDoc(schoolRef);
+    if (!schoolDoc.exists()) return null;
+
+    const schoolData = schoolDoc.data() as SchoolData;
+    let updatedFee: FinanceRecord | undefined;
+
+    const updatedFinance = schoolData.finance.map(f => {
+        if (f.id === feeId) {
+            const newAmountPaid = f.amountPaid + amount;
+            const status = newAmountPaid >= f.totalAmount ? 'Paid' : 'Partially Paid';
+            updatedFee = { ...f, amountPaid: newAmountPaid, status };
+            return updatedFee;
+        }
+        return f;
+    });
+
+    await updateDoc(schoolRef, { finance: updatedFinance });
+    return updatedFee || null;
+}
+
+export async function addExpenseToFirestore(schoolId: string, expenseData: Omit<Expense, 'id'>): Promise<Expense> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const newExpense: Expense = {
+        id: `EXP${Date.now()}`,
+        ...expenseData
+    };
+    await updateDoc(schoolRef, {
+        expenses: arrayUnion(newExpense)
+    });
+    return newExpense;
+}
+
+    

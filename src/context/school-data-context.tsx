@@ -4,10 +4,10 @@ import React, { createContext, useContext, useState, ReactNode, useEffect, useMe
 import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabus, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, SchoolProfile, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, mockUsers, UserProfile, SyllabusTopic } from '@/lib/mock-data';
 import { useAuth, User } from './auth-context';
 import type { Role } from './auth-context';
-import { getSchoolsFromFirestore, seedInitialData, updateSchoolInFirestore } from '@/lib/firebase/firestore-service';
+import { getSchoolsFromFirestore, seedInitialData, addFeeToFirestore, recordPaymentInFirestore, addExpenseToFirestore } from '@/lib/firebase/firestore-service';
 import { getGpaFromNumeric } from '@/lib/utils';
-import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction } from '@/app/actions/school-actions';
 import { updateSchoolProfileAction } from '@/app/actions/update-school-action';
+import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction, addSyllabusAction, addCourseAction, updateCourseAction, deleteCourseFromFirestore, addFeeAction, recordPaymentAction, addExpenseAction } from '@/app/actions/school-actions';
 
 
 export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, SyllabusTopic, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, DeployedTest, SavedTest, NewMessageData, NewAdmissionData } from '@/lib/mock-data';
@@ -54,8 +54,8 @@ interface SchoolDataContextType {
     announceAwards: () => void;
     addSchool: (schoolData: SchoolData) => void;
     removeSchool: (schoolId: string) => void;
-    addCourse: (course: Omit<Course, 'id'>) => void;
-    addSyllabus: (syllabus: Omit<Syllabus, 'id' | 'topics'>) => void;
+    addCourse: (course: Omit<Course, 'id'>) => Promise<void>;
+    addSyllabus: (syllabus: Omit<Syllabus, 'id' | 'topics'>) => Promise<void>;
     updateSyllabusTopic: (subject: string, grade: string, topic: any) => Promise<void>;
     deleteSyllabusTopic: (subject: string, grade: string, topicId: string) => Promise<void>;
     updateApplicationStatus: (id: string, status: Admission['status']) => void;
@@ -68,9 +68,9 @@ interface SchoolDataContextType {
     addEvent: (event: Omit<Event, 'id' | 'schoolName'>) => void;
     addGrade: (grade: Omit<Grade, 'id' | 'date' | 'teacherId'>) => boolean;
     addTestSubmission: (testId: string, studentId: string, score: number) => void;
-    recordPayment: (feeId: string, amount: number) => void;
-    addFee: (fee: Omit<FinanceRecord, 'id' | 'studentName' | 'status' | 'amountPaid'>) => void;
-    addExpense: (expense: Omit<Expense, 'id'>) => void;
+    recordPayment: (feeId: string, amount: number) => Promise<void>;
+    addFee: (fee: Omit<FinanceRecord, 'id' | 'studentName' | 'status' | 'amountPaid'>) => Promise<void>;
+    addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
     addTeam: (team: Omit<Team, 'id' | 'playerIds'>) => void;
     deleteTeam: (teamId: string) => void;
     addPlayerToTeam: (teamId: string, studentId: string) => void;
@@ -382,28 +382,32 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const addCourse = (course: Omit<Course, 'id'>) => {
+  const addCourse = async (course: Omit<Course, 'id'>) => {
     if (!schoolId) return;
-    const newCourse: Course = { id: `CRS${Date.now()}`, ...course };
-    setData(prev => {
-        if (!prev) return null;
-        const newData = { ...prev };
-        newData[schoolId].courses.push(newCourse);
-        addLog(schoolId, 'Create', `Created new course: ${course.subject}`);
-        return newData;
-    });
+    const result = await addCourseAction(schoolId, course);
+    if (result.success && result.course) {
+        setData(prev => {
+            if (!prev) return null;
+            const newData = { ...prev };
+            newData[schoolId].courses.push(result.course!);
+            addLog(schoolId, 'Create', `Created new course: ${course.subject}`);
+            return newData;
+        });
+    }
   };
 
-  const addSyllabus = (syllabus: Omit<Syllabus, 'id'|'topics'>) => {
+  const addSyllabus = async (syllabus: Omit<Syllabus, 'id'|'topics'>) => {
       if(!schoolId) return;
-      const newSyllabus: Syllabus = { id: `SYL${Date.now()}`, topics: [], ...syllabus };
-      setData(prev => {
-          if (!prev) return null;
-          const newData = { ...prev };
-          newData[schoolId].syllabi.push(newSyllabus);
-          addLog(schoolId, 'Create', `Created syllabus for ${syllabus.subject} Grade ${syllabus.grade}`);
-          return newData;
-      });
+      const result = await addSyllabusAction(schoolId, syllabus);
+      if(result.success && result.syllabus) {
+        setData(prev => {
+            if (!prev) return null;
+            const newData = { ...prev };
+            newData[schoolId].syllabi.push(result.syllabus!);
+            addLog(schoolId, 'Create', `Created syllabus for ${syllabus.subject} Grade ${syllabus.grade}`);
+            return newData;
+        });
+      }
   };
   
   const updateSyllabusTopic = async (subject: string, grade: string, topic: SyllabusTopic) => {
@@ -572,57 +576,51 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const recordPayment = (feeId: string, amount: number) => {
+  const recordPayment = async (feeId: string, amount: number) => {
     if (!schoolId) return;
-    setData(prev => {
-      if (!prev) return null;
-      const newData = { ...prev };
-      const school = newData[schoolId];
-      school.finance = school.finance.map(f => {
-        if (f.id === feeId) {
-          const newAmountPaid = f.amountPaid + amount;
-          const newStatus = newAmountPaid >= f.totalAmount ? 'Paid' : 'Partially Paid';
-          addLog(schoolId, 'Update', `Recorded payment of ${amount} for fee ${f.description}`);
-          return { ...f, amountPaid: newAmountPaid, status: newStatus };
-        }
-        return f;
-      });
-      return newData;
-    });
+    const updatedFee = await recordPaymentInFirestore(schoolId, feeId, amount);
+    if (updatedFee) {
+        setData(prev => {
+            if (!prev) return null;
+            const newData = { ...prev };
+            const school = newData[schoolId];
+            school.finance = school.finance.map(f => f.id === feeId ? updatedFee : f);
+            addLog(schoolId, 'Update', `Recorded payment of ${amount} for fee ${updatedFee.description}`);
+            return newData;
+        });
+    }
   };
 
-  const addFee = (fee: Omit<FinanceRecord, 'id' | 'studentName' | 'status' | 'amountPaid'>) => {
+  const addFee = async (fee: Omit<FinanceRecord, 'id' | 'studentName' | 'status' | 'amountPaid'>) => {
     if (!schoolId) return;
     const student = schoolData?.students.find(s => s.id === fee.studentId);
     if (!student) return;
 
-    const newFee: FinanceRecord = {
-        id: `FIN${Date.now()}`,
-        studentName: student.name,
-        status: 'Pending',
-        amountPaid: 0,
-        ...fee
-    };
+    const newFee = await addFeeToFirestore(schoolId, fee, student.name);
 
-    setData(prev => {
-        if (!prev) return null;
-        const newData = { ...prev };
-        newData[schoolId].finance.push(newFee);
-        addLog(schoolId, 'Create', `Created new fee for ${student.name}: ${fee.description}`);
-        return newData;
-    });
+    if (newFee) {
+        setData(prev => {
+            if (!prev) return null;
+            const newData = { ...prev };
+            newData[schoolId].finance.push(newFee);
+            addLog(schoolId, 'Create', `Created new fee for ${student.name}: ${fee.description}`);
+            return newData;
+        });
+    }
   };
 
-  const addExpense = (expense: Omit<Expense, 'id'>) => {
-      if(!schoolId) return;
-      const newExpense: Expense = { id: `EXP${Date.now()}`, ...expense };
-      setData(prev => {
+  const addExpense = async (expense: Omit<Expense, 'id'>) => {
+    if(!schoolId) return;
+    const newExpense = await addExpenseToFirestore(schoolId, expense);
+    if(newExpense) {
+        setData(prev => {
           if (!prev) return null;
           const newData = { ...prev };
           newData[schoolId].expenses.push(newExpense);
           addLog(schoolId, 'Create', `Added expense: ${expense.description}`);
           return newData;
       });
+    }
   };
   
   const addTeam = (team: Omit<Team, 'id' | 'playerIds'>) => {

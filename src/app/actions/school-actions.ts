@@ -1,9 +1,10 @@
 
+
 'use server';
 
-import { NewSchoolData, SchoolData, UserProfile, Teacher, Class, Syllabus, SyllabusTopic, Course } from '@/context/school-data-context';
+import { NewSchoolData, SchoolData, UserProfile, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense } from '@/context/school-data-context';
 import { revalidatePath } from 'next/cache';
-import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore, updateSyllabusTopicInFirestore, deleteSyllabusTopicFromFirestore, addSyllabusToFirestore, addCourseToFirestore, updateCourseInFirestore, deleteCourseFromFirestore } from '@/lib/firebase/firestore-service';
+import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore, updateSyllabusTopicInFirestore, deleteSyllabusTopicFromFirestore, addSyllabusToFirestore, addCourseToFirestore, updateCourseInFirestore, deleteCourseFromFirestore, addFeeToFirestore, recordPaymentInFirestore, addExpenseToFirestore } from '@/lib/firebase/firestore-service';
 
 export async function createSchool(data: NewSchoolData, groupId?: string): Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile } } | null> {
     try {
@@ -150,3 +151,41 @@ export async function deleteCourseAction(schoolId: string, courseId: string): Pr
         return { success: false, error: 'Server error deleting course.' };
     }
 }
+
+export async function addFeeAction(schoolId: string, feeData: Omit<FinanceRecord, 'id' | 'studentName' | 'status' | 'amountPaid'>, studentName: string): Promise<{ success: boolean, fee?: FinanceRecord, error?: string }> {
+    try {
+        const newFee = await addFeeToFirestore(schoolId, feeData, studentName);
+        revalidatePath('/dashboard/finance');
+        return { success: true, fee: newFee };
+    } catch (e) {
+        console.error("Failed to add fee:", e);
+        return { success: false, error: 'Server error adding fee.' };
+    }
+}
+
+export async function recordPaymentAction(schoolId: string, feeId: string, amount: number): Promise<{ success: boolean, fee?: FinanceRecord, error?: string }> {
+    try {
+        const updatedFee = await recordPaymentInFirestore(schoolId, feeId, amount);
+        if (updatedFee) {
+            revalidatePath('/dashboard/finance');
+            return { success: true, fee: updatedFee };
+        }
+        return { success: false, error: 'Fee not found.' };
+    } catch (e) {
+        console.error("Failed to record payment:", e);
+        return { success: false, error: 'Server error recording payment.' };
+    }
+}
+
+export async function addExpenseAction(schoolId: string, expenseData: Omit<Expense, 'id'>): Promise<{ success: boolean, expense?: Expense, error?: string }> {
+    try {
+        const newExpense = await addExpenseToFirestore(schoolId, expenseData);
+        revalidatePath('/dashboard/finance');
+        return { success: true, expense: newExpense };
+    } catch (e) {
+        console.error("Failed to add expense:", e);
+        return { success: false, error: 'Server error adding expense.' };
+    }
+}
+
+    
