@@ -42,6 +42,7 @@ export async function analyzeStudentPerformance(params: AnalyzeStudentPerformanc
 
 const studentAnalysisPrompt = ai.definePrompt({
   name: 'studentAnalysisPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: AnalyzeStudentPerformanceParamsSchema },
   output: { schema: StudentAnalysisSchema },
   prompt: `

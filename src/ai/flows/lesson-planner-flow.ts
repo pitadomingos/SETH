@@ -44,6 +44,7 @@ export async function generateLessonPlan(params: GenerateLessonPlanParams): Prom
 
 const lessonPlannerPrompt = ai.definePrompt({
   name: 'lessonPlannerPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: GenerateLessonPlanParamsSchema },
   output: { schema: LessonPlanSchema },
   prompt: `
