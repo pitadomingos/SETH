@@ -121,7 +121,7 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         kioskMedia: [],
         activityLogs: [{
             id: `LOG${schoolId}${Date.now()}`,
-            timestamp: new Date(), // This will be converted before returning
+            timestamp: new Date(),
             schoolId: schoolId,
             user: 'System Admin',
             role: 'GlobalAdmin',
@@ -136,12 +136,11 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         schoolGroups: {},
     };
 
-    // Prepare data for Firestore by converting the Date object to a Firestore Timestamp
     const dataForFirestore = {
         ...newSchoolData,
         activityLogs: newSchoolData.activityLogs.map(log => ({
             ...log,
-            timestamp: serverTimestamp() // Use server timestamp for accuracy
+            timestamp: Timestamp.fromDate(log.timestamp) 
         }))
     };
     
@@ -151,31 +150,21 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
     const batch = writeBatch(db);
     batch.set(schoolDocRef, dataForFirestore);
     batch.set(userDocRef, adminUser);
-    await batch.commit();
     
     if (groupId) {
        console.log(`School ${schoolId} associated with group ${groupId}.`);
+       const groupRef = doc(db, 'schools', 'miniarte');
+       batch.update(groupRef, {
+           [`schoolGroups.${groupId}`]: [...(initialSchoolData.miniarte.schoolGroups[groupId] || []), schoolId]
+       });
     }
-    
-    // Send the welcome email (no changes needed here)
-    if (typeof window !== 'undefined') {
-        await sendWelcomeEmail({ username: adminUsername, profile: adminUser }, data.name);
-    }
+
+    await batch.commit();
+    await sendWelcomeEmail({ username: adminUsername, profile: adminUser }, data.name);
     
     console.log(`Successfully created school data and admin user in Firestore: ${schoolId}.`);
 
-    // Prepare data to be returned to the client: convert the date back to a serializable format
-    const returnedData = {
-        ...newSchoolData,
-        activityLogs: newSchoolData.activityLogs.map(log => ({
-            ...log,
-            // @ts-ignore
-            timestamp: log.timestamp.toISOString(),
-        })),
-    };
-
-    // @ts-ignore
-    return { school: returnedData, adminUser: { username: adminUsername, profile: adminUser } };
+    return { school: newSchoolData, adminUser: { username: adminUsername, profile: adminUser } };
 }
 
 

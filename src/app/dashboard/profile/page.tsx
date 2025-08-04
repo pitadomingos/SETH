@@ -128,8 +128,14 @@ export default function ProfilePage() {
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = async () => {
+            const dataUrl = reader.result as string;
+            if (!dataUrl) {
+                toast({ variant: 'destructive', title: "File Error", description: "Could not read the selected file." });
+                setIsUploading(false);
+                return;
+            }
+            
             try {
-                const dataUrl = reader.result as string;
                 const newUrl = await uploadProfilePicture(user.username, dataUrl);
 
                 if (newUrl) {
