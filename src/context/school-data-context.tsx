@@ -144,6 +144,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         Object.keys(newData).forEach(schoolId => {
             newData[schoolId].profile.kioskConfig.showAwardWinner = true;
         });
+        // Also update the 'master' school config for persistence
+        if(newData['northwood']) {
+            newData['northwood'].profile.kioskConfig.showAwardWinner = true;
+        }
         return newData;
     });
     addLog('northwood', 'Announcement', 'Annual awards have been announced network-wide.');
