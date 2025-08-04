@@ -1,9 +1,9 @@
 
 'use server';
 
-import { NewSchoolData, SchoolData, UserProfile, Teacher, Class } from '@/context/school-data-context';
+import { NewSchoolData, SchoolData, UserProfile, Teacher, Class, SyllabusTopic } from '@/context/school-data-context';
 import { revalidatePath } from 'next/cache';
-import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore } from '@/lib/firebase/firestore-service';
+import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore, updateSyllabusTopicInFirestore, deleteSyllabusTopicFromFirestore } from '@/lib/firebase/firestore-service';
 
 export async function createSchool(data: NewSchoolData, groupId?: string): Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile } } | null> {
     try {
@@ -83,5 +83,27 @@ export async function deleteClassAction(schoolId: string, classId: string) {
     } catch(e) {
         console.error("Failed to delete class", e);
         return { success: false, error: 'Server error deleting class.' };
+    }
+}
+
+export async function updateSyllabusTopicAction(schoolId: string, subject: string, grade: string, topic: SyllabusTopic): Promise<{ success: boolean, error?: string }> {
+    try {
+        await updateSyllabusTopicInFirestore(schoolId, subject, grade, topic);
+        revalidatePath('/dashboard/academics');
+        return { success: true };
+    } catch (e) {
+        console.error("Failed to update syllabus topic:", e);
+        return { success: false, error: 'Server error updating syllabus topic.' };
+    }
+}
+
+export async function deleteSyllabusTopicAction(schoolId: string, subject: string, grade: string, topicId: string): Promise<{ success: boolean, error?: string }> {
+    try {
+        await deleteSyllabusTopicFromFirestore(schoolId, subject, grade, topicId);
+        revalidatePath('/dashboard/academics');
+        return { success: true };
+    } catch (e) {
+        console.error("Failed to delete syllabus topic:", e);
+        return { success: false, error: 'Server error deleting syllabus topic.' };
     }
 }

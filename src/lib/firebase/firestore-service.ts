@@ -1,8 +1,8 @@
 
 
-import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from './config';
-import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class } from '@/lib/mock-data';
+import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, SyllabusTopic } from '@/lib/mock-data';
 import { sendEmail } from '@/lib/email-service';
 
 // --- Email Simulation ---
@@ -265,4 +265,42 @@ export async function deleteClassFromFirestore(schoolId: string, classId: string
     batch.update(schoolRef, { courses: remainingCourses });
     
     await batch.commit();
+}
+
+// --- Syllabus CRUD ---
+export async function updateSyllabusTopicInFirestore(schoolId: string, subject: string, grade: string, topic: SyllabusTopic): Promise<void> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const schoolDoc = await getDoc(schoolRef);
+    const schoolData = schoolDoc.data() as SchoolData;
+    
+    const updatedSyllabi = schoolData.syllabi.map(s => {
+        if (s.subject === subject && s.grade === grade) {
+            const topicIndex = s.topics.findIndex(t => t.id === topic.id);
+            if (topicIndex > -1) {
+                // Update existing topic
+                s.topics[topicIndex] = topic;
+            } else {
+                // Add new topic
+                s.topics.push(topic);
+            }
+        }
+        return s;
+    });
+
+    await updateDoc(schoolRef, { syllabi: updatedSyllabi });
+}
+
+export async function deleteSyllabusTopicFromFirestore(schoolId: string, subject: string, grade: string, topicId: string): Promise<void> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const schoolDoc = await getDoc(schoolRef);
+    const schoolData = schoolDoc.data() as SchoolData;
+
+    const updatedSyllabi = schoolData.syllabi.map(s => {
+        if (s.subject === subject && s.grade === grade) {
+            s.topics = s.topics.filter(t => t.id !== topicId);
+        }
+        return s;
+    });
+
+    await updateDoc(schoolRef, { syllabi: updatedSyllabi });
 }
