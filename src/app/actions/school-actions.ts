@@ -1,15 +1,14 @@
 
 'use server';
 
-import { NewSchoolData, SchoolData, UserProfile, Teacher, Class, SyllabusTopic } from '@/context/school-data-context';
+import { NewSchoolData, SchoolData, UserProfile, Teacher, Class, Syllabus, SyllabusTopic, Course } from '@/context/school-data-context';
 import { revalidatePath } from 'next/cache';
-import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore, updateSyllabusTopicInFirestore, deleteSyllabusTopicFromFirestore } from '@/lib/firebase/firestore-service';
+import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore, updateSyllabusTopicInFirestore, deleteSyllabusTopicFromFirestore, addSyllabusToFirestore, addCourseToFirestore, updateCourseInFirestore, deleteCourseFromFirestore } from '@/lib/firebase/firestore-service';
 
 export async function createSchool(data: NewSchoolData, groupId?: string): Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile } } | null> {
     try {
         const { school, adminUser } = await createSchoolInFirestore(data, groupId);
         
-        // This tells Next.js to re-fetch the data on the client for these paths.
         revalidatePath('/dashboard/global-admin/all-schools');
         revalidatePath('/dashboard/manage-schools');
         
@@ -105,5 +104,49 @@ export async function deleteSyllabusTopicAction(schoolId: string, subject: strin
     } catch (e) {
         console.error("Failed to delete syllabus topic:", e);
         return { success: false, error: 'Server error deleting syllabus topic.' };
+    }
+}
+
+export async function addSyllabusAction(schoolId: string, syllabusData: Omit<Syllabus, 'id' | 'topics'>): Promise<{ success: boolean, syllabus?: Syllabus, error?: string }> {
+    try {
+        const newSyllabus = await addSyllabusToFirestore(schoolId, syllabusData);
+        revalidatePath('/dashboard/academics');
+        return { success: true, syllabus: newSyllabus };
+    } catch (e) {
+        console.error("Failed to add syllabus:", e);
+        return { success: false, error: 'Server error adding syllabus.' };
+    }
+}
+
+export async function addCourseAction(schoolId: string, courseData: Omit<Course, 'id'>): Promise<{ success: boolean, course?: Course, error?: string }> {
+    try {
+        const newCourse = await addCourseToFirestore(schoolId, courseData);
+        revalidatePath('/dashboard/academics');
+        return { success: true, course: newCourse };
+    } catch (e) {
+        console.error("Failed to add course:", e);
+        return { success: false, error: 'Server error adding course.' };
+    }
+}
+
+export async function updateCourseAction(schoolId: string, courseId: string, courseData: Partial<Course>): Promise<{ success: boolean, error?: string }> {
+    try {
+        await updateCourseInFirestore(schoolId, courseId, courseData);
+        revalidatePath('/dashboard/academics');
+        return { success: true };
+    } catch (e) {
+        console.error("Failed to update course:", e);
+        return { success: false, error: 'Server error updating course.' };
+    }
+}
+
+export async function deleteCourseAction(schoolId: string, courseId: string): Promise<{ success: boolean, error?: string }> {
+    try {
+        await deleteCourseFromFirestore(schoolId, courseId);
+        revalidatePath('/dashboard/academics');
+        return { success: true };
+    } catch (e) {
+        console.error("Failed to delete course:", e);
+        return { success: false, error: 'Server error deleting course.' };
     }
 }

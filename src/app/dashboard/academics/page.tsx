@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useFormState } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -78,11 +78,12 @@ function NewCourseDialog() {
     resolver: zodResolver(courseSchema),
     defaultValues: { subject: '', teacherId: '', classId: '', schedule: [{ day: 'Monday', startTime: '09:00', endTime: '10:00', room: '' }], },
   });
-
+  
+  const { isSubmitting } = useFormState({ control: form.control });
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "schedule" });
 
-  function onSubmit(values: CourseFormValues) {
-    addCourse(values);
+  async function onSubmit(values: CourseFormValues) {
+    await addCourse(values);
     form.reset();
     setIsDialogOpen(false);
   }
@@ -126,7 +127,7 @@ function NewCourseDialog() {
             </div>
             <DialogFooter className="sticky bottom-0 bg-background pt-4 pr-0">
               <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-              <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Course</Button>
+              <Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Course</Button>
             </DialogFooter>
           </form>
         </Form>
@@ -140,12 +141,12 @@ function NewSyllabusDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const form = useForm<SyllabusFormValues>({ resolver: zodResolver(syllabusSchema) });
 
-  const onSubmit = (values: SyllabusFormValues) => {
+  const onSubmit = async (values: SyllabusFormValues) => {
     if (syllabi.some(s => s.subject === values.subject && s.grade === values.grade)) {
       form.setError('root', { message: 'A syllabus for this subject and grade already exists.' });
       return;
     }
-    addSyllabus(values);
+    await addSyllabus(values);
     form.reset();
     setIsOpen(false);
   };
@@ -181,13 +182,13 @@ function TopicDialog({ syllabus, topic, children }: { syllabus: Syllabus, topic?
       : { topic: '', week: 1, subtopics: '' }
   });
 
-  const onSubmit = (values: TopicFormValues) => {
+  const onSubmit = async (values: TopicFormValues) => {
     const topicData = {
       ...values,
       subtopics: values.subtopics.split('\\n').filter(s => s.trim() !== ''),
       id: topic?.id || `T${Date.now()}`
     };
-    updateSyllabusTopic(syllabus.subject, syllabus.grade, topicData);
+    await updateSyllabusTopic(syllabus.subject, syllabus.grade, topicData);
     form.reset();
     setIsOpen(false);
   };

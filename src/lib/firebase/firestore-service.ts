@@ -2,7 +2,7 @@
 
 import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from './config';
-import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, SyllabusTopic } from '@/lib/mock-data';
+import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, SyllabusTopic, Course } from '@/lib/mock-data';
 import { sendEmail } from '@/lib/email-service';
 
 // --- Email Simulation ---
@@ -268,6 +268,19 @@ export async function deleteClassFromFirestore(schoolId: string, classId: string
 }
 
 // --- Syllabus CRUD ---
+export async function addSyllabusToFirestore(schoolId: string, syllabusData: Omit<any, 'id' | 'topics'>): Promise<any> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const newSyllabus = {
+        id: `SYL${Date.now()}`,
+        topics: [],
+        ...syllabusData
+    };
+    await updateDoc(schoolRef, {
+        syllabi: arrayUnion(newSyllabus)
+    });
+    return newSyllabus;
+}
+
 export async function updateSyllabusTopicInFirestore(schoolId: string, subject: string, grade: string, topic: SyllabusTopic): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolDoc = await getDoc(schoolRef);
@@ -303,4 +316,37 @@ export async function deleteSyllabusTopicFromFirestore(schoolId: string, subject
     });
 
     await updateDoc(schoolRef, { syllabi: updatedSyllabi });
+}
+
+// --- Course CRUD ---
+export async function addCourseToFirestore(schoolId: string, courseData: Omit<Course, 'id'>): Promise<Course> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const newCourse: Course = {
+        id: `CRS${Date.now()}`,
+        ...courseData
+    };
+    await updateDoc(schoolRef, {
+        courses: arrayUnion(newCourse)
+    });
+    return newCourse;
+}
+
+export async function updateCourseInFirestore(schoolId: string, courseId: string, courseData: Partial<Course>): Promise<void> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const schoolSnapshot = await getDoc(schoolRef);
+    const schoolData = schoolSnapshot.data() as SchoolData;
+    const updatedCourses = schoolData.courses.map(c => c.id === courseId ? { ...c, ...courseData } : c);
+    await updateDoc(schoolRef, { courses: updatedCourses });
+}
+
+export async function deleteCourseFromFirestore(schoolId: string, courseId: string): Promise<void> {
+    const schoolRef = doc(db, 'schools', schoolId);
+    const schoolSnapshot = await getDoc(schoolRef);
+    const schoolData = schoolSnapshot.data() as SchoolData;
+    const courseToDelete = schoolData.courses.find(c => c.id === courseId);
+    if (courseToDelete) {
+        await updateDoc(schoolRef, {
+            courses: arrayRemove(courseToDelete)
+        });
+    }
 }
