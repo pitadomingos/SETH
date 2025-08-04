@@ -1,9 +1,10 @@
+
 "use client"
 
 import * as React from "react"
 import { Languages } from "lucide-react"
 import { useLocale } from "next-intl"
-import { useRouter, usePathname } from 'next-intl/client';
+import { usePathname, useRouter } from 'next-intl/navigation';
 
 import { Button } from "@/components/ui/button"
 import {

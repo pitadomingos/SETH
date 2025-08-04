@@ -1,3 +1,4 @@
+
 'use client';
 import {
   DropdownMenu,
@@ -12,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, User, Bell, GraduationCap, ArrowLeftFromLine } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import Link from 'next-intl/link';
+import { Link } from 'next-intl/navigation';
 import { ThemeToggle } from './theme-toggle';
 import { useSchoolData } from '@/context/school-data-context';
 import { formatDistanceToNow } from 'date-fns';

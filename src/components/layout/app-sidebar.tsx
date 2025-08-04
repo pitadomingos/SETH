@@ -1,3 +1,4 @@
+
 'use client';
 import {
   SidebarHeader,
@@ -55,11 +56,11 @@ import {
     Database,
     Languages,
 } from 'lucide-react';
-import { usePathname } from 'next-intl/client';
-import Link from 'next-intl/link';
+import { usePathname, Link } from 'next-intl/navigation';
 import { type LucideIcon } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 
 export interface NavLink {
     href: string;
@@ -83,109 +84,109 @@ function isGroup(item: NavItem): item is NavGroup {
 
 export const roleLinks: Record<Role, NavItem[]> = {
   GlobalAdmin: [
-    { href: '/dashboard/global-admin', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard/global-admin', label: 'sidebar.dashboard', icon: LayoutDashboard },
     {
-      title: 'Network Management',
+      title: 'sidebar.networkManagement',
       links: [
-        { href: '/dashboard/global-admin/all-schools', label: 'All Schools', icon: Building },
-        { href: '/dashboard/global-admin/inbox', label: 'Inbox', icon: Mail },
-        { href: '/dashboard/global-admin/finance', label: 'System Finance', icon: DollarSign },
-        { href: '/dashboard/global-admin/students', label: 'All Students', icon: Users },
-        { href: '/dashboard/global-admin/parents', label: 'All Parents', icon: HeartHandshake },
-        { href: '/dashboard/global-admin/teachers', label: 'All Teachers', icon: Presentation },
-        { href: '/dashboard/global-admin/awards', label: 'Annual Awards', icon: Trophy },
+        { href: '/dashboard/global-admin/all-schools', label: 'sidebar.allSchools', icon: Building },
+        { href: '/dashboard/global-admin/inbox', label: 'sidebar.inbox', icon: Mail },
+        { href: '/dashboard/global-admin/finance', label: 'sidebar.systemFinance', icon: DollarSign },
+        { href: '/dashboard/global-admin/students', label: 'sidebar.allStudents', icon: Users },
+        { href: '/dashboard/global-admin/parents', label: 'sidebar.allParents', icon: HeartHandshake },
+        { href: '/dashboard/global-admin/teachers', label: 'sidebar.allTeachers', icon: Presentation },
+        { href: '/dashboard/global-admin/awards', label: 'sidebar.annualAwards', icon: Trophy },
       ]
     },
     {
-      title: 'System & Info',
+      title: 'sidebar.systemInfo',
       links: [
-        { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: MonitorPlay },
-        { href: '/kiosk/global', label: 'Public Kiosk', icon: Tv, dynamic: false, target: '_blank' },
-        { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
-        { href: '/dashboard/project-proposal', label: 'Project Proposal', icon: FileText },
-        { href: '/proposal-slides', label: 'Presentation Slides', icon: MonitorPlay, target: '_blank' },
-        { href: '/dashboard/system-documentation', label: 'System Docs', icon: GitBranch },
-        { href: '/dashboard/todo-list', label: 'To-Do List', icon: List },
+        { href: '/dashboard/kiosk-showcase', label: 'sidebar.kioskShowcase', icon: MonitorPlay },
+        { href: '/kiosk/global', label: 'sidebar.publicKiosk', icon: Tv, dynamic: false, target: '_blank' },
+        { href: '/dashboard/activity-logs', label: 'sidebar.activityLogs', icon: History },
+        { href: '/dashboard/project-proposal', label: 'sidebar.projectProposal', icon: FileText },
+        { href: '/proposal-slides', label: 'sidebar.presentationSlides', icon: MonitorPlay, target: '_blank' },
+        { href: '/dashboard/system-documentation', label: 'sidebar.systemDocs', icon: GitBranch },
+        { href: '/dashboard/todo-list', label: 'sidebar.todoList', icon: List },
       ]
     },
-    { href: '/dashboard/user-manual', label: 'User Manual', icon: LifeBuoy },
-    { href: '/dashboard/profile', label: 'My Profile', icon: User },
+    { href: '/dashboard/user-manual', label: 'sidebar.userManual', icon: LifeBuoy },
+    { href: '/dashboard/profile', label: 'sidebar.myProfile', icon: User },
   ],
   Admin: [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard', label: 'sidebar.dashboard', icon: LayoutDashboard },
     {
-      title: 'Academics',
+      title: 'sidebar.academics',
       links: [
-        { href: '/dashboard/academics', label: 'Curriculum', icon: BookOpen },
-        { href: '/dashboard/classes', label: 'Classes', icon: Library },
-        { href: '/dashboard/reports', label: 'AI Reports', icon: BrainCircuit, pro: true },
-        { href: '/dashboard/admissions', label: 'Admissions', icon: UserPlus, pro: true },
+        { href: '/dashboard/academics', label: 'sidebar.curriculum', icon: BookOpen },
+        { href: '/dashboard/classes', label: 'sidebar.classes', icon: Library },
+        { href: '/dashboard/reports', label: 'sidebar.aiReports', icon: BrainCircuit, pro: true },
+        { href: '/dashboard/admissions', label: 'sidebar.admissions', icon: UserPlus, pro: true },
       ],
     },
     {
-      title: 'Operations',
+      title: 'sidebar.operations',
       links: [
-        { href: '/dashboard/students', label: 'Students', icon: Users },
-        { href: '/dashboard/teachers', label: 'Teachers', icon: Presentation },
-        { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
-        { href: '/dashboard/events', label: 'Events', icon: Calendar },
-        { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
-        { href: '/dashboard/assets', label: 'Assets', icon: Package },
-        { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
-        { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
+        { href: '/dashboard/students', label: 'sidebar.students', icon: Users },
+        { href: '/dashboard/teachers', label: 'sidebar.teachers', icon: Presentation },
+        { href: '/dashboard/finance', label: 'sidebar.finance', icon: DollarSign },
+        { href: '/dashboard/events', label: 'sidebar.events', icon: Calendar },
+        { href: '/dashboard/sports', label: 'sidebar.sports', icon: Trophy },
+        { href: '/dashboard/assets', label: 'sidebar.assets', icon: Package },
+        { href: '/dashboard/messaging', label: 'sidebar.messaging', icon: Mail },
+        { href: '/dashboard/activity-logs', label: 'sidebar.activityLogs', icon: History },
       ],
     },
     {
-        title: 'School',
+        title: 'sidebar.school',
         links: [
-            { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: MonitorPlay },
-            { href: '/kiosk/[schoolId]', label: 'Public Kiosk', icon: Tv, dynamic: true, target: '_blank' },
-            { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+            { href: '/dashboard/kiosk-showcase', label: 'sidebar.kioskShowcase', icon: MonitorPlay },
+            { href: '/kiosk/[schoolId]', label: 'sidebar.publicKiosk', icon: Tv, dynamic: true, target: '_blank' },
+            { href: '/dashboard/settings', label: 'sidebar.settings', icon: Settings },
         ]
     },
-    { href: '/dashboard/profile', label: 'My Profile', icon: User },
+    { href: '/dashboard/profile', label: 'sidebar.myProfile', icon: User },
   ],
   Teacher: [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard', label: 'sidebar.dashboard', icon: LayoutDashboard },
     {
-      title: 'Instruction',
+      title: 'sidebar.instruction',
       links: [
-        { href: '/dashboard/schedule', label: 'My Schedule', icon: Calendar },
-        { href: '/dashboard/lesson-planner', label: 'AI Lesson Planner', icon: PenSquare, pro: true },
-        { href: '/dashboard/ai-testing', label: 'AI Test Generator', icon: FlaskConical, pro: true },
+        { href: '/dashboard/schedule', label: 'sidebar.mySchedule', icon: Calendar },
+        { href: '/dashboard/lesson-planner', label: 'sidebar.aiLessonPlanner', icon: PenSquare, pro: true },
+        { href: '/dashboard/ai-testing', label: 'sidebar.aiTestGenerator', icon: FlaskConical, pro: true },
       ]
     },
     {
-      title: 'Student Management',
+      title: 'sidebar.studentManagement',
       links: [
-        { href: '/dashboard/grading', label: 'Gradebook', icon: GraduationCap },
-        { href: '/dashboard/attendance', label: 'Attendance', icon: CalendarCheck },
-        { href: '/dashboard/behavioral', label: 'Behavioral', icon: Heart },
-        { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Trophy },
+        { href: '/dashboard/grading', label: 'sidebar.gradebook', icon: GraduationCap },
+        { href: '/dashboard/attendance', label: 'sidebar.attendance', icon: CalendarCheck },
+        { href: '/dashboard/behavioral', label: 'sidebar.behavioral', icon: Heart },
+        { href: '/dashboard/leaderboards', label: 'sidebar.leaderboards', icon: Trophy },
       ]
     },
     {
-      title: 'Communication',
+      title: 'sidebar.communication',
       links: [
-        { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
-        { href: '/dashboard/profile', label: 'My Profile', icon: User },
+        { href: '/dashboard/messaging', label: 'sidebar.messaging', icon: Mail },
+        { href: '/dashboard/profile', label: 'sidebar.myProfile', icon: User },
       ]
     }
   ],
   Student: [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/dashboard/schedule', label: 'My Schedule', icon: Calendar },
-    { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Trophy },
-    { href: '/dashboard/events', label: 'School Events', icon: Megaphone },
-    { href: '/dashboard/profile', label: 'My Profile', icon: User },
+    { href: '/dashboard', label: 'sidebar.dashboard', icon: LayoutDashboard },
+    { href: '/dashboard/schedule', label: 'sidebar.mySchedule', icon: Calendar },
+    { href: '/dashboard/leaderboards', label: 'sidebar.leaderboards', icon: Trophy },
+    { href: '/dashboard/events', label: 'sidebar.schoolEvents', icon: Megaphone },
+    { href: '/dashboard/profile', label: 'sidebar.myProfile', icon: User },
   ],
   Parent: [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/dashboard/leaderboards', label: 'Rankings', icon: Trophy },
-    { href: '/dashboard/finance', label: 'Family Fees', icon: DollarSign },
-    { href: '/dashboard/events', label: 'School Events', icon: Megaphone },
-    { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
-    { href: '/dashboard/profile', label: 'My Profile', icon: User },
+    { href: '/dashboard', label: 'sidebar.dashboard', icon: LayoutDashboard },
+    { href: '/dashboard/leaderboards', label: 'sidebar.rankings', icon: Trophy },
+    { href: '/dashboard/finance', label: 'sidebar.familyFees', icon: DollarSign },
+    { href: '/dashboard/events', label: 'sidebar.schoolEvents', icon: Megaphone },
+    { href: '/dashboard/messaging', label: 'sidebar.messaging', icon: Mail },
+    { href: '/dashboard/profile', label: 'sidebar.myProfile', icon: User },
   ],
 };
 
@@ -194,6 +195,7 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { schoolProfile, schoolGroups } = useSchoolData();
   const { setOpenMobile } = useSidebar();
+  const t = useTranslations();
 
   const isPremiumAdmin = useMemo(() => {
     if (role !== 'Admin' || !user?.schoolId || !schoolGroups) return false;
@@ -207,9 +209,9 @@ export function AppSidebar() {
     navItems = [
       ...navItems,
       { 
-        title: 'Group Management',
+        title: 'sidebar.groupManagement',
         links: [
-            { href: '/dashboard/manage-schools', label: 'Manage Schools', icon: Building }
+            { href: '/dashboard/manage-schools', label: 'sidebar.manageSchools', icon: Building }
         ]
       }
     ].sort((a,b) => a.href === '/dashboard' ? -1 : 1);
@@ -241,17 +243,18 @@ export function AppSidebar() {
             if(isGroup(item)) {
                 return (
                     <SidebarGroup key={item.title}>
-                        <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
+                        <SidebarGroupLabel>{t(item.title)}</SidebarGroupLabel>
                         <SidebarGroupContent>
                             {item.links.map(link => {
                                 const finalHref = (link.dynamic && user?.schoolId) 
                                 ? link.href.replace('[schoolId]', user.schoolId)
                                 : link.href;
+                                const translatedLabel = t(link.label);
                                 return (
                                     <SidebarMenuItem key={link.href}>
                                         <Link href={finalHref} passHref target={link.target || undefined} onClick={() => setOpenMobile(false)}>
-                                            <SidebarMenuButton asChild isActive={pathname === finalHref} tooltip={link.label}>
-                                                <span><link.icon className="h-4 w-4" /><span>{link.label}</span></span>
+                                            <SidebarMenuButton asChild isActive={pathname === finalHref} tooltip={translatedLabel}>
+                                                <span><link.icon className="h-4 w-4" /><span>{translatedLabel}</span></span>
                                             </SidebarMenuButton>
                                         </Link>
                                     </SidebarMenuItem>
@@ -264,12 +267,13 @@ export function AppSidebar() {
             const finalHref = (item.dynamic && user?.schoolId) 
               ? item.href.replace('[schoolId]', user.schoolId)
               : item.href;
+            const translatedLabel = t(item.label);
             
             return (
               <SidebarMenuItem key={item.href}>
                 <Link href={finalHref} passHref target={item.target || undefined} onClick={() => setOpenMobile(false)}>
-                  <SidebarMenuButton asChild isActive={pathname === finalHref} tooltip={item.label}>
-                    <span><item.icon className="h-4 w-4" /><span>{item.label}</span></span>
+                  <SidebarMenuButton asChild isActive={pathname === finalHref} tooltip={translatedLabel}>
+                    <span><item.icon className="h-4 w-4" /><span>{translatedLabel}</span></span>
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
