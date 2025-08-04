@@ -4,7 +4,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData, Class, Course, Syllabus, Grade, Student } from '@/context/school-data-context';
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { Loader2, PenSquare, Sparkles, Printer, AlertTriangle } from 'lucide-react';
+import { Loader2, PenSquare, Sparkles, Printer, AlertTriangle, Book, Flask, Target, ClipboardCheck, List } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { FeatureLock } from '@/components/layout/feature-lock';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useReactToPrint } from 'react-to-print';
 import { generateLessonPlanAction } from '@/app/actions/ai-actions';
 import { GenerateLessonPlanParams, LessonPlan } from '@/ai/flows/lesson-planner-flow';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Separator } from '@/components/ui/separator';
 
 export default function LessonPlannerPage() {
   const { role, user, isLoading: authLoading } = useAuth();
@@ -30,6 +32,7 @@ export default function LessonPlannerPage() {
 
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
+    documentTitle: generatedPlan?.title || 'Lesson Plan',
   });
 
   const isLoading = authLoading || dataLoading;
@@ -68,14 +71,10 @@ export default function LessonPlannerPage() {
     setGeneratedPlan(null);
     setError(null);
     
-    // 1. Get syllabus for the subject and grade
     const relevantSyllabus = syllabi.find(s => s.subject === selectedCourse.subject && s.grade === selectedClass.grade);
-    
-    // 2. Get students in the class
     const classStudents = studentsData.filter(s => s.grade === selectedClass.grade && s.class === selectedClass.name.split('-')[1].trim());
     const studentIds = classStudents.map(s => s.id);
 
-    // 3. Get recent performance for those students in this subject
     const recentGrades = grades
         .filter(g => studentIds.includes(g.studentId) && g.subject === selectedCourse.subject)
         .sort((a,b) => {
@@ -83,7 +82,7 @@ export default function LessonPlannerPage() {
             const dateB = b.date.toDate ? b.date.toDate() : new Date(b.date);
             return dateB.getTime() - dateA.getTime();
         })
-        .slice(0, 20); // Get last 20 grades for context
+        .slice(0, 20); 
 
     const performanceSummary = recentGrades.map(g => {
         const studentName = studentsData.find(s => s.id === g.studentId)?.name || 'Unknown Student';
@@ -167,11 +166,11 @@ export default function LessonPlannerPage() {
       {generatedPlan && (
         <Card>
             <CardHeader>
-                <div className="flex justify-between items-center">
+                <div className="flex flex-wrap justify-between items-start gap-2">
                     <div>
-                        <CardTitle>{generatedPlan.title}</CardTitle>
+                        <CardTitle className="text-2xl">{generatedPlan.title}</CardTitle>
                         <CardDescription>
-                            A week-long lesson plan for {selectedClass?.name} - {selectedCourse?.subject}.
+                            A week-long plan for {selectedClass?.name} ({selectedCourse?.subject}).
                         </CardDescription>
                     </div>
                     <Button variant="outline" onClick={handlePrint}>
@@ -179,29 +178,54 @@ export default function LessonPlannerPage() {
                     </Button>
                 </div>
             </CardHeader>
-            <CardContent ref={componentRef} className="prose dark:prose-invert max-w-none p-6 pt-0">
-                <h2>{generatedPlan.title}</h2>
-                <p><strong>Subject:</strong> {selectedCourse?.subject} | <strong>Grade:</strong> {selectedClass?.grade}</p>
-                <h3>Overall Weekly Objectives</h3>
-                <ul>
-                    {generatedPlan.weeklyObjectives.map((obj, i) => <li key={i}>{obj}</li>)}
-                </ul>
-                <h3>Materials Needed</h3>
-                <ul>
-                    {generatedPlan.materialsNeeded.map((mat, i) => <li key={i}>{mat}</li>)}
-                </ul>
-                <hr/>
-                {generatedPlan.dailyPlans.map((dayPlan, i) => (
-                    <div key={i} className="py-4 border-b last:border-b-0">
-                        <h4>Day {i+1}: {dayPlan.day} - {dayPlan.topic}</h4>
-                        <p><strong>Objective:</strong> {dayPlan.objective}</p>
-                        <h5>Activities:</h5>
-                        <ol>
-                            {dayPlan.activities.map((act, j) => <li key={j}>{act}</li>)}
-                        </ol>
-                        <p><strong>Assessment:</strong> {dayPlan.assessment}</p>
-                    </div>
-                ))}
+            <CardContent ref={componentRef} className="space-y-6 print:p-0">
+                <div className="grid gap-6 md:grid-cols-2">
+                    <Card className="bg-muted/30">
+                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Target/> Weekly Objectives</CardTitle></CardHeader>
+                        <CardContent>
+                            <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+                                {generatedPlan.weeklyObjectives.map((obj, i) => <li key={i}>{obj}</li>)}
+                            </ul>
+                        </CardContent>
+                    </Card>
+                     <Card className="bg-muted/30">
+                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><List/> Materials Needed</CardTitle></CardHeader>
+                        <CardContent>
+                           <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+                                {generatedPlan.materialsNeeded.map((mat, i) => <li key={i}>{mat}</li>)}
+                            </ul>
+                        </CardContent>
+                    </Card>
+                </div>
+                <Separator/>
+                <div>
+                  <h3 className="text-xl font-semibold mb-4">Daily Breakdown</h3>
+                  <Accordion type="multiple" defaultValue={['item-0']} className="w-full space-y-2">
+                    {generatedPlan.dailyPlans.map((dayPlan, i) => (
+                      <AccordionItem value={`item-${i}`} key={i} className="border-b-0 rounded-lg bg-background border">
+                        <AccordionTrigger className="p-4 font-semibold text-lg hover:no-underline">
+                           Day {i+1}: {dayPlan.day} - {dayPlan.topic}
+                        </AccordionTrigger>
+                        <AccordionContent className="p-4 pt-0 space-y-4">
+                          <div className="p-3 bg-muted/50 rounded-md">
+                            <p className="font-semibold text-sm flex items-center gap-2"><Book className="h-4 w-4"/>Objective</p>
+                            <p className="text-sm text-muted-foreground mt-1">{dayPlan.objective}</p>
+                          </div>
+                          <div className="p-3 bg-muted/50 rounded-md">
+                            <p className="font-semibold text-sm flex items-center gap-2"><Flask className="h-4 w-4"/>Activities</p>
+                             <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground mt-2">
+                                {dayPlan.activities.map((act, j) => <li key={j}>{act}</li>)}
+                            </ol>
+                          </div>
+                          <div className="p-3 bg-muted/50 rounded-md">
+                            <p className="font-semibold text-sm flex items-center gap-2"><ClipboardCheck className="h-4 w-4"/>Assessment</p>
+                             <p className="text-sm text-muted-foreground mt-1">{dayPlan.assessment}</p>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </div>
             </CardContent>
         </Card>
       )}
