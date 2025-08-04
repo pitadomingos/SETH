@@ -7,6 +7,9 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
 } from '@/components/ui/sidebar';
 import { useAuth, Role } from '@/context/auth-context';
 import { 
@@ -54,59 +57,110 @@ export interface NavLink {
     href: string;
     label: string;
     icon: LucideIcon;
-    pro?: boolean; // Feature is available on Pro or higher
-    dynamic?: boolean; // Indicates if the href needs dynamic segment replacement
-    target?: string; // To open in a new tab
+    pro?: boolean;
+    dynamic?: boolean;
+    target?: string;
 }
 
-export const roleLinks: Record<Role, NavLink[]> = {
+interface NavGroup {
+    title: string;
+    links: NavLink[];
+}
+
+type NavItem = NavLink | NavGroup;
+
+function isGroup(item: NavItem): item is NavGroup {
+    return 'title' in item;
+}
+
+export const roleLinks: Record<Role, NavItem[]> = {
   GlobalAdmin: [
     { href: '/dashboard/global-admin', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/dashboard/global-admin/all-schools', label: 'All Schools', icon: Building },
-    { href: '/dashboard/global-admin/inbox', label: 'Inbox', icon: Mail },
-    { href: '/dashboard/global-admin/students', label: 'All Students', icon: Users },
-    { href: '/dashboard/global-admin/parents', label: 'All Parents', icon: HeartHandshake },
-    { href: '/dashboard/global-admin/teachers', label: 'All Teachers', icon: Presentation },
-    { href: '/dashboard/global-admin/awards', label: 'Annual Awards', icon: Trophy },
-    { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: MonitorPlay },
-    { href: '/kiosk/global', label: 'Public Kiosk', icon: Tv, dynamic: false, target: '_blank' },
-    { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
-    { href: '/dashboard/project-proposal', label: 'Project Proposal', icon: FileText },
-    { href: '/dashboard/system-documentation', label: 'System Docs', icon: GitBranch },
-    { href: '/dashboard/todo-list', label: 'To-Do List', icon: List },
+    {
+      title: 'Network Management',
+      links: [
+        { href: '/dashboard/global-admin/all-schools', label: 'All Schools', icon: Building },
+        { href: '/dashboard/global-admin/inbox', label: 'Inbox', icon: Mail },
+        { href: '/dashboard/global-admin/students', label: 'All Students', icon: Users },
+        { href: '/dashboard/global-admin/parents', label: 'All Parents', icon: HeartHandshake },
+        { href: '/dashboard/global-admin/teachers', label: 'All Teachers', icon: Presentation },
+        { href: '/dashboard/global-admin/awards', label: 'Annual Awards', icon: Trophy },
+      ]
+    },
+    {
+      title: 'System & Info',
+      links: [
+        { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: MonitorPlay },
+        { href: '/kiosk/global', label: 'Public Kiosk', icon: Tv, dynamic: false, target: '_blank' },
+        { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
+        { href: '/dashboard/project-proposal', label: 'Project Proposal', icon: FileText },
+        { href: '/dashboard/system-documentation', label: 'System Docs', icon: GitBranch },
+        { href: '/dashboard/todo-list', label: 'To-Do List', icon: List },
+      ]
+    },
     { href: '/dashboard/user-manual', label: 'User Manual', icon: LifeBuoy },
     { href: '/dashboard/profile', label: 'My Profile', icon: User },
   ],
   Admin: [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/dashboard/academics', label: 'Academics', icon: BookOpen },
-    { href: '/dashboard/students', label: 'Students', icon: Users },
-    { href: '/dashboard/teachers', label: 'Teachers', icon: Presentation },
-    { href: '/dashboard/classes', label: 'Classes', icon: Library },
-    { href: '/dashboard/admissions', label: 'Admissions', icon: UserPlus, pro: true },
-    { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
-    { href: '/dashboard/reports', label: 'AI Reports', icon: BrainCircuit, pro: true },
-    { href: '/dashboard/events', label: 'Events', icon: Calendar },
-    { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
-    { href: '/dashboard/assets', label: 'Assets', icon: Briefcase },
-    { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: MonitorPlay },
-    { href: '/kiosk/[schoolId]', label: 'Public Kiosk', icon: Tv, dynamic: true, target: '_blank' },
-    { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
-    { href: '/dashboard/settings', label: 'Settings', icon: Settings },
-    { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
+    {
+      title: 'Academics',
+      links: [
+        { href: '/dashboard/academics', label: 'Curriculum', icon: BookOpen },
+        { href: '/dashboard/classes', label: 'Classes', icon: Library },
+        { href: '/dashboard/reports', label: 'AI Reports', icon: BrainCircuit, pro: true },
+        { href: '/dashboard/admissions', label: 'Admissions', icon: UserPlus, pro: true },
+      ],
+    },
+    {
+      title: 'Operations',
+      links: [
+        { href: '/dashboard/students', label: 'Students', icon: Users },
+        { href: '/dashboard/teachers', label: 'Teachers', icon: Presentation },
+        { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
+        { href: '/dashboard/events', label: 'Events', icon: Calendar },
+        { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
+        { href: '/dashboard/assets', label: 'Assets', icon: Briefcase },
+        { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
+        { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
+      ],
+    },
+    {
+        title: 'School',
+        links: [
+            { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: MonitorPlay },
+            { href: '/kiosk/[schoolId]', label: 'Public Kiosk', icon: Tv, dynamic: true, target: '_blank' },
+            { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+        ]
+    },
     { href: '/dashboard/profile', label: 'My Profile', icon: User },
   ],
   Teacher: [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/dashboard/schedule', label: 'My Schedule', icon: Calendar },
-    { href: '/dashboard/lesson-planner', label: 'AI Lesson Planner', icon: PenSquare, pro: true },
-    { href: '/dashboard/ai-testing', label: 'AI Test Generator', icon: FlaskConical, pro: true },
-    { href: '/dashboard/grading', label: 'Gradebook', icon: GraduationCap },
-    { href: '/dashboard/attendance', label: 'Attendance', icon: CalendarCheck },
-    { href: '/dashboard/behavioral', label: 'Behavioral', icon: Heart },
-    { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Trophy },
-    { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
-    { href: '/dashboard/profile', label: 'My Profile', icon: User },
+    {
+      title: 'Instruction',
+      links: [
+        { href: '/dashboard/schedule', label: 'My Schedule', icon: Calendar },
+        { href: '/dashboard/lesson-planner', label: 'AI Lesson Planner', icon: PenSquare, pro: true },
+        { href: '/dashboard/ai-testing', label: 'AI Test Generator', icon: FlaskConical, pro: true },
+      ]
+    },
+    {
+      title: 'Student Management',
+      links: [
+        { href: '/dashboard/grading', label: 'Gradebook', icon: GraduationCap },
+        { href: '/dashboard/attendance', label: 'Attendance', icon: CalendarCheck },
+        { href: '/dashboard/behavioral', label: 'Behavioral', icon: Heart },
+        { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Trophy },
+      ]
+    },
+    {
+      title: 'Communication',
+      links: [
+        { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
+        { href: '/dashboard/profile', label: 'My Profile', icon: User },
+      ]
+    }
   ],
   Student: [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -135,19 +189,29 @@ export function AppSidebar() {
     return Object.values(schoolGroups).some(group => group.includes(user.schoolId!));
   }, [role, user, schoolGroups]);
 
-  let links = role ? roleLinks[role] : [];
+  let navItems = role ? roleLinks[role] : [];
   
   // Add multi-school link for premium admins
   if (isPremiumAdmin) {
-    links = [
-        ...links,
-        { href: '/dashboard/manage-schools', label: 'Manage Schools', icon: Building }
+    navItems = [
+      ...navItems,
+      { 
+        title: 'Group Management',
+        links: [
+            { href: '/dashboard/manage-schools', label: 'Manage Schools', icon: Building }
+        ]
+      }
     ].sort((a,b) => a.href === '/dashboard' ? -1 : 1);
   }
 
   // Filter out Pro features if on Starter plan
   if (schoolProfile && schoolProfile.tier === 'Starter') {
-    links = links.filter(link => !link.pro);
+    navItems = navItems.map(item => {
+        if(isGroup(item)) {
+            return { ...item, links: item.links.filter(link => !link.pro) };
+        }
+        return item;
+    }).filter(item => !isGroup(item) || item.links.length > 0);
   }
 
   return (
@@ -162,23 +226,39 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {links.map((link) => {
-            const finalHref = (link.dynamic && user?.schoolId) 
-              ? link.href.replace('[schoolId]', user.schoolId)
-              : link.href;
-
+          {navItems.map((item, index) => {
+            if(isGroup(item)) {
+                return (
+                    <SidebarGroup key={item.title}>
+                        <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            {item.links.map(link => {
+                                const finalHref = (link.dynamic && user?.schoolId) 
+                                ? link.href.replace('[schoolId]', user.schoolId)
+                                : link.href;
+                                return (
+                                    <SidebarMenuItem key={link.href}>
+                                        <Link href={finalHref} passHref target={link.target}>
+                                            <SidebarMenuButton asChild isActive={pathname === finalHref} tooltip={link.label}>
+                                                <span><link.icon className="h-4 w-4" /><span>{link.label}</span></span>
+                                            </SidebarMenuButton>
+                                        </Link>
+                                    </SidebarMenuItem>
+                                )
+                            })}
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                )
+            }
+            const finalHref = (item.dynamic && user?.schoolId) 
+              ? item.href.replace('[schoolId]', user.schoolId)
+              : item.href;
+            
             return (
-              <SidebarMenuItem key={link.href}>
-                <Link href={finalHref} passHref target={link.target}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === finalHref}
-                    tooltip={link.label}
-                  >
-                    <span>
-                      <link.icon className="h-4 w-4" />
-                      <span>{link.label}</span>
-                    </span>
+              <SidebarMenuItem key={item.href}>
+                <Link href={finalHref} passHref target={item.target}>
+                  <SidebarMenuButton asChild isActive={pathname === finalHref} tooltip={item.label}>
+                    <span><item.icon className="h-4 w-4" /><span>{item.label}</span></span>
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
