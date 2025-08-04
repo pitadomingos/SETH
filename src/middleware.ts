@@ -2,15 +2,9 @@ import createMiddleware from 'next-intl/middleware';
 import { locales, localePrefix } from './i18n.config';
  
 export default createMiddleware({
-  // A list of all locales that are supported
-  locales,
- 
-  // Used when no locale matches
   defaultLocale: 'en',
-
-  // The following properties are required for the App Router
-  // A `localePrefix` is used on all paths except for the default locale
-  localePrefix,
+  locales,
+  localePrefix
 });
  
 export const config = {
