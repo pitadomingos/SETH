@@ -67,15 +67,18 @@ export function AppHeader() {
                          <DropdownMenuLabel>Recent Notifications</DropdownMenuLabel>
                          <DropdownMenuSeparator />
                          {notifications.length > 0 ? (
-                            notifications.map(log => (
+                            notifications.map(log => {
+                                const logDate = log.timestamp && typeof log.timestamp.toDate === 'function' ? log.timestamp.toDate() : new Date(log.timestamp);
+                                return (
                                 <DropdownMenuItem key={log.id} className="flex-col items-start gap-1">
                                     <div className="flex justify-between w-full">
                                         <Badge variant="outline">{log.action}</Badge>
-                                        <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}</p>
+                                        <p className="text-xs text-muted-foreground">{formatDistanceToNow(logDate, { addSuffix: true })}</p>
                                     </div>
                                     <p className="text-sm text-muted-foreground whitespace-normal">{log.user} {log.details.toLowerCase()}</p>
                                 </DropdownMenuItem>
-                            ))
+                                )
+                            })
                          ) : (
                             <div className="p-4 text-center text-sm text-muted-foreground">
                                 No new notifications.
