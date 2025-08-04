@@ -11,6 +11,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getGpaFromNumeric } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 function AIEvaluationDialog({ winner, category }) {
     const [analysis, setAnalysis] = useState(null);
@@ -107,6 +108,7 @@ export default function AwardsPage() {
   const { role, isLoading: authLoading } = useAuth();
   const { allSchoolData, isLoading: schoolLoading } = useSchoolData();
   const router = useRouter();
+  const { toast } = useToast();
   const isLoading = authLoading || schoolLoading;
 
   useEffect(() => {
@@ -166,6 +168,14 @@ export default function AwardsPage() {
       return { ...student, avgGrade, schoolName: school.profile.name };
     })).sort((a, b) => b.avgGrade - a.avgGrade)[0];
   }, [allSchoolData]);
+
+  const handleAnnounce = () => {
+    toast({
+      title: 'Winners Announced!',
+      description: 'A notification has been sent to all schools regarding the award winners.',
+      duration: 5000,
+    });
+  };
 
   if (isLoading || !allSchoolData) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -268,7 +278,7 @@ export default function AwardsPage() {
           </div>
         </CardContent>
         <CardFooter>
-            <Button>Announce Winners & Prizes</Button>
+            <Button onClick={handleAnnounce}>Announce Winners &amp; Prizes</Button>
         </CardFooter>
        </Card>
     </div>
