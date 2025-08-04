@@ -178,53 +178,55 @@ export default function LessonPlannerPage() {
                     </Button>
                 </div>
             </CardHeader>
-            <CardContent ref={componentRef} className="space-y-6 print:p-0">
-                <div className="grid gap-6 md:grid-cols-2">
-                    <Card className="bg-muted/30">
-                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Target/> Weekly Objectives</CardTitle></CardHeader>
-                        <CardContent>
-                            <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                                {generatedPlan.weeklyObjectives.map((obj, i) => <li key={i}>{obj}</li>)}
-                            </ul>
-                        </CardContent>
-                    </Card>
-                     <Card className="bg-muted/30">
-                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><List/> Materials Needed</CardTitle></CardHeader>
-                        <CardContent>
-                           <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                                {generatedPlan.materialsNeeded.map((mat, i) => <li key={i}>{mat}</li>)}
-                            </ul>
-                        </CardContent>
-                    </Card>
-                </div>
-                <Separator/>
-                <div>
-                  <h3 className="text-xl font-semibold mb-4">Daily Breakdown</h3>
-                  <Accordion type="multiple" defaultValue={['item-0']} className="w-full space-y-2">
-                    {generatedPlan.dailyPlans.map((dayPlan, i) => (
-                      <AccordionItem value={`item-${i}`} key={i} className="border-b-0 rounded-lg bg-background border">
-                        <AccordionTrigger className="p-4 font-semibold text-lg hover:no-underline">
-                           Day {i+1}: {dayPlan.day} - {dayPlan.topic}
-                        </AccordionTrigger>
-                        <AccordionContent className="p-4 pt-0 space-y-4">
-                          <div className="p-3 bg-muted/50 rounded-md">
-                            <p className="font-semibold text-sm flex items-center gap-2"><Book className="h-4 w-4"/>Objective</p>
-                            <p className="text-sm text-muted-foreground mt-1">{dayPlan.objective}</p>
-                          </div>
-                          <div className="p-3 bg-muted/50 rounded-md">
-                            <p className="font-semibold text-sm flex items-center gap-2"><FlaskConical className="h-4 w-4"/>Activities</p>
-                             <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground mt-2">
-                                {dayPlan.activities.map((act, j) => <li key={j}>{act}</li>)}
-                            </ol>
-                          </div>
-                          <div className="p-3 bg-muted/50 rounded-md">
-                            <p className="font-semibold text-sm flex items-center gap-2"><ClipboardCheck className="h-4 w-4"/>Assessment</p>
-                             <p className="text-sm text-muted-foreground mt-1">{dayPlan.assessment}</p>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
+            <CardContent className="print:p-0">
+                <div ref={componentRef} className="space-y-6">
+                    <div className="grid gap-6 md:grid-cols-2">
+                        <Card className="bg-muted/30">
+                            <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Target/> Weekly Objectives</CardTitle></CardHeader>
+                            <CardContent>
+                                <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+                                    {generatedPlan.weeklyObjectives.map((obj, i) => <li key={i}>{obj}</li>)}
+                                </ul>
+                            </CardContent>
+                        </Card>
+                         <Card className="bg-muted/30">
+                            <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><List/> Materials Needed</CardTitle></CardHeader>
+                            <CardContent>
+                               <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+                                    {generatedPlan.materialsNeeded.map((mat, i) => <li key={i}>{mat}</li>)}
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    </div>
+                    <Separator/>
+                    <div>
+                      <h3 className="text-xl font-semibold mb-4">Daily Breakdown</h3>
+                      <Accordion type="multiple" defaultValue={['item-0']} className="w-full space-y-2">
+                        {generatedPlan.dailyPlans.map((dayPlan, i) => (
+                          <AccordionItem value={`item-${i}`} key={i} className="border-b-0 rounded-lg bg-background border">
+                            <AccordionTrigger className="p-4 font-semibold text-lg hover:no-underline">
+                               Day {i+1}: {dayPlan.day} - {dayPlan.topic}
+                            </AccordionTrigger>
+                            <AccordionContent className="p-4 pt-0 space-y-4">
+                              <div className="p-3 bg-muted/50 rounded-md">
+                                <p className="font-semibold text-sm flex items-center gap-2"><Book className="h-4 w-4"/>Objective</p>
+                                <p className="text-sm text-muted-foreground mt-1">{dayPlan.objective}</p>
+                              </div>
+                              <div className="p-3 bg-muted/50 rounded-md">
+                                <p className="font-semibold text-sm flex items-center gap-2"><FlaskConical className="h-4 w-4"/>Activities</p>
+                                 <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground mt-2">
+                                    {dayPlan.activities.map((act, j) => <li key={j}>{act}</li>)}
+                                </ol>
+                              </div>
+                              <div className="p-3 bg-muted/50 rounded-md">
+                                <p className="font-semibold text-sm flex items-center gap-2"><ClipboardCheck className="h-4 w-4"/>Assessment</p>
+                                 <p className="text-sm text-muted-foreground mt-1">{dayPlan.assessment}</p>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                    </div>
                 </div>
             </CardContent>
         </Card>
