@@ -1,274 +1,404 @@
-
 'use client';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { useSchoolData } from '@/context/school-data-context';
-import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useSchoolData, NewAdmissionData, Competition, Team, Student } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Loader2, Trophy, School, User, Sparkles, BrainCircuit, Gift, DollarSign, Award as AwardIcon } from 'lucide-react';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { getGpaFromNumeric } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
+import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cn, formatCurrency } from '@/lib/utils';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartConfig,
+} from '@/components/ui/chart';
+import { Bar, BarChart } from 'recharts';
+import { getGpaFromNumeric, formatGradeDisplay } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
-function AIEvaluationDialog({ winner, category }) {
-    const [analysis, setAnalysis] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
 
-    const handleGenerateAnalysis = () => {
-        setIsLoading(true);
-        // Simulate AI analysis generation
-        setTimeout(() => {
-            let generatedAnalysis;
-            if (category === 'School') {
-                generatedAnalysis = {
-                    title: `Analysis for ${winner.name}`,
-                    points: [
-                        `Demonstrated a 15% year-over-year improvement in average student GPA, reaching an impressive ${winner.avgGpa.toFixed(2)}.`,
-                        "Achieved a 98% fee collection rate, indicating strong financial health and parent satisfaction.",
-                        "Maintained a student-teacher ratio of 15:1, well below the network average, allowing for personalized attention.",
-                        "Received outstanding community feedback, particularly regarding their extracurricular arts and science programs."
-                    ],
-                    recommendation: `The key to ${winner.name}'s success lies in its balanced focus on academic rigor and community engagement. Other schools could adopt their model of targeted after-school tutoring to boost academic performance.`
-                };
-            } else if (category === 'Teacher') {
-                 generatedAnalysis = {
-                    title: `Analysis for ${winner.name}`,
-                    points: [
-                        `Maintained an average student grade of ${winner.avgStudentGrade.toFixed(2)}/20 in ${winner.subject}, a subject often considered challenging.`,
-                        "Consistently high parent-teacher meeting attendance, suggesting strong communication and parental involvement.",
-                        "Pioneered the use of project-based learning, which correlates with a 20% increase in student engagement metrics.",
-                        "Zero student complaints filed over the past academic year."
-                    ],
-                    recommendation: `${winner.name}'s use of formative assessments and personalized feedback loops is a model of excellence. Implementing weekly, low-stakes quizzes could help other teachers identify struggling students earlier.`
-                };
-            } else { // Student
-                generatedAnalysis = {
-                    title: `Analysis for ${winner.name}`,
-                    points: [
-                        `Achieved an exceptional average grade of ${winner.avgGrade.toFixed(2)}/20 across all subjects.`,
-                        "Demonstrated perfect attendance for the entire academic year, showing remarkable dedication.",
-                        "Actively participated in 3 extracurricular clubs, holding a leadership position in one.",
-                        "Received top marks in behavioral assessments for respect and participation."
-                    ],
-                    recommendation: `Miguel's success is a testament to consistent effort and active participation. His study technique, which involves creating summary mind maps, could be shared with peers as a best-practice example.`
-                };
-            }
-            setAnalysis(generatedAnalysis);
-            setIsLoading(false);
-        }, 1500);
-    };
+const applicationSchema = z.object({
+  schoolId: z.string({ required_error: "Please select a school to apply to."}),
+  name: z.string().min(2, "Applicant name must be at least 2 characters."),
+  dateOfBirth: z.date({ required_error: "Date of birth is required." }),
+  sex: z.enum(['Male', 'Female'], { required_error: "Please select a gender." }),
+  appliedFor: z.string().min(1, "Please specify the grade being applied for."),
+  formerSchool: z.string().min(2, "Please enter the name of the former school."),
+  gradesSummary: z.string().min(10, "Please provide a brief summary of previous grades.").optional(),
+});
+type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
-    return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm"><Sparkles className="mr-2 h-4 w-4" /> View Analysis</Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2"><BrainCircuit /> AI Performance Analysis</DialogTitle>
-                    <DialogDescription>
-                        An AI-generated summary of the winner's achievements.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4">
-                    {!analysis && !isLoading && (
-                         <div className="text-center p-8">
-                             <p className="text-muted-foreground mb-4">Click below to generate the analysis for {winner.name}.</p>
-                            <Button onClick={handleGenerateAnalysis}>Generate Analysis</Button>
-                        </div>
-                    )}
-                    {isLoading && <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>}
-                    {analysis && (
-                        <div className="space-y-4">
-                            <h3 className="font-semibold">{analysis.title}</h3>
-                            <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
-                                {analysis.points.map((point, i) => <li key={i}>{point}</li>)}
-                            </ul>
-                            <div className="p-3 bg-primary/10 rounded-md">
-                                <p className="font-semibold text-sm">Key Recommendation:</p>
-                                <p className="text-sm text-muted-foreground">{analysis.recommendation}</p>
-                            </div>
-                        </div>
-                    )}
+function NewApplicationDialog() {
+  const { addAdmission, allSchoolData } = useSchoolData();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<ApplicationFormValues>({
+    resolver: zodResolver(applicationSchema),
+  });
+
+  const selectedSchoolId = form.watch('schoolId');
+  const selectedGradeStr = form.watch('appliedFor');
+
+  const vacancies = useMemo(() => {
+    if (!selectedSchoolId || !selectedGradeStr) return null;
+    const school = allSchoolData?.[selectedSchoolId];
+    if (!school) return null;
+
+    const gradeNumber = selectedGradeStr.replace('Grade ', '');
+    const capacity = school.profile.gradeCapacity?.[gradeNumber] ?? 0;
+    const currentStudents = school.students.filter(s => s.grade === gradeNumber).length;
+
+    return Math.max(0, capacity - currentStudents);
+  }, [selectedSchoolId, selectedGradeStr, allSchoolData]);
+
+  function onSubmit(values: ApplicationFormValues) {
+    addAdmission({
+      schoolId: values.schoolId,
+      name: values.name,
+      dateOfBirth: format(values.dateOfBirth, 'yyyy-MM-dd'),
+      sex: values.sex,
+      appliedFor: values.appliedFor,
+      formerSchool: values.formerSchool,
+      gradesSummary: values.gradesSummary || 'N/A',
+    });
+    toast({
+      title: 'Application Submitted',
+      description: `The application for ${values.name} has been sent to the school for review.`,
+    });
+    form.reset();
+    setIsDialogOpen(false);
+  }
+
+  const schoolList = allSchoolData ? Object.values(allSchoolData).map(s => s.profile) : [];
+
+  return (
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Button><UserPlus className="mr-2 h-4 w-4" /> New Application</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Apply for a New Child</DialogTitle>
+          <DialogDescription>
+            Fill out this form to submit a new admission application to a school.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+            <FormField control={form.control} name="schoolId" render={({ field }) => ( <FormItem><FormLabel>School to Apply To</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select School" /></SelectTrigger></FormControl><SelectContent>{schoolList.map(school => <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Child's Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+                <FormField control={form.control} name="sex" render={({ field }) => ( <FormItem><FormLabel>Sex</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+            </div>
+            <FormField control={form.control} name="appliedFor" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Applying for Grade</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedSchoolId}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select Grade" /></SelectTrigger></FormControl>
+                        <SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(g => <SelectItem key={g} value={`Grade ${g}`}>Grade {g}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+            )} />
+             {vacancies !== null && (
+                <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md border">
+                    Available Vacancies for this grade: <span className="font-bold text-primary">{vacancies}</span>
+                    {vacancies === 0 && " (Applications will be added to the waitlist)"}
                 </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button variant="secondary">Close</Button>
-                    </DialogClose>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
+            )}
+            <FormField control={form.control} name="formerSchool" render={({ field }) => ( <FormItem><FormLabel>Previous School</FormLabel><FormControl><Input placeholder="e.g., Eastwood Elementary" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="gradesSummary" render={({ field }) => ( <FormItem><FormLabel>Previous Grades Summary</FormLabel><FormControl><Textarea placeholder="Briefly describe academic performance, e.g., 'Consistent A grades in Math and Science, B in English.'" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            
+            <DialogFooter className="sticky bottom-0 bg-background pt-4 pr-0">
+              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+              <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit Application</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
-export default function AwardsPage() {
-  const { role, isLoading: authLoading } = useAuth();
-  const { allSchoolData, isLoading: schoolLoading, announceAwards, awardsAnnounced } = useSchoolData();
-  const router = useRouter();
-  const { toast } = useToast();
-  const isLoading = authLoading || schoolLoading;
+
+function AIGeneratedAdvice({ child }) {
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> AI-Powered Insights</CardTitle>
+          <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+          <p>AI features are temporarily disabled for maintenance.</p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function GradeDistribution({ grades }) {
+  const chartData = useMemo(() => {
+    return grades.map(grade => ({
+      subject: grade.subject,
+      gpa: getGpaFromNumeric(parseFloat(grade.grade))
+    }));
+  }, [grades]);
+
+  const chartConfig = {
+    gpa: {
+      label: 'GPA',
+      color: 'hsl(var(--chart-2))',
+    },
+  } satisfies ChartConfig;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><BarChart2 /> Grade Distribution</CardTitle>
+        <CardDescription>Performance by subject based on GPA.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {grades.length > 0 ? (
+          <ChartContainer config={chartConfig} className="h-48 w-full">
+            <BarChart data={chartData} margin={{ top: 20 }}>
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="gpa" fill="var(--color-gpa)" radius={4} />
+            </BarChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex items-center justify-center h-48 text-muted-foreground">
+            <p>No grade data available.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function ParentSportsActivities() {
+    const { studentsData, teamsData, competitionsData } = useSchoolData();
+
+    const upcomingCompetitions = useMemo(() => {
+        const childrenIds = studentsData.map(c => c.id);
+        const childrenTeams = teamsData.filter(t => t.playerIds.some(pId => childrenIds.includes(pId)));
+        const teamMap = new Map(childrenTeams.map(t => [t.id, t]));
+        
+        return competitionsData
+            .filter(c => c.date >= new Date() && teamMap.has(c.ourTeamId))
+            .map(c => ({
+                ...c,
+                team: teamMap.get(c.ourTeamId),
+                players: studentsData.filter(s => teamMap.get(c.ourTeamId)?.playerIds.includes(s.id))
+            }))
+            .sort((a,b) => a.date.getTime() - b.date.getTime());
+    }, [studentsData, teamsData, competitionsData]);
+
+    if (upcomingCompetitions.length === 0) return null;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Trophy /> My Children's Sports</CardTitle>
+                <CardDescription>Upcoming games and competitions for your children.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ul className="space-y-4">
+                    {upcomingCompetitions.map(comp => (
+                        <li key={comp.id} className="flex items-start gap-4">
+                            <div className="flex flex-col items-center p-2 bg-muted rounded-md w-14">
+                                <span className="font-bold text-lg">{format(comp.date, 'dd')}</span>
+                                <span className="text-xs uppercase">{format(comp.date, 'MMM')}</span>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold">{comp.team?.name} vs {comp.opponent}</h4>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                    <div className="flex items-center gap-2"><User className="h-3 w-3"/><span>Player(s): {comp.players.map(p => p.name).join(', ')}</span></div>
+                                    <div className="flex items-center gap-2"><CalendarIcon className="h-3 w-3"/><span>{format(comp.date, 'EEEE')} at {comp.time}</span></div>
+                                </div>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </CardContent>
+        </Card>
+    );
+}
+
+const getStatusInfo = (fee) => {
+    const balance = fee.totalAmount - fee.amountPaid;
+    const isOverdue = new Date(fee.dueDate) < new Date() && balance > 0;
+
+    if (balance <= 0) {
+        return { text: 'Paid', variant: 'secondary' as const };
+    }
+    if (isOverdue) {
+        return { text: 'Overdue', variant: 'destructive' as const };
+    }
+     if (fee.amountPaid > 0) {
+        return { text: 'Partially Paid', variant: 'outline' as const };
+    }
+    return { text: 'Pending', variant: 'outline' as const };
+};
+
+export default function ParentDashboard() {
+  const { user } = useAuth();
+  const { studentsData, grades, attendance, financeData, schoolProfile, isLoading: schoolDataLoading } = useSchoolData();
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLoading && role !== 'GlobalAdmin') {
-      router.push('/dashboard');
+    if (!selectedChildId && studentsData.length > 0) {
+      setSelectedChildId(studentsData[0].id);
     }
-  }, [role, isLoading, router]);
+  }, [studentsData, selectedChildId]);
 
-  const latestAwards = useMemo(() => {
-    if (!allSchoolData) return null;
-    const masterSchool = allSchoolData['northwood'];
-    if (!masterSchool || !masterSchool.profile.awards || masterSchool.profile.awards.length === 0) {
-      return null;
-    }
-    return masterSchool.profile.awards[masterSchool.profile.awards.length - 1];
-  }, [allSchoolData]);
+  const selectedChild = useMemo(() => studentsData.find(c => c.id === selectedChildId), [selectedChildId, studentsData]);
 
-  const schoolOfTheYear = useMemo(() => {
-    if (!latestAwards || !allSchoolData) return null;
-    const schoolId = latestAwards.schoolOfTheYear;
-    const school = allSchoolData[schoolId];
-    if (!school) return null;
-    const avgGpa = school.grades.length > 0 ? school.grades.reduce((acc, g) => acc + getGpaFromNumeric(parseFloat(g.grade)), 0) / school.grades.length : 0;
-    const totalFees = school.finance.reduce((sum, f) => sum + f.totalAmount, 0);
-    const totalRevenue = school.finance.reduce((sum, f) => sum + f.amountPaid, 0);
-    const collectionRate = totalFees > 0 ? (totalRevenue / totalFees) : 1;
-    return { ...school.profile, avgGpa, collectionRate };
-  }, [latestAwards, allSchoolData]);
+  const childGrades = useMemo(() => {
+    if (!selectedChildId) return [];
+    return grades.filter(g => g.studentId === selectedChildId);
+  }, [grades, selectedChildId]);
+  
+  const childFinanceSummary = useMemo(() => {
+    if (!selectedChildId) return null;
+    const childFees = financeData.filter(f => f.studentId === selectedChildId);
+    if (childFees.length === 0) return null;
+    // Prioritize showing an overdue fee, then a partially paid/pending one.
+    const overdue = childFees.find(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < new Date());
+    if (overdue) return overdue;
+    const pending = childFees.find(f => f.totalAmount - f.amountPaid > 0);
+    if (pending) return pending;
+    return childFees[0]; // Otherwise show the first one (likely a paid one)
+  }, [financeData, selectedChildId]);
 
-  const teacherOfTheYear = useMemo(() => {
-    if (!latestAwards || !allSchoolData) return null;
-    const teacherId = latestAwards.teacherOfTheYear;
-    return Object.values(allSchoolData).flatMap(school => school.teachers.map(teacher => ({...teacher, schoolName: school.profile.name}))).find(t => t.id === teacherId);
-  }, [latestAwards, allSchoolData]);
+  if (schoolDataLoading) {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
 
-  const studentOfTheYear = useMemo(() => {
-    if (!latestAwards || !allSchoolData) return null;
-    const studentId = latestAwards.studentOfTheYear;
-    return Object.values(allSchoolData).flatMap(school => school.students.map(student => ({...student, schoolName: school.profile.name}))).find(s => s.id === studentId);
-  }, [latestAwards, allSchoolData]);
-
-  const handleAnnounce = () => {
-    announceAwards();
-    toast({
-      title: 'Winners Announced!',
-      description: 'The awards are now live on dashboards and kiosks across the network.',
-      duration: 5000,
-    });
-  };
-
-  if (isLoading || !allSchoolData) {
-    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (!studentsData || studentsData.length === 0) {
+    return (
+       <div className="space-y-6">
+        <header className="flex flex-wrap gap-4 justify-between items-center">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+              <p className="text-muted-foreground">Welcome, {user?.name}.</p>
+            </div>
+            <NewApplicationDialog />
+        </header>
+        <Card>
+            <CardHeader>
+            <CardTitle>No Student Data Found</CardTitle>
+            </CardHeader>
+            <CardContent>
+            <p>No student information is linked to your account. You can submit an application for a new child to a school.</p>
+            </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in-50">
-      <header>
-        <h2 className="text-3xl font-bold tracking-tight">EduDesk Annual Awards</h2>
-        <p className="text-muted-foreground">Recognizing excellence across the entire school network.</p>
+    <div className="space-y-6">
+      <header className="flex flex-wrap gap-4 justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+          <p className="text-muted-foreground">Welcome, {user?.name}. Here is an overview for your children.</p>
+        </div>
+        <NewApplicationDialog />
       </header>
 
-      {!awardsAnnounced && (
-        <Card className="text-center p-8">
-            <CardHeader>
-                <CardTitle>Awards Not Yet Announced</CardTitle>
-                <CardDescription>Click the button below to calculate and announce this year's winners. This action is irreversible for the current session.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button onClick={handleAnnounce}>Announce Winners &amp; Prizes</Button>
-            </CardContent>
-        </Card>
-      )}
-
-      {awardsAnnounced && (
-        <>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {schoolOfTheYear && (
-            <Card className="flex flex-col">
-                <CardHeader className="text-center">
-                <Trophy className="mx-auto h-12 w-12 text-amber-500" />
-                <CardTitle className="text-2xl mt-4">School of the Year</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-grow flex flex-col items-center justify-center text-center">
-                    <Avatar className="h-24 w-24 mb-4">
-                        <AvatarImage src={schoolOfTheYear.logoUrl} alt={schoolOfTheYear.name} data-ai-hint="school logo"/>
-                        <AvatarFallback><School /></AvatarFallback>
-                    </Avatar>
-                    <h3 className="text-xl font-semibold">{schoolOfTheYear.name}</h3>
-                    <p className="text-muted-foreground">{schoolOfTheYear.head}</p>
-                    <div className="mt-4 flex gap-2">
-                        <Badge>Avg. GPA: {schoolOfTheYear.avgGpa.toFixed(2)}</Badge>
-                        <Badge variant="secondary">Fees: {(schoolOfTheYear.collectionRate * 100).toFixed(0)}% Paid</Badge>
-                    </div>
-                </CardContent>
-                <CardFooter>
-                <AIEvaluationDialog winner={schoolOfTheYear} category="School" />
-                </CardFooter>
+      <div>
+        <h3 className="text-lg font-medium mb-2">Select a Child</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {studentsData.map(child => (
+            <Card 
+              key={child.id} 
+              onClick={() => setSelectedChildId(child.id)}
+              className={cn(
+                'cursor-pointer transition-all hover:shadow-md hover:border-primary/50',
+                selectedChildId === child.id ? 'border-primary ring-2 ring-primary/50' : 'border-border'
+              )}
+            >
+              <CardHeader>
+                <CardTitle>{child.name}</CardTitle>
+                <CardDescription>{child.schoolName}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Grade {child.grade} - {child.class}</p>
+              </CardContent>
             </Card>
-            )}
-            {teacherOfTheYear && (
-                <Card className="flex flex-col">
-                <CardHeader className="text-center">
-                <AwardIcon className="mx-auto h-12 w-12 text-slate-500" />
-                <CardTitle className="text-2xl mt-4">Teacher of the Year</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-grow flex flex-col items-center justify-center text-center">
-                    <Avatar className="h-24 w-24 mb-4">
-                        <AvatarImage src="" alt={teacherOfTheYear.name} data-ai-hint="profile picture"/>
-                        <AvatarFallback className="text-3xl">{teacherOfTheYear.name.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
-                    </Avatar>
-                    <h3 className="text-xl font-semibold">{teacherOfTheYear.name}</h3>
-                    <p className="text-muted-foreground">{teacherOfTheYear.subject} - {teacherOfTheYear.schoolName}</p>
-                </CardContent>
-                <CardFooter>
-                <AIEvaluationDialog winner={teacherOfTheYear} category="Teacher" />
-                </CardFooter>
-            </Card>
-            )}
-            {studentOfTheYear && (
-                <Card className="flex flex-col">
-                <CardHeader className="text-center">
-                <User className="mx-auto h-12 w-12 text-cyan-600" />
-                <CardTitle className="text-2xl mt-4">Student of the Year</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-grow flex flex-col items-center justify-center text-center">
-                    <Avatar className="h-24 w-24 mb-4">
-                        <AvatarImage src="" alt={studentOfTheYear.name} data-ai-hint="profile picture"/>
-                        <AvatarFallback className="text-3xl">{studentOfTheYear.name.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
-                    </Avatar>
-                    <h3 className="text-xl font-semibold">{studentOfTheYear.name}</h3>
-                    <p className="text-muted-foreground">Grade {studentOfTheYear.grade} - {studentOfTheYear.schoolName}</p>
-                </CardContent>
-                <CardFooter>
-                <AIEvaluationDialog winner={studentOfTheYear} category="Student" />
-                </CardFooter>
-            </Card>
-            )}
+          ))}
         </div>
-
+      </div>
+      
+      {selectedChild ? (
+        <div className="space-y-6 animate-in fade-in-25">
+           <div className="grid gap-6 lg:grid-cols-3">
+            {selectedChild && <AIGeneratedAdvice child={selectedChild} />}
+             <div className="space-y-6">
+                <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><DollarSign /> Fee Status</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                    {childFinanceSummary ? (
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount, schoolProfile?.currency)}</span></p>
+                                <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
+                            </div>
+                            <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">No fee information available.</p>
+                    )}
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><GraduationCap /> Recent Grades</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-2">
+                            {childGrades.length > 0 ? childGrades.slice(0, 3).map((grade, index) => {
+                              const numericGrade = parseFloat(grade.grade);
+                              return (
+                                <li key={index} className="flex justify-between items-center text-sm">
+                                    <span className="font-medium">{grade.subject}</span>
+                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
+                                </li>
+                              )
+                            }) : <p className="text-muted-foreground text-sm">No recent grades.</p>}
+                        </ul>
+                    </CardContent>
+                </Card>
+              </div>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <GradeDistribution grades={childGrades} />
+            <ParentSportsActivities />
+          </div>
+        </div>
+      ) : (
         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Gift /> Prize Management</CardTitle>
-                <CardDescription>Prizes for the award winners.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-6 md:grid-cols-3">
-            <div className="p-4 rounded-lg border">
-                <h4 className="font-semibold mb-2">School of the Year Prize</h4>
-                <p className="text-sm text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4"/> $10,000 Technology Grant</p>
-            </div>
-            <div className="p-4 rounded-lg border">
-                <h4 className="font-semibold mb-2">Teacher of the Year Prize</h4>
-                <p className="text-sm text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4"/> $2,500 Professional Development Fund</p>
-            </div>
-            <div className="p-4 rounded-lg border">
-                <h4 className="font-semibold mb-2">Student of the Year Prize</h4>
-                <p className="text-sm text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4"/> $1,000 University Scholarship</p>
-            </div>
-            </CardContent>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            <p>Please select a child to view their details.</p>
+          </CardContent>
         </Card>
-        </>
       )}
     </div>
   );

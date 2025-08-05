@@ -1,269 +1,405 @@
-
 'use client';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database } from 'lucide-react';
-import { useEffect } from 'react';
-import { Separator } from '@/components/ui/separator';
+import { useSchoolData, NewAdmissionData, Competition, Team, Student } from '@/context/school-data-context';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { cn, formatCurrency } from '@/lib/utils';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartConfig,
+} from '@/components/ui/chart';
+import { Bar, BarChart } from 'recharts';
+import { getGpaFromNumeric, formatGradeDisplay } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
-export default function FinanceProposalPage() {
-  const { role, isLoading } = useAuth();
-  const router = useRouter();
+
+const applicationSchema = z.object({
+  schoolId: z.string({ required_error: "Please select a school to apply to."}),
+  name: z.string().min(2, "Applicant name must be at least 2 characters."),
+  dateOfBirth: z.date({ required_error: "Date of birth is required." }),
+  sex: z.enum(['Male', 'Female'], { required_error: "Please select a gender." }),
+  appliedFor: z.string().min(1, "Please specify the grade being applied for."),
+  formerSchool: z.string().min(2, "Please enter the name of the former school."),
+  gradesSummary: z.string().min(10, "Please provide a brief summary of previous grades.").optional(),
+});
+type ApplicationFormValues = z.infer<typeof applicationSchema>;
+
+function NewApplicationDialog() {
+  const { addAdmission, allSchoolData } = useSchoolData();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<ApplicationFormValues>({
+    resolver: zodResolver(applicationSchema),
+  });
+
+  const selectedSchoolId = form.watch('schoolId');
+  const selectedGradeStr = form.watch('appliedFor');
+
+  const vacancies = useMemo(() => {
+    if (!selectedSchoolId || !selectedGradeStr) return null;
+    const school = allSchoolData?.[selectedSchoolId];
+    if (!school) return null;
+
+    const gradeNumber = selectedGradeStr.replace('Grade ', '');
+    const capacity = school.profile.gradeCapacity?.[gradeNumber] ?? 0;
+    const currentStudents = school.students.filter(s => s.grade === gradeNumber).length;
+
+    return Math.max(0, capacity - currentStudents);
+  }, [selectedSchoolId, selectedGradeStr, allSchoolData]);
+
+  function onSubmit(values: ApplicationFormValues) {
+    addAdmission({
+      schoolId: values.schoolId,
+      name: values.name,
+      dateOfBirth: format(values.dateOfBirth, 'yyyy-MM-dd'),
+      sex: values.sex,
+      appliedFor: values.appliedFor,
+      formerSchool: values.formerSchool,
+      gradesSummary: values.gradesSummary || 'N/A',
+    });
+    toast({
+      title: 'Application Submitted',
+      description: `The application for ${values.name} has been sent to the school for review.`,
+    });
+    form.reset();
+    setIsDialogOpen(false);
+  }
+
+  const schoolList = allSchoolData ? Object.values(allSchoolData).map(s => s.profile) : [];
+
+  return (
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Button><UserPlus className="mr-2 h-4 w-4" /> New Application</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Apply for a New Child</DialogTitle>
+          <DialogDescription>
+            Fill out this form to submit a new admission application to a school.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+            <FormField control={form.control} name="schoolId" render={({ field }) => ( <FormItem><FormLabel>School to Apply To</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select School" /></SelectTrigger></FormControl><SelectContent>{schoolList.map(school => <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Child's Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+                <FormField control={form.control} name="sex" render={({ field }) => ( <FormItem><FormLabel>Sex</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+            </div>
+            <FormField control={form.control} name="appliedFor" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Applying for Grade</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedSchoolId}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select Grade" /></SelectTrigger></FormControl>
+                        <SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(g => <SelectItem key={g} value={`Grade ${g}`}>Grade {g}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+            )} />
+             {vacancies !== null && (
+                <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md border">
+                    Available Vacancies for this grade: <span className="font-bold text-primary">{vacancies}</span>
+                    {vacancies === 0 && " (Applications will be added to the waitlist)"}
+                </div>
+            )}
+            <FormField control={form.control} name="formerSchool" render={({ field }) => ( <FormItem><FormLabel>Previous School</FormLabel><FormControl><Input placeholder="e.g., Eastwood Elementary" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="gradesSummary" render={({ field }) => ( <FormItem><FormLabel>Previous Grades Summary</FormLabel><FormControl><Textarea placeholder="Briefly describe academic performance, e.g., 'Consistent A grades in Math and Science, B in English.'" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            
+            <DialogFooter className="sticky bottom-0 bg-background pt-4 pr-0">
+              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+              <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit Application</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+function AIGeneratedAdvice({ child }) {
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> AI-Powered Insights</CardTitle>
+          <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+          <p>AI features are temporarily disabled for maintenance.</p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function GradeDistribution({ grades }) {
+  const chartData = useMemo(() => {
+    return grades.map(grade => ({
+      subject: grade.subject,
+      gpa: getGpaFromNumeric(parseFloat(grade.grade))
+    }));
+  }, [grades]);
+
+  const chartConfig = {
+    gpa: {
+      label: 'GPA',
+      color: 'hsl(var(--chart-2))',
+    },
+  } satisfies ChartConfig;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><BarChart2 /> Grade Distribution</CardTitle>
+        <CardDescription>Performance by subject based on GPA.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {grades.length > 0 ? (
+          <ChartContainer config={chartConfig} className="h-48 w-full">
+            <BarChart data={chartData} margin={{ top: 20 }}>
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="gpa" fill="var(--color-gpa)" radius={4} />
+            </BarChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex items-center justify-center h-48 text-muted-foreground">
+            <p>No grade data available.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function ParentSportsActivities() {
+    const { studentsData, teamsData, competitionsData } = useSchoolData();
+
+    const upcomingCompetitions = useMemo(() => {
+        const childrenIds = studentsData.map(c => c.id);
+        const childrenTeams = teamsData.filter(t => t.playerIds.some(pId => childrenIds.includes(pId)));
+        const teamMap = new Map(childrenTeams.map(t => [t.id, t]));
+        
+        return competitionsData
+            .filter(c => c.date >= new Date() && teamMap.has(c.ourTeamId))
+            .map(c => ({
+                ...c,
+                team: teamMap.get(c.ourTeamId),
+                players: studentsData.filter(s => teamMap.get(c.ourTeamId)?.playerIds.includes(s.id))
+            }))
+            .sort((a,b) => a.date.getTime() - b.date.getTime());
+    }, [studentsData, teamsData, competitionsData]);
+
+    if (upcomingCompetitions.length === 0) return null;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Trophy /> My Children's Sports</CardTitle>
+                <CardDescription>Upcoming games and competitions for your children.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ul className="space-y-4">
+                    {upcomingCompetitions.map(comp => (
+                        <li key={comp.id} className="flex items-start gap-4">
+                            <div className="flex flex-col items-center p-2 bg-muted rounded-md w-14">
+                                <span className="font-bold text-lg">{format(comp.date, 'dd')}</span>
+                                <span className="text-xs uppercase">{format(comp.date, 'MMM')}</span>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold">{comp.team?.name} vs {comp.opponent}</h4>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                    <div className="flex items-center gap-2"><User className="h-3 w-3"/><span>Player(s): {comp.players.map(p => p.name).join(', ')}</span></div>
+                                    <div className="flex items-center gap-2"><CalendarIcon className="h-3 w-3"/><span>{format(comp.date, 'EEEE')} at {comp.time}</span></div>
+                                </div>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </CardContent>
+        </Card>
+    );
+}
+
+const getStatusInfo = (fee) => {
+    const balance = fee.totalAmount - fee.amountPaid;
+    const isOverdue = new Date(fee.dueDate) < new Date() && balance > 0;
+
+    if (balance <= 0) {
+        return { text: 'Paid', variant: 'secondary' as const };
+    }
+    if (isOverdue) {
+        return { text: 'Overdue', variant: 'destructive' as const };
+    }
+     if (fee.amountPaid > 0) {
+        return { text: 'Partially Paid', variant: 'outline' as const };
+    }
+    return { text: 'Pending', variant: 'outline' as const };
+};
+
+export default function ParentDashboard() {
+  const { user } = useAuth();
+  const { studentsData, grades, attendance, financeData, schoolProfile, isLoading: schoolDataLoading } = useSchoolData();
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLoading && role !== 'GlobalAdmin') {
-      router.push('/dashboard');
+    if (!selectedChildId && studentsData.length > 0) {
+      setSelectedChildId(studentsData[0].id);
     }
-  }, [role, isLoading, router]);
+  }, [studentsData, selectedChildId]);
 
-  if (isLoading || role !== 'GlobalAdmin') {
-    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  }
+  const selectedChild = useMemo(() => studentsData.find(c => c.id === selectedChildId), [selectedChildId, studentsData]);
+
+  const childGrades = useMemo(() => {
+    if (!selectedChildId) return [];
+    return grades.filter(g => g.studentId === selectedChildId);
+  }, [grades, selectedChildId]);
   
-  return (
-    <div className="space-y-8 animate-in fade-in-50">
-      <header className="text-center">
-        <h2 className="text-4xl font-bold tracking-tight text-primary">Project Proposal: EduManage</h2>
-        <p className="text-xl text-muted-foreground mt-2">A Catalyst for Educational Transformation in Southern Africa</p>
-      </header>
+  const childFinanceSummary = useMemo(() => {
+    if (!selectedChildId) return null;
+    const childFees = financeData.filter(f => f.studentId === selectedChildId);
+    if (childFees.length === 0) return null;
+    // Prioritize showing an overdue fee, then a partially paid/pending one.
+    const overdue = childFees.find(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < new Date());
+    if (overdue) return overdue;
+    const pending = childFees.find(f => f.totalAmount - f.amountPaid > 0);
+    if (pending) return pending;
+    return childFees[0]; // Otherwise show the first one (likely a paid one)
+  }, [financeData, selectedChildId]);
 
-      <Card className="bg-primary/5 border-primary/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3 text-2xl"><Rocket /> Executive Summary</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 text-muted-foreground">
-            <p>The landscape of education in Mozambique and the broader Southern African region is at a critical inflection point. While rich in potential, it faces significant challenges related to administrative efficiency, resource allocation, and data-driven decision-making. EduManage is a comprehensive, multi-tenant SaaS platform engineered not just to manage schools, but to transform them. By integrating a suite of powerful, AI-driven tools into a single, accessible system, EduManage will empower educators, engage parents, and provide administrators with the insights needed to elevate educational standards.</p>
-            <p>Our prototype has successfully validated the core thesis: that a unified, intelligent platform can drastically reduce administrative overhead and unlock a new level of academic oversight. We are now seeking seed funding to transition from our robust prototype to a production-ready Firebase backend, enabling us to launch in Mozambique and subsequently scale across the SADC region. This investment will fuel a sustainable business model designed for long-term social impact, making modern educational tools accessible and affordable.</p>
-        </CardContent>
-      </Card>
+  if (schoolDataLoading) {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
 
-      <div className="grid gap-8 lg:grid-cols-2">
+  if (!studentsData || studentsData.length === 0) {
+    return (
+       <div className="space-y-6">
+        <header className="flex flex-wrap gap-4 justify-between items-center">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+              <p className="text-muted-foreground">Welcome, {user?.name}.</p>
+            </div>
+            <NewApplicationDialog />
+        </header>
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Lightbulb /> The Challenge & The Opportunity</CardTitle>
-            <CardDescription>From Administrative Burden to Educational Focus</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-             <div>
-                <h3 className="font-semibold text-card-foreground">Current State: The Administrative Bottleneck</h3>
-                <p className="text-sm text-muted-foreground mt-1">Many schools rely on manual, paper-based processes or a fragmented collection of outdated software. This results in critical data being siloed in disparate spreadsheets and physical files. Teachers spend valuable hours on administrative tasks instead of instructional planning, and school leaders lack the timely, aggregated data required for strategic decision-making. This inefficiency directly impacts the quality of education and hinders student progress.</p>
-             </div>
-             <div>
-                <h3 className="font-semibold text-card-foreground">Our Solution: A Unified, Intelligent Ecosystem</h3>
-                <p className="text-sm text-muted-foreground mt-1">EduManage replaces this disconnected patchwork with a single, cloud-native platform. Our key differentiator is the deep integration of AI to not just manage data, but to provide actionable insights—from performance-aware lesson planning for teachers to strategic system-wide analysis for administrators. By automating administrative tasks and providing clear, visual data, we free up educators to do what they do best: teach.</p>
-             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><TrendingUp /> How EduManage Elevates Standards</CardTitle>
-            <CardDescription>Directly Addressing Key Educational Challenges</CardDescription>
-          </CardHeader>
-           <CardContent className="space-y-4 text-sm">
-              <div className="flex items-start gap-3">
-                <BrainCircuit className="h-5 w-5 text-primary mt-1 shrink-0" />
-                <div>
-                  <h4 className="font-semibold">Empowering Teachers with AI</h4>
-                  <p className="text-muted-foreground">Instead of generic lesson plans, teachers can use our AI to generate plans tailored to their students' recent performance, ensuring no one is left behind. Ad-hoc tests can be created in minutes, not hours.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <BookCopy className="h-5 w-5 text-primary mt-1 shrink-0" />
-                <div>
-                  <h4 className="font-semibold">Enabling Data-Driven Leadership</h4>
-                  <p className="text-muted-foreground">School administrators can move from guesswork to strategy. Our AI reports provide instant analysis of school-wide performance, class struggles, and teacher effectiveness, identifying areas for intervention and improvement.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Users className="h-5 w-5 text-primary mt-1 shrink-0" />
-                <div>
-                  <h4 className="font-semibold">Engaging Parents in Partnership</h4>
-                  <p className="text-muted-foreground">The Parent Portal bridges the communication gap. Parents receive real-time updates on finances and can access AI-powered advice on how to support their child's specific academic needs, fostering a collaborative educational environment.</p>
-                </div>
-              </div>
-           </CardContent>
+            <CardHeader>
+            <CardTitle>No Student Data Found</CardTitle>
+            </CardHeader>
+            <CardContent>
+            <p>No student information is linked to your account. You can submit an application for a new child to a school.</p>
+            </CardContent>
         </Card>
       </div>
+    );
+  }
 
-       <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Target /> Go-to-Market, Monetization & Partnerships</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <h3 className="text-xl font-semibold text-card-foreground mb-3">Sustainable Monetization Model</h3>
-              <p className="text-sm text-muted-foreground">Our business model is a B2B SaaS subscription sold directly to educational institutions. We use a tiered, annual per-student pricing model, billed to the school in their local currency. This ensures predictable revenue for us and makes the platform accessible for institutions of all sizes. Schools have the flexibility to absorb this operational cost or incorporate it into their tuition structures.</p>
-              <ul className="list-disc pl-5 mt-4 space-y-2 text-sm text-muted-foreground">
-                  <li><span className="font-semibold">Starter:</span> Core management features for emerging schools.</li>
-                  <li><span className="font-semibold text-primary">Pro:</span> Adds advanced AI tools for established institutions.</li>
-                  <li><span className="font-semibold text-accent">Premium:</span> Multi-school management for districts and groups.</li>
-              </ul>
-            </div>
-            
-            <Separator />
-            
-            <div>
-              <h3 className="text-xl font-semibold text-card-foreground mb-3">Sales & Marketing Strategy</h3>
-              <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
-                  <div>
-                      <h4 className="font-semibold">Phased Regional Rollout</h4>
-                      <p className="text-sm text-muted-foreground mt-1">Our initial launch will target independent and semi-private schools in Mozambique. Success here will create a proven case study for expansion into neighboring countries like South Africa, Zimbabwe, and Botswana, adapting to local curricula and needs.</p>
-                  </div>
-                  <div>
-                      <h4 className="font-semibold">Direct Sales & Pilot Programs</h4>
-                      <p className="text-sm text-muted-foreground mt-1">An agile local sales team will conduct on-site demos and build relationships. We will offer a limited number of schools a free or heavily discounted pilot program in exchange for feedback and testimonials to use as powerful case studies.</p>
-                  </div>
-                  <div>
-                      <h4 className="font-semibold">Digital Marketing</h4>
-                      <p className="text-sm text-muted-foreground mt-1">Launch targeted ad campaigns on platforms like LinkedIn and Facebook focusing on school administrators. Develop content marketing (blogs, whitepapers) around the benefits of EdTech to establish thought leadership.</p>
-                  </div>
+  return (
+    <div className="space-y-6">
+      <header className="flex flex-wrap gap-4 justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+          <p className="text-muted-foreground">Welcome, {user?.name}. Here is an overview for your children.</p>
+        </div>
+        <NewApplicationDialog />
+      </header>
+
+      <div>
+        <h3 className="text-lg font-medium mb-2">Select a Child</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {studentsData.map(child => (
+            <Card 
+              key={child.id} 
+              onClick={() => setSelectedChildId(child.id)}
+              className={cn(
+                'cursor-pointer transition-all hover:shadow-md hover:border-primary/50',
+                selectedChildId === child.id ? 'border-primary ring-2 ring-primary/50' : 'border-border'
+              )}
+            >
+              <CardHeader>
+                <CardTitle>{child.name}</CardTitle>
+                <CardDescription>{child.schoolName}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Grade {child.grade} - {child.class}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+      
+      {selectedChild ? (
+        <div className="space-y-6 animate-in fade-in-25">
+           <div className="grid gap-6 lg:grid-cols-3">
+            {selectedChild && <AIGeneratedAdvice child={selectedChild} />}
+             <div className="space-y-6">
+                <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><DollarSign /> Fee Status</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                    {childFinanceSummary ? (
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount, schoolProfile?.currency)}</span></p>
+                                <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
+                            </div>
+                            <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">No fee information available.</p>
+                    )}
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><GraduationCap /> Recent Grades</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-2">
+                            {childGrades.length > 0 ? childGrades.slice(0, 3).map((grade, index) => {
+                              const numericGrade = parseFloat(grade.grade);
+                              return (
+                                <li key={index} className="flex justify-between items-center text-sm">
+                                    <span className="font-medium">{grade.subject}</span>
+                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
+                                </li>
+                              )
+                            }) : <p className="text-muted-foreground text-sm">No recent grades.</p>}
+                        </ul>
+                    </CardContent>
+                </Card>
               </div>
-            </div>
-
-            <Separator />
-
-            <div>
-              <h3 className="text-xl font-semibold text-card-foreground mb-3">Partnership & Ecosystem Building</h3>
-              <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
-                  <div>
-                      <h4 className="font-semibold">Technology Partners</h4>
-                      <p className="text-sm text-muted-foreground mt-1">Integrate with dominant regional mobile money providers (M-Pesa, eMola) and payment gateways to streamline fee collection. Partner with local hardware vendors to offer bundled deals on tablets.</p>
-                  </div>
-                  <div>
-                      <h4 className="font-semibold">Government & Associations</h4>
-                      <p className="text-sm text-muted-foreground mt-1">Engage with Ministries of Education and Private School Associations to gain endorsements and access to a wider network of potential clients.</p>
-                  </div>
-                   <div>
-                      <h4 className="font-semibold">Corporate Sponsorships</h4>
-                      <p className="text-sm text-muted-foreground mt-1">Secure sponsorships for the "EduManage Excellence Awards" from local and international companies looking to invest in the region's educational development, creating an additional revenue stream.</p>
-                  </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <GradeDistribution grades={childGrades} />
+            <ParentSportsActivities />
+          </div>
+        </div>
+      ) : (
         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Trophy /> Motivation & Recognition: The EduManage Awards</CardTitle>
-                <CardDescription>Fostering a Culture of Excellence</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <p className="text-muted-foreground">To further drive engagement and celebrate success, we will establish the annual **EduManage Excellence Awards**. These awards will recognize top-performing schools, teachers, and students across the network, based on data-driven metrics pulled from the platform. The system owner can configure prizes and announce the winners from a dedicated page in their dashboard.</p>
-                <p className="text-muted-foreground">This initiative creates a positive feedback loop, encouraging healthy competition and a focus on improvement. It also opens up a valuable revenue stream through **corporate sponsorships**, allowing local and international brands to align themselves with educational excellence in the region.</p>
-            </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><CalendarClock /> Development Roadmap</CardTitle>
-             <CardDescription>A clear timeline for moving from prototype to a scalable, production-ready application.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-start gap-4">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold shrink-0">1</span>
-              <div>
-                <h4 className="font-semibold">Phase 1 (Q3 2025): Production Backend & Core Service</h4>
-                <p className="text-sm text-muted-foreground">Transition from mock data to a full Firebase backend (Firestore, Auth, Storage). Refactor all services and establish robust security rules for a multi-tenant architecture.</p>
-              </div>
-            </div>
-             <div className="flex items-start gap-4">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold shrink-0">2</span>
-              <div>
-                <h4 className="font-semibold">Phase 2 (Q4 2025): Financial Integration & Automation</h4>
-                <p className="text-sm text-muted-foreground">This phase focuses on creating a frictionless financial ecosystem. We will integrate with key regional payment providers including mobile money (M-Pesa, eMola, EcoCash) and traditional banking systems. This will enable automated invoicing, one-click fee payments from the Parent Portal, real-time payment tracking, and automated reminders for overdue fees, significantly reducing the administrative burden of collections.</p>
-              </div>
-            </div>
-             <div className="flex items-start gap-4">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold shrink-0">3</span>
-              <div>
-                <h4 className="font-semibold">Phase 3 (Q1 2026): Pilot Program & Market Launch</h4>
-                <p className="text-sm text-muted-foreground">Launch a pilot program with a select group of schools in Mozambique to gather feedback and refine features. Initiate targeted marketing campaigns for a full market launch.</p>
-              </div>
-            </div>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            <p>Please select a child to view their details.</p>
           </CardContent>
         </Card>
-
-         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Layers /> Continuous Improvement: Seasonal Updates</CardTitle>
-                <CardDescription>Beyond the core roadmap, we are committed to continuous innovation through regular seasonal updates.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-6 sm:grid-cols-2">
-                <div className="flex items-start gap-3">
-                    <Smartphone className="h-5 w-5 text-primary mt-1 shrink-0" />
-                    <div>
-                        <h4 className="font-semibold">Native Mobile Apps</h4>
-                        <p className="text-sm text-muted-foreground">Dedicated iOS and Android applications for parents and students to enhance accessibility and engagement.</p>
-                    </div>
-                </div>
-                <div className="flex items-start gap-3">
-                    <LineChart className="h-5 w-5 text-primary mt-1 shrink-0" />
-                    <div>
-                        <h4 className="font-semibold">Predictive Analytics</h4>
-                        <p className="text-sm text-muted-foreground">Tools to predict student dropout risks or identify opportunities for academic intervention based on historical data.</p>
-                    </div>
-                </div>
-                <div className="flex items-start gap-3">
-                    <Target className="h-5 w-5 text-primary mt-1 shrink-0" />
-                    <div>
-                        <h4 className="font-semibold">Goal Setting</h4>
-                        <p className="text-sm text-muted-foreground">Collaborative tools for students and parents to set, track, and manage academic and personal development goals.</p>
-                    </div>
-                </div>
-                <div className="flex items-start gap-3">
-                    <Club className="h-5 w-5 text-primary mt-1 shrink-0" />
-                    <div>
-                        <h4 className="font-semibold">Extracurricular Management</h4>
-                        <p className="text-sm text-muted-foreground">A dedicated module for managing non-academic activities, clubs, and sports teams with scheduling and communication tools.</p>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-        
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Briefcase /> The Future Vision: A Lifelong Learning Ecosystem</CardTitle>
-            <CardDescription>From the first day of pre-school to university graduation and beyond.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Our ultimate vision extends beyond the K-12 classroom. We aim to create a cohesive, three-part ecosystem that supports a student's entire educational journey. While the Pre-School and University modules will be developed as distinct, specialized applications due to their unique complexities, they will be built on a shared data philosophy.</p>
-            <div className="grid md:grid-cols-3 gap-6 mt-6">
-              <div className="flex flex-col items-center text-center p-4 rounded-lg bg-muted/50">
-                <Baby className="h-10 w-10 text-primary mb-3"/>
-                <h4 className="font-semibold">EduManage Pre-School</h4>
-                <p className="text-sm text-muted-foreground mt-1">Focusing on developmental milestones, play-based learning, and parent communication, creating the foundational data points for a child's educational profile.</p>
-              </div>
-              <div className="flex flex-col items-center text-center p-4 rounded-lg bg-primary/10 border border-primary/20 shadow-inner">
-                <School className="h-10 w-10 text-primary mb-3"/>
-                <h4 className="font-semibold">EduManage K-12 (Core)</h4>
-                <p className="text-sm text-muted-foreground mt-1">Our current platform, perfecting the management of curriculum-based education, assessments, and school operations, building a rich academic history.</p>
-              </div>
-              <div className="flex flex-col items-center text-center p-4 rounded-lg bg-muted/50">
-                <Briefcase className="h-10 w-10 text-primary mb-3"/>
-                <h4 className="font-semibold">EduManage University & Careers</h4>
-                <p className="text-sm text-muted-foreground mt-1">A specialized module for higher education that also bridges the gap to employment. Upon student consent, employers and recruitment agents can gain temporary, verified access to academic records, helping them connect with the right talent.</p>
-              </div>
-            </div>
-            <p className="text-muted-foreground mt-6">This interconnected system will provide unprecedented insights, allowing educators to track progress, advisors to offer personalized guidance, and employers to connect with qualified talent. This is not just school management; it is lifetime learning and career management.</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><DollarSign /> Funding Request</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-muted-foreground">
-              <p>We are seeking $500,000 in seed funding. This capital will be strategically allocated to accelerate development, establish a local presence for sales and support, and ensure a successful market entry.</p>
-              <ul className="list-disc pl-5 mt-2">
-                  <li><span className="font-semibold">40%</span> - Engineering & Product Development (Firebase migration, mobile optimization)</li>
-                  <li><span className="font-semibold">35%</span> - Sales & Marketing (Establish local team, build partnerships)</li>
-                  <li><span className="font-semibold">15%</span> - Cloud Infrastructure & Operations</li>
-                  <li><span className="font-semibold">10%</span> - Administrative & Contingency</li>
-              </ul>
-          </CardContent>
-        </Card>
+      )}
     </div>
   );
 }

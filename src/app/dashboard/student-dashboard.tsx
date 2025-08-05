@@ -1,528 +1,405 @@
-
 'use client';
-import { useMemo, useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Link } from '@/navigation';
-import { FileText as FileTextIcon, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse, Sparkles, BookOpen, User, Check, Lightbulb, TrendingUp, BrainCircuit } from "lucide-react";
-import { useAuth } from "@/context/auth-context";
-import { useSchoolData, Grade, Student } from "@/context/school-data-context";
+import { useEffect, useState, useMemo } from 'react';
+import { useAuth } from '@/context/auth-context';
+import { useSchoolData, NewAdmissionData, Competition, Team, Student } from '@/context/school-data-context';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Pie, PieChart, Cell } from 'recharts';
+import { cn, formatCurrency } from '@/lib/utils';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
-  ChartConfig
+  ChartConfig,
 } from '@/components/ui/chart';
-import { format } from "date-fns";
+import { Bar, BarChart } from 'recharts';
+import { getGpaFromNumeric, formatGradeDisplay } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import Image from 'next/image';
-import { formatGradeDisplay } from '@/lib/utils';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { EndOfTermReportDialog } from '@/components/dashboard/end-of-term-report';
-import { analyzeStudentPerformanceAction } from '@/app/actions/ai-actions';
-import { StudentAnalysis } from '@/ai/flows/student-analysis-flow';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
-const calculateAverageNumericGrade = (studentId: string, grades: Grade[], subject?: string) => {
-    if (!studentId || !grades) return 0;
-    const studentGrades = subject 
-        ? grades.filter(g => g.studentId === studentId && g.subject === subject)
-        : grades.filter(g => g.studentId === studentId);
-        
-    if (studentGrades.length === 0) return 0;
-    const totalPoints = studentGrades.reduce((acc, g) => acc + parseFloat(g.grade), 0);
-    return (totalPoints / studentGrades.length);
-};
 
-function MyCourses({ student, studentCourses, grades, schoolProfile, teachersData }) {
-    if (studentCourses.length === 0) {
-        return (
-            <Card>
-                <CardHeader><CardTitle>My Courses</CardTitle></CardHeader>
-                <CardContent><p className="text-muted-foreground">You are not enrolled in any courses yet.</p></CardContent>
-            </Card>
-        );
-    }
-    
-    return (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {studentCourses.map(course => {
-                const teacher = teachersData.find(t => t.id === course.teacherId);
-                const avgGrade = calculateAverageNumericGrade(student.id, grades, course.subject);
-                return (
-                    <Card key={course.id}>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-xl"><BookOpen className="text-primary"/> {course.subject}</CardTitle>
-                            {teacher && <CardDescription className="flex items-center gap-2"><User className="h-4 w-4"/> {teacher.name}</CardDescription>}
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground">Your Average Grade</p>
-                            <p className="text-4xl font-bold">{formatGradeDisplay(avgGrade, schoolProfile?.gradingSystem)}</p>
-                        </CardContent>
-                    </Card>
-                )
-            })}
-        </div>
-    )
-}
+const applicationSchema = z.object({
+  schoolId: z.string({ required_error: "Please select a school to apply to."}),
+  name: z.string().min(2, "Applicant name must be at least 2 characters."),
+  dateOfBirth: z.date({ required_error: "Date of birth is required." }),
+  sex: z.enum(['Male', 'Female'], { required_error: "Please select a gender." }),
+  appliedFor: z.string().min(1, "Please specify the grade being applied for."),
+  formerSchool: z.string().min(2, "Please enter the name of the former school."),
+  gradesSummary: z.string().min(10, "Please provide a brief summary of previous grades.").optional(),
+});
+type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
-function StudentAIAdvisor({ student, grades, attendanceSummary }) {
-    const [analysis, setAnalysis] = useState<StudentAnalysis | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const { toast } = useToast();
+function NewApplicationDialog() {
+  const { addAdmission, allSchoolData } = useSchoolData();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-    const handleAnalysis = async () => {
-        setIsLoading(true);
-        setAnalysis(null);
-        try {
-            const gradeData = grades.map(g => ({
-                subject: g.subject,
-                grade: g.grade,
-                type: g.type,
-                description: g.description,
-            }));
+  const form = useForm<ApplicationFormValues>({
+    resolver: zodResolver(applicationSchema),
+  });
 
-            const attendanceData = Object.entries(attendanceSummary).map(([status, count]) => ({ status, count: count as number }));
+  const selectedSchoolId = form.watch('schoolId');
+  const selectedGradeStr = form.watch('appliedFor');
 
-            const result = await analyzeStudentPerformanceAction({
-                studentName: student.name,
-                grades: gradeData,
-                attendance: attendanceData,
-            });
-            setAnalysis(result);
-        } catch (e) {
-            console.error("AI Analysis failed:", e);
-            toast({ variant: 'destructive', title: 'Analysis Failed', description: 'Could not get AI-powered recommendations.' });
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const vacancies = useMemo(() => {
+    if (!selectedSchoolId || !selectedGradeStr) return null;
+    const school = allSchoolData?.[selectedSchoolId];
+    if (!school) return null;
 
-    return (
-        <Card className="lg:col-span-2">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> Your AI Academic Advisor</CardTitle>
-                <CardDescription>Get personalized insights and recommendations based on your performance.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                {!analysis && (
-                    <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
-                        <p className="text-muted-foreground mb-4">Click the button below to analyze your recent grades and attendance.</p>
-                        <Button onClick={handleAnalysis} disabled={isLoading}>
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-                            Analyze My Performance
-                        </Button>
-                    </div>
-                )}
-                {analysis && (
-                    <div className="space-y-6">
-                         <div className="grid md:grid-cols-2 gap-6">
-                            <div>
-                                <h3 className="font-semibold flex items-center gap-2 mb-2"><Check className="text-green-500"/> Strengths</h3>
-                                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-                                    {analysis.strengths.map((s,i) => <li key={i}>{s}</li>)}
-                                </ul>
-                            </div>
-                             <div>
-                                <h3 className="font-semibold flex items-center gap-2 mb-2"><TrendingUp className="text-orange-500"/> Areas for Improvement</h3>
-                                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-                                    {analysis.areasForImprovement.map((a,i) => <li key={i}>{a}</li>)}
-                                </ul>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold flex items-center gap-2 mb-2"><Lightbulb className="text-yellow-500"/> Recommendations</h3>
-                             <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-                                {analysis.recommendations.map((r,i) => <li key={i}>{r}</li>)}
-                            </ul>
-                        </div>
-                    </div>
-                )}
-            </CardContent>
-            {analysis && (
-                <CardFooter>
-                    <Button variant="outline" onClick={() => setAnalysis(null)}>
-                        Start a New Analysis
-                    </Button>
-                </CardFooter>
-            )}
-        </Card>
-    )
-}
+    const gradeNumber = selectedGradeStr.replace('Grade ', '');
+    const capacity = school.profile.gradeCapacity?.[gradeNumber] ?? 0;
+    const currentStudents = school.students.filter(s => s.grade === gradeNumber).length;
 
-function RankCard({ studentId }) {
-    const { studentsData, grades } = useSchoolData();
-  
-    const allStudentsWithAvg = useMemo(() => studentsData.map(student => ({
-        ...student,
-        avgNumeric: calculateAverageNumericGrade(student.id, grades),
-    })).sort((a, b) => b.avgNumeric - a.avgNumeric), [studentsData, grades]);
+    return Math.max(0, capacity - currentStudents);
+  }, [selectedSchoolId, selectedGradeStr, allSchoolData]);
 
-    const studentRank = useMemo(() => {
-        if (!studentId) return -1;
-        return allStudentsWithAvg.findIndex(s => s.id === studentId) + 1;
-    }, [allStudentsWithAvg, studentId]);
+  function onSubmit(values: ApplicationFormValues) {
+    addAdmission({
+      schoolId: values.schoolId,
+      name: values.name,
+      dateOfBirth: format(values.dateOfBirth, 'yyyy-MM-dd'),
+      sex: values.sex,
+      appliedFor: values.appliedFor,
+      formerSchool: values.formerSchool,
+      gradesSummary: values.gradesSummary || 'N/A',
+    });
+    toast({
+      title: 'Application Submitted',
+      description: `The application for ${values.name} has been sent to the school for review.`,
+    });
+    form.reset();
+    setIsDialogOpen(false);
+  }
 
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Trophy /> School Rank</CardTitle>
-                <CardDescription>Your overall academic position.</CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-                <p className="text-6xl font-bold text-primary">{studentRank > 0 ? studentRank : 'N/A'}</p>
-                <p className="text-muted-foreground">out of {allStudentsWithAvg.length} students</p>
-            </CardContent>
-            <CardFooter>
-                 <Link href="/dashboard/leaderboards" passHref className="w-full">
-                    <Button variant="outline" className="w-full">View Leaderboards</Button>
-                </Link>
-            </CardFooter>
-        </Card>
-    );
-}
-
-function AttendanceBreakdownChart({ studentId }) {
-  const { attendance } = useSchoolData();
-  const studentAttendance = attendance.filter(a => a.studentId === studentId);
-  
-  const breakdown = studentAttendance.reduce((acc, record) => {
-    const statusKey = record.status.toLowerCase();
-    acc[statusKey] = (acc[statusKey] || 0) + 1;
-    return acc;
-  }, { present: 0, late: 0, absent: 0, sick: 0});
-
-  const chartData = [
-    { status: 'present', value: breakdown.present, fill: 'var(--color-present)' },
-    { status: 'late', value: breakdown.late, fill: 'var(--color-late)' },
-    { status: 'absent', value: breakdown.absent, fill: 'var(--color-absent)' },
-    { status: 'sick', value: breakdown.sick, fill: 'var(--color-sick)' },
-  ];
-
-  const chartConfig = {
-    present: { label: 'Present', color: 'hsl(var(--chart-2))' },
-    late: { label: 'Late', color: 'hsl(var(--chart-4))' },
-    absent: { label: 'Absent', color: 'hsl(var(--destructive))' },
-    sick: { label: 'Sick', icon: HeartPulse, color: 'hsl(var(--chart-3))' },
-  } satisfies ChartConfig;
+  const schoolList = allSchoolData ? Object.values(allSchoolData).map(s => s.profile) : [];
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="items-center pb-0">
-        <CardTitle>Attendance</CardTitle>
-        <CardDescription>Your attendance this semester</CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1 pb-0">
-        <ChartContainer
-          config={chartConfig}
-          className="mx-auto aspect-square max-h-[200px]"
-        >
-          <PieChart>
-            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-            <Pie data={chartData} dataKey="value" nameKey="status" innerRadius={30} strokeWidth={5}>
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
-              ))}
-            </Pie>
-            <ChartLegend content={<ChartLegendContent nameKey="status" />} />
-          </PieChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Button><UserPlus className="mr-2 h-4 w-4" /> New Application</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Apply for a New Child</DialogTitle>
+          <DialogDescription>
+            Fill out this form to submit a new admission application to a school.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+            <FormField control={form.control} name="schoolId" render={({ field }) => ( <FormItem><FormLabel>School to Apply To</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select School" /></SelectTrigger></FormControl><SelectContent>{schoolList.map(school => <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Child's Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+                <FormField control={form.control} name="sex" render={({ field }) => ( <FormItem><FormLabel>Sex</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+            </div>
+            <FormField control={form.control} name="appliedFor" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Applying for Grade</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedSchoolId}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select Grade" /></SelectTrigger></FormControl>
+                        <SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(g => <SelectItem key={g} value={`Grade ${g}`}>Grade {g}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+            )} />
+             {vacancies !== null && (
+                <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md border">
+                    Available Vacancies for this grade: <span className="font-bold text-primary">{vacancies}</span>
+                    {vacancies === 0 && " (Applications will be added to the waitlist)"}
+                </div>
+            )}
+            <FormField control={form.control} name="formerSchool" render={({ field }) => ( <FormItem><FormLabel>Previous School</FormLabel><FormControl><Input placeholder="e.g., Eastwood Elementary" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="gradesSummary" render={({ field }) => ( <FormItem><FormLabel>Previous Grades Summary</FormLabel><FormControl><Textarea placeholder="Briefly describe academic performance, e.g., 'Consistent A grades in Math and Science, B in English.'" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            
+            <DialogFooter className="sticky bottom-0 bg-background pt-4 pr-0">
+              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+              <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit Application</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-function CompletionStatusAlert({ hasPassed, areAllFeesPaid }) {
-  if (hasPassed && areAllFeesPaid) {
-    return (
-      <Alert>
-        <CheckCircle className="h-4 w-4" />
-        <AlertTitle>Congratulations!</AlertTitle>
-        <AlertDescription>
-          You have met all academic and financial requirements for completion. You can now preview and download your official documents below.
-        </AlertDescription>
-      </Alert>
-    );
-  }
 
-  if (!hasPassed) {
-    return (
-      <Alert variant="destructive">
-        <XCircle className="h-4 w-4" />
-        <AlertTitle>Academic Requirements Not Met</AlertTitle>
-        <AlertDescription>Your average grade is below the passing requirement. Please use the AI Advisor below for recommendations on how to improve. You cannot download official documents at this time.</AlertDescription>
-      </Alert>
-    );
-  }
-  
-  if (!areAllFeesPaid) {
-    return (
-      <Alert className="border-amber-500/50 text-amber-600 dark:border-amber-500 [&>svg]:text-amber-600">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Outstanding Balance</AlertTitle>
-        <AlertDescription>
-           You have an outstanding balance on your account. Please clear all pending fees to enable document previews and downloads.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  return null;
+function AIGeneratedAdvice({ child }) {
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> AI-Powered Insights</CardTitle>
+          <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+          <p>AI features are temporarily disabled for maintenance.</p>
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
-function AssignedTests({ student, studentClass }) {
-    const { deployedTests, savedTests } = useSchoolData();
+function GradeDistribution({ grades }) {
+  const chartData = useMemo(() => {
+    return grades.map(grade => ({
+      subject: grade.subject,
+      gpa: getGpaFromNumeric(parseFloat(grade.grade))
+    }));
+  }, [grades]);
 
-    const assigned = useMemo(() => {
-        if (!student || !studentClass) return [];
-        return deployedTests
-            .filter(dt => dt.classId === studentClass.id && !dt.submissions.some(s => s.studentId === student.id))
-            .map(dt => {
-                const testDetails = savedTests.find(st => st.id === dt.testId);
-                const deadlineDate = dt.deadline instanceof Date ? dt.deadline : new Date(dt.deadline);
-                return { ...dt, ...testDetails, deadline: deadlineDate };
-            })
-            .sort((a,b) => a.deadline.getTime() - b.deadline.getTime());
-    }, [student, studentClass, deployedTests, savedTests]);
+  const chartConfig = {
+    gpa: {
+      label: 'GPA',
+      color: 'hsl(var(--chart-2))',
+    },
+  } satisfies ChartConfig;
 
-    if (assigned.length === 0) {
-        return null;
-    }
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><BarChart2 /> Grade Distribution</CardTitle>
+        <CardDescription>Performance by subject based on GPA.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {grades.length > 0 ? (
+          <ChartContainer config={chartConfig} className="h-48 w-full">
+            <BarChart data={chartData} margin={{ top: 20 }}>
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="gpa" fill="var(--color-gpa)" radius={4} />
+            </BarChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex items-center justify-center h-48 text-muted-foreground">
+            <p>No grade data available.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function ParentSportsActivities() {
+    const { studentsData, teamsData, competitionsData } = useSchoolData();
+
+    const upcomingCompetitions = useMemo(() => {
+        const childrenIds = studentsData.map(c => c.id);
+        const childrenTeams = teamsData.filter(t => t.playerIds.some(pId => childrenIds.includes(pId)));
+        const teamMap = new Map(childrenTeams.map(t => [t.id, t]));
+        
+        return competitionsData
+            .filter(c => c.date >= new Date() && teamMap.has(c.ourTeamId))
+            .map(c => ({
+                ...c,
+                team: teamMap.get(c.ourTeamId),
+                players: studentsData.filter(s => teamMap.get(c.ourTeamId)?.playerIds.includes(s.id))
+            }))
+            .sort((a,b) => a.date.getTime() - b.date.getTime());
+    }, [studentsData, teamsData, competitionsData]);
+
+    if (upcomingCompetitions.length === 0) return null;
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><ListChecks /> Assigned Tests</CardTitle>
-                <CardDescription>Tests you need to complete.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Trophy /> My Children's Sports</CardTitle>
+                <CardDescription>Upcoming games and competitions for your children.</CardDescription>
             </CardHeader>
             <CardContent>
-                <ul className="space-y-3">
-                {assigned.slice(0, 4).map(test => (
-                    <li key={test.id} className="flex justify-between items-center text-sm p-3 bg-muted rounded-md">
-                        <div>
-                            <p className="font-semibold">{test.topic}</p>
-                            <p className="text-xs text-muted-foreground">{test.subject}</p>
-                        </div>
-                        <div className="text-right">
-                           <Link href={`/dashboard/test/${test.id}`} passHref>
-                             <Button size="sm">Take Test</Button>
-                           </Link>
-                           <p className="text-xs text-muted-foreground mt-1">
-                                Due {format(test.deadline, 'MMM d, yyyy')}
-                           </p>
-                        </div>
-                    </li>
-                ))}
+                <ul className="space-y-4">
+                    {upcomingCompetitions.map(comp => (
+                        <li key={comp.id} className="flex items-start gap-4">
+                            <div className="flex flex-col items-center p-2 bg-muted rounded-md w-14">
+                                <span className="font-bold text-lg">{format(comp.date, 'dd')}</span>
+                                <span className="text-xs uppercase">{format(comp.date, 'MMM')}</span>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold">{comp.team?.name} vs {comp.opponent}</h4>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                    <div className="flex items-center gap-2"><User className="h-3 w-3"/><span>Player(s): {comp.players.map(p => p.name).join(', ')}</span></div>
+                                    <div className="flex items-center gap-2"><CalendarIcon className="h-3 w-3"/><span>{format(comp.date, 'EEEE')} at {comp.time}</span></div>
+                                </div>
+                            </div>
+                        </li>
+                    ))}
                 </ul>
             </CardContent>
         </Card>
     );
 }
 
+const getStatusInfo = (fee) => {
+    const balance = fee.totalAmount - fee.amountPaid;
+    const isOverdue = new Date(fee.dueDate) < new Date() && balance > 0;
 
-export default function StudentDashboard() {
+    if (balance <= 0) {
+        return { text: 'Paid', variant: 'secondary' as const };
+    }
+    if (isOverdue) {
+        return { text: 'Overdue', variant: 'destructive' as const };
+    }
+     if (fee.amountPaid > 0) {
+        return { text: 'Partially Paid', variant: 'outline' as const };
+    }
+    return { text: 'Pending', variant: 'outline' as const };
+};
+
+export default function ParentDashboard() {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const {
-    grades,
-    financeData,
-    studentsData,
-    attendance,
-    schoolProfile,
-    classesData,
-    coursesData,
-    teachersData
-  } = useSchoolData();
+  const { studentsData, grades, attendance, financeData, schoolProfile, isLoading: schoolDataLoading } = useSchoolData();
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedChildId && studentsData.length > 0) {
+      setSelectedChildId(studentsData[0].id);
+    }
+  }, [studentsData, selectedChildId]);
+
+  const selectedChild = useMemo(() => studentsData.find(c => c.id === selectedChildId), [selectedChildId, studentsData]);
+
+  const childGrades = useMemo(() => {
+    if (!selectedChildId) return [];
+    return grades.filter(g => g.studentId === selectedChildId);
+  }, [grades, selectedChildId]);
   
-  const student = useMemo(() => {
-    if (!user?.email) return null;
-    return studentsData.find(s => s.email === user.email);
-  }, [studentsData, user]);
+  const childFinanceSummary = useMemo(() => {
+    if (!selectedChildId) return null;
+    const childFees = financeData.filter(f => f.studentId === selectedChildId);
+    if (childFees.length === 0) return null;
+    // Prioritize showing an overdue fee, then a partially paid/pending one.
+    const overdue = childFees.find(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < new Date());
+    if (overdue) return overdue;
+    const pending = childFees.find(f => f.totalAmount - f.amountPaid > 0);
+    if (pending) return pending;
+    return childFees[0]; // Otherwise show the first one (likely a paid one)
+  }, [financeData, selectedChildId]);
 
-  const studentId = student?.id;
-
-  const studentClass = useMemo(() => {
-    if (!student) return null;
-    return classesData.find(c => c.grade === student.grade && c.name.split('-')[1].trim() === student.class);
-  }, [student, classesData]);
-
-  const studentCourses = useMemo(() => {
-    if (!studentClass) return [];
-    return coursesData.filter(c => c.classId === studentClass.id);
-  }, [studentClass, coursesData]);
-  
-  const studentGrades = useMemo(() => {
-    if (!studentId) return [];
-    return grades.filter(g => g.studentId === studentId);
-  }, [grades, studentId]);
-
-  const studentAttendanceSummary = useMemo(() => {
-    if (!studentId) return { present: 0, late: 0, absent: 0, sick: 0 };
-    const records = attendance.filter(a => a.studentId === studentId);
-    return records.reduce((acc, record) => {
-      const statusKey = record.status.toLowerCase();
-      acc[statusKey] = (acc[statusKey] || 0) + 1;
-      return acc;
-    }, { present: 0, late: 0, absent: 0, sick: 0 });
-  }, [attendance, studentId]);
-
-  const hasPassed = useMemo(() => {
-    if (!studentId) return false;
-    const avg = calculateAverageNumericGrade(studentId, grades);
-    return avg >= 12; // Passing grade is 12/20
-  }, [studentId, grades]);
-
-  const areAllFeesPaid = useMemo(() => {
-    if (!studentId) return false;
-    const studentFees = financeData.filter(f => f.studentId === studentId);
-    if (studentFees.length === 0) return true;
-    return studentFees.every(fee => (fee.totalAmount - fee.amountPaid) <= 0);
-  }, [studentId, financeData]);
-  
-  const isEligibleForCompletion = hasPassed && areAllFeesPaid;
-
-  const handleDownloadCertificate = () => {
-    toast({
-      title: "Certificate Download Started",
-      description: "Your completion certificate is being prepared. (This is a demo feature)",
-    });
-  };
-
-  const handleDownloadTranscript = () => {
-    toast({
-      title: "Transcript Download Started",
-      description: "Your official transcript is being prepared. (This is a demo feature)",
-    });
-  };
-  
-  if (!student) {
+  if (schoolDataLoading) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  if (!studentsData || studentsData.length === 0) {
+    return (
+       <div className="space-y-6">
+        <header className="flex flex-wrap gap-4 justify-between items-center">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+              <p className="text-muted-foreground">Welcome, {user?.name}.</p>
+            </div>
+            <NewApplicationDialog />
+        </header>
+        <Card>
+            <CardHeader>
+            <CardTitle>No Student Data Found</CardTitle>
+            </CardHeader>
+            <CardContent>
+            <p>No student information is linked to your account. You can submit an application for a new child to a school.</p>
+            </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-       <header>
-        <h2 className="text-3xl font-bold tracking-tight">Student Dashboard</h2>
-        <p className="text-muted-foreground">Welcome back, {user?.name}</p>
-      </header>
-      
-       <CompletionStatusAlert 
-          hasPassed={hasPassed}
-          areAllFeesPaid={areAllFeesPaid}
-       />
-      
-       <div className="grid gap-6 lg:grid-cols-3">
-          <StudentAIAdvisor student={student} grades={studentGrades} attendanceSummary={studentAttendanceSummary} />
-          <RankCard studentId={studentId} />
-       </div>
-       <div className="grid gap-6 lg:grid-cols-2">
-          <AssignedTests student={student} studentClass={studentClass} />
-          <AttendanceBreakdownChart studentId={studentId} />
+      <header className="flex flex-wrap gap-4 justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+          <p className="text-muted-foreground">Welcome, {user?.name}. Here is an overview for your children.</p>
         </div>
+        <NewApplicationDialog />
+      </header>
 
-       <Card>
-            <CardHeader>
-                <CardTitle>My Courses & Progress</CardTitle>
-                <CardDescription>An overview of your performance in each subject.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <MyCourses student={student} studentCourses={studentCourses} grades={grades} schoolProfile={schoolProfile} teachersData={teachersData} />
-            </CardContent>
-            <CardFooter>
-                <EndOfTermReportDialog student={student} />
-            </CardFooter>
-        </Card>
-
-       <Card>
-            <CardHeader>
-                <CardTitle>Completion Documents</CardTitle>
-                <CardDescription>
-                    Your official certificate and academic transcript. Access is granted once all academic and financial requirements are met.
-                </CardDescription>
-            </CardHeader>
-            <CardFooter className="flex flex-col items-start gap-2">
-                <div className="flex w-full gap-2">
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <Button disabled={!isEligibleForCompletion} className="w-full">
-                                <FileTextIcon className="mr-2 h-4 w-4" />
-                                Preview Certificate
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl">
-                            <DialogHeader>
-                                <DialogTitle>Official Certificate of Completion</DialogTitle>
-                                <DialogDescription>
-                                    This is a preview of your official certificate from {schoolProfile?.name}.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="p-4 bg-muted rounded-md flex justify-center">
-                                <Image
-                                    src={schoolProfile?.certificateTemplateUrl || "https://placehold.co/800x600.png"}
-                                    alt="Certificate Preview"
-                                    width={800}
-                                    height={600}
-                                    className="rounded-md border shadow-lg"
-                                    data-ai-hint="certificate document"
-                                />
+      <div>
+        <h3 className="text-lg font-medium mb-2">Select a Child</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {studentsData.map(child => (
+            <Card 
+              key={child.id} 
+              onClick={() => setSelectedChildId(child.id)}
+              className={cn(
+                'cursor-pointer transition-all hover:shadow-md hover:border-primary/50',
+                selectedChildId === child.id ? 'border-primary ring-2 ring-primary/50' : 'border-border'
+              )}
+            >
+              <CardHeader>
+                <CardTitle>{child.name}</CardTitle>
+                <CardDescription>{child.schoolName}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Grade {child.grade} - {child.class}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+      
+      {selectedChild ? (
+        <div className="space-y-6 animate-in fade-in-25">
+           <div className="grid gap-6 lg:grid-cols-3">
+            {selectedChild && <AIGeneratedAdvice child={selectedChild} />}
+             <div className="space-y-6">
+                <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><DollarSign /> Fee Status</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                    {childFinanceSummary ? (
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount, schoolProfile?.currency)}</span></p>
+                                <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
                             </div>
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button type="button" variant="secondary">Close</Button>
-                                </DialogClose>
-                                <Button onClick={handleDownloadCertificate}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Download PDF
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <Button variant="secondary" disabled={!isEligibleForCompletion} className="w-full">
-                                <FileTextIcon className="mr-2 h-4 w-4" />
-                                Preview Transcript
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                                <DialogTitle>Official Academic Transcript</DialogTitle>
-                                <DialogDescription>
-                                   This is a preview of your official academic transcript from {schoolProfile?.name}.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="p-4 bg-muted rounded-md flex justify-center max-h-[70vh] overflow-y-auto">
-                                <Image
-                                    src={schoolProfile?.transcriptTemplateUrl || "https://placehold.co/600x800.png"}
-                                    alt="Transcript Preview"
-                                    width={600}
-                                    height={800}
-                                    className="rounded-md border shadow-lg"
-                                    data-ai-hint="transcript document"
-                                />
-                            </div>
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button type="button" variant="secondary">Close</Button>
-                                </DialogClose>
-                                <Button onClick={handleDownloadTranscript}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Download PDF
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-                <p className="text-xs text-muted-foreground self-center">
-                    Document by Pixel Digital Solutions {new Date().getFullYear()}
-                </p>
-            </CardFooter>
+                            <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">No fee information available.</p>
+                    )}
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><GraduationCap /> Recent Grades</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-2">
+                            {childGrades.length > 0 ? childGrades.slice(0, 3).map((grade, index) => {
+                              const numericGrade = parseFloat(grade.grade);
+                              return (
+                                <li key={index} className="flex justify-between items-center text-sm">
+                                    <span className="font-medium">{grade.subject}</span>
+                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
+                                </li>
+                              )
+                            }) : <p className="text-muted-foreground text-sm">No recent grades.</p>}
+                        </ul>
+                    </CardContent>
+                </Card>
+              </div>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <GradeDistribution grades={childGrades} />
+            <ParentSportsActivities />
+          </div>
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            <p>Please select a child to view their details.</p>
+          </CardContent>
         </Card>
+      )}
     </div>
   );
 }

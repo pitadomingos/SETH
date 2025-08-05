@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { useSchoolData, NewAdmissionData, Competition, Team, Student, Grade } from '@/context/school-data-context';
+import { useSchoolData, NewAdmissionData, Competition, Team, Student } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb } from 'lucide-react';
@@ -25,10 +25,8 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Textarea } from '../ui/textarea';
-import { analyzeStudentPerformanceAction } from '@/app/actions/ai-actions';
-import { StudentAnalysis } from '@/ai/flows/student-analysis-flow';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 
 const applicationSchema = z.object({
@@ -137,93 +135,18 @@ function NewApplicationDialog() {
 }
 
 
-function AIGeneratedAdvice({ child, grades, attendance }) {
-  const [analysis, setAnalysis] = useState<StudentAnalysis | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-
-  const handleAnalysis = async () => {
-    setIsLoading(true);
-    setAnalysis(null);
-    try {
-      const gradeData = grades.map(g => ({
-        subject: g.subject,
-        grade: g.grade,
-        type: g.type,
-        description: g.description,
-      }));
-
-      const attendanceData = Object.entries(attendance).map(([status, count]) => ({
-        status,
-        count: count as number,
-      }));
-
-      const result = await analyzeStudentPerformanceAction({
-        studentName: child.name,
-        grades: gradeData,
-        attendance: attendanceData,
-      });
-      setAnalysis(result);
-    } catch (e) {
-      console.error('AI Analysis failed:', e);
-      toast({
-        variant: 'destructive',
-        title: 'Analysis Failed',
-        description: 'Could not get AI-powered recommendations.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+function AIGeneratedAdvice({ child }) {
   return (
     <Card className="lg:col-span-2">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> AI-Powered Insights</CardTitle>
-        <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
+          <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> AI-Powered Insights</CardTitle>
+          <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {!analysis && (
-          <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
-            <p className="text-muted-foreground mb-4">Click below to analyze your child's recent performance.</p>
-            <Button onClick={handleAnalysis} disabled={isLoading}>
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-              Analyze Performance
-            </Button>
-          </div>
-        )}
-        {analysis && (
-          <div className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-semibold flex items-center gap-2 mb-2"><Check className="text-green-500"/> Strengths</h3>
-                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-                  {analysis.strengths.map((s, i) => <li key={i}>{s}</li>)}
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-semibold flex items-center gap-2 mb-2"><TrendingUp className="text-orange-500"/> Areas for Improvement</h3>
-                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-                  {analysis.areasForImprovement.map((a, i) => <li key={i}>{a}</li>)}
-                </ul>
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold flex items-center gap-2 mb-2"><Lightbulb className="text-yellow-500"/> Recommendations for You</h3>
-              <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-                {analysis.recommendations.map((r, i) => <li key={i}>{r}</li>)}
-              </ul>
-            </div>
-          </div>
-        )}
+      <CardContent>
+        <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+          <p>AI features are temporarily disabled for maintenance.</p>
+        </div>
       </CardContent>
-       {analysis && (
-        <CardFooter>
-          <Button variant="outline" onClick={() => setAnalysis(null)}>
-            Start New Analysis
-          </Button>
-        </CardFooter>
-      )}
     </Card>
   )
 }
@@ -276,10 +199,9 @@ function ParentSportsActivities() {
         const teamMap = new Map(childrenTeams.map(t => [t.id, t]));
         
         return competitionsData
-            .filter(c => (c.date instanceof Date ? c.date : new Date(c.date)) >= new Date() && teamMap.has(c.ourTeamId))
+            .filter(c => c.date >= new Date() && teamMap.has(c.ourTeamId))
             .map(c => ({
                 ...c,
-                date: c.date instanceof Date ? c.date : new Date(c.date),
                 team: teamMap.get(c.ourTeamId),
                 players: studentsData.filter(s => teamMap.get(c.ourTeamId)?.playerIds.includes(s.id))
             }))
@@ -350,15 +272,6 @@ export default function ParentDashboard() {
     if (!selectedChildId) return [];
     return grades.filter(g => g.studentId === selectedChildId);
   }, [grades, selectedChildId]);
-
-  const childAttendance = useMemo(() => {
-      if (!selectedChildId) return {};
-      return attendance.filter(a => a.studentId === selectedChildId).reduce((acc, record) => {
-          const statusKey = record.status.toLowerCase();
-          acc[statusKey] = (acc[statusKey] || 0) + 1;
-          return acc;
-      }, {});
-  }, [attendance, selectedChildId]);
   
   const childFinanceSummary = useMemo(() => {
     if (!selectedChildId) return null;
@@ -435,7 +348,7 @@ export default function ParentDashboard() {
       {selectedChild ? (
         <div className="space-y-6 animate-in fade-in-25">
            <div className="grid gap-6 lg:grid-cols-3">
-            {selectedChild && <AIGeneratedAdvice child={selectedChild} grades={childGrades} attendance={childAttendance} />}
+            {selectedChild && <AIGeneratedAdvice child={selectedChild} />}
              <div className="space-y-6">
                 <Card>
                     <CardHeader className="pb-4">
@@ -445,7 +358,7 @@ export default function ParentDashboard() {
                     {childFinanceSummary ? (
                         <div className="flex justify-between items-center">
                             <div>
-                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid, schoolProfile?.currency)}</span></p>
+                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount, schoolProfile?.currency)}</span></p>
                                 <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
                             </div>
                             <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>

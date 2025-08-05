@@ -1,351 +1,405 @@
-
 'use client';
-
-import { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { useSchoolData, Attendance, Student } from '@/context/school-data-context';
-import { Award, Trophy, BookOpen, CalendarCheck } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { formatGradeDisplay } from '@/lib/utils';
-
-// --- Holistic Score Calculation ---
-const calculateHolisticScore = (student: Student, allGrades: any[], allAttendance: any[]) => {
-    // Academic Score (60%)
-    const studentGrades = allGrades.filter(g => g.studentId === student.id).map(g => parseFloat(g.grade));
-    const avgGrade = studentGrades.length > 0 ? studentGrades.reduce((sum, g) => sum + g, 0) / studentGrades.length : 0;
-    const academicScore = (avgGrade / 20) * 60;
-
-    // Attendance Score (20%)
-    const studentAttendance = allAttendance.filter(a => a.studentId === student.id);
-    const attendedCount = studentAttendance.filter(a => a.status === 'Present' || a.status === 'Late').length;
-    const attendanceRate = studentAttendance.length > 0 ? (attendedCount / studentAttendance.length) * 100 : 100; // Default to 100 if no records
-    const attendanceScore = (attendanceRate / 100) * 20;
-
-    // Behavioral Score (20%)
-    let behaviorScore = 0;
-    if (student.behavioralAssessments && student.behavioralAssessments.length > 0) {
-        const totalScore = student.behavioralAssessments.reduce((sum, assessment) => sum + assessment.respect + assessment.participation + assessment.socialSkills + assessment.conduct, 0);
-        const totalItems = student.behavioralAssessments.length * 4;
-        const avgBehavior = totalScore / totalItems;
-        // Normalize from 1-5 scale to 0-1, then multiply by weight
-        behaviorScore = ((avgBehavior - 1) / 4) * 20;
-    } else {
-        // Default to average score (3/5) if no assessments
-        behaviorScore = ( (3 - 1) / 4 ) * 20;
-    }
-    
-    return academicScore + attendanceScore + behaviorScore;
-};
+import { useSchoolData, NewAdmissionData, Competition, Team, Student } from '@/context/school-data-context';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { cn, formatCurrency } from '@/lib/utils';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartConfig,
+} from '@/components/ui/chart';
+import { Bar, BarChart } from 'recharts';
+import { getGpaFromNumeric, formatGradeDisplay } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 
-// --- Components ---
+const applicationSchema = z.object({
+  schoolId: z.string({ required_error: "Please select a school to apply to."}),
+  name: z.string().min(2, "Applicant name must be at least 2 characters."),
+  dateOfBirth: z.date({ required_error: "Date of birth is required." }),
+  sex: z.enum(['Male', 'Female'], { required_error: "Please select a gender." }),
+  appliedFor: z.string().min(1, "Please specify the grade being applied for."),
+  formerSchool: z.string().min(2, "Please enter the name of the former school."),
+  gradesSummary: z.string().min(10, "Please provide a brief summary of previous grades.").optional(),
+});
+type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
-const LeaderboardTable = ({ students, gradingSystem }: { students: any[], gradingSystem?: string }) => {
-    if (!students || students.length === 0) {
-        return <p className="text-center text-muted-foreground py-8">No data available for this selection.</p>;
-    }
+function NewApplicationDialog() {
+  const { addAdmission, allSchoolData } = useSchoolData();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-    return (
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead className="w-[80px]">Rank</TableHead>
-                    <TableHead>Student</TableHead>
-                    <TableHead className="text-right">Holistic Score</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {students.slice(0, 10).map((student, index) => {
-                    return (
-                        <TableRow key={student.id}>
-                            <TableCell className="font-bold text-lg text-primary">{index + 1}</TableCell>
-                            <TableCell>
-                                <div className="flex items-center gap-3">
-                                    <Avatar className="h-9 w-9">
-                                        <AvatarImage src={`https://placehold.co/100x100.png`} alt={student.name} data-ai-hint="profile picture" />
-                                        <AvatarFallback>{student.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <p className="font-medium">{student.name}</p>
-                                        <p className="text-xs text-muted-foreground">Grade {student.grade} - {student.class}</p>
-                                    </div>
-                                </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                                 <Badge variant="secondary" className="text-base">
-                                    {student.holisticScore.toFixed(2)}
-                                </Badge>
-                            </TableCell>
-                        </TableRow>
-                    );
-                })}
-            </TableBody>
-        </Table>
-    );
-};
+  const form = useForm<ApplicationFormValues>({
+    resolver: zodResolver(applicationSchema),
+  });
 
+  const selectedSchoolId = form.watch('schoolId');
+  const selectedGradeStr = form.watch('appliedFor');
 
-const IndividualRankingView = () => {
-  const { role } = useAuth();
-  const { studentsData, allSchoolData } = useSchoolData();
+  const vacancies = useMemo(() => {
+    if (!selectedSchoolId || !selectedGradeStr) return null;
+    const school = allSchoolData?.[selectedSchoolId];
+    if (!school) return null;
 
-  const allStudentsWithScoreBySchool = useMemo(() => {
-    if (!allSchoolData) return {};
-    const data = {};
-    for (const schoolId in allSchoolData) {
-      const school = allSchoolData[schoolId];
-      data[schoolId] = {
-        students: school.students.map(student => ({
-          ...student,
-          holisticScore: calculateHolisticScore(student, school.grades, school.attendance),
-        })).sort((a, b) => b.holisticScore - a.holisticScore),
-        gradingSystem: school.profile.gradingSystem,
-        attendance: school.attendance,
-      };
-    }
-    return data;
-  }, [allSchoolData]);
+    const gradeNumber = selectedGradeStr.replace('Grade ', '');
+    const capacity = school.profile.gradeCapacity?.[gradeNumber] ?? 0;
+    const currentStudents = school.students.filter(s => s.grade === gradeNumber).length;
 
-  const getRank = (studentId, rankedList) => {
-    if (!rankedList) return { rank: 0, total: 0 };
-    const rank = rankedList.findIndex(s => s.id === studentId) + 1;
-    return { rank, total: rankedList.length };
-  };
+    return Math.max(0, capacity - currentStudents);
+  }, [selectedSchoolId, selectedGradeStr, allSchoolData]);
 
-  const getSubjectRanks = (student, schoolId) => {
-      if (!allSchoolData || !allSchoolData[schoolId]) return [];
-      const schoolData = allSchoolData[schoolId];
-      const schoolGrades = schoolData.grades;
-      const studentSubjects = [...new Set(schoolGrades.filter(g => g.studentId === student.id).map(g => g.subject))];
+  function onSubmit(values: ApplicationFormValues) {
+    addAdmission({
+      schoolId: values.schoolId,
+      name: values.name,
+      dateOfBirth: format(values.dateOfBirth, 'yyyy-MM-dd'),
+      sex: values.sex,
+      appliedFor: values.appliedFor,
+      formerSchool: values.formerSchool,
+      gradesSummary: values.gradesSummary || 'N/A',
+    });
+    toast({
+      title: 'Application Submitted',
+      description: `The application for ${values.name} has been sent to the school for review.`,
+    });
+    form.reset();
+    setIsDialogOpen(false);
+  }
 
-      return studentSubjects.map(subject => {
-          const subjectGradesForSchool = schoolGrades.filter(g => g.subject === subject);
-          const studentIdsInSubject = [...new Set(subjectGradesForSchool.map(g => g.studentId))];
-          
-          const rankedStudents = studentIdsInSubject.map(sId => {
-              const sInfo = schoolData.students.find(s => s.id === sId);
-              if (!sInfo) return null;
-              const holisticScore = calculateHolisticScore(sInfo, subjectGradesForSchool, schoolData.attendance);
-              return { id: sId, holisticScore };
-          }).filter(Boolean).sort((a, b) => b.holisticScore - a.holisticScore);
-
-          const rankInfo = getRank(student.id, rankedStudents);
-          return { subject, ...rankInfo };
-      }).sort((a, b) => a.rank - b.rank);
-  };
-  
-  const headerTitle = role === 'Parent' ? "My Children's Rankings" : "My Academic Rankings";
-  const headerDescription = role === 'Parent'
-    ? "A detailed look at your children's performance for the 2024-2025 year."
-    : "A detailed look at your academic performance for the 2024-2025 year.";
-
+  const schoolList = allSchoolData ? Object.values(allSchoolData).map(s => s.profile) : [];
 
   return (
-    <div className="space-y-6 animate-in fade-in-50">
-      <header>
-        <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2"><Trophy /> {headerTitle}</h2>
-        <p className="text-muted-foreground">{headerDescription}</p>
-      </header>
-      <div className="space-y-6">
-        {studentsData.map(child => {
-          const schoolRanks = allStudentsWithScoreBySchool[child.schoolId!]?.students || [];
-          const classRanks = schoolRanks.filter(s => s.grade === child.grade && s.class === child.class);
-          
-          const overallRank = getRank(child.id, schoolRanks);
-          const classRank = getRank(child.id, classRanks);
-          const subjectRanks = getSubjectRanks(child, child.schoolId!);
-          const studentAttendance = allStudentsWithScoreBySchool[child.schoolId!]?.attendance || [];
-          const attendanceSummary = studentAttendance.filter(a => a.studentId === child.id).reduce((acc, record) => {
-            acc[record.status.toLowerCase()] = (acc[record.status.toLowerCase()] || 0) + 1;
-            return acc;
-          }, { present: 0, late: 0, absent: 0, sick: 0 });
-
-          return (
-            <Card key={child.id}>
-              <CardHeader>
-                <CardTitle>{child.name}</CardTitle>
-                <CardDescription>{child.schoolName} - Grade {child.grade}, Class {child.class}</CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-6 md:grid-cols-3">
-                <div className="space-y-4">
-                  <h3 className="font-semibold flex items-center gap-2"><Trophy className="text-primary"/> Overall & Class Rank</h3>
-                  <div className="p-4 bg-muted rounded-lg space-y-2">
-                      <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">School Rank</span>
-                          <span className="font-bold">{overallRank.rank > 0 ? `${overallRank.rank} / ${overallRank.total}` : 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Class Rank</span>
-                          <span className="font-bold">{classRank.rank > 0 ? `${classRank.rank} / ${classRank.total}` : 'N/A'}</span>
-                      </div>
-                  </div>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Button><UserPlus className="mr-2 h-4 w-4" /> New Application</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Apply for a New Child</DialogTitle>
+          <DialogDescription>
+            Fill out this form to submit a new admission application to a school.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+            <FormField control={form.control} name="schoolId" render={({ field }) => ( <FormItem><FormLabel>School to Apply To</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select School" /></SelectTrigger></FormControl><SelectContent>{schoolList.map(school => <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Child's Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+                <FormField control={form.control} name="sex" render={({ field }) => ( <FormItem><FormLabel>Sex</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+            </div>
+            <FormField control={form.control} name="appliedFor" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Applying for Grade</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedSchoolId}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select Grade" /></SelectTrigger></FormControl>
+                        <SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(g => <SelectItem key={g} value={`Grade ${g}`}>Grade {g}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+            )} />
+             {vacancies !== null && (
+                <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md border">
+                    Available Vacancies for this grade: <span className="font-bold text-primary">{vacancies}</span>
+                    {vacancies === 0 && " (Applications will be added to the waitlist)"}
                 </div>
-                 <div className="space-y-4">
-                  <h3 className="font-semibold flex items-center gap-2"><BookOpen className="text-primary"/> Subject Ranks</h3>
-                    <div className="p-4 bg-muted rounded-lg space-y-2 max-h-48 overflow-y-auto">
-                       {subjectRanks.length > 0 ? subjectRanks.map(sr => (
-                           <div key={sr.subject} className="flex justify-between items-center text-sm">
-                               <span className="text-muted-foreground">{sr.subject}</span>
-                               <span className="font-bold">{sr.rank > 0 ? `${sr.rank} / ${sr.total}` : 'N/A'}</span>
-                           </div>
-                       )) : <p className="text-sm text-muted-foreground">No subject ranks available.</p>}
-                    </div>
-                </div>
-                 <div className="space-y-4">
-                  <h3 className="font-semibold flex items-center gap-2"><CalendarCheck className="text-primary"/> Attendance Summary</h3>
-                    <div className="p-4 bg-muted rounded-lg space-y-2">
-                        <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Present</span><span className="font-bold text-green-600">{attendanceSummary.present}</span></div>
-                        <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Late</span><span className="font-bold text-orange-500">{attendanceSummary.late}</span></div>
-                        <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Absent</span><span className="font-bold text-red-500">{attendanceSummary.absent}</span></div>
-                        <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Sick</span><span className="font-bold text-blue-500">{attendanceSummary.sick}</span></div>
-                    </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
+            )}
+            <FormField control={form.control} name="formerSchool" render={({ field }) => ( <FormItem><FormLabel>Previous School</FormLabel><FormControl><Input placeholder="e.g., Eastwood Elementary" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="gradesSummary" render={({ field }) => ( <FormItem><FormLabel>Previous Grades Summary</FormLabel><FormControl><Textarea placeholder="Briefly describe academic performance, e.g., 'Consistent A grades in Math and Science, B in English.'" {...field} /></FormControl><FormMessage /></FormItem> )} />
+            
+            <DialogFooter className="sticky bottom-0 bg-background pt-4 pr-0">
+              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+              <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit Application</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
-};
+}
 
 
-export default function LeaderboardsPage() {
-    const { role, user } = useAuth();
-    const { studentsData, classesData, grades, schoolProfile, coursesData, teachersData, attendance } = useSchoolData();
-    const [selectedClass, setSelectedClass] = useState<string | null>(null);
-    const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-    
-    const gradingSystem = schoolProfile?.gradingSystem;
+function AIGeneratedAdvice({ child }) {
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> AI-Powered Insights</CardTitle>
+          <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+          <p>AI features are temporarily disabled for maintenance.</p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
-    const allStudentsWithScore = useMemo(() => studentsData.map(student => ({
-        ...student,
-        holisticScore: calculateHolisticScore(student, grades, attendance),
-    })).sort((a, b) => b.holisticScore - a.holisticScore), [studentsData, grades, attendance]);
-    
-    const teacherInfo = useMemo(() => {
-        if (role !== 'Teacher' || !user) return null;
-        return teachersData.find(t => t.email === user.email);
-    }, [role, user, teachersData]);
+function GradeDistribution({ grades }) {
+  const chartData = useMemo(() => {
+    return grades.map(grade => ({
+      subject: grade.subject,
+      gpa: getGpaFromNumeric(parseFloat(grade.grade))
+    }));
+  }, [grades]);
 
-    const teacherClasses = useMemo(() => {
-        if (!teacherInfo) return classesData; // Admins see all
-        const teacherCourseClassIds = coursesData
-            .filter(c => c.teacherId === teacherInfo.id)
-            .map(c => c.classId);
-        return classesData.filter(c => teacherCourseClassIds.includes(c.id));
-    }, [teacherInfo, classesData, coursesData]);
+  const chartConfig = {
+    gpa: {
+      label: 'GPA',
+      color: 'hsl(var(--chart-2))',
+    },
+  } satisfies ChartConfig;
 
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><BarChart2 /> Grade Distribution</CardTitle>
+        <CardDescription>Performance by subject based on GPA.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {grades.length > 0 ? (
+          <ChartContainer config={chartConfig} className="h-48 w-full">
+            <BarChart data={chartData} margin={{ top: 20 }}>
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="gpa" fill="var(--color-gpa)" radius={4} />
+            </BarChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex items-center justify-center h-48 text-muted-foreground">
+            <p>No grade data available.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
 
-    const subjects = useMemo(() => [...new Set(grades.map(g => g.subject))], [grades]);
+function ParentSportsActivities() {
+    const { studentsData, teamsData, competitionsData } = useSchoolData();
 
-    const topStudentsInClass = useMemo(() => {
-        if (!selectedClass) return [];
-        const classInfo = classesData.find(c => c.id === selectedClass);
-        if (!classInfo) return [];
-
-        const studentsInClass = allStudentsWithScore.filter(s =>
-            s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim()
-        );
-        return studentsInClass.sort((a, b) => b.holisticScore - a.holisticScore);
-    }, [selectedClass, classesData, allStudentsWithScore]);
-
-    const topStudentsBySubject = useMemo(() => {
-        if (!selectedSubject) return [];
-        const subjectGrades = grades.filter(g => g.subject === selectedSubject);
-        const studentIdsInSubject = [...new Set(subjectGrades.map(g => g.studentId))];
+    const upcomingCompetitions = useMemo(() => {
+        const childrenIds = studentsData.map(c => c.id);
+        const childrenTeams = teamsData.filter(t => t.playerIds.some(pId => childrenIds.includes(pId)));
+        const teamMap = new Map(childrenTeams.map(t => [t.id, t]));
         
-        const rankedStudents = studentIdsInSubject.map(studentId => {
-            const studentInfo = studentsData.find(s => s.id === studentId);
-            if (!studentInfo) return null;
-            return {
-                ...studentInfo,
-                holisticScore: calculateHolisticScore(studentInfo, subjectGrades, attendance),
-            };
-        }).filter(Boolean).sort((a, b) => b.holisticScore - a.holisticScore);
+        return competitionsData
+            .filter(c => c.date >= new Date() && teamMap.has(c.ourTeamId))
+            .map(c => ({
+                ...c,
+                team: teamMap.get(c.ourTeamId),
+                players: studentsData.filter(s => teamMap.get(c.ourTeamId)?.playerIds.includes(s.id))
+            }))
+            .sort((a,b) => a.date.getTime() - b.date.getTime());
+    }, [studentsData, teamsData, competitionsData]);
 
-        return rankedStudents;
-    }, [selectedSubject, grades, studentsData, attendance]);
-
-    if (role === 'Parent' || role === 'Student') {
-        return <IndividualRankingView />;
-    }
+    if (upcomingCompetitions.length === 0) return null;
 
     return (
-        <div className="space-y-6 animate-in fade-in-50">
-            <header>
-                <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2"><Trophy /> Leaderboards</h2>
-                <p className="text-muted-foreground">Recognizing top student achievements.</p>
-            </header>
-
-            <Tabs defaultValue="overall">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="overall">Overall Top 10</TabsTrigger>
-                    <TabsTrigger value="by-class">By Class</TabsTrigger>
-                    <TabsTrigger value="by-subject">By Subject</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="overall">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><Award /> Overall Academic Champions</CardTitle>
-                            <CardDescription>Top 10 students across all grades based on a holistic score including academics, attendance, and behavior.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <LeaderboardTable students={allStudentsWithScore} gradingSystem={gradingSystem} />
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="by-class">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Top Students by Class</CardTitle>
-                            <CardDescription>Select a class to view its top academic performers.</CardDescription>
-                            <div className="pt-4">
-                                <Select onValueChange={setSelectedClass}>
-                                    <SelectTrigger className="w-[280px]">
-                                        <SelectValue placeholder="Select a class" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {teacherClasses.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Trophy /> My Children's Sports</CardTitle>
+                <CardDescription>Upcoming games and competitions for your children.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ul className="space-y-4">
+                    {upcomingCompetitions.map(comp => (
+                        <li key={comp.id} className="flex items-start gap-4">
+                            <div className="flex flex-col items-center p-2 bg-muted rounded-md w-14">
+                                <span className="font-bold text-lg">{format(comp.date, 'dd')}</span>
+                                <span className="text-xs uppercase">{format(comp.date, 'MMM')}</span>
                             </div>
-                        </CardHeader>
-                        <CardContent>
-                            <LeaderboardTable students={topStudentsInClass} gradingSystem={gradingSystem}/>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="by-subject">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Top Students by Subject</CardTitle>
-                            <CardDescription>Select a subject to see the top performers across the school.</CardDescription>
-                             <div className="pt-4">
-                                <Select onValueChange={setSelectedSubject}>
-                                    <SelectTrigger className="w-[280px]">
-                                        <SelectValue placeholder="Select a subject" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {subjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                            <div>
+                                <h4 className="font-semibold">{comp.team?.name} vs {comp.opponent}</h4>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                    <div className="flex items-center gap-2"><User className="h-3 w-3"/><span>Player(s): {comp.players.map(p => p.name).join(', ')}</span></div>
+                                    <div className="flex items-center gap-2"><CalendarIcon className="h-3 w-3"/><span>{format(comp.date, 'EEEE')} at {comp.time}</span></div>
+                                </div>
                             </div>
-                        </CardHeader>
-                        <CardContent>
-                           <LeaderboardTable students={topStudentsBySubject} gradingSystem={gradingSystem}/>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
-        </div>
+                        </li>
+                    ))}
+                </ul>
+            </CardContent>
+        </Card>
     );
+}
+
+const getStatusInfo = (fee) => {
+    const balance = fee.totalAmount - fee.amountPaid;
+    const isOverdue = new Date(fee.dueDate) < new Date() && balance > 0;
+
+    if (balance <= 0) {
+        return { text: 'Paid', variant: 'secondary' as const };
+    }
+    if (isOverdue) {
+        return { text: 'Overdue', variant: 'destructive' as const };
+    }
+     if (fee.amountPaid > 0) {
+        return { text: 'Partially Paid', variant: 'outline' as const };
+    }
+    return { text: 'Pending', variant: 'outline' as const };
+};
+
+export default function ParentDashboard() {
+  const { user } = useAuth();
+  const { studentsData, grades, attendance, financeData, schoolProfile, isLoading: schoolDataLoading } = useSchoolData();
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedChildId && studentsData.length > 0) {
+      setSelectedChildId(studentsData[0].id);
+    }
+  }, [studentsData, selectedChildId]);
+
+  const selectedChild = useMemo(() => studentsData.find(c => c.id === selectedChildId), [selectedChildId, studentsData]);
+
+  const childGrades = useMemo(() => {
+    if (!selectedChildId) return [];
+    return grades.filter(g => g.studentId === selectedChildId);
+  }, [grades, selectedChildId]);
+  
+  const childFinanceSummary = useMemo(() => {
+    if (!selectedChildId) return null;
+    const childFees = financeData.filter(f => f.studentId === selectedChildId);
+    if (childFees.length === 0) return null;
+    // Prioritize showing an overdue fee, then a partially paid/pending one.
+    const overdue = childFees.find(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < new Date());
+    if (overdue) return overdue;
+    const pending = childFees.find(f => f.totalAmount - f.amountPaid > 0);
+    if (pending) return pending;
+    return childFees[0]; // Otherwise show the first one (likely a paid one)
+  }, [financeData, selectedChildId]);
+
+  if (schoolDataLoading) {
+    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  if (!studentsData || studentsData.length === 0) {
+    return (
+       <div className="space-y-6">
+        <header className="flex flex-wrap gap-4 justify-between items-center">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+              <p className="text-muted-foreground">Welcome, {user?.name}.</p>
+            </div>
+            <NewApplicationDialog />
+        </header>
+        <Card>
+            <CardHeader>
+            <CardTitle>No Student Data Found</CardTitle>
+            </CardHeader>
+            <CardContent>
+            <p>No student information is linked to your account. You can submit an application for a new child to a school.</p>
+            </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <header className="flex flex-wrap gap-4 justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Parent Dashboard</h2>
+          <p className="text-muted-foreground">Welcome, {user?.name}. Here is an overview for your children.</p>
+        </div>
+        <NewApplicationDialog />
+      </header>
+
+      <div>
+        <h3 className="text-lg font-medium mb-2">Select a Child</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {studentsData.map(child => (
+            <Card 
+              key={child.id} 
+              onClick={() => setSelectedChildId(child.id)}
+              className={cn(
+                'cursor-pointer transition-all hover:shadow-md hover:border-primary/50',
+                selectedChildId === child.id ? 'border-primary ring-2 ring-primary/50' : 'border-border'
+              )}
+            >
+              <CardHeader>
+                <CardTitle>{child.name}</CardTitle>
+                <CardDescription>{child.schoolName}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Grade {child.grade} - {child.class}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+      
+      {selectedChild ? (
+        <div className="space-y-6 animate-in fade-in-25">
+           <div className="grid gap-6 lg:grid-cols-3">
+            {selectedChild && <AIGeneratedAdvice child={selectedChild} />}
+             <div className="space-y-6">
+                <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><DollarSign /> Fee Status</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                    {childFinanceSummary ? (
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount, schoolProfile?.currency)}</span></p>
+                                <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
+                            </div>
+                            <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">No fee information available.</p>
+                    )}
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2"><GraduationCap /> Recent Grades</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-2">
+                            {childGrades.length > 0 ? childGrades.slice(0, 3).map((grade, index) => {
+                              const numericGrade = parseFloat(grade.grade);
+                              return (
+                                <li key={index} className="flex justify-between items-center text-sm">
+                                    <span className="font-medium">{grade.subject}</span>
+                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
+                                </li>
+                              )
+                            }) : <p className="text-muted-foreground text-sm">No recent grades.</p>}
+                        </ul>
+                    </CardContent>
+                </Card>
+              </div>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <GradeDistribution grades={childGrades} />
+            <ParentSportsActivities />
+          </div>
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-6 text-center text-muted-foreground">
+            <p>Please select a child to view their details.</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
 }
