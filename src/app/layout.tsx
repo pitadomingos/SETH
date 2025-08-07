@@ -5,10 +5,8 @@ import { ReactNode } from "react";
 // The locale-specific layout will handle the rest.
 export default function RootLayout({
   children,
-  params,
 }: {
   children: ReactNode;
-  params: { locale: string };
 }) {
   return children;
 }
