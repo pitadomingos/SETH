@@ -1,6 +1,6 @@
 
 'use client';
-import { useRouter } from '@/navigation';
+import { useRouter, usePathname } from '@/navigation';
 import { useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { LoginForm } from '@/components/auth/login-form';
