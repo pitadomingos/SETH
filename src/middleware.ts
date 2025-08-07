@@ -1,17 +1,6 @@
-import createMiddleware from 'next-intl/middleware';
-import { locales, defaultLocale } from '../i18n';
- 
-export default createMiddleware({
-  // A list of all locales that are supported
-  locales,
- 
-  // Used when no locale matches
-  defaultLocale,
-
-  localePrefix: 'as-needed'
-});
+// This file is obsolete and has been neutralized to prevent build errors.
+export default function middleware() {}
  
 export const config = {
-  // Match only internationalized pathnames
-  matcher: ['/', '/(pt|en)/:path*']
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)']
 };

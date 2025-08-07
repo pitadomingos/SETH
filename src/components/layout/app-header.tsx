@@ -13,21 +13,21 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, User, Bell, GraduationCap, ArrowLeftFromLine } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Link } from '@/navigation';
+import Link from 'next/link';
 import { ThemeToggle } from './theme-toggle';
 import { useSchoolData } from '@/context/school-data-context';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '../ui/badge';
 import { LanguageToggle } from './language-toggle';
-import { useTranslations } from 'next-intl';
 
 export function AppHeader({ className }: { className?: string }) {
   const { user, logout, originalUser } = useAuth();
   const { activityLogs } = useSchoolData();
-  const t = useTranslations();
   const initials = user?.name.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
 
   const notifications = activityLogs.slice(0, 5);
+
+  const t = (key: string) => key.split('.').pop()?.replace(/([A-Z])/g, ' $1').trim() || key;
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background px-4 md:px-6">

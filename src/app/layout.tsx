@@ -1,12 +1,33 @@
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/toaster";
+import { AppProviders } from "@/components/layout/app-providers";
+import { ThemeProvider } from "@/components/layout/theme-provider";
 
-import { ReactNode } from "react";
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
-// The root layout only needs to pass children and params.
-// The locale-specific layout will handle the rest.
+export const metadata: Metadata = {
+  title: "EduDesk",
+  description: "AI-Powered Multi-School Management Prototype",
+};
+
 export default function RootLayout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={cn("min-h-screen bg-background font-sans antialiased", inter.variable)}>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <AppProviders>
+              {children}
+            </AppProviders>
+            <Toaster />
+          </ThemeProvider>
+      </body>
+    </html>
+  );
 }

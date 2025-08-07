@@ -56,11 +56,11 @@ import {
     Database,
     Languages,
 } from 'lucide-react';
-import { usePathname, Link } from '@/navigation';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { type LucideIcon } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useMemo } from 'react';
-import { useTranslations } from 'next-intl';
 
 export interface NavLink {
     href: string;
@@ -195,7 +195,8 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { schoolProfile, schoolGroups } = useSchoolData();
   const { setOpenMobile } = useSidebar();
-  const t = useTranslations();
+  
+  const t = (key: string) => key.split('.').pop()?.replace(/([A-Z])/g, ' $1').trim() || key;
 
   const isPremiumAdmin = useMemo(() => {
     if (role !== 'Admin' || !user?.schoolId || !schoolGroups) return false;
