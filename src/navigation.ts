@@ -1,4 +1,3 @@
-
 import {
   createNavigation
 } from 'next-intl/navigation';

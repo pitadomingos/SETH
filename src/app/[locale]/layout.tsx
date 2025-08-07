@@ -1,12 +1,13 @@
 import {ReactNode} from 'react';
 import {NextIntlClientProvider} from 'next-intl';
-import {getMessages, setRequestLocale} from 'next-intl/server';
+import {getMessages} from 'next-intl/server';
 import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { AppProviders } from "@/components/layout/app-providers";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { locales } from '@/navigation';
+import { setRequestLocale } from 'next-intl/server';
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
