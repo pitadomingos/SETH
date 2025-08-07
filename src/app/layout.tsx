@@ -1,41 +1,14 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { cn } from "@/lib/utils";
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
-import { Toaster } from "@/components/ui/toaster";
-import { AppProviders } from "@/components/layout/app-providers";
-import { ThemeProvider } from "@/components/layout/theme-provider";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+import { ReactNode } from "react";
 
-export const metadata: Metadata = {
-  title: "EduDesk",
-  description: "AI-Powered Multi-School Management Prototype",
-};
-
-export default async function RootLayout({
+// The root layout only needs to pass children and params.
+// The locale-specific layout will handle the rest.
+export default function RootLayout({
   children,
-  params: { locale },
+  params,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   params: { locale: string };
 }) {
-  const messages = await getMessages();
-
-  return (
-    <html lang={locale} suppressHydrationWarning>
-      <body className={cn("min-h-screen bg-background font-sans antialiased", inter.variable)}>
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <AppProviders>
-              {children}
-            </AppProviders>
-            <Toaster />
-          </ThemeProvider>
-        </NextIntlClientProvider>
-      </body>
-    </html>
-  );
+  return children;
 }
