@@ -1,6 +1,6 @@
 import {ReactNode} from 'react';
-import {NextIntlClientProvider, createTranslator} from 'next-intl';
-import {getMessages, unstable_setRequestLocale} from 'next-intl/server';
+import {NextIntlClientProvider} from 'next-intl';
+import {getMessages, setRequestLocale} from 'next-intl/server';
 import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
@@ -21,7 +21,7 @@ export function generateStaticParams() {
 
 export default async function LocaleLayout({children, params: {locale}}: Props) {
   // Enable static rendering
-  unstable_setRequestLocale(locale);
+  setRequestLocale(locale);
  
   // Providing all messages to the client
   // side is the easiest way to get started
