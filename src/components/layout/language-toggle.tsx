@@ -20,7 +20,7 @@ export function LanguageToggle() {
   const locale = useLocale();
 
   const handleLanguageChange = (nextLocale: string) => {
-    router.push(pathname, {locale: nextLocale});
+    router.replace(pathname, {locale: nextLocale});
   };
 
   return (
