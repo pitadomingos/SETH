@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { Languages } from "lucide-react"
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter } from '@/navigation';
 
 import { Button } from "@/components/ui/button"
 import {
@@ -12,16 +12,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useLocale } from "next-intl";
 
 export function LanguageToggle() {
   const router = useRouter();
   const pathname = usePathname();
-  const currentLocale = pathname.split('/')[1];
+  const locale = useLocale();
 
   const handleLanguageChange = (nextLocale: string) => {
-    // This functionality is disabled for now.
-    // To re-enable, the routing logic in middleware.ts needs to be restored.
-    console.log(`Language change to ${nextLocale} disabled.`);
+    router.push(pathname, {locale: nextLocale});
   };
 
   return (
@@ -33,10 +32,10 @@ export function LanguageToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => handleLanguageChange("en")} disabled>
+        <DropdownMenuItem onClick={() => handleLanguageChange("en")} disabled={locale === 'en'}>
           English
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleLanguageChange("pt")} disabled>
+        <DropdownMenuItem onClick={() => handleLanguageChange("pt")} disabled={locale === 'pt'}>
           Português
         </DropdownMenuItem>
       </DropdownMenuContent>

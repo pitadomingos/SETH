@@ -56,11 +56,11 @@ import {
     Database,
     Languages,
 } from 'lucide-react';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { usePathname, Link } from '@/navigation';
 import { type LucideIcon } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 
 export interface NavLink {
     href: string;
@@ -196,7 +196,7 @@ export function AppSidebar() {
   const { schoolProfile, schoolGroups } = useSchoolData();
   const { setOpenMobile } = useSidebar();
   
-  const t = (key: string) => key.split('.').pop()?.replace(/([A-Z])/g, ' $1').trim() || key;
+  const t = useTranslations('AppSidebar');
 
   const isPremiumAdmin = useMemo(() => {
     if (role !== 'Admin' || !user?.schoolId || !schoolGroups) return false;
@@ -244,16 +244,16 @@ export function AppSidebar() {
             if(isGroup(item)) {
                 return (
                     <SidebarGroup key={item.title}>
-                        <SidebarGroupLabel>{t(item.title)}</SidebarGroupLabel>
+                        <SidebarGroupLabel>{t(item.title.replace('sidebar.', ''))}</SidebarGroupLabel>
                         <SidebarGroupContent>
                             {item.links.map(link => {
                                 const finalHref = (link.dynamic && user?.schoolId) 
                                 ? link.href.replace('[schoolId]', user.schoolId)
                                 : link.href;
-                                const translatedLabel = t(link.label);
+                                const translatedLabel = t(link.label.replace('sidebar.', ''));
                                 return (
                                     <SidebarMenuItem key={link.href}>
-                                        <Link href={finalHref} passHref target={link.target || undefined} onClick={() => setOpenMobile(false)}>
+                                        <Link href={finalHref} target={link.target || undefined} onClick={() => setOpenMobile(false)}>
                                             <SidebarMenuButton asChild isActive={pathname === finalHref} tooltip={translatedLabel}>
                                                 <span><link.icon className="h-4 w-4" /><span>{translatedLabel}</span></span>
                                             </SidebarMenuButton>
@@ -268,11 +268,11 @@ export function AppSidebar() {
             const finalHref = (item.dynamic && user?.schoolId) 
               ? item.href.replace('[schoolId]', user.schoolId)
               : item.href;
-            const translatedLabel = t(item.label);
+            const translatedLabel = t(item.label.replace('sidebar.', ''));
             
             return (
               <SidebarMenuItem key={item.href}>
-                <Link href={finalHref} passHref target={item.target || undefined} onClick={() => setOpenMobile(false)}>
+                <Link href={finalHref} target={item.target || undefined} onClick={() => setOpenMobile(false)}>
                   <SidebarMenuButton asChild isActive={pathname === finalHref} tooltip={translatedLabel}>
                     <span><item.icon className="h-4 w-4" /><span>{translatedLabel}</span></span>
                   </SidebarMenuButton>
