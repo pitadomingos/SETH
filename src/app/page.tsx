@@ -11,14 +11,9 @@ export default function RootPage() {
   const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    if (!isLoading) {
-      if (user) {
-        redirect('/dashboard');
-      } else {
-        redirect('/');
-      }
-    }
-  }, [user, isLoading]);
+    // This now correctly uses the locale-aware redirect
+    redirect('/');
+  }, []);
 
   return (
     <div className="flex h-screen w-full items-center justify-center">
