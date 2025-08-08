@@ -3,5 +3,5 @@ import { locales } from '../i18n';
  
 export const localePrefix = 'always';
  
-export const {Link, redirect, usePathname, useRouter, getPathname} =
+export const {Link, redirect, usePathname, useRouter} =
   createNavigation({locales, localePrefix});

@@ -6,11 +6,11 @@ export default createMiddleware({
   locales,
  
   // Used when no locale matches
-  defaultLocale,
+  defaultLocale
 });
  
 export const config = {
   // Match only internationalized pathnames
-  // The negative lookahead is to exclude API routes
+  // The negative lookahead is to exclude API routes and static files
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)']
 };
