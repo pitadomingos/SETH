@@ -1,16 +1,14 @@
-
 'use client';
 
 import { useEffect } from 'react';
-import { redirect } from '@/navigation';
+import { redirect } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { defaultLocale } from '@/i18n';
 
 export default function RootPage() {
 
   useEffect(() => {
-    // This now correctly uses the locale-aware redirect
-    redirect('/');
+    redirect(`/${defaultLocale}`);
   }, []);
 
   return (
