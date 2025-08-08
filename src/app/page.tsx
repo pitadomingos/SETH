@@ -3,12 +3,10 @@
 
 import { useEffect } from 'react';
 import { redirect } from '@/navigation';
-import { useAuth } from '@/context/auth-context';
 import { Loader2 } from 'lucide-react';
-import { defaultLocale } from '@/navigation';
+import { defaultLocale } from '@/i18n';
 
 export default function RootPage() {
-  const { user, isLoading } = useAuth();
 
   useEffect(() => {
     // This now correctly uses the locale-aware redirect
