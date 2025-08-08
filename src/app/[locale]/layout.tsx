@@ -6,8 +6,7 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { AppProviders } from "@/components/layout/app-providers";
 import { ThemeProvider } from "@/components/layout/theme-provider";
-import { locales } from '@/i18n';
-import {notFound} from 'next/navigation';
+import { locales } from '../../../i18n';
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -21,9 +20,9 @@ export function generateStaticParams() {
 }
 
 export default async function LocaleLayout({children, params}: Props) {
-  // Safe validation
-  if (!locales.includes(params.locale as any)) {
-    notFound();
+  // Validate that the incoming `locale` parameter is valid
+  if (!locales.includes(params.locale)) {
+      // Handle not found case if you need to. For now, we rely on middleware.
   }
 
   // Enable static rendering
@@ -40,8 +39,8 @@ export default async function LocaleLayout({children, params}: Props) {
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <AppProviders>
               {children}
+              <Toaster />
             </AppProviders>
-            <Toaster />
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

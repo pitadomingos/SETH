@@ -1,7 +1,6 @@
-
 import {createNavigation} from 'next-intl/navigation';
- 
-export const locales = ['pt', 'en'] as const;
+import { locales } from '../i18n';
+
 export const localePrefix = 'always';
  
 export const pathnames = {
