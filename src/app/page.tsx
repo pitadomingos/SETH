@@ -15,7 +15,7 @@ export default function RootPage() {
       if (user) {
         redirect('/dashboard');
       } else {
-        redirect(`/${defaultLocale}`);
+        redirect('/');
       }
     }
   }, [user, isLoading]);

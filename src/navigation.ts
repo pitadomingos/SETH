@@ -2,8 +2,9 @@
 import {
   createNavigation
 } from 'next-intl/navigation';
+import {locales as allLocales} from '@/i18n';
 
-export const locales = ['en', 'pt'] as const;
+export const locales = allLocales;
 export const localePrefix = 'always';
 export const defaultLocale = 'pt' as const;
 
