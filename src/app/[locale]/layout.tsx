@@ -19,8 +19,6 @@ export default async function LocaleLayout({ children, params }: Props) {
     notFound();
   }
   
-  // Providing the messages to the client
-  // This is necessary for client components to use useTranslations
   let messages;
   try {
     messages = await getMessages();
