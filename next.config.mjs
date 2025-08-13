@@ -1,10 +1,10 @@
-import withNextIntl from 'next-intl/plugin';
+
+import createNextIntlPlugin from 'next-intl/plugin';
  
-const withNextIntlConfig = withNextIntl('./i18n.ts');
+const withNextIntl = createNextIntlPlugin();
  
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -23,4 +23,4 @@ const nextConfig = {
   },
 };
  
-export default withNextIntlConfig(nextConfig);
+export default withNextIntl(nextConfig);
