@@ -367,7 +367,7 @@ export interface NewSchoolData {
 
 export const mockUsers: Record<string, UserProfile> = {
   developer: {
-    user: { username: 'developer', name: 'Dev Admin', role: 'GlobalAdmin', email: 'dev@edudmanage.com' },
+    user: { username: 'developer', name: 'Dev Admin', role: 'GlobalAdmin', email: 'dev@seth.com' },
     password: 'password'
   },
   admin1: {

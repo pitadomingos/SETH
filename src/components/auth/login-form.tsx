@@ -62,8 +62,8 @@ export function LoginForm() {
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary">
           <GraduationCap className="h-8 w-8 text-primary-foreground" />
         </div>
-        <CardTitle className="text-3xl font-headline">EduDesk</CardTitle>
-        <CardDescription>Multi-Role Education Platform</CardDescription>
+        <CardTitle className="text-3xl font-headline">SETH</CardTitle>
+        <CardDescription>Students Excellence Teachers' Hub</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>

@@ -51,10 +51,10 @@ function KioskGlobalDashboardSlide({ allSchoolData }) {
         <div className="p-8 h-full flex flex-col">
             <header className="flex items-center gap-4">
                 <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-muted shrink-0 overflow-hidden">
-                    <Image src="https://placehold.co/100x100.png" alt="EduManage Network Logo" width={80} height={80} className="object-cover" data-ai-hint="logo building"/>
+                    <Image src="https://placehold.co/100x100.png" alt="SETH Network Logo" width={80} height={80} className="object-cover" data-ai-hint="logo building"/>
                 </div>
                 <div>
-                    <h2 className="text-5xl font-bold">EduDesk Network</h2>
+                    <h2 className="text-5xl font-bold">SETH Network</h2>
                     <p className="text-2xl text-muted-foreground">Showcasing Excellence Across All Schools</p>
                 </div>
             </header>
@@ -182,7 +182,7 @@ function KioskAwardsSlide({ allSchoolData }) {
 
     return (
         <div className="p-8 h-full flex flex-col">
-            <h2 className="text-6xl font-bold text-center mb-8 flex items-center justify-center gap-4"><Trophy className="text-amber-400" /> EduDesk Annual Awards</h2>
+            <h2 className="text-6xl font-bold text-center mb-8 flex items-center justify-center gap-4"><Trophy className="text-amber-400" /> SETH Annual Awards</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1">
                 <Card className="flex flex-col items-center justify-center text-center p-8">
                     <Trophy className="h-20 w-20 text-amber-400" />
@@ -303,7 +303,7 @@ function KioskPage({ allSchoolData }: { allSchoolData: Record<string, SchoolData
       const globalSlides = [];
       if(globalKioskConfig.showAwardWinner) globalSlides.push({ id: 'awards', component: <KioskAwardsSlide allSchoolData={allSchoolData} /> });
       if(globalKioskConfig.showShowcase) {
-          globalSlides.push({ id: 'marketing-who', component: <KioskMarketingSlide title="Who We Are" description="EduDesk is a catalyst for educational transformation, empowering schools with AI-driven tools to reduce administrative overhead and elevate academic standards." icon={Lightbulb} /> });
+          globalSlides.push({ id: 'marketing-who', component: <KioskMarketingSlide title="Who We Are" description="SETH is a catalyst for educational transformation, empowering schools with AI-driven tools to reduce administrative overhead and elevate academic standards." icon={Lightbulb} /> });
           globalSlides.push({ id: 'marketing-goal', component: <KioskMarketingSlide title="Our Goal & Mission" description="Our mission is to make modern educational technology accessible and affordable for institutions across Southern Africa, fostering a new era of data-driven, efficient, and impactful education." icon={Briefcase} /> });
       }
       if(globalKioskConfig.showDashboard) globalSlides.push({ id: 'dashboard', component: <KioskGlobalDashboardSlide allSchoolData={allSchoolData} /> });
@@ -317,7 +317,7 @@ function KioskPage({ allSchoolData }: { allSchoolData: Record<string, SchoolData
       if(globalKioskConfig.showTeacherLeaderboard) globalSlides.push({ id: 'teacher-leaderboard', component: <KioskTeacherLeaderboardSlide allSchoolData={allSchoolData} /> });
       if(globalKioskConfig.showAllSchools) globalSlides.push({ id: 'all-schools', component: <AllSchoolsSlide allSchoolData={allSchoolData} /> });
       if(globalKioskConfig.showShowcase) {
-          globalSlides.push({ id: 'marketing-connect', component: <KioskMarketingSlide title="Join the EduDesk Family" description="Connect your school to a powerful, unified ecosystem. Boost efficiency, empower your teachers, and unlock data-driven insights for student success." icon={LinkIcon}><p className="text-2xl mt-8">Contact us at +258 845479481 to request a demo.</p></KioskMarketingSlide> });
+          globalSlides.push({ id: 'marketing-connect', component: <KioskMarketingSlide title="Join the SETH Family" description="Connect your school to a powerful, unified ecosystem. Boost efficiency, empower your teachers, and unlock data-driven insights for student success." icon={LinkIcon}><p className="text-2xl mt-8">Contact us at +258 845479481 to request a demo.</p></KioskMarketingSlide> });
       }
       return globalSlides;
     }

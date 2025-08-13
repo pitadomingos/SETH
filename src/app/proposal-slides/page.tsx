@@ -39,7 +39,7 @@ const slides = [
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
         >
-          EduDesk
+          SETH
         </motion.h1>
         <motion.p 
             className="text-3xl text-muted-foreground mt-4"
@@ -59,7 +59,7 @@ const slides = [
       <div className="p-12 w-full max-w-5xl">
         <h2 className="text-5xl font-bold flex items-center gap-4"><Rocket className="text-primary"/> Executive Summary</h2>
         <p className="text-2xl mt-8 text-muted-foreground leading-relaxed">
-          EduDesk is a comprehensive, multi-tenant SaaS platform engineered to transform schools in Southern Africa. By integrating powerful, AI-driven tools into a single, accessible system, EduDesk empowers educators, engages parents, and provides administrators with the insights needed to elevate educational standards and reduce administrative overhead.
+          SETH is a comprehensive, multi-tenant SaaS platform engineered to transform schools in Southern Africa. By integrating powerful, AI-driven tools into a single, accessible system, SETH empowers educators, engages parents, and provides administrators with the insights needed to elevate educational standards and reduce administrative overhead.
         </p>
       </div>
     ),
@@ -83,7 +83,7 @@ const slides = [
       <div className="p-12 w-full max-w-5xl text-center">
         <h2 className="text-5xl font-bold flex items-center justify-center gap-4"><TrendingUp className="text-primary"/> Our Solution</h2>
         <p className="text-2xl mt-8 text-muted-foreground leading-relaxed max-w-4xl mx-auto">
-          EduDesk replaces this patchwork with a unified, intelligent ecosystem. We automate administrative tasks and integrate AI to provide actionable insights, freeing educators to do what they do best: teach.
+          SETH replaces this patchwork with a unified, intelligent ecosystem. We automate administrative tasks and integrate AI to provide actionable insights, freeing educators to do what they do best: teach.
         </p>
       </div>
     ),
@@ -93,7 +93,7 @@ const slides = [
   {
     content: (
       <div className="p-12 w-full max-w-6xl">
-        <h2 className="text-5xl font-bold text-center mb-16">How EduDesk Elevates Standards</h2>
+        <h2 className="text-5xl font-bold text-center mb-16">How SETH Elevates Standards</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <div className="text-center">
                 <Users className="h-16 w-16 mx-auto text-primary"/>

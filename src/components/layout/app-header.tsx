@@ -36,7 +36,7 @@ export function AppHeader({ className }: { className?: string }) {
         <SidebarTrigger className="md:hidden" />
          <Link href="/dashboard" className="hidden items-center gap-2 md:flex" aria-label="Go to dashboard">
             <GraduationCap className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-semibold">EduDesk</h1>
+            <h1 className="text-xl font-semibold">SETH</h1>
         </Link>
       </div>
       <div className="flex items-center gap-4">

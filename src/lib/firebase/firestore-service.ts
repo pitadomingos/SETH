@@ -9,7 +9,7 @@ async function sendWelcomeEmail(adminUser: { username: string, profile: UserProf
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
     const emailHtml = `
         <p>Dear ${adminUser.profile.user.name},</p>
-        <p>Welcome to EduDesk!</p>
+        <p>Welcome to SETH!</p>
         <p>Your new account for <strong>${schoolName}</strong> has been created. You can log in using the following temporary credentials:</p>
         <ul>
             <li><strong>App Link:</strong> <a href="${appUrl}">${appUrl}</a></li>
@@ -19,12 +19,12 @@ async function sendWelcomeEmail(adminUser: { username: string, profile: UserProf
         <p>We recommend that you change your password upon your first login.</p>
         <br/>
         <p>Best regards,</p>
-        <p>The EduDesk Team</p>
+        <p>The SETH Team</p>
     `;
 
     await sendEmail({
         to: adminUser.profile.user.email,
-        subject: `Welcome to EduDesk - Your Admin Account for ${schoolName}`,
+        subject: `Welcome to SETH - Your Admin Account for ${schoolName}`,
         html: emailHtml,
     });
 }
