@@ -2,7 +2,6 @@ import { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
-import { AppProviders } from '@/components/layout/app-providers';
 import { ThemeProvider } from '@/components/layout/theme-provider';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -26,10 +25,8 @@ export default function RootLayout({ children, params }: Props) {
           defaultTheme="system"
           enableSystem
         >
-          <AppProviders>
-            {children}
-            <Toaster />
-          </AppProviders>
+          {children}
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

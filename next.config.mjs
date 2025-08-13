@@ -24,6 +24,7 @@ const nextConfig = {
       },
     ],
   },
+  trailingSlash: true,
 };
 
 export default withNextIntlConfig(nextConfig);

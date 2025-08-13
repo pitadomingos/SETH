@@ -1,21 +1,15 @@
 
 'use client';
-import { useRouter, usePathname } from '@/navigation';
-import { useEffect } from 'react';
+import { usePathname } from '@/navigation';
 import { useAuth } from '@/context/auth-context';
 import { LoginForm } from '@/components/auth/login-form';
 import { Loader2 } from 'lucide-react';
 
 export default function RootPage() {
   const { user, isLoading } = useAuth();
-  const router = useRouter();
 
-  useEffect(() => {
-    if (!isLoading && user) {
-      router.push('/dashboard');
-    }
-  }, [user, isLoading, router]);
-  
+  // Redirect is now handled by ProtectedRoute wrapping the dashboard
+
   if (isLoading || user) {
      return (
       <div className="flex h-screen w-full items-center justify-center">

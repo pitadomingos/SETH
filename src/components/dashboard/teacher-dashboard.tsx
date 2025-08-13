@@ -2,7 +2,7 @@
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Link from 'next/link';
+import Link from '@/navigation';
 import { PenSquare, BookMarked, Bell, BrainCircuit, Loader2, X, Mail, CalendarCheck, FileCheck, FlaskConical, TrendingUp } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData, NewMessageData } from "@/context/school-data-context";

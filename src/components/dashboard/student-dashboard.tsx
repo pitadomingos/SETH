@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { FileText as FileTextIcon, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse, Sparkles, BookOpen, User, Check, Lightbulb, TrendingUp, BrainCircuit } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData, Grade, Student } from "@/context/school-data-context";

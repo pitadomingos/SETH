@@ -1,14 +1,14 @@
 import createMiddleware from 'next-intl/middleware';
 import { locales, defaultLocale } from './i18n';
-import { NextRequest } from 'next/server';
  
-export async function middleware(request: NextRequest) {
-  const handleI18nRouting = createMiddleware({
+export default createMiddleware({
+  // A list of all locales that are supported
   locales,
+ 
+  // Used when no locale matches
   defaultLocale
 });
-  return handleI18nRouting(request);
-}
+ 
 export const config = {
   // Match only internationalized pathnames
   matcher: ['/', '/(pt|en)/:path*']

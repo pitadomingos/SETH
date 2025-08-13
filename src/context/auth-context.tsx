@@ -1,7 +1,7 @@
 
 'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { Loader2 } from 'lucide-react';
 import { mockUsers, UserProfile } from '@/lib/mock-data';
 import { getUsersFromFirestore } from '@/lib/firebase/firestore-service';
