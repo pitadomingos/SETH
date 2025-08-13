@@ -13,21 +13,22 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export default async function LocaleLayout({ children, params }: Props) {
+export default async function LocaleLayout({ children, params: { locale } }: Props) {
   // Validate that the incoming `locale` parameter is valid
-  if (!locales.includes(params.locale)) {
+  if (!locales.includes(locale)) {
     notFound();
   }
   
   let messages;
   try {
-    messages = await getMessages();
+    messages = await getMessages({locale});
   } catch (error) {
+    console.error("Could not load messages for locale:", locale, error);
     notFound();
   }
 
   return (
-    <NextIntlClientProvider locale={params.locale} messages={messages}>
+    <NextIntlClientProvider locale={locale} messages={messages}>
       {children}
     </NextIntlClientProvider>
   );
