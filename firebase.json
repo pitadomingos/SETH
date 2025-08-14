@@ -4,10 +4,20 @@
     "indexes": "firestore.indexes.json"
   },
   "storage": {
-    "rules": "firestore.rules"
-  }
-  ,
-  "hosting": {
-    "public": ".next"
+    "rules": "storage.rules"
+  },
+  "apphosting": {
+    "backends": {
+      "seth-backend": {
+        "framework": "nextjs",
+        "source": "."
+      }
+    },
+    "rewrites": [
+      {
+        "source": "**",
+        "function": "seth-backend"
+      }
+    ]
   }
 }
