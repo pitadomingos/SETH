@@ -52,3 +52,4 @@ To run this prototype:
     -   ...and more, as detailed on the login screen.
 
 This application uses a live Firebase backend. All data is persistent. The application will auto-seed with initial data if the database is empty.
+# SETH
