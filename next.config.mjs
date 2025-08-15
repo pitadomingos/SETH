@@ -1,13 +1,10 @@
 
-import withNextIntl from 'next-intl/plugin';
+import createNextIntlPlugin from 'next-intl/plugin';
 
-const withNextIntlConfig = withNextIntl(
-  './i18n.ts'
-);
+const withNextIntl = createNextIntlPlugin('./i18n.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -18,13 +15,18 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: 'seth.co',
+        port: '',
+        pathname: '/**',
+      },
+       {
+        protocol: 'https',
         hostname: 'placehold.co',
         port: '',
         pathname: '/**',
       },
     ],
   },
-  trailingSlash: true,
 };
 
-export default withNextIntlConfig(nextConfig);
+export default withNextIntl(nextConfig);
