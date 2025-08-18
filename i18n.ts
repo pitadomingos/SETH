@@ -1,14 +1,13 @@
-import {notFound} from 'next/navigation';
-import {getRequestConfig} from 'next-intl/server';
+import { getRequestConfig } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+import ptMessages from './src/messages/pt.json';
+import enMessages from './src/messages/en.json';
 
 export const locales = ['en', 'pt'];
 export const defaultLocale = 'pt';
 
-export default getRequestConfig(async ({locale}) => {
-  if (!locales.includes(locale as any)) notFound();
-
-  // Use a relative path to ensure the bundler can find the files
-  return {
-    messages: (await import(`./src/messages/${locale}.json`)).default
-  };
+export default getRequestConfig(async ({ locale }) => {
+  if (locale === 'pt') return { messages: ptMessages };
+  if (locale === 'en') return { messages: enMessages };
+  notFound();
 });

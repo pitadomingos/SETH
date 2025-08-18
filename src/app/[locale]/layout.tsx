@@ -7,17 +7,19 @@ import { AppProviders } from '@/components/layout/app-providers';
 
 type Props = {
   children: ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 };
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export default async function LocaleLayout({ children, params: { locale } }: Props) {
+export default async function LocaleLayout({ children, params }: Props) {
+  const { locale } = await params;
+
   let messages;
   try {
-    messages = await getMessages({locale});
+    messages = await getMessages({ locale });
   } catch (error) {
     console.error("Could not load messages for locale:", locale, error);
     notFound();
