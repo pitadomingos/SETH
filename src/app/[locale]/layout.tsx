@@ -7,7 +7,7 @@ import { AppProviders } from '@/components/layout/app-providers';
 
 type Props = {
   children: ReactNode;
-  params: Promise<{ locale: string }>;
+  params: { locale: string };
 };
 
 export function generateStaticParams() {
@@ -15,7 +15,7 @@ export function generateStaticParams() {
 }
 
 export default async function LocaleLayout({ children, params }: Props) {
-  const { locale } = await params;
+  const { locale } = params;
 
   let messages;
   try {
