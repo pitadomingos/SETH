@@ -3,5 +3,5 @@
 
 // Example:
 // export function someHelperFunction(locale: string) {
-//   // ...
+//   // ....
 // }
