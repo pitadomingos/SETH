@@ -1,27 +1,18 @@
 import createMiddleware from 'next-intl/middleware';
-import { locales, defaultLocale } from './i18n';
-import { NextResponse } from 'next/server';
+import { locales, defaultLocale } from './i18n'; // Make sure this is correct!
+import { NextResponse, NextRequest } from 'next/server'; // Import NextRequest for typing
 
-// Create the middleware
 const intlMiddleware = createMiddleware({
   locales: [...locales],
   defaultLocale,
   localePrefix: 'always'
 });
 
-// Export a single default middleware function that handles errors
-export default async function middleware(request) {
-  console.log('Value of locales in middleware:', locales); // Console log here
-
+export default function middleware(request: NextRequest) {
   try {
-    // Call the next-intl middleware
-    const response = await intlMiddleware(request);
-    return response;
-
+    return intlMiddleware(request);
   } catch (error) {
-    console.error('Error in next-intl middleware:', error); // Log the error
-
-    // Return a 500 response if an error occurs
+    console.error('Error in next-intl middleware:', error);
     return new NextResponse('Internal Server Error in Middleware', { status: 500 });
   }
 }
