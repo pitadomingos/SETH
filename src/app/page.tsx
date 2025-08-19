@@ -1,17 +1,6 @@
-
-'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { redirect } from 'next/navigation';
+import { defaultLocale } from '../../i18n';
 
 export default function RootPage() {
-  const router = useRouter();
-  const locale = useLocale();
-
-  useEffect(() => {
-    router.replace(`/${locale}`);
-  }, [locale, router]);
-
-  return null;
+  redirect(defaultLocale);
 }
