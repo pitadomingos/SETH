@@ -1,7 +1,6 @@
-import {getRequestConfig} from 'next-intl/server';
 import {notFound} from 'next/navigation';
-import {locales as allLocales} from './src/navigation';
-
+import {getRequestConfig} from 'next-intl/server';
+ 
 // Can be imported from a shared config
 export const locales = ['en', 'pt'];
 export const defaultLocale = 'pt';
