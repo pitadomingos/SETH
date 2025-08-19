@@ -1,8 +1,15 @@
-import { useTranslations } from 'next-intl';
-import { redirect } from '@/navigation';
 
-export default function LocaleIndexPage() {
-  // This page is caught by the root redirect in `src/app/page.tsx`,
-  // but as a fallback, we'll redirect again.
-  redirect('/dashboard');
+'use client';
+
+import { LoginForm } from '@/components/auth/login-form';
+import { ThemeProvider } from '@/components/layout/theme-provider';
+
+export default function LoginPage() {
+  return (
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+            <LoginForm />
+        </main>
+    </ThemeProvider>
+  );
 }
