@@ -1,6 +1,5 @@
 import { ReactNode } from 'react';
 import { AppProviders } from '@/components/layout/app-providers';
-import { NextIntlClientProvider, useMessages } from 'next-intl';
 import { Toaster } from '@/components/ui/toaster';
 
 type Props = {
@@ -8,18 +7,16 @@ type Props = {
   params: { locale: string };
 };
 
+// This is the root layout, and it does not have access to the locale.
+// It should be language-agnostic.
 export default function RootLayout({ children, params: { locale } }: Props) {
-  const messages = useMessages();
-  
   return (
     <html lang={locale} suppressHydrationWarning>
       <body>
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <AppProviders>
-            {children}
-            <Toaster />
-          </AppProviders>
-        </NextIntlClientProvider>
+        <AppProviders>
+          {children}
+          <Toaster />
+        </AppProviders>
       </body>
     </html>
   );
