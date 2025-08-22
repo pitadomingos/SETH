@@ -15,16 +15,22 @@ export default async function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn('font-body antialiased', 'min-h-screen bg-background')}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <AppProviders>{children}</AppProviders>
-            <Toaster />
-          </ThemeProvider>
+      <body
+        className={cn(
+          'font-body antialiased',
+          'min-h-screen bg-background'
+        )}
+        suppressHydrationWarning
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AppProviders>{children}</AppProviders>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
