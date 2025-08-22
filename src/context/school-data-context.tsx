@@ -1,17 +1,17 @@
-
 'use client';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
-import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabus, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, SchoolProfile, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, mockUsers, UserProfile, SyllabusTopic } from '@/lib/mock-data';
+import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabus, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, SchoolProfile, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, mockUsers, UserProfile, SyllabusTopic, BehavioralAssessment } from '@/lib/mock-data';
 import { useAuth, User } from './auth-context';
 import type { Role } from './auth-context';
 import { getSchoolsFromFirestore, seedInitialData } from '@/lib/firebase/firestore-service';
 import { getGpaFromNumeric } from '@/lib/utils';
 import { updateSchoolProfileAction } from '@/app/actions/update-school-action';
-import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction, addSyllabusAction, addCourseAction, updateCourseAction, deleteCourseFromFirestore, addFeeAction, recordPaymentAction, addExpenseAction, addTeamAction, deleteTeamAction, addPlayerToTeamAction, removePlayerFromTeamAction, addCompetitionAction, addCompetitionResultAction, updateAdmissionStatusAction, addStudentFromAdmissionAction, addAssetAction } from '@/app/actions/school-actions';
+import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction, addSyllabusAction, addCourseAction, updateCourseAction, deleteCourseFromFirestore, addFeeAction, recordPaymentAction, addExpenseAction, addTeamAction, deleteTeamAction, addPlayerToTeamAction, removePlayerFromTeamAction, addCompetitionAction, addCompetitionResultAction, updateAdmissionStatusAction, addStudentFromAdmissionAction, addAssetAction, addKioskMediaAction, removeKioskMediaAction, addBehavioralAssessmentAction, addGradeAction, addLessonAttendanceAction, addTestSubmissionAction } from '@/app/actions/school-actions';
+import { addTermAction, addHolidayAction, addExamBoardAction, deleteExamBoardAction, addFeeDescriptionAction, deleteFeeDescriptionAction, addAudienceAction, deleteAudienceAction } from '@/app/actions/academic-year-actions';
 import { sendMessageAction } from '@/app/actions/messaging-actions';
 
 
-export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, SyllabusTopic, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, DeployedTest, SavedTest, NewMessageData, NewAdmissionData } from '@/lib/mock-data';
+export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, SyllabusTopic, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, BehavioralAssessment } from '@/lib/mock-data';
 
 interface SchoolDataContextType {
     // --- Data States ---
@@ -63,13 +63,13 @@ interface SchoolDataContextType {
     updateApplicationStatus: (id: string, status: Admission['status']) => Promise<void>;
     addStudentFromAdmission: (application: Admission) => Promise<void>;
     addAsset: (asset: Omit<any, 'id'>) => Promise<{success: boolean, error?: string}>;
-    addLessonAttendance: (courseId: string, date: string, studentStatuses: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => void;
+    addLessonAttendance: (courseId: string, date: string, studentStatuses: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => Promise<void>;
     addClass: (classData: Omit<Class, 'id'>) => Promise<void>;
     updateClass: (id: string, data: Partial<Class>) => Promise<void>;
     deleteClass: (id: string) => Promise<void>;
     addEvent: (event: Omit<Event, 'id' | 'schoolName'>) => void;
-    addGrade: (grade: Omit<Grade, 'id' | 'date' | 'teacherId'>) => boolean;
-    addTestSubmission: (testId: string, studentId: string, score: number) => void;
+    addGrade: (grade: Omit<Grade, 'id' | 'date' | 'teacherId'>) => Promise<boolean>;
+    addTestSubmission: (testId: string, studentId: string, score: number) => Promise<void>;
     recordPayment: (feeId: string, amount: number) => Promise<void>;
     addFee: (fee: Omit<FinanceRecord, 'id' | 'studentName' | 'status' | 'amountPaid'>) => Promise<void>;
     addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
@@ -82,8 +82,8 @@ interface SchoolDataContextType {
     addTeacher: (teacher: Omit<Teacher, 'id' | 'status'>) => Promise<void>;
     updateTeacher: (id: string, data: Partial<Teacher>) => Promise<void>;
     deleteTeacher: (id: string) => Promise<void>;
-    addKioskMedia: (media: Omit<KioskMedia, 'id'|'createdAt'>) => void;
-    removeKioskMedia: (id: string) => void;
+    addKioskMedia: (media: Omit<KioskMedia, 'id'|'createdAt'>) => Promise<void>;
+    removeKioskMedia: (id: string) => Promise<void>;
     updateSchoolProfile: (data: Partial<SchoolProfile>, schoolId?: string) => Promise<boolean>;
     addMessage: (message: NewMessageData) => Promise<void>;
     addAdmission: (admission: NewAdmissionData) => void;
@@ -92,21 +92,21 @@ interface SchoolDataContextType {
     updateStudentStatus: (schoolId: string, studentId: string, status: Student['status']) => void;
     updateTeacherStatus: (schoolId: string, teacherId: string, status: Teacher['status']) => void;
     updateParentStatus: (parentEmail: string, status: 'Active' | 'Suspended') => void;
-    addBehavioralAssessment: (assessment: Omit<any, 'id' | 'date'>) => void;
+    addBehavioralAssessment: (assessment: Omit<any, 'id' | 'date'>) => Promise<void>;
     
     // Academic Year
     terms: any[];
     holidays: any[];
-    addTerm: (term: any) => void;
-    addHoliday: (holiday: any) => void;
+    addTerm: (term: any) => Promise<void>;
+    addHoliday: (holiday: any) => Promise<void>;
 
     // Dropdown management
-    addExamBoard: (board: string) => void;
-    deleteExamBoard: (board: string) => void;
-    addFeeDescription: (desc: string) => void;
-    deleteFeeDescription: (desc: string) => void;
-    addAudience: (aud: string) => void;
-    deleteAudience: (aud: string) => void;
+    addExamBoard: (board: string) => Promise<void>;
+    deleteExamBoard: (board: string) => Promise<void>;
+    addFeeDescription: (desc: string) => Promise<void>;
+    deleteFeeDescription: (desc: string) => Promise<void>;
+    addAudience: (aud: string) => Promise<void>;
+    deleteAudience: (aud: string) => Promise<void>;
     addSavedReport: (report: Omit<SavedReport, 'id'>) => void;
 }
 
@@ -501,26 +501,24 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, error: result.error };
   };
   
-  const addLessonAttendance = (courseId: string, date: string, studentStatuses: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => {
+  const addLessonAttendance = async (courseId: string, date: string, studentStatuses: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => {
     if(!schoolId) return;
-    const newRecords: Attendance[] = Object.entries(studentStatuses).map(([studentId, status]) => ({
-      id: `ATT${Date.now()}${studentId}`,
-      studentId,
-      date: new Date(date),
-      status,
-      courseId,
-    }));
-    
-    setData(prev => {
-      if (!prev) return null;
-      const newData = {...prev};
-      const school = newData[schoolId];
-      // Filter out old records for the same day and course
-      school.attendance = school.attendance.filter(a => !(a.date.toISOString().split('T')[0] === date && a.courseId === courseId));
-      school.attendance.push(...newRecords);
-      addLog(schoolId, 'Create', `Recorded attendance for course ${courseId} on ${date}`);
-      return newData;
-    });
+    const result = await addLessonAttendanceAction(schoolId, courseId, date, studentStatuses);
+    if(result.success) {
+        const newRecords: Attendance[] = Object.entries(studentStatuses).map(([studentId, status]) => ({
+            id: `ATT${Date.now()}${studentId}`, studentId, date: new Date(date), status, courseId,
+        }));
+        
+        setData(prev => {
+            if (!prev) return null;
+            const newData = {...prev};
+            const school = newData[schoolId];
+            school.attendance = school.attendance.filter(a => !(new Date(a.date).toISOString().split('T')[0] === date && a.courseId === courseId));
+            school.attendance.push(...newRecords);
+            addLog(schoolId, 'Create', `Recorded attendance for course ${courseId} on ${date}`);
+            return newData;
+        });
+    }
   };
 
   const addEvent = (event: Omit<Event, 'id' | 'schoolName'>) => {
@@ -540,36 +538,41 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     return schoolData?.teachers.find(t => t.email === user.email);
   }, [role, user, schoolData]);
   
-  const addGrade = (grade: Omit<Grade, 'id' | 'date' | 'teacherId'>): boolean => {
+  const addGrade = async (grade: Omit<Grade, 'id' | 'date'>): Promise<boolean> => {
     if(!schoolId || !teacher) return false;
-    const teacherId = teacher.id;
-    const newGrade: Grade = { id: `GRD${Date.now()}`, date: new Date(), teacherId, ...grade };
-    setData(prev => {
-        if (!prev) return null;
-        const newData = { ...prev };
-        newData[schoolId].grades.push(newGrade);
-        return newData;
-    });
-    return true;
+    const result = await addGradeAction(schoolId, {...grade, teacherId: teacher.id });
+    if(result.success && result.grade) {
+        setData(prev => {
+            if (!prev) return null;
+            const newData = { ...prev };
+            newData[schoolId].grades.push(result.grade!);
+            return newData;
+        });
+        return true;
+    }
+    return false;
   };
   
-  const addTestSubmission = (testId: string, studentId: string, score: number) => {
+  const addTestSubmission = async (testId: string, studentId: string, score: number) => {
     if (!schoolId) return;
-    setData(prevData => {
-        if (!prevData) return null;
-        const newData = { ...prevData };
-        const school = newData[schoolId];
-        const testIndex = school.deployedTests.findIndex(t => t.id === testId);
-        if (testIndex > -1) {
-            school.deployedTests[testIndex].submissions.push({
-                studentId,
-                score,
-                submittedAt: new Date(),
-            });
-        }
-        addLog(schoolId, 'Create', `Student ${studentId} submitted test ${testId}`);
-        return newData;
-    });
+    const result = await addTestSubmissionAction(schoolId, testId, studentId, score);
+    if (result.success) {
+        setData(prevData => {
+            if (!prevData) return null;
+            const newData = { ...prevData };
+            const school = newData[schoolId];
+            const testIndex = school.deployedTests.findIndex(t => t.id === testId);
+            if (testIndex > -1) {
+                school.deployedTests[testIndex].submissions.push({
+                    studentId,
+                    score,
+                    submittedAt: new Date(),
+                });
+            }
+            addLog(schoolId, 'Create', `Student ${studentId} submitted test ${testId}`);
+            return newData;
+        });
+    }
   };
 
   const recordPayment = async (feeId: string, amount: number) => {
@@ -717,45 +720,52 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const addBehavioralAssessment = (assessment: Omit<any, 'id'|'date'>) => {
+  const addBehavioralAssessment = async (assessment: Omit<any, 'id'|'date'>) => {
     if(!schoolId) return;
-    const newAssessment = { id: `BA${Date.now()}`, date: new Date(), ...assessment };
-    setData(prev => {
-        if (!prev) return null;
-        const newData = {...prev};
-        const school = newData[schoolId];
-        school.students = school.students.map(s => {
-            if(s.id === assessment.studentId) {
-                s.behavioralAssessments.push(newAssessment);
-            }
-            return s;
+    const result = await addBehavioralAssessmentAction(schoolId, assessment);
+    if(result.success && result.assessment) {
+        setData(prev => {
+            if (!prev) return null;
+            const newData = {...prev};
+            const school = newData[schoolId];
+            school.students = school.students.map(s => {
+                if(s.id === assessment.studentId) {
+                    s.behavioralAssessments.push(result.assessment!);
+                }
+                return s;
+            });
+            addLog(schoolId, 'Create', `Added behavioral assessment for student ${assessment.studentId}`);
+            return newData;
         });
-        addLog(schoolId, 'Create', `Added behavioral assessment for student ${assessment.studentId}`);
-        return newData;
-    });
+    }
   };
   
-  const addKioskMedia = (media: Omit<KioskMedia, 'id' | 'createdAt'>) => {
+  const addKioskMedia = async (media: Omit<KioskMedia, 'id' | 'createdAt'>) => {
     if (!schoolId) return;
-    const newMedia: KioskMedia = { id: `KM${Date.now()}`, createdAt: new Date(), ...media };
-    setData(prev => {
-      if (!prev) return null;
-      const newData = { ...prev };
-      newData[schoolId].kioskMedia.push(newMedia);
-      addLog(schoolId, 'Create', `Added kiosk media: ${media.title}`);
-      return newData;
-    });
+    const result = await addKioskMediaAction(schoolId, media);
+    if (result.success && result.media) {
+      setData(prev => {
+        if (!prev) return null;
+        const newData = { ...prev };
+        newData[schoolId].kioskMedia.push(result.media!);
+        addLog(schoolId, 'Create', `Added kiosk media: ${media.title}`);
+        return newData;
+      });
+    }
   };
   
-  const removeKioskMedia = (id: string) => {
+  const removeKioskMedia = async (id: string) => {
       if(!schoolId) return;
-      setData(prev => {
-          if (!prev) return null;
-          const newData = {...prev};
-          newData[schoolId].kioskMedia = newData[schoolId].kioskMedia.filter(m => m.id !== id);
-          addLog(schoolId, 'Delete', `Removed kiosk media item ${id}`);
-          return newData;
-      });
+      const result = await removeKioskMediaAction(schoolId, id);
+      if (result.success) {
+          setData(prev => {
+              if (!prev) return null;
+              const newData = {...prev};
+              newData[schoolId].kioskMedia = newData[schoolId].kioskMedia.filter(m => m.id !== id);
+              addLog(schoolId, 'Delete', `Removed kiosk media item ${id}`);
+              return newData;
+          });
+      }
   };
   
   const addMessage = async (messageData: NewMessageData) => {
@@ -874,79 +884,103 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     setParentStatusOverrides(prev => ({...prev, [parentEmail]: status}));
   };
   
-  const addExamBoard = (board: string) => {
+  const addExamBoard = async (board: string) => {
     if(!schoolId) return;
-    setData(prev => {
-        if (!prev) return null;
-        const newData = {...prev};
-        newData[schoolId].examBoards.push(board);
-        return newData;
-    });
-  };
-  const deleteExamBoard = (board: string) => {
-    if(!schoolId) return;
-    setData(prev => {
-        if (!prev) return null;
-        const newData = {...prev};
-        newData[schoolId].examBoards = newData[schoolId].examBoards.filter(b => b !== board);
-        return newData;
-    });
-  };
-  const addFeeDescription = (desc: string) => {
-    if(!schoolId) return;
-    setData(prev => {
-        if (!prev) return null;
-        const newData = {...prev};
-        newData[schoolId].feeDescriptions.push(desc);
-        return newData;
-    });
-  };
-  const deleteFeeDescription = (desc: string) => {
-    if(!schoolId) return;
-    setData(prev => {
-        if (!prev) return null;
-        const newData = {...prev};
-        newData[schoolId].feeDescriptions = newData[schoolId].feeDescriptions.filter(d => d !== desc);
-        return newData;
-    });
-  };
-  const addAudience = (aud: string) => {
-    if(!schoolId) return;
-    setData(prev => {
-        if (!prev) return null;
-        const newData = {...prev};
-        newData[schoolId].audiences.push(aud);
-        return newData;
-    });
-  };
-  const deleteAudience = (aud: string) => {
-    if(!schoolId) return;
-    setData(prev => {
-        if (!prev) return null;
-        const newData = {...prev};
-        newData[schoolId].audiences = newData[schoolId].audiences.filter(a => a !== aud);
-        return newData;
-    });
-  };
-  
-  const addTerm = (term: any) => {
-    if (!schoolId) return;
-    setData(prev => {
-        if (!prev) return null;
-        const newData = {...prev};
-        newData[schoolId].terms.push({id: `T${Date.now()}`, ...term});
-        return newData;
-    });
-  };
-
-  const addHoliday = (holiday: any) => {
-      if (!schoolId) return;
+    const result = await addExamBoardAction(schoolId, board);
+    if(result.success && result.board) {
       setData(prev => {
           if (!prev) return null;
           const newData = {...prev};
-          newData[schoolId].holidays.push({id: `H${Date.now()}`, ...holiday});
+          newData[schoolId].examBoards.push(result.board!);
           return newData;
       });
+    }
+  };
+  const deleteExamBoard = async (board: string) => {
+    if(!schoolId) return;
+    const result = await deleteExamBoardAction(schoolId, board);
+    if(result.success) {
+      setData(prev => {
+          if (!prev) return null;
+          const newData = {...prev};
+          newData[schoolId].examBoards = newData[schoolId].examBoards.filter(b => b !== board);
+          return newData;
+      });
+    }
+  };
+  const addFeeDescription = async (desc: string) => {
+    if(!schoolId) return;
+    const result = await addFeeDescriptionAction(schoolId, desc);
+    if(result.success && result.description) {
+      setData(prev => {
+          if (!prev) return null;
+          const newData = {...prev};
+          newData[schoolId].feeDescriptions.push(result.description!);
+          return newData;
+      });
+    }
+  };
+  const deleteFeeDescription = async (desc: string) => {
+    if(!schoolId) return;
+    const result = await deleteFeeDescriptionAction(schoolId, desc);
+    if (result.success) {
+      setData(prev => {
+          if (!prev) return null;
+          const newData = {...prev};
+          newData[schoolId].feeDescriptions = newData[schoolId].feeDescriptions.filter(d => d !== desc);
+          return newData;
+      });
+    }
+  };
+  const addAudience = async (aud: string) => {
+    if(!schoolId) return;
+    const result = await addAudienceAction(schoolId, aud);
+    if(result.success && result.audience) {
+      setData(prev => {
+          if (!prev) return null;
+          const newData = {...prev};
+          newData[schoolId].audiences.push(result.audience!);
+          return newData;
+      });
+    }
+  };
+  const deleteAudience = async (aud: string) => {
+    if(!schoolId) return;
+    const result = await deleteAudienceAction(schoolId, aud);
+    if(result.success) {
+      setData(prev => {
+          if (!prev) return null;
+          const newData = {...prev};
+          newData[schoolId].audiences = newData[schoolId].audiences.filter(a => a !== aud);
+          return newData;
+      });
+    }
+  };
+  
+  const addTerm = async (term: any) => {
+    if (!schoolId) return;
+    const result = await addTermAction(schoolId, term);
+    if (result.success && result.term) {
+        setData(prev => {
+            if (!prev) return null;
+            const newData = {...prev};
+            newData[schoolId].terms.push(result.term!);
+            return newData;
+        });
+    }
+  };
+
+  const addHoliday = async (holiday: any) => {
+      if (!schoolId) return;
+      const result = await addHolidayAction(schoolId, holiday);
+      if (result.success && result.holiday) {
+        setData(prev => {
+            if (!prev) return null;
+            const newData = {...prev};
+            newData[schoolId].holidays.push(result.holiday!);
+            return newData;
+        });
+      }
   };
   
   const addSavedReport = (report: Omit<SavedReport, 'id'>) => {

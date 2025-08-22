@@ -1,9 +1,8 @@
-
 'use server';
 
-import { NewSchoolData, SchoolData, UserProfile, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student } from '@/context/school-data-context';
+import { NewSchoolData, SchoolData, UserProfile, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student, KioskMedia, BehavioralAssessment, Grade, AttendanceRecord, DeployedTest } from '@/context/school-data-context';
 import { revalidatePath } from 'next/cache';
-import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore, updateSyllabusTopicInFirestore, deleteSyllabusTopicFromFirestore, addSyllabusToFirestore, addCourseToFirestore, updateCourseInFirestore, deleteCourseFromFirestore, addFeeToFirestore, recordPaymentInFirestore, addExpenseToFirestore, addTeamToFirestore, deleteTeamFromFirestore, addPlayerToTeamInFirestore, removePlayerFromTeamInFirestore, addCompetitionToFirestore, addCompetitionResultInFirestore, updateAdmissionStatusInFirestore, addStudentFromAdmissionInFirestore, addAssetToFirestore } from '@/lib/firebase/firestore-service';
+import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore, updateSyllabusTopicInFirestore, deleteSyllabusTopicFromFirestore, addSyllabusToFirestore, addCourseToFirestore, updateCourseInFirestore, deleteCourseFromFirestore, addFeeToFirestore, recordPaymentInFirestore, addExpenseToFirestore, addTeamToFirestore, deleteTeamFromFirestore, addPlayerToTeamInFirestore, removePlayerFromTeamInFirestore, addCompetitionToFirestore, addCompetitionResultInFirestore, updateAdmissionStatusInFirestore, addStudentFromAdmissionInFirestore, addAssetToFirestore, addKioskMediaToFirestore, removeKioskMediaFromFirestore, addBehavioralAssessmentToFirestore, addGradeToFirestore, addLessonAttendanceToFirestore, addTestSubmissionToFirestore } from '@/lib/firebase/firestore-service';
 
 export async function createSchool(data: NewSchoolData, groupId?: string): Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile } } | null> {
     try {
@@ -293,5 +292,75 @@ export async function addAssetAction(schoolId: string, assetData: Omit<any, 'id'
         return { success: false, error: 'Server error adding asset.' };
     }
 }
-    
 
+// Kiosk Media Actions
+export async function addKioskMediaAction(schoolId: string, mediaData: Omit<KioskMedia, 'id' | 'createdAt'>): Promise<{ success: boolean, media?: KioskMedia, error?: string }> {
+    try {
+        const newMedia = await addKioskMediaToFirestore(schoolId, mediaData);
+        revalidatePath('/dashboard/kiosk-showcase');
+        return { success: true, media: newMedia };
+    } catch (e) {
+        console.error("Failed to add kiosk media:", e);
+        return { success: false, error: 'Server error adding kiosk media.' };
+    }
+}
+
+export async function removeKioskMediaAction(schoolId: string, mediaId: string): Promise<{ success: boolean, error?: string }> {
+    try {
+        await removeKioskMediaFromFirestore(schoolId, mediaId);
+        revalidatePath('/dashboard/kiosk-showcase');
+        return { success: true };
+    } catch (e) {
+        console.error("Failed to remove kiosk media:", e);
+        return { success: false, error: 'Server error removing kiosk media.' };
+    }
+}
+    
+// Behavioral Assessment Action
+export async function addBehavioralAssessmentAction(schoolId: string, assessmentData: Omit<BehavioralAssessment, 'id' | 'date'>): Promise<{ success: boolean, assessment?: BehavioralAssessment, error?: string }> {
+    try {
+        const newAssessment = await addBehavioralAssessmentToFirestore(schoolId, assessmentData);
+        revalidatePath('/dashboard/behavioral');
+        return { success: true, assessment: newAssessment };
+    } catch (e) {
+        console.error("Failed to add behavioral assessment:", e);
+        return { success: false, error: 'Server error adding behavioral assessment.' };
+    }
+}
+
+// Grade Action
+export async function addGradeAction(schoolId: string, gradeData: Omit<Grade, 'id' | 'date'>): Promise<{ success: boolean, grade?: Grade, error?: string }> {
+    try {
+        const newGrade = await addGradeToFirestore(schoolId, gradeData);
+        revalidatePath('/dashboard/grading');
+        return { success: true, grade: newGrade };
+    } catch (e) {
+        console.error("Failed to add grade:", e);
+        return { success: false, error: 'Server error adding grade.' };
+    }
+}
+
+// Attendance Action
+export async function addLessonAttendanceAction(schoolId: string, courseId: string, date: string, studentStatuses: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>): Promise<{ success: boolean, error?: string }> {
+    try {
+        await addLessonAttendanceToFirestore(schoolId, courseId, date, studentStatuses);
+        revalidatePath('/dashboard/attendance');
+        return { success: true };
+    } catch (e) {
+        console.error("Failed to record attendance:", e);
+        return { success: false, error: 'Server error recording attendance.' };
+    }
+}
+
+// Test Submission Action
+export async function addTestSubmissionAction(schoolId: string, deployedTestId: string, studentId: string, score: number): Promise<{ success: boolean, error?: string }> {
+    try {
+        await addTestSubmissionToFirestore(schoolId, deployedTestId, studentId, score);
+        revalidatePath(`/dashboard/test/${deployedTestId}`);
+        revalidatePath('/dashboard');
+        return { success: true };
+    } catch (e) {
+        console.error("Failed to submit test:", e);
+        return { success: false, error: 'Server error submitting test.' };
+    }
+}
