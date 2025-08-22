@@ -55,6 +55,7 @@ import {
     UploadCloud,
     Database,
     Languages,
+    UserCog,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -145,6 +146,7 @@ export const roleLinks: Record<Role, NavItem[]> = {
         ]
     },
     { href: '/dashboard/profile', label: 'My Profile', icon: User },
+    { href: '/dashboard/user-manual', label: 'User Manual', icon: LifeBuoy },
   ],
   Teacher: [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -188,12 +190,52 @@ export const roleLinks: Record<Role, NavItem[]> = {
     { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
     { href: '/dashboard/profile', label: 'My Profile', icon: User },
   ],
+  AcademicDean: [
+    { href: '/dashboard/academics', label: 'Curriculum', icon: BookOpen },
+    { href: '/dashboard/classes', label: 'Classes', icon: Library },
+    { href: '/dashboard/reports', label: 'AI Reports', icon: BrainCircuit, pro: true },
+    { href: '/dashboard/teachers', label: 'Teachers', icon: Presentation },
+    { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Trophy },
+    { href: '/dashboard/profile', label: 'My Profile', icon: User },
+  ],
+  AdmissionsOfficer: [
+    { href: '/dashboard/admissions', label: 'Admissions', icon: UserPlus, pro: true },
+    { href: '/dashboard/students', label: 'Students', icon: Users },
+    { href: '/dashboard/classes', label: 'Classes', icon: Library },
+    { href: '/dashboard/messaging', label: 'Messaging', icon: Mail },
+    { href: '/dashboard/profile', label: 'My Profile', icon: User },
+  ],
+  Counselor: [
+      { href: '/dashboard/students', label: 'Students', icon: Users },
+      { href: '/dashboard/behavioral', label: 'Behavioral', icon: Heart },
+      { href: '/dashboard/attendance', label: 'Attendance', icon: CalendarCheck },
+      { href: '/dashboard/grading', label: 'Gradebook', icon: GraduationCap },
+      { href: '/dashboard/leaderboards', label: 'Leaderboards', icon: Trophy },
+      { href: '/dashboard/profile', label: 'My Profile', icon: User },
+  ],
+  FinanceOfficer: [
+      { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
+      { href: '/dashboard/assets', label: 'Assets', icon: Package },
+      { href: '/dashboard/profile', label: 'My Profile', icon: User },
+  ],
+  SportsDirector: [
+      { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
+      { href: '/dashboard/events', label: 'Events', icon: Calendar },
+      { href: '/dashboard/assets', label: 'Assets', icon: Package },
+      { href: '/dashboard/profile', label: 'My Profile', icon: User },
+  ],
+  ITAdmin: [
+      { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: MonitorPlay },
+      { href: '/dashboard/assets', label: 'Assets', icon: Package },
+      { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+      { href: '/dashboard/profile', label: 'My Profile', icon: User },
+  ],
 };
 
 export function AppSidebar() {
   const { role, user } = useAuth();
   const pathname = usePathname();
-  const { schoolProfile, schoolGroups } = useSchoolData();
+  const { schoolProfile, schoolGroups, classesData } = useSchoolData();
   const { isMobile, setOpenMobile } = useSidebar();
 
   const handleLinkClick = () => {
@@ -206,8 +248,17 @@ export function AppSidebar() {
     if (role !== 'Admin' || !user?.schoolId || !schoolGroups) return false;
     return Object.values(schoolGroups).some(group => group.includes(user.schoolId!));
   }, [role, user, schoolGroups]);
+  
+  const isHeadOfClass = useMemo(() => {
+    if (role !== 'Teacher' || !user) return false;
+    // Find the teacher's ID from their email
+    const teacherId = schoolProfile?.teachers.find(t => t.email === user.email)?.id;
+    if (!teacherId) return false;
+    // Check if this teacherId is assigned as head of any class
+    return classesData.some(c => c.headOfClassId === teacherId);
+  }, [role, user, schoolProfile, classesData]);
 
-  let navItems = role ? roleLinks[role] : [];
+  let navItems = role ? [...roleLinks[role]] : [];
   
   if (isPremiumAdmin) {
     navItems = [
@@ -219,6 +270,23 @@ export function AppSidebar() {
         ]
       }
     ].sort((a,b) => a.href === '/dashboard' ? -1 : 1);
+  }
+  
+  if (isHeadOfClass) {
+    const classManagementGroup = {
+      title: 'Class Management',
+      links: [
+        { href: '/dashboard/students', label: 'Students', icon: Users },
+        { href: '/dashboard/behavioral', label: 'Behavioral', icon: Heart },
+      ]
+    };
+    // Insert after the 'Instruction' group for teachers
+    const instructionIndex = navItems.findIndex(item => isGroup(item) && item.title === 'Instruction');
+    if (instructionIndex !== -1) {
+      navItems.splice(instructionIndex + 1, 0, classManagementGroup);
+    } else {
+      navItems.splice(1, 0, classManagementGroup); // Fallback position
+    }
   }
 
   if (schoolProfile && schoolProfile.tier === 'Starter') {

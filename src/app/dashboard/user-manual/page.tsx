@@ -6,6 +6,8 @@ import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2, 
 import { type LucideIcon } from 'lucide-react';
 import { roleLinks, type NavLink } from '@/components/layout/app-sidebar';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 const userGuides: Record<string, { icon: LucideIcon, title: string, points: string[] }> = {
   GlobalAdmin: {
@@ -35,7 +37,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
         'School Profile: View and edit your school\'s core information like name, address, and contact details. Upload a school logo and manage your subscription plan.',
         'Academics: A central hub to manage both course schedules and curriculum syllabi. Define courses, assign them to classes and teachers, and manage the syllabus topics for each subject and grade.',
         'Students & Teachers: View and manage student and teacher profiles. New teachers can be added, and students are enrolled automatically through Admissions.',
-        'Classes: Define and manage student groups (e.g., "Class 9-A").',
+        'Classes: Define and manage student groups (e.g., "Class 9-A"). You can also assign a "Head of Class" to delegate certain responsibilities to a teacher.',
         'Admissions: Review and process new student applications. Approving an application automatically creates the student\'s record and links them to their parent\'s account.',
         'Finance: Track school-wide revenue and expenses. Record partial or full payments for student fees and create new ad-hoc fee transactions.',
         'Sports: Create sports teams, assign coaches, and manage player rosters. You can also delete teams, which will remove associated competitions.',
@@ -119,6 +121,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
       'Schedules: View your teaching schedule based on the courses assigned to you.',
       'Leaderboards: Check academic rankings to see how students are performing.',
       'Profile: View your personal information.',
+      'Class Management: If you are designated as a "Head of Class", you will see an extra menu group giving you access to view student profiles and manage behavioral assessments for your assigned class.'
     ]
   },
   Student: {
@@ -154,9 +157,21 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
 
 export default function UserManualPage() {
   const { role, isLoading } = useAuth();
+  const router = useRouter();
 
-  if (isLoading) {
-    return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  useEffect(() => {
+    if (!isLoading && role !== 'GlobalAdmin' && role !== 'Admin') {
+      router.push('/dashboard');
+    }
+  }, [role, isLoading, router]);
+
+
+  if (isLoading || (role !== 'GlobalAdmin' && role !== 'Admin')) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
   
   const handlePrint = () => {
@@ -270,5 +285,3 @@ export default function UserManualPage() {
     </div>
   );
 }
-
-    

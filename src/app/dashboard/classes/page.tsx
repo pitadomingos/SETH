@@ -3,7 +3,7 @@
 import { useSchoolData, Class as ClassType } from '@/context/school-data-context';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Presentation, MapPin, UserPlus, Loader2, School, Sigma, Edit, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Users, Presentation, MapPin, UserPlus, Loader2, School, Sigma, Edit, MoreHorizontal, Trash2, UserCog } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
@@ -25,6 +25,7 @@ const classSchema = z.object({
   teacher: z.string().min(2, "Homeroom teacher is required."),
   students: z.coerce.number().int().positive("Must be a positive number."),
   room: z.string().min(1, "Room is required."),
+  headOfClassId: z.string().optional(),
 });
 type ClassFormValues = z.infer<typeof classSchema>;
 
@@ -35,7 +36,7 @@ function ClassFormDialog({ classItem, children }: { classItem?: ClassType, child
     
     const form = useForm<ClassFormValues>({
         resolver: zodResolver(classSchema),
-        defaultValues: isEditMode ? classItem : { name: '', grade: '', teacher: '', students: 0, room: '' }
+        defaultValues: isEditMode ? classItem : { name: '', grade: '', teacher: '', students: 0, room: '', headOfClassId: '' }
     });
     
     const { isSubmitting } = useFormState({ control: form.control });
@@ -44,7 +45,7 @@ function ClassFormDialog({ classItem, children }: { classItem?: ClassType, child
         if (isEditMode && classItem) {
             form.reset(classItem);
         } else {
-            form.reset({ name: '', grade: '', teacher: '', students: 0, room: '' });
+            form.reset({ name: '', grade: '', teacher: '', students: 0, room: '', headOfClassId: '' });
         }
     }, [classItem, isEditMode, form, isDialogOpen]);
 
@@ -67,11 +68,12 @@ function ClassFormDialog({ classItem, children }: { classItem?: ClassType, child
                     <DialogDescription>{isEditMode ? 'Update the details for this class section.' : 'Define a new group of students (e.g., a homeroom section).'}</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
                          <div className="grid grid-cols-2 gap-4">
                             <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Class Name</FormLabel><FormControl><Input placeholder="e.g., Class 9-A" {...field} /></FormControl><FormMessage /></FormItem> )} />
                             <FormField control={form.control} name="grade" render={({ field }) => ( <FormItem><FormLabel>Grade</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select Grade" /></SelectTrigger></FormControl><SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(g => <SelectItem key={g} value={String(g)}>Grade {g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                             <FormField control={form.control} name="teacher" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Homeroom Teacher</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select Teacher" /></SelectTrigger></FormControl><SelectContent>{teachersData.map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                             <FormField control={form.control} name="headOfClassId" render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Head of Class (Optional)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a teacher..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="">None</SelectItem>{teachersData.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                             <FormField control={form.control} name="students" render={({ field }) => ( <FormItem><FormLabel>No. of Students</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                             <FormField control={form.control} name="room" render={({ field }) => ( <FormItem><FormLabel>Homeroom</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                         </div>
@@ -156,7 +158,7 @@ function StudentsPerClassChart() {
 
 export default function ClassesPage() {
     const { role, isLoading } = useAuth();
-    const { classesData } = useSchoolData();
+    const { classesData, teachersData } = useSchoolData();
     const router = useRouter();
 
     const summaryStats = useMemo(() => {
@@ -174,6 +176,11 @@ export default function ClassesPage() {
 
     if (isLoading || role !== 'Admin') {
         return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    }
+    
+    const getHeadOfClassName = (teacherId?: string) => {
+        if (!teacherId) return 'Not Assigned';
+        return teachersData.find(t => t.id === teacherId)?.name || 'Unknown';
     }
 
     return (
@@ -225,6 +232,10 @@ export default function ClassesPage() {
                             <div className="flex items-center text-muted-foreground">
                                 <Presentation className="mr-3 h-4 w-4" />
                                 <span>Homeroom Teacher: {classItem.teacher}</span>
+                            </div>
+                            <div className="flex items-center text-muted-foreground">
+                                <UserCog className="mr-3 h-4 w-4" />
+                                <span>Head of Class: {getHeadOfClassName(classItem.headOfClassId)}</span>
                             </div>
                              <div className="flex items-center text-muted-foreground">
                                 <Users className="mr-3 h-4 w-4" />

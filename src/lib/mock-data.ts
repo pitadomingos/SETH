@@ -97,6 +97,7 @@ export interface Class {
     teacher: string;
     students: number;
     room: string;
+    headOfClassId?: string; // Optional ID of the teacher who is head of this class
 }
 
 export interface Course {
@@ -224,6 +225,7 @@ export interface Competition {
 export interface BehavioralAssessment {
     id: string;
     teacherId: string;
+    studentId: string;
     date: Date;
     respect: number;
     participation: number;
@@ -341,6 +343,8 @@ export interface NewMessageData {
     body: string;
     attachmentUrl?: string;
     attachmentName?: string;
+    senderName?: string;
+    senderRole?: string;
 }
 
 export interface NewAdmissionData {
