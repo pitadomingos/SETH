@@ -1,7 +1,8 @@
+
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { useSchoolData, NewAdmissionData, Competition, Team, Student, Grade } from '@/context/school-data-context';
+import { useSchoolData, NewAdmissionData, Competition, Team, Student } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb } from 'lucide-react';
