@@ -685,22 +685,26 @@ export default function FinancePage() {
   const { role, isLoading } = useAuth();
   const router = useRouter();
 
+  const isAuthorized = role === 'Admin' || role === 'Parent' || role === 'FinanceOfficer';
+
   useEffect(() => {
-    if (!isLoading && role !== 'Admin' && role !== 'Parent') {
+    if (!isLoading && !isAuthorized) {
       router.push('/dashboard');
     }
-  }, [role, isLoading, router]);
+  }, [role, isLoading, router, isAuthorized]);
 
-  if (isLoading || (role !== 'Admin' && role !== 'Parent')) {
+  if (isLoading || !isAuthorized) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
   
   return (
     <div className="animate-in fade-in-50">
-        {role === 'Admin' && <AdminFinanceView />}
+        {(role === 'Admin' || role === 'FinanceOfficer') && <AdminFinanceView />}
         {role === 'Parent' && <ParentFinanceView />}
     </div>
   );
 }
+
+    
 
     

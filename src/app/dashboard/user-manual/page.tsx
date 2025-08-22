@@ -2,7 +2,7 @@
 'use client';
 import { useAuth, Role } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2, List, Gem, MonitorPlay, Download, BrainCircuit, Users, FileText, LifeBuoy, User, GitBranch, Tv, Building, Mail, Trophy } from 'lucide-react';
+import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2, List, Gem, MonitorPlay, Download, BrainCircuit, Users, FileText, LifeBuoy, User, GitBranch, Tv, Building, Mail, Trophy, Briefcase, BarChart, DollarSign as DollarSignIcon, Package, UserCheck as AdmissionsIcon } from 'lucide-react';
 import { type LucideIcon } from 'lucide-react';
 import { roleLinks, type NavLink } from '@/components/layout/app-sidebar';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,65 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
         'Messaging, Events, Leaderboards, Profile: Standard modules for communication, scheduling, tracking, and personal settings.',
         'Activity Logs: View a log of all significant actions taken by users within your school. This feed is specific to your school only.',
     ]
+  },
+  AcademicDean: {
+      icon: Briefcase,
+      title: 'Academic Dean Guide',
+      points: [
+        'Academics: A central hub to manage both course schedules and curriculum syllabi.',
+        'Classes: View and manage student groups.',
+        'AI Reports: Access a suite of AI-powered academic reports.',
+        'Teachers: View and manage teacher profiles and performance.',
+        'Examinations: Schedule and oversee official examinations.',
+        'Leaderboards: Monitor school-wide academic rankings.',
+      ],
+  },
+  AdmissionsOfficer: {
+      icon: AdmissionsIcon,
+      title: 'Admissions Officer Guide',
+      points: [
+          'Admissions: The primary module to review and process new student applications.',
+          'Students: View the roster of currently enrolled students.',
+          'Classes: Check class capacities to manage enrollment numbers.',
+          'Messaging: Communicate with parents regarding their applications.',
+      ],
+  },
+  Counselor: {
+      icon: HeartHandshake,
+      title: 'Counselor Guide',
+      points: [
+          'Students: Access student profiles and academic records.',
+          'Behavioral Assessments: View and contribute to student behavioral assessments.',
+          'Attendance: Monitor student attendance records to identify potential issues.',
+          'Grading: View student grades to provide academic support.',
+          'Leaderboards: Identify both high-achieving and struggling students.',
+      ],
+  },
+  FinanceOfficer: {
+      icon: DollarSignIcon,
+      title: 'Finance Officer Guide',
+      points: [
+          'Finance: Manage all school financial data, including student fees, payments, and expenses.',
+          'Assets: Track and manage all school equipment and physical resources.',
+      ],
+  },
+  SportsDirector: {
+      icon: Trophy,
+      title: 'Sports Director Guide',
+      points: [
+          'Sports: Manage all sports teams, player rosters, coaches, and competitions.',
+          'Events: Schedule sports-related events on the school calendar.',
+          'Assets: Manage sports equipment and facility resources.',
+      ],
+  },
+  ITAdmin: {
+      icon: Server,
+      title: 'IT Administrator Guide',
+      points: [
+          'Kiosk Showcase: Manage the media and display settings for the school\'s public-facing kiosk.',
+          'Assets: Manage all IT-related equipment and software licenses.',
+          'User Management (in Settings): View and manage user accounts within the school.',
+      ],
   },
   Teacher: {
     icon: PenSquare,
@@ -211,3 +270,5 @@ export default function UserManualPage() {
     </div>
   );
 }
+
+    
