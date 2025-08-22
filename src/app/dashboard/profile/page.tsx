@@ -145,14 +145,18 @@ export default function ProfilePage() {
                         description: "Your new profile picture has been saved.",
                     });
                 } else {
-                    throw new Error("Upload failed to return a URL.");
+                     toast({
+                        variant: 'destructive',
+                        title: "Upload Failed",
+                        description: "Could not update your profile picture. Please try again.",
+                    });
                 }
             } catch (error) {
                 console.error("Upload failed:", error);
                 toast({
                     variant: 'destructive',
                     title: "Upload Failed",
-                    description: "Could not update your profile picture. Please try again.",
+                    description: "An unexpected error occurred during upload. Please try again.",
                 });
             } finally {
                 setIsUploading(false);
