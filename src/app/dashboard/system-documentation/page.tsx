@@ -103,12 +103,12 @@ export default function SystemDocumentationPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-muted-foreground">
                 <p>Authentication is handled by the <code>AuthProvider</code>, which now validates against user profiles in Firestore. Upon successful login, the user's role and school affiliation are stored in sessionStorage to persist the session.</p>
-                <p>Role-based access control (RBAC) is implemented throughout the app, primarily in two ways:</p>
+                <p>Role-based access control (RBAC) is implemented throughout the app, with an expanding set of roles to delegate responsibilities effectively. The primary roles are Global Admin, Admin, Teacher, Student, and Parent. The system is designed to support more granular school-level roles like Academic Dean, Counselor, and Finance Officer, as well as future higher-level roles for District, Provincial, and National oversight.</p>
                 <ul className="list-disc pl-6 space-y-1">
-                    <li><b>Page-Level:</b> Each page component checks the user's role from <code>useAuth()</code> and redirects if they are not authorized.</li>
-                    <li><b>Component-Level:</b> The sidebar and other components conditionally render UI elements (like buttons and menu items) based on the user's role.</li>
+                    <li><b>Page-Level Security:</b> Each page component checks the user's role and redirects if they are not authorized.</li>
+                    <li><b>UI-Level Security:</b> The sidebar and other components conditionally render UI elements based on the user's role.</li>
+                    <li><b>Impersonation:</b> Allows a Global Admin to temporarily assume another user's role for support and verification.</li>
                 </ul>
-                <p>The <b>Impersonation</b> feature allows a Global Admin to temporarily assume the role of another user to view the application from their perspective. The original user's session is stored and can be reverted to.</p>
             </CardContent>
         </Card>
         <Card>

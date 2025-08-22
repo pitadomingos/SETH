@@ -294,6 +294,13 @@ export default function ProjectProposalPage() {
                         <p className="text-sm text-muted-foreground">Full support for multiple languages, starting with English and Portuguese, to cater to the diverse linguistic landscape of the region.</p>
                     </div>
                 </div>
+                 <div className="flex items-start gap-3">
+                    <Users className="h-5 w-5 text-primary mt-1 shrink-0" />
+                    <div>
+                        <h4 className="font-semibold">Expanded Role-Based Access Control</h4>
+                        <p className="text-sm text-muted-foreground">Introduce more granular roles like Academic Dean, Counselor, and Finance Officer to better reflect real-world school operations and delegate responsibilities effectively.</p>
+                    </div>
+                </div>
             </CardContent>
         </Card>
         
@@ -303,7 +310,7 @@ export default function ProjectProposalPage() {
             <CardDescription>From the first day of pre-school to university graduation and beyond.</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">Our ultimate vision extends beyond the K-12 classroom. We aim to create a cohesive, three-part ecosystem that supports a student's entire educational journey. While the Pre-School and University modules will be developed as distinct, specialized applications due to their unique complexities, they will be built on a shared data philosophy.</p>
+            <p className="text-muted-foreground">Our ultimate vision extends beyond the K-12 classroom. We aim to create a cohesive, three-part ecosystem that supports a student's entire educational journey. This includes specialized modules for Pre-School and University, which will eventually be integrated with higher-level oversight for District, Provincial, and National educational bodies. This will provide unprecedented insights for macro-level decision-making.</p>
             <div className="grid md:grid-cols-3 gap-6 mt-6">
               <div className="flex flex-col items-center text-center p-4 rounded-lg bg-muted/50">
                 <Baby className="h-10 w-10 text-primary mb-3"/>
