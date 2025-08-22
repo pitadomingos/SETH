@@ -1,11 +1,31 @@
-import { ReactNode } from 'react';
+import { Inter } from 'next/font/google';
+import React from 'react';
+import { AppProviders } from '@/components/layout/app-providers';
+import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from '@/components/layout/theme-provider';
+import { cn } from '@/lib/utils';
+import './globals.css';
 
-// Even though this component is just passing its children through, the metadata
-// interface requires this interface declaration.
-export default function RootLayout({
+const inter = Inter({ subsets: ['latin'], variable: '--font-body' });
+
+export default async function RootLayout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <html lang="en">
+      <body className={cn('font-body antialiased', 'min-h-screen bg-background')}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <AppProviders>{children}</AppProviders>
+            <Toaster />
+          </ThemeProvider>
+      </body>
+    </html>
+  );
 }

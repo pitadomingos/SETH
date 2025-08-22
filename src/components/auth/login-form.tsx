@@ -15,7 +15,6 @@ import { Input } from '@/components/ui/input';
 import { GraduationCap, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useTranslations } from 'next-intl';
 
 const formSchema = z.object({
   username: z.string().min(1, { message: 'Username is required.' }),
@@ -29,7 +28,6 @@ export function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const t = useTranslations('login');
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
@@ -48,10 +46,10 @@ export function LoginForm() {
     } else {
       toast({
         variant: 'destructive',
-        title: t('error.title'),
-        description: t('error.invalid'),
+        title: 'Login Failed',
+        description: 'Invalid username or password',
       });
-      form.setError('root', { message: t('error.invalid') });
+      form.setError('root', { message: 'Invalid username or password' });
       setIsLoggingIn(false);
     }
   }
@@ -64,8 +62,8 @@ export function LoginForm() {
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary">
           <GraduationCap className="h-8 w-8 text-primary-foreground" />
         </div>
-        <CardTitle className="text-3xl font-headline">{t('title')}</CardTitle>
-        <CardDescription>{t('description')}</CardDescription>
+        <CardTitle className="text-3xl font-headline">EduDesk</CardTitle>
+        <CardDescription>Multi-Role Education Platform</CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -75,9 +73,9 @@ export function LoginForm() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('username.label')}</FormLabel>
+                  <FormLabel>Username</FormLabel>
                   <FormControl>
-                    <Input placeholder={t('username.placeholder')} {...field} />
+                    <Input placeholder='Enter your username' {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -88,9 +86,9 @@ export function LoginForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('password.label')}</FormLabel>
+                  <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder={t('password.placeholder')} {...field} />
+                    <Input type="password" placeholder='Enter password' {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -100,12 +98,12 @@ export function LoginForm() {
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" disabled={isLoggingIn} className="w-full" size="lg">
               {isLoggingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('button.signin')}
+              Sign In
             </Button>
             {demoUsers.length > 0 && (
               <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="item-1">
-                      <AccordionTrigger className="text-sm text-muted-foreground">{t('button.demo_creds')}</AccordionTrigger>
+                      <AccordionTrigger className="text-sm text-muted-foreground">View Demo Credentials</AccordionTrigger>
                       <AccordionContent>
                           <ul className="space-y-1 text-xs text-muted-foreground">
                               {demoUsers.map(({ user, password }) => (
