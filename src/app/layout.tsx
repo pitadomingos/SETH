@@ -6,6 +6,8 @@ import { AppProviders } from '@/components/layout/app-providers';
 import { ThemeProvider } from '@/components/layout/theme-provider';
 import { cn } from '@/lib/utils';
 import './globals.css';
+import { I18nProviderClient } from '@/lib/i18n';
+import { useCurrentLocale } from 'next-international/client';
 
 // Even though we're using 'Inter' from tailwind.config.ts,
 // it's good practice to have a font pre-connection here.
@@ -14,6 +16,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = useCurrentLocale() || 'en';
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -29,16 +33,18 @@ export default function RootLayout({
         />
       </head>
       <body className={cn('font-body antialiased', 'min-h-screen bg-background')}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-        >
-          <AppProviders>
-            {children}
-          </AppProviders>
-          <Toaster />
-        </ThemeProvider>
+        <I18nProviderClient locale={locale}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+          >
+            <AppProviders>
+              {children}
+            </AppProviders>
+            <Toaster />
+          </ThemeProvider>
+        </I18nProviderClient>
       </body>
     </html>
   );
