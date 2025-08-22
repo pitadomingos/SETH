@@ -10,6 +10,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { useAuth, Role } from '@/context/auth-context';
 import { 
@@ -193,6 +194,13 @@ export function AppSidebar() {
   const { role, user } = useAuth();
   const pathname = usePathname();
   const { schoolProfile, schoolGroups } = useSchoolData();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   const isPremiumAdmin = useMemo(() => {
     if (role !== 'Admin' || !user?.schoolId || !schoolGroups) return false;
@@ -201,7 +209,6 @@ export function AppSidebar() {
 
   let navItems = role ? roleLinks[role] : [];
   
-  // Add multi-school link for premium admins
   if (isPremiumAdmin) {
     navItems = [
       ...navItems,
@@ -214,7 +221,6 @@ export function AppSidebar() {
     ].sort((a,b) => a.href === '/dashboard' ? -1 : 1);
   }
 
-  // Filter out Pro features if on Starter plan
   if (schoolProfile && schoolProfile.tier === 'Starter') {
     navItems = navItems.map(item => {
         if(isGroup(item)) {
@@ -248,7 +254,7 @@ export function AppSidebar() {
                                 : link.href;
                                 return (
                                     <SidebarMenuItem key={link.href}>
-                                        <Link href={finalHref} passHref target={link.target}>
+                                        <Link href={finalHref} passHref target={link.target} onClick={handleLinkClick}>
                                             <SidebarMenuButton asChild isActive={pathname === finalHref} tooltip={link.label}>
                                                 <span><link.icon className="h-4 w-4" /><span>{link.label}</span></span>
                                             </SidebarMenuButton>
@@ -266,7 +272,7 @@ export function AppSidebar() {
             
             return (
               <SidebarMenuItem key={item.href}>
-                <Link href={finalHref} passHref target={item.target}>
+                <Link href={finalHref} passHref target={item.target} onClick={handleLinkClick}>
                   <SidebarMenuButton asChild isActive={pathname === finalHref} tooltip={item.label}>
                     <span><item.icon className="h-4 w-4" /><span>{item.label}</span></span>
                   </SidebarMenuButton>
