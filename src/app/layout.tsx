@@ -14,7 +14,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={cn('font-body antialiased', 'min-h-screen bg-background')}>
           <ThemeProvider
             attribute="class"
