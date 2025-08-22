@@ -1,0 +1,22 @@
+{
+  "login": {
+    "title": "EduDesk",
+    "description": "Multi-Role Education Platform",
+    "username": {
+      "label": "Username",
+      "placeholder": "Enter your username"
+    },
+    "password": {
+      "label": "Password",
+      "placeholder": "Enter password"
+    },
+    "button": {
+      "signin": "Sign In",
+      "demo_creds": "View Demo Credentials"
+    },
+    "error": {
+      "title": "Login Failed",
+      "invalid": "Invalid username or password"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "login": {
+    "title": "EduDesk",
+    "description": "Plataforma Educacional Multi-Função",
+    "username": {
+      "label": "Nome de usuário",
+      "placeholder": "Digite seu nome de usuário"
+    },
+    "password": {
+      "label": "Senha",
+      "placeholder": "Digite a senha"
+    },
+    "button": {
+      "signin": "Entrar",
+      "demo_creds": "Ver Credenciais de Demonstração"
+    },
+    "error": {
+      "title": "Falha no Login",
+      "invalid": "Nome de usuário ou senha inválidos"
+    }
+  }
+}
