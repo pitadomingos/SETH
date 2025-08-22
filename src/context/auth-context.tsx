@@ -6,7 +6,20 @@ import { Loader2 } from 'lucide-react';
 import { mockUsers, UserProfile } from '@/lib/mock-data';
 import { getUsersFromFirestore } from '@/lib/firebase/firestore-service';
 
-export type Role = 'GlobalAdmin' | 'Admin' | 'Teacher' | 'Student' | 'Parent';
+export type Role = 
+    | 'GlobalAdmin' 
+    | 'Admin' 
+    | 'Teacher' 
+    | 'Student' 
+    | 'Parent'
+    // New School-Level Roles
+    | 'AcademicDean'
+    | 'AdmissionsOfficer'
+    | 'Counselor'
+    | 'FinanceOfficer'
+    | 'SportsDirector'
+    | 'ITAdmin';
+
 
 export interface User {
   username: string;
