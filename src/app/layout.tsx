@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
-import { AppProviders } from '@/components/layout/app-providers';
 import { ThemeProvider } from '@/components/layout/theme-provider';
-import { I18nProviderClient } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import './globals.css';
 
@@ -16,27 +14,23 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-  params: { locale },
 }: Readonly<{
   children: React.ReactNode;
-  params: { locale: string };
 }>) {
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body
         className={cn('font-body antialiased', 'min-h-screen bg-background')}
       >
-        <I18nProviderClient locale={locale}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <AppProviders>{children}</AppProviders>
-            <Toaster />
-          </ThemeProvider>
-        </I18nProviderClient>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
