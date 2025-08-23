@@ -275,7 +275,7 @@ export interface SavedReport {
     title: string;
     date: Date;
     generatedBy: string;
-    content: string; // This would store the AI-generated JSON or text
+    content: any;
 }
 
 export interface SavedTest {
@@ -409,7 +409,32 @@ export const mockUsers: Record<string, UserProfile> = {
   parent2: {
     user: { username: 'parent2', name: 'Rui Oliveira', role: 'Parent', email: 'rui.oliveira@email.com', schoolId: 'maplewood' },
     password: 'password'
-  }
+  },
+  // New specialized roles for Northwood High
+  acdean1: {
+    user: { username: 'acdean1', name: 'Helena Gomes', role: 'AcademicDean', email: 'helena.gomes@northwood.edu', schoolId: 'northwood' },
+    password: 'password'
+  },
+  admissions1: {
+    user: { username: 'admissions1', name: 'Marco Abreu', role: 'AdmissionsOfficer', email: 'marco.abreu@northwood.edu', schoolId: 'northwood' },
+    password: 'password'
+  },
+  finance1: {
+    user: { username: 'finance1', name: 'Fátima Ribeiro', role: 'FinanceOfficer', email: 'fatima.ribeiro@northwood.edu', schoolId: 'northwood' },
+    password: 'password'
+  },
+  counselor1: {
+    user: { username: 'counselor1', name: 'David Melo', role: 'Counselor', email: 'david.melo@northwood.edu', schoolId: 'northwood' },
+    password: 'password'
+  },
+  sports1: {
+    user: { username: 'sports1', name: 'Vasco Nunes', role: 'SportsDirector', email: 'vasco.nunes@northwood.edu', schoolId: 'northwood' },
+    password: 'password'
+  },
+  itadmin1: {
+    user: { username: 'itadmin1', name: 'Juliana Barros', role: 'ITAdmin', email: 'juliana.barros@northwood.edu', schoolId: 'northwood' },
+    password: 'password'
+  },
 };
 
 
