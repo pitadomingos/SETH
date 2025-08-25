@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Database, Layers, Cloud, KeyRound, Server, UploadCloud, GitBranch, FolderTree, Puzzle, UserCheck, BrainCircuit, Download, Trophy } from 'lucide-react';
+import { Loader2, Database, Layers, Cloud, KeyRound, Server, UploadCloud, GitBranch, FolderTree, Puzzle, UserCheck, BrainCircuit, Download, Trophy, DollarSign, LifeBuoy, Lightbulb, TrendingUp } from 'lucide-react';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -175,6 +175,31 @@ export default function SystemDocumentationPage() {
                     <h4 className="font-semibold text-card-foreground">4. Firestore Service Layer</h4>
                     <p className="text-muted-foreground">Located in s<code>/lib/firebase/firestore-service.ts</code>, this layer abstracts the direct Firebase SDK calls. Server Actions call functions in this service to interact with the database, centralizing all Firestore logic.</p>
                 </div>
+            </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Users /> Suggested Corporate Roles</CardTitle>
+          <CardDescription>A blueprint for the Pixel Digital Solutions team as the platform scales.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-4">
+                <h4 className="font-semibold flex items-center gap-2"><Server className="text-primary"/> Chief Technology Officer (CTO)</h4>
+                <p className="text-sm text-muted-foreground">Oversees technical vision, architecture, platform security, and scalability. Manages the development lifecycle and major integrations like payment gateways.</p>
+            </div>
+            <div className="space-y-4">
+                <h4 className="font-semibold flex items-center gap-2"><Lightbulb className="text-primary"/> Head of Product</h4>
+                <p className="text-sm text-muted-foreground">Defines the product roadmap based on user feedback and market analysis. Prioritizes new features, analyzes usage data, and ensures the product meets user needs.</p>
+            </div>
+            <div className="space-y-4">
+                <h4 className="font-semibold flex items-center gap-2"><TrendingUp className="text-primary"/> Head of Sales & Partnerships</h4>
+                <p className="text-sm text-muted-foreground">Drives customer acquisition and revenue. Manages the sales team, builds strategic partnerships, and uses platform dashboards to track growth and inform strategy.</p>
+            </div>
+            <div className="space-y-4">
+                <h4 className="font-semibold flex items-center gap-2"><LifeBuoy className="text-primary"/> Head of Customer Success & Support</h4>
+                <p className="text-sm text-muted-foreground">Focuses on customer onboarding, training, and retention. Manages the support team, develops user documentation, and uses platform tools like impersonation to resolve issues.</p>
             </div>
         </CardContent>
       </Card>
