@@ -26,6 +26,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { EndOfTermReportDialog } from '@/components/dashboard/end-of-term-report';
 import { analyzeStudentPerformanceAction } from '@/app/actions/ai-actions';
 import { StudentAnalysis } from '@/ai/flows/student-analysis-flow';
+import { FeatureLock } from '../layout/feature-lock';
 
 const calculateAverageNumericGrade = (studentId: string, grades: Grade[], subject?: string) => {
     if (!studentId || !grades) return 0;
@@ -289,6 +290,10 @@ function AssignedTests({ student, studentClass }) {
             .sort((a,b) => a.deadline.getTime() - b.deadline.getTime());
     }, [student, studentClass, deployedTests, savedTests]);
 
+    if (assigned.length === 0) {
+        return null;
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -296,30 +301,24 @@ function AssignedTests({ student, studentClass }) {
                 <CardDescription>Tests you need to complete.</CardDescription>
             </CardHeader>
             <CardContent>
-                {assigned.length > 0 ? (
-                    <ul className="space-y-3">
-                    {assigned.slice(0, 4).map(test => (
-                        <li key={test.id} className="flex justify-between items-center text-sm p-3 bg-muted rounded-md">
-                            <div>
-                                <p className="font-semibold">{test.topic}</p>
-                                <p className="text-xs text-muted-foreground">{test.subject}</p>
-                            </div>
-                            <div className="text-right">
-                               <Link href={`/dashboard/test/${test.id}`} passHref>
-                                 <Button size="sm">Take Test</Button>
-                               </Link>
-                               <p className="text-xs text-muted-foreground mt-1">
-                                    Due {format(test.deadline, 'MMM d, yyyy')}
-                               </p>
-                            </div>
-                        </li>
-                    ))}
-                    </ul>
-                ) : (
-                    <div className="text-center text-muted-foreground py-8">
-                        You have no pending tests. Great job!
-                    </div>
-                )}
+                <ul className="space-y-3">
+                {assigned.slice(0, 4).map(test => (
+                    <li key={test.id} className="flex justify-between items-center text-sm p-3 bg-muted rounded-md">
+                        <div>
+                            <p className="font-semibold">{test.topic}</p>
+                            <p className="text-xs text-muted-foreground">{test.subject}</p>
+                        </div>
+                        <div className="text-right">
+                           <Link href={`/dashboard/test/${test.id}`} passHref>
+                             <Button size="sm">Take Test</Button>
+                           </Link>
+                           <p className="text-xs text-muted-foreground mt-1">
+                                Due {format(test.deadline, 'MMM d, yyyy')}
+                           </p>
+                        </div>
+                    </li>
+                ))}
+                </ul>
             </CardContent>
         </Card>
     );
@@ -418,7 +417,10 @@ export default function StudentDashboard() {
        />
       
        <div className="grid gap-6 lg:grid-cols-3">
-          <StudentAIAdvisor student={student} grades={studentGrades} attendanceSummary={studentAttendanceSummary} />
+          {schoolProfile?.tier !== 'Starter' 
+              ? <StudentAIAdvisor student={student} grades={studentGrades} attendanceSummary={studentAttendanceSummary} />
+              : <div className="lg:col-span-2"><FeatureLock featureName="AI Academic Advisor" /></div>
+          }
           <RankCard studentId={studentId} />
        </div>
        <div className="grid gap-6 lg:grid-cols-2">

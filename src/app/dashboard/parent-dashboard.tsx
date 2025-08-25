@@ -1,10 +1,11 @@
+
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useSchoolData, NewAdmissionData, Competition, Team, Student } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy } from 'lucide-react';
+import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn, formatCurrency } from '@/lib/utils';
 import {
@@ -27,6 +28,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Textarea } from '../ui/textarea';
+import { analyzeStudentPerformanceAction } from '@/app/actions/ai-actions';
+import { StudentAnalysis } from '@/ai/flows/student-analysis-flow';
+import { useRouter } from 'next/navigation';
 
 
 const applicationSchema = z.object({
@@ -135,17 +139,124 @@ function NewApplicationDialog() {
 }
 
 
-function AIGeneratedAdvice({ child }) {
+function AIGeneratedAdvice({ child, grades, attendance }) {
+  const [analysis, setAnalysis] = useState<StudentAnalysis | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleAnalysis = async () => {
+    setIsLoading(true);
+    setAnalysis(null);
+    try {
+      const gradeData = grades.map(g => ({
+        subject: g.subject,
+        grade: g.grade,
+        type: g.type,
+        description: g.description,
+      }));
+
+      const attendanceData = Object.entries(attendance).map(([status, count]) => ({
+        status,
+        count: count as number,
+      }));
+
+      const result = await analyzeStudentPerformanceAction({
+        studentName: child.name,
+        grades: gradeData,
+        attendance: attendanceData,
+      });
+      setAnalysis(result);
+    } catch (e) {
+      console.error('AI Analysis failed:', e);
+      toast({
+        variant: 'destructive',
+        title: 'Analysis Failed',
+        description: 'Could not get AI-powered recommendations.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Card className="lg:col-span-2">
       <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> AI-Powered Insights</CardTitle>
-          <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
+        <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary"/> AI-Powered Insights</CardTitle>
+        <CardDescription>A summary of {child.name}'s progress and recommendations for you.</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-          <p>AI features are temporarily disabled for maintenance.</p>
-        </div>
+      <CardContent className="space-y-6">
+        {!analysis && (
+          <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+            <p className="text-muted-foreground mb-4">Click below to analyze your child's recent performance.</p>
+            <Button onClick={handleAnalysis} disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+              Analyze Performance
+            </Button>
+          </div>
+        )}
+        {analysis && (
+          <div className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-semibold flex items-center gap-2 mb-2"><Check className="text-green-500"/> Strengths</h3>
+                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                  {analysis.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold flex items-center gap-2 mb-2"><TrendingUp className="text-orange-500"/> Areas for Improvement</h3>
+                <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                  {analysis.areasForImprovement.map((a, i) => <li key={i}>{a}</li>)}
+                </ul>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-semibold flex items-center gap-2 mb-2"><Lightbulb className="text-yellow-500"/> Recommendations for You</h3>
+              <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                {analysis.recommendations.map((r, i) => <li key={i}>{r}</li>)}
+              </ul>
+            </div>
+          </div>
+        )}
+      </CardContent>
+       {analysis && (
+        <CardFooter>
+          <Button variant="outline" onClick={() => setAnalysis(null)}>
+            Start New Analysis
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
+  )
+}
+
+function AITierLockMessage({ schoolName, schoolAdminEmail }) {
+  const router = useRouter();
+
+  const handleContactAdmin = () => {
+    const prefillData = {
+      recipientUsername: schoolAdminEmail,
+      subject: `Inquiry About EduDesk Pro Plan for ${schoolName}`,
+      body: `Dear ${schoolName} Administration,\n\nI am interested in the AI-powered parent features and would like to inquire about upgrading our school's subscription to the Pro plan to enable them.\n\nCould you please provide more information?\n\nThank you.`
+    };
+    sessionStorage.setItem('prefillMessage', JSON.stringify(prefillData));
+    router.push('/dashboard/messaging');
+  };
+
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> AI-Powered Insights</CardTitle>
+        <CardDescription>This is a Pro-tier feature.</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col items-center justify-center text-center p-8">
+        <p className="text-muted-foreground mb-4">
+          The AI Academic Advisor is not available for students at {schoolName} because the school is on the Starter plan.
+        </p>
+        <Button onClick={handleContactAdmin}>
+          <MessageSquare className="mr-2 h-4 w-4" />
+          Contact School Admin to Upgrade
+        </Button>
       </CardContent>
     </Card>
   )
@@ -199,9 +310,10 @@ function ParentSportsActivities() {
         const teamMap = new Map(childrenTeams.map(t => [t.id, t]));
         
         return competitionsData
-            .filter(c => c.date >= new Date() && teamMap.has(c.ourTeamId))
+            .filter(c => (c.date instanceof Date ? c.date : new Date(c.date)) >= new Date() && teamMap.has(c.ourTeamId))
             .map(c => ({
                 ...c,
+                date: c.date instanceof Date ? c.date : new Date(c.date),
                 team: teamMap.get(c.ourTeamId),
                 players: studentsData.filter(s => teamMap.get(c.ourTeamId)?.playerIds.includes(s.id))
             }))
@@ -257,7 +369,7 @@ const getStatusInfo = (fee) => {
 
 export default function ParentDashboard() {
   const { user } = useAuth();
-  const { studentsData, grades, attendance, financeData, schoolProfile, isLoading: schoolDataLoading } = useSchoolData();
+  const { allSchoolData, studentsData, grades, attendance, financeData, isLoading: schoolDataLoading } = useSchoolData();
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -267,22 +379,35 @@ export default function ParentDashboard() {
   }, [studentsData, selectedChildId]);
 
   const selectedChild = useMemo(() => studentsData.find(c => c.id === selectedChildId), [selectedChildId, studentsData]);
+  
+  const selectedChildSchool = useMemo(() => {
+    if (!selectedChild || !allSchoolData) return null;
+    return allSchoolData[selectedChild.schoolId!];
+  }, [selectedChild, allSchoolData]);
 
   const childGrades = useMemo(() => {
     if (!selectedChildId) return [];
     return grades.filter(g => g.studentId === selectedChildId);
   }, [grades, selectedChildId]);
+
+  const childAttendance = useMemo(() => {
+      if (!selectedChildId) return {};
+      return attendance.filter(a => a.studentId === selectedChildId).reduce((acc, record) => {
+          const statusKey = record.status.toLowerCase();
+          acc[statusKey] = (acc[statusKey] || 0) + 1;
+          return acc;
+      }, {});
+  }, [attendance, selectedChildId]);
   
   const childFinanceSummary = useMemo(() => {
     if (!selectedChildId) return null;
     const childFees = financeData.filter(f => f.studentId === selectedChildId);
     if (childFees.length === 0) return null;
-    // Prioritize showing an overdue fee, then a partially paid/pending one.
     const overdue = childFees.find(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < new Date());
     if (overdue) return overdue;
     const pending = childFees.find(f => f.totalAmount - f.amountPaid > 0);
     if (pending) return pending;
-    return childFees[0]; // Otherwise show the first one (likely a paid one)
+    return childFees[0];
   }, [financeData, selectedChildId]);
 
   if (schoolDataLoading) {
@@ -345,10 +470,13 @@ export default function ParentDashboard() {
         </div>
       </div>
       
-      {selectedChild ? (
+      {selectedChild && selectedChildSchool ? (
         <div className="space-y-6 animate-in fade-in-25">
            <div className="grid gap-6 lg:grid-cols-3">
-            {selectedChild && <AIGeneratedAdvice child={selectedChild} />}
+            {selectedChildSchool.profile.tier !== 'Starter' 
+              ? <AIGeneratedAdvice child={selectedChild} grades={childGrades} attendance={childAttendance} />
+              : <AITierLockMessage schoolName={selectedChildSchool.profile.name} schoolAdminEmail={selectedChildSchool.profile.email} />
+            }
              <div className="space-y-6">
                 <Card>
                     <CardHeader className="pb-4">
@@ -358,7 +486,7 @@ export default function ParentDashboard() {
                     {childFinanceSummary ? (
                         <div className="flex justify-between items-center">
                             <div>
-                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid, schoolProfile?.currency)}</span></p>
+                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid, selectedChildSchool.profile.currency)}</span></p>
                                 <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
                             </div>
                             <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>
@@ -379,7 +507,7 @@ export default function ParentDashboard() {
                               return (
                                 <li key={index} className="flex justify-between items-center text-sm">
                                     <span className="font-medium">{grade.subject}</span>
-                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
+                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, selectedChildSchool.profile.gradingSystem)}</Badge>
                                 </li>
                               )
                             }) : <p className="text-muted-foreground text-sm">No recent grades.</p>}
