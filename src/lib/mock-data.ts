@@ -142,6 +142,7 @@ export interface Admission {
     // For transfers
     studentIdToTransfer?: string;
     fromSchoolId?: string;
+    reasonForTransfer?: string;
 }
 
 export interface FinanceRecord {
@@ -372,6 +373,7 @@ export interface NewAdmissionData {
   // For transfers
   studentIdToTransfer?: string;
   fromSchoolId?: string;
+  reasonForTransfer?: string;
 }
 
 export interface NewSchoolData {

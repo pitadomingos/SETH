@@ -816,12 +816,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if (!schoolId || !user) return;
     const newAdmission: Admission = {
         id: `ADM${Date.now()}`,
-        ...rest,
+        status: 'Pending',
         date: new Date().toISOString().split('T')[0],
         parentName: user.name,
         parentEmail: user.email,
-        status: 'Pending',
-        grades: rest.gradesSummary || 'N/A'
+        grades: rest.gradesSummary || 'N/A',
+        ...rest,
     };
      setData(prev => {
       if (!prev) return null;
