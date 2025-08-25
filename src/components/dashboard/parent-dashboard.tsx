@@ -79,7 +79,20 @@ function NewApplicationDialog() {
   const form = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema),
     defaultValues: {
-        applicationType: 'new'
+        applicationType: 'new',
+        schoolId: '',
+        name: '',
+        sex: undefined,
+        appliedFor: '',
+        formerSchool: '',
+        gradesSummary: '',
+        idUrl: '',
+        reportUrl: '',
+        photoUrl: '',
+        transferStudentId: '',
+        transferSchoolId: '',
+        reasonForTransfer: '',
+        transferGrade: '',
     },
   });
   
