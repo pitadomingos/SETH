@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/context/auth-context';
@@ -9,7 +10,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { FeatureLock } from '@/components/layout/feature-lock';
 
 export default function AiReportsPage() {
-  const { role, isLoading: authLoading } from 'useAuth';
+  const { role, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { schoolProfile, isLoading: dataLoading } = useSchoolData();
 
