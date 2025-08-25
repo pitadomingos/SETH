@@ -1,7 +1,7 @@
 
 'use client';
 import { useSchoolData, Teacher } from '@/context/school-data-context';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UserPlus, Loader2, MoreHorizontal, Edit, Search, Presentation, CheckCircle, XCircle, Briefcase, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
@@ -321,7 +321,7 @@ export default function TeachersPage() {
                     )}
                 </CardContent>
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-end space-x-2 p-4 border-t">
+                    <CardFooter className="flex items-center justify-end space-x-2 border-t pt-4">
                         <span className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</span>
                         <Button
                         variant="outline"
@@ -339,7 +339,7 @@ export default function TeachersPage() {
                         >
                             Next <ChevronRight className="h-4 w-4" />
                         </Button>
-                    </div>
+                    </CardFooter>
                 )}
             </Card>
         </div>

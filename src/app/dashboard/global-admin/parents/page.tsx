@@ -3,7 +3,7 @@
 
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, MoreHorizontal, Search, HeartHandshake, Users, CheckCircle, XCircle, ChevronLeft, ChevronRight, LogIn } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
@@ -225,7 +225,7 @@ export default function GlobalParentsPage() {
           )}
         </CardContent>
         {totalPages > 1 && (
-          <div className="flex items-center justify-end space-x-2 p-4 border-t">
+          <CardFooter className="flex items-center justify-end space-x-2 border-t pt-4">
             <span className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</span>
             <Button
               variant="outline"
@@ -245,7 +245,7 @@ export default function GlobalParentsPage() {
               Next
               <ChevronRight className="h-4 w-4" />
             </Button>
-          </div>
+          </CardFooter>
         )}
       </Card>
     </div>
