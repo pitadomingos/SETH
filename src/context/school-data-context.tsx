@@ -238,7 +238,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [data]);
 
   const studentsData = useMemo(() => {
-    if (role === 'Parent' && user?.email) {
+    if (role === 'Parent' && user?.email && allStudents.length > 0) {
       return allStudents.filter(student => student.parentEmail === user.email);
     }
     return schoolData?.students || [];
@@ -1017,55 +1017,55 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     syllabi: schoolData?.syllabi || [],
     admissionsData: schoolData?.admissions || [],
     financeData: useMemo(() => {
-        if (!data) return [];
+        if (!data || !user) return [];
         if (role === 'Parent') {
-            const parentStudentIds = studentsData.map(s => s.id);
+            const parentStudentIds = allStudents.filter(s => s.parentEmail === user.email).map(s => s.id);
             return Object.values(data).flatMap(d => d.finance.filter(f => parentStudentIds.includes(f.studentId)));
         }
         return schoolData?.finance || [];
-    }, [schoolData, data, role, studentsData]),
+    }, [schoolData, data, role, user, allStudents]),
     assetsData: schoolData?.assets || [],
     examsData: schoolData?.exams || [],
     grades: useMemo(() => {
-        if (!data) return [];
+        if (!data || !user) return [];
         if (role === 'Parent') {
-            const parentStudentIds = studentsData.map(s => s.id);
+            const parentStudentIds = allStudents.filter(s => s.parentEmail === user.email).map(s => s.id);
             return Object.values(data).flatMap(d => d.grades.filter(g => parentStudentIds.includes(g.studentId)));
         }
         return schoolData?.grades || [];
-    }, [schoolData, data, role, studentsData]),
+    }, [schoolData, data, role, user, allStudents]),
     attendance: useMemo(() => {
-        if (!data) return [];
+        if (!data || !user) return [];
         if (role === 'Parent') {
-            const parentStudentIds = studentsData.map(s => s.id);
+            const parentStudentIds = allStudents.filter(s => s.parentEmail === user.email).map(s => s.id);
             return Object.values(data).flatMap(d => d.attendance.filter(a => parentStudentIds.includes(a.studentId)));
         }
         return schoolData?.attendance || [];
-    }, [schoolData, data, role, studentsData]),
+    }, [schoolData, data, role, user, allStudents]),
     events: useMemo(() => {
         if (!data) return [];
         if (role === 'Parent' || role === 'Student') {
-            return Object.values(data).flatMap(d => d.events);
+            return Object.values(data).flatMap(d => d.events.map(e => ({...e, schoolName: d.profile.name})));
         }
         return schoolData?.events || [];
     }, [schoolData, data, role]),
     expensesData: schoolData?.expenses || [],
     teamsData: useMemo(() => {
-        if (!data) return [];
+        if (!data || !user) return [];
         if (role === 'Parent') {
-            const parentStudentIds = studentsData.map(s => s.id);
+            const parentStudentIds = allStudents.filter(s => s.parentEmail === user.email).map(s => s.id);
             return Object.values(data).flatMap(d => d.teams.filter(t => t.playerIds.some(pId => parentStudentIds.includes(pId))));
         }
         return schoolData?.teams || [];
-    }, [schoolData, data, role, studentsData]),
+    }, [schoolData, data, role, user, allStudents]),
     competitionsData: useMemo(() => {
-        if (!data) return [];
+        if (!data || !user) return [];
         if (role === 'Parent') {
-            const parentTeamIds = (schoolData?.teams || []).map(t => t.id);
+             const parentTeamIds = Object.values(data).flatMap(d => d.teams.filter(t => t.playerIds.some(pId => allStudents.filter(s => s.parentEmail === user.email).map(s => s.id).includes(pId)))).map(t => t.id);
             return Object.values(data).flatMap(d => d.competitions.filter(c => parentTeamIds.includes(c.ourTeamId)));
         }
         return schoolData?.competitions || [];
-    }, [schoolData, data, role]),
+    }, [schoolData, data, role, user, allStudents]),
     kioskMedia: schoolData?.kioskMedia || [],
     activityLogs: useMemo(() => {
         if (!data) return [];

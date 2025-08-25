@@ -70,7 +70,8 @@ const applicationSchema = z.object({
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 function NewApplicationDialog() {
-  const { addAdmission, allSchoolData, studentsData: allStudents } = useSchoolData();
+  const { addAdmission, allSchoolData, allStudents } = useSchoolData();
+  const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -86,10 +87,15 @@ function NewApplicationDialog() {
   const selectedSchoolId = form.watch('schoolId');
   const selectedGradeStr = form.watch('appliedFor');
   
+  const parentStudents = useMemo(() => {
+    if(!user || !allStudents) return [];
+    return allStudents.filter(s => s.parentEmail === user.email);
+  }, [user, allStudents]);
+
   const filteredStudents = useMemo(() => {
     if (!searchTerm) return [];
-    return allStudents.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [searchTerm, allStudents]);
+    return parentStudents.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [searchTerm, parentStudents]);
 
   const vacancies = useMemo(() => {
     if (!selectedSchoolId || !selectedGradeStr) return null;
@@ -201,7 +207,7 @@ function NewApplicationDialog() {
                             <FormLabel>Student to Transfer</FormLabel>
                             <FormControl>
                                 <div className="relative">
-                                    <Input placeholder="Search for student by name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                                    <Input placeholder="Search for your child by name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                                     {searchTerm && filteredStudents.length > 0 && (
                                         <div className="absolute z-10 w-full bg-background border mt-1 rounded-md shadow-lg max-h-48 overflow-y-auto">
                                             {filteredStudents.map(student => (
