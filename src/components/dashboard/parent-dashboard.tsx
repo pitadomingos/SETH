@@ -436,7 +436,7 @@ export default function ParentDashboard() {
       {selectedChild ? (
         <div className="space-y-6 animate-in fade-in-25">
            <div className="grid gap-6 lg:grid-cols-3">
-            {selectedChild && <AIGeneratedAdvice child={selectedChild} grades={childGrades} attendance={childAttendance} />}
+            {schoolProfile?.tier !== 'Starter' && selectedChild && <AIGeneratedAdvice child={selectedChild} grades={childGrades} attendance={childAttendance} />}
              <div className="space-y-6">
                 <Card>
                     <CardHeader className="pb-4">

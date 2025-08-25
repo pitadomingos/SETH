@@ -416,7 +416,7 @@ export default function StudentDashboard() {
        />
       
        <div className="grid gap-6 lg:grid-cols-3">
-          <StudentAIAdvisor student={student} grades={studentGrades} attendanceSummary={studentAttendanceSummary} />
+          {schoolProfile?.tier !== 'Starter' && <StudentAIAdvisor student={student} grades={studentGrades} attendanceSummary={studentAttendanceSummary} />}
           <RankCard studentId={studentId} />
        </div>
        <div className="grid gap-6 lg:grid-cols-2">
