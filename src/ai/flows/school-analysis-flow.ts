@@ -32,7 +32,7 @@ const AttendanceInfoSchema = z.object({
   status: z.string(),
 });
 
-export const SchoolAnalysisParamsSchema = z.object({
+const SchoolAnalysisParamsSchema = z.object({
   type: z.enum(['School-Wide', 'Class Performance', 'Struggling Students', 'Teacher Performance']),
   schoolName: z.string(),
   students: z.array(StudentInfoSchema),
@@ -42,7 +42,7 @@ export const SchoolAnalysisParamsSchema = z.object({
 });
 export type SchoolAnalysisParams = z.infer<typeof SchoolAnalysisParamsSchema>;
 
-export const SchoolAnalysisSchema = z.object({
+const SchoolAnalysisSchema = z.object({
   title: z.string().describe("The title of the generated report."),
   summary: z.string().describe("A one-paragraph summary of the key findings in the report."),
   keyMetrics: z.array(z.object({

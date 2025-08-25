@@ -10,7 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-export const GenerateTestParamsSchema = z.object({
+const GenerateTestParamsSchema = z.object({
   subject: z.string().describe("The subject for the test (e.g., History, Physics)."),
   grade: z.string().describe("The grade level for the test (e.g., '10', '5')."),
   topic: z.string().describe("The specific topic the test should cover."),
@@ -24,7 +24,7 @@ const QuestionSchema = z.object({
   correctAnswer: z.string().describe("The correct answer from the options array."),
 });
 
-export const TestSchema = z.object({
+const TestSchema = z.object({
   subject: z.string(),
   grade: z.string(),
   topic: z.string(),
@@ -56,7 +56,7 @@ const testGeneratorPrompt = ai.definePrompt({
     3.  One of the options must be the correct answer.
     4.  The questions should be relevant to the specified subject, grade, and topic.
     5.  The difficulty should be appropriate for a Grade {{grade}} student.
-    6.  Ensure the \`correctAnswer\` field in the output exactly matches one of the strings in the \`options\` array for each question.
+    6.  Ensure the 'correctAnswer' field in the output exactly matches one of the strings in the 'options' array for each question.
   `,
 });
 
