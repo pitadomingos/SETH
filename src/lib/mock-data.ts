@@ -400,10 +400,6 @@ export const mockUsers: Record<string, UserProfile> = {
     user: { username: 'admin1', name: 'Amelia Costa', role: 'Admin', email: 'amelia.costa@northwood.edu', schoolId: 'northwood' },
     password: 'password'
   },
-  admin2: {
-    user: { username: 'admin2', name: 'Beatriz Silva', role: 'Admin', email: 'beatriz.silva@maplewood.edu', schoolId: 'maplewood' },
-    password: 'password'
-  },
   admin3: {
     user: { username: 'admin3', name: 'Carlos Pereira', role: 'Admin', email: 'carlos.pereira@miniarte.edu', schoolId: 'miniarte' },
     password: 'password'
@@ -412,24 +408,12 @@ export const mockUsers: Record<string, UserProfile> = {
     user: { username: 'teacher1', name: 'Sérgio Almeida', role: 'Teacher', email: 'sergio.almeida@northwood.edu', schoolId: 'northwood' },
     password: 'password'
   },
-  teacher2: {
-    user: { username: 'teacher2', name: 'Laura Ferreira', role: 'Teacher', email: 'laura.ferreira@maplewood.edu', schoolId: 'maplewood' },
-    password: 'password'
-  },
   student1: {
     user: { username: 'student1', name: 'Miguel Santos', role: 'Student', email: 'miguel.santos@northwood.edu', schoolId: 'northwood' },
     password: 'password'
   },
-  student2: {
-    user: { username: 'student2', name: 'Sofia Oliveira', role: 'Student', email: 'sofia.oliveira@maplewood.edu', schoolId: 'maplewood' },
-    password: 'password'
-  },
   parent1: {
     user: { username: 'parent1', name: 'Ana Santos', role: 'Parent', email: 'ana.santos@email.com', schoolId: 'northwood' },
-    password: 'password'
-  },
-  parent2: {
-    user: { username: 'parent2', name: 'Rui Oliveira', role: 'Parent', email: 'rui.oliveira@email.com', schoolId: 'maplewood' },
     password: 'password'
   },
   // New specialized roles for Northwood High
@@ -475,6 +459,18 @@ const defaultKioskConfig = {
     showShowcase: false,
 };
 
+const emptySchoolData: Omit<SchoolData, 'profile'> = {
+    students: [], teachers: [], classes: [], courses: [], syllabi: [],
+    admissions: [], exams: [], finance: [], assets: [], grades: [], attendance: [],
+    events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'],
+    audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'],
+    expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
+    expenses: [], teams: [], competitions: [], terms: [], holidays: [],
+    kioskMedia: [], activityLogs: [], messages: [], savedReports: [],
+    examBoards: ['Internal', 'Cambridge', 'IEB'], deployedTests: [],
+    lessonPlans: [], savedTests: [], schoolGroups: {}
+};
+
 const northwoodData: SchoolData = {
     profile: {
         id: 'northwood',
@@ -501,6 +497,8 @@ const northwoodData: SchoolData = {
         { id: 'STU001', name: 'Miguel Santos', email: 'miguel.santos@northwood.edu', phone: '840000001', address: 'Rua de Kassuende', sex: 'Male', dateOfBirth: '2008-05-10', grade: '10', class: 'A', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] },
         { id: 'STU002', name: 'Inês Pereira', email: 'ines.pereira@northwood.edu', phone: '840000002', address: 'Av. 24 de Julho', sex: 'Female', dateOfBirth: '2008-08-15', grade: '10', class: 'A', parentName: 'João Pereira', parentEmail: 'joao.pereira@email.com', status: 'Active', behavioralAssessments: [] },
         { id: 'STU003', name: 'Tiago Rodrigues', email: 'tiago.rodrigues@northwood.edu', phone: '840000003', address: 'Av. da Marginal', sex: 'Male', dateOfBirth: '2007-01-20', grade: '11', class: 'B', parentName: 'Carla Rodrigues', parentEmail: 'carla.rodrigues@email.com', status: 'Active', behavioralAssessments: [] },
+        { id: 'STU201', name: 'Lucia Santos', email: 'lucia.santos@northwood.edu', phone: '840000201', address: 'Rua de Kassuende', sex: 'Female', dateOfBirth: '2010-02-12', grade: '8', class: 'B', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] },
+        { id: 'STU202', name: 'Pedro Santos', email: 'pedro.santos@northwood.edu', phone: '840000202', address: 'Rua de Kassuende', sex: 'Male', dateOfBirth: '2009-07-05', grade: '9', class: 'C', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] }
     ],
     teachers: [
         { id: 'T01', name: 'Sérgio Almeida', email: 'sergio.almeida@northwood.edu', phone: '820000001', address: 'Av. da Guerra Popular', sex: 'Male', subject: 'Mathematics', experience: '10 years', qualifications: 'M.Sc. Mathematics', status: 'Active' },
@@ -510,6 +508,7 @@ const northwoodData: SchoolData = {
         { id: 'C01', name: 'Grade 10-A', grade: '10', teacher: 'Sérgio Almeida', students: 30, room: '101' },
         { id: 'C02', name: 'Grade 11-B', grade: '11', teacher: 'Catarina Martins', students: 28, room: '102' },
         { id: 'C03', name: 'Grade 9-C', grade: '9', teacher: 'Sérgio Almeida', students: 25, room: '103' },
+        { id: 'C04', name: 'Grade 8-B', grade: '8', teacher: 'Catarina Martins', students: 28, room: '104' },
     ],
     courses: [
         { id: 'CRS01', subject: 'Mathematics', teacherId: 'T01', classId: 'C01', schedule: [{ day: 'Monday', startTime: '09:00', endTime: '10:00', room: '101' }] },
@@ -520,7 +519,7 @@ const northwoodData: SchoolData = {
         { id: 'G01', studentId: 'STU001', subject: 'Mathematics', grade: '18', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
         { id: 'G02', studentId: 'STU002', subject: 'Mathematics', grade: '14', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
         { id: 'G03', studentId: 'STU003', subject: 'History', grade: '16', date: new Date('2024-04-10T00:00:00Z'), type: 'Coursework', description: 'WWII Essay', teacherId: 'T02' },
-        { id: 'G14', studentId: 'STU202', subject: 'Science', grade: '12', date: new Date('2024-04-12T00:00:00Z'), type: 'Test', description: 'Biology Mid-Term', teacherId: 'T12' },
+        { id: 'G14', studentId: 'STU202', subject: 'Science', grade: '12', date: new Date('2024-04-12T00:00:00Z'), type: 'Test', description: 'Biology Mid-Term', teacherId: 'T02' },
         { id: 'G15', studentId: 'STU202', subject: 'History', grade: '17', date: new Date('2024-03-10T00:00:00Z'), type: 'Coursework', description: 'Ancient Civilizations Essay', teacherId: 'T02' }
     ],
     finance: [
@@ -542,64 +541,6 @@ const northwoodData: SchoolData = {
         { id: 'DT01', testId: 'ST01', classId: 'C01', deadline: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000), submissions: [] }
     ],
     syllabi: [], admissions: [], assets: [], exams: [], attendance: [], events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'], audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'], expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], messages: [], savedReports: [], examBoards: ['Internal', 'Cambridge', 'IEB'], lessonPlans: [], schoolGroups: {}
-};
-
-const maplewoodData: SchoolData = {
-    profile: {
-        id: 'maplewood',
-        name: 'Maplewood Academy',
-        head: 'Beatriz Silva',
-        address: 'Av. da Paz, Matola',
-        phone: '+258 82 987 6543',
-        email: 'beatriz.silva@maplewood.edu',
-        motto: 'Knowledge and Virtue',
-        tier: 'Starter',
-        logoUrl: 'https://placehold.co/100x100.png',
-        certificateTemplateUrl: 'https://placehold.co/800x600.png',
-        transcriptTemplateUrl: 'https://placehold.co/600x800.png',
-        gradingSystem: 'Letter',
-        currency: 'ZAR',
-        status: 'Active',
-        schoolLevel: 'Secondary',
-        gradeCapacity: { "8": 30, "9": 30, "10": 30, "11": 35, "12": 35 },
-        kioskConfig: defaultKioskConfig,
-        subscription: { status: 'Overdue', amount: 150, dueDate: '2024-05-01' },
-        awards: [],
-    },
-    students: [
-        { id: 'STU101', name: 'Sofia Oliveira', email: 'sofia.oliveira@maplewood.edu', phone: '820000101', address: 'Rua do Comércio', sex: 'Female', dateOfBirth: '2007-11-22', grade: '11', class: 'A', parentName: 'Rui Oliveira', parentEmail: 'rui.oliveira@email.com', status: 'Active', behavioralAssessments: [] },
-        { id: 'STU102', name: 'Diogo Costa', email: 'diogo.costa@maplewood.edu', phone: '820000102', address: 'Av. do Trabalho', sex: 'Male', dateOfBirth: '2007-03-30', grade: '11', class: 'A', parentName: 'Mariana Costa', parentEmail: 'mariana.costa@email.com', status: 'Active', behavioralAssessments: [] },
-        { id: 'STU201', name: 'Lucia Santos', email: 'lucia.santos@maplewood.edu', phone: '840000201', address: 'Rua de Kassuende', sex: 'Female', dateOfBirth: '2010-02-12', grade: '8', class: 'B', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] },
-        { id: 'STU202', name: 'Pedro Santos', email: 'pedro.santos@maplewood.edu', phone: '840000202', address: 'Rua de Kassuende', sex: 'Male', dateOfBirth: '2009-07-05', grade: '9', class: 'C', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] }
-    ],
-    teachers: [
-        { id: 'T11', name: 'Laura Ferreira', email: 'laura.ferreira@maplewood.edu', phone: '840000011', address: 'Bairro do Jardim', sex: 'Female', subject: 'English', experience: '12 years', qualifications: 'Ph.D. English Literature', status: 'Active' },
-        { id: 'T12', name: 'André Sousa', email: 'andre.sousa@maplewood.edu', phone: '840000012', address: 'Bairro Central', sex: 'Male', subject: 'Science', experience: '6 years', qualifications: 'B.Sc. Biology', status: 'Active' },
-    ],
-    classes: [
-        { id: 'C11', name: 'Grade 11-A', grade: '11', teacher: 'Laura Ferreira', students: 25, room: 'A1' },
-        { id: 'C12', name: 'Grade 8-B', grade: '8', teacher: 'André Sousa', students: 28, room: 'B2' },
-        { id: 'C13', name: 'Grade 9-C', grade: '9', teacher: 'André Sousa', students: 22, room: 'B3' },
-    ],
-    courses: [
-        { id: 'CRS11', subject: 'English', teacherId: 'T11', classId: 'C11', schedule: [{ day: 'Monday', startTime: '11:00', endTime: '12:00', room: 'A1' }] },
-        { id: 'CRS12', subject: 'Science', teacherId: 'T12', classId: 'C12', schedule: [{ day: 'Thursday', startTime: '09:00', endTime: '10:00', room: 'B2' }] },
-        { id: 'CRS13', subject: 'Science', teacherId: 'T12', classId: 'C13', schedule: [{ day: 'Friday', startTime: '10:00', endTime: '11:00', room: 'B3' }] },
-    ],
-    grades: [
-        { id: 'G11', studentId: 'STU101', subject: 'English', grade: '19', date: new Date('2024-04-01T00:00:00Z'), type: 'Coursework', description: 'Shakespeare Essay', teacherId: 'T11' },
-        { id: 'G12', studentId: 'STU102', subject: 'English', grade: '15', date: new Date('2024-04-01T00:00:00Z'), type: 'Coursework', description: 'Shakespeare Essay', teacherId: 'T11' },
-        { id: 'G13', studentId: 'STU201', subject: 'Science', grade: '11', date: new Date('2024-04-05T00:00:00Z'), type: 'Test', description: 'Lab Safety Quiz', teacherId: 'T12' },
-    ],
-    finance: [
-        { id: 'FIN11', studentId: 'STU101', studentName: 'Sofia Oliveira', description: 'Annual Fees', totalAmount: 85000, amountPaid: 85000, dueDate: '2024-01-30', status: 'Paid' },
-        { id: 'FIN12', studentId: 'STU201', studentName: 'Lucia Santos', description: 'Term 1 Tuition', totalAmount: 30000, amountPaid: 30000, dueDate: '2024-02-15', status: 'Paid' },
-        { id: 'FIN13', studentId: 'STU202', studentName: 'Pedro Santos', description: 'Term 1 Tuition', totalAmount: 30000, amountPaid: 30000, dueDate: '2024-02-15', status: 'Paid' },
-    ],
-    activityLogs: [
-        { id: 'LOG101', timestamp: new Date('2024-05-18T09:00:00Z'), schoolId: 'maplewood', user: 'Beatriz Silva', role: 'Admin', action: 'Create', details: 'Added new team: Varsity Lions' }
-    ],
-    syllabi: [], admissions: [], assets: [], exams: [], attendance: [], events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'], audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'], expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], messages: [], savedReports: [], examBoards: ['Internal', 'Cambridge', 'IEB'], deployedTests: [], lessonPlans: [], savedTests: [], schoolGroups: {}
 };
 
 const miniArteData: SchoolData = {
@@ -638,7 +579,7 @@ const miniArteData: SchoolData = {
 };
 
 const miniArteMatolaData: SchoolData = {
-  ...miniArteData,
+  ...emptySchoolData,
   students: [ { id: 'STU301', name: 'Julio Silva', email: 'julio.silva@miniarte.edu', phone: '860000301', address: 'Bairro Tsalala', sex: 'Male', dateOfBirth: '2012-09-01', grade: '6', class: 'A', parentName: 'Fernanda Silva', parentEmail: 'fernanda.silva@email.com', status: 'Active', behavioralAssessments: [] }],
   profile: {
     ...miniArteData.profile,
@@ -656,7 +597,7 @@ const miniArteMatolaData: SchoolData = {
 };
 
 const miniArteBeiraData: SchoolData = {
-  ...miniArteData,
+  ...emptySchoolData,
   students: [{ id: 'STU401', name: 'Mariana Lopes', email: 'mariana.lopes@miniarte.edu', phone: '860000401', address: 'Bairro da Ponta Gêa', sex: 'Female', dateOfBirth: '2011-12-25', grade: '7', class: 'A', parentName: 'Sérgio Lopes', parentEmail: 'sergio.lopes@email.com', status: 'Active', behavioralAssessments: [] }],
   profile: {
     ...miniArteData.profile,
@@ -673,11 +614,84 @@ const miniArteBeiraData: SchoolData = {
   activityLogs: [],
 };
 
+const logixSystemsData: SchoolData = {
+    ...emptySchoolData,
+    profile: {
+        id: 'logixsystems',
+        name: 'Logix Systems School',
+        head: 'Default Admin',
+        address: '123 Tech Park',
+        phone: '555-0100',
+        email: 'admin@logixsystems.edu',
+        motto: 'Logic and Learning',
+        tier: 'Starter',
+        logoUrl: 'https://placehold.co/100x100.png',
+        certificateTemplateUrl: 'https://placehold.co/800x600.png',
+        transcriptTemplateUrl: 'https://placehold.co/600x800.png',
+        gradingSystem: '20-Point',
+        currency: 'USD',
+        status: 'Active',
+        schoolLevel: 'Full',
+        gradeCapacity: { "1": 30, "2": 30, "3": 30, "4": 30, "5": 30, "6": 35, "7": 35, "8": 35, "9": 40, "10": 40, "11": 40, "12": 40 },
+        kioskConfig: defaultKioskConfig,
+        subscription: { status: 'Paid', amount: 100, dueDate: '2025-01-01' },
+    }
+};
+
+const plcData: SchoolData = {
+    ...emptySchoolData,
+    profile: {
+        id: 'plc',
+        name: 'Progressive Learning Center',
+        head: 'Default Admin',
+        address: '456 Innovation Drive',
+        phone: '555-0200',
+        email: 'admin@plc.edu',
+        motto: 'Progress Through Knowledge',
+        tier: 'Pro',
+        logoUrl: 'https://placehold.co/100x100.png',
+        certificateTemplateUrl: 'https://placehold.co/800x600.png',
+        transcriptTemplateUrl: 'https://placehold.co/600x800.png',
+        gradingSystem: '20-Point',
+        currency: 'USD',
+        status: 'Active',
+        schoolLevel: 'Secondary',
+        gradeCapacity: { "8": 30, "9": 30, "10": 30, "11": 35, "12": 35 },
+        kioskConfig: defaultKioskConfig,
+        subscription: { status: 'Paid', amount: 250, dueDate: '2025-01-01' },
+    }
+};
+
+const trialSchoolData: SchoolData = {
+    ...emptySchoolData,
+    profile: {
+        id: 'trialschool',
+        name: 'Trial School',
+        head: 'Default Admin',
+        address: '789 Demo Street',
+        phone: '555-0300',
+        email: 'admin@trialschool.edu',
+        motto: 'A Place to Start',
+        tier: 'Starter',
+        logoUrl: 'https://placehold.co/100x100.png',
+        certificateTemplateUrl: 'https://placehold.co/800x600.png',
+        transcriptTemplateUrl: 'https://placehold.co/600x800.png',
+        gradingSystem: '20-Point',
+        currency: 'USD',
+        status: 'Active',
+        schoolLevel: 'Primary',
+        gradeCapacity: { "1": 30, "2": 30, "3": 30, "4": 30, "5": 30 },
+        kioskConfig: defaultKioskConfig,
+        subscription: { status: 'Paid', amount: 100, dueDate: '2025-01-01' },
+    }
+};
+
 export const initialSchoolData: Record<string, SchoolData> = {
     'northwood': northwoodData,
-    'maplewood': maplewoodData,
     'miniarte': miniArteData,
     'miniarte_matola': miniArteMatolaData,
     'miniarte_beira': miniArteBeiraData,
+    'logixsystems': logixSystemsData,
+    'plc': plcData,
+    'trialschool': trialSchoolData,
 };
-
