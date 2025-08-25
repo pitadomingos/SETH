@@ -191,6 +191,7 @@ export const roleLinks: Record<Role, NavItem[]> = {
     { href: '/dashboard/profile', label: 'My Profile', icon: User },
   ],
   AcademicDean: [
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/academics', label: 'Curriculum', icon: BookOpen },
     { href: '/dashboard/classes', label: 'Classes', icon: Library },
     { href: '/dashboard/reports', label: 'AI Reports', icon: BrainCircuit, pro: true },
@@ -199,6 +200,7 @@ export const roleLinks: Record<Role, NavItem[]> = {
     { href: '/dashboard/profile', label: 'My Profile', icon: User },
   ],
   AdmissionsOfficer: [
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/admissions', label: 'Admissions', icon: UserPlus, pro: true },
     { href: '/dashboard/students', label: 'Students', icon: Users },
     { href: '/dashboard/classes', label: 'Classes', icon: Library },
@@ -206,6 +208,7 @@ export const roleLinks: Record<Role, NavItem[]> = {
     { href: '/dashboard/profile', label: 'My Profile', icon: User },
   ],
   Counselor: [
+      { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/dashboard/students', label: 'Students', icon: Users },
       { href: '/dashboard/behavioral', label: 'Behavioral', icon: Heart },
       { href: '/dashboard/attendance', label: 'Attendance', icon: CalendarCheck },
@@ -214,17 +217,20 @@ export const roleLinks: Record<Role, NavItem[]> = {
       { href: '/dashboard/profile', label: 'My Profile', icon: User },
   ],
   FinanceOfficer: [
+      { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/dashboard/finance', label: 'Finance', icon: DollarSign },
       { href: '/dashboard/assets', label: 'Assets', icon: Package },
       { href: '/dashboard/profile', label: 'My Profile', icon: User },
   ],
   SportsDirector: [
+      { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/dashboard/sports', label: 'Sports', icon: Trophy },
       { href: '/dashboard/events', label: 'Events', icon: Calendar },
       { href: '/dashboard/assets', label: 'Assets', icon: Package },
       { href: '/dashboard/profile', label: 'My Profile', icon: User },
   ],
   ITAdmin: [
+      { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: MonitorPlay },
       { href: '/dashboard/assets', label: 'Assets', icon: Package },
       { href: '/dashboard/settings', label: 'Settings', icon: Settings },
