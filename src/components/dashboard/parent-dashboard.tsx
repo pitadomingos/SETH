@@ -1,12 +1,11 @@
 
-
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { useSchoolData, NewAdmissionData, Competition, Team, Student } from '@/context/school-data-context';
+import { useSchoolData, NewAdmissionData, Competition, Team, Student, Grade } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb, MessageSquare, Upload } from 'lucide-react';
+import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb, MessageSquare, Upload, LineChart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn, formatCurrency } from '@/lib/utils';
 import {
@@ -71,7 +70,7 @@ const applicationSchema = z.object({
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 function NewApplicationDialog() {
-  const { addAdmission, allSchoolData, allStudents } = useSchoolData();
+  const { addAdmission, allSchoolData, studentsData: allStudents } = useSchoolData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -241,7 +240,7 @@ function NewApplicationDialog() {
 }
 
 
-function AIGeneratedAdvice({ child, grades, attendance }) {
+function AIGeneratedAdvice({ child, grades, attendance, allSchoolData }) {
   const [analysis, setAnalysis] = useState<StudentAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -262,10 +261,22 @@ function AIGeneratedAdvice({ child, grades, attendance }) {
         count: count as number,
       }));
 
+      // Check for transfer history
+      const studentHistory = Object.values(allSchoolData).filter(school => school.students.some(s => s.id === child.id));
+      let schoolPerformanceData;
+      if (studentHistory.length > 1) {
+        schoolPerformanceData = studentHistory.map(school => {
+            const schoolGrades = school.grades.filter(g => g.studentId === child.id);
+            const avgGrade = schoolGrades.length > 0 ? schoolGrades.reduce((sum, g) => sum + parseFloat(g.grade), 0) / schoolGrades.length : 0;
+            return { schoolName: school.profile.name, averageGrade: avgGrade };
+        });
+      }
+
       const result = await analyzeStudentPerformanceAction({
         studentName: child.name,
         grades: gradeData,
         attendance: attendanceData,
+        schoolPerformance: schoolPerformanceData
       });
       setAnalysis(result);
     } catch (e) {
@@ -298,6 +309,12 @@ function AIGeneratedAdvice({ child, grades, attendance }) {
         )}
         {analysis && (
           <div className="space-y-6">
+            {analysis.crossSchoolAnalysis && (
+                <div className="p-4 bg-primary/10 rounded-lg">
+                     <h3 className="font-semibold flex items-center gap-2 mb-2"><LineChart className="text-primary"/> Cross-School Analysis</h3>
+                     <p className="text-sm text-muted-foreground">{analysis.crossSchoolAnalysis}</p>
+                </div>
+            )}
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-semibold flex items-center gap-2 mb-2"><Check className="text-green-500"/> Strengths</h3>
@@ -573,7 +590,7 @@ export default function ParentDashboard() {
         <div className="space-y-6 animate-in fade-in-25">
            <div className="grid gap-6 lg:grid-cols-3">
             {selectedChildSchool.profile.tier !== 'Starter' 
-              ? <AIGeneratedAdvice child={selectedChild} grades={childGrades} attendance={childAttendance} />
+              ? <AIGeneratedAdvice child={selectedChild} grades={childGrades} attendance={childAttendance} allSchoolData={allSchoolData!} />
               : <AITierLockMessage schoolName={selectedChildSchool.profile.name} schoolAdminEmail={selectedChildSchool.profile.email} />
             }
              <div className="space-y-6">
