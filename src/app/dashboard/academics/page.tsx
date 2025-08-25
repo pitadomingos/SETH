@@ -421,11 +421,13 @@ export default function AcademicsPage() {
   const { syllabi, subjects } = useSchoolData();
   const [selectedSubject, setSelectedSubject] = useState('');
 
-  useEffect(() => { if (!authLoading && role !== 'Admin') router.push('/dashboard'); }, [role, authLoading, router]);
+  const isAuthorized = role === 'Admin' || role === 'AcademicDean';
+
+  useEffect(() => { if (!authLoading && !isAuthorized) router.push('/dashboard'); }, [role, authLoading, router, isAuthorized]);
 
   const filteredSyllabi = useMemo(() => syllabi.filter(s => selectedSubject ? s.subject === selectedSubject : true).sort((a, b) => parseInt(a.grade) - parseInt(b.grade)), [syllabi, selectedSubject]);
 
-  if (authLoading || role !== 'Admin') {
+  if (authLoading || !isAuthorized) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 

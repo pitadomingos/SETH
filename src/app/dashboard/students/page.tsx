@@ -77,6 +77,8 @@ export default function StudentsPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
 
+    const isAuthorized = role === 'Admin' || role === 'AdmissionsOfficer' || role === 'Counselor';
+
     const filteredStudents = useMemo(() => {
         return studentsData.map(student => {
             const studentGrades = grades.filter(g => g.studentId === student.id);
@@ -133,16 +135,16 @@ export default function StudentsPage() {
 
 
     useEffect(() => {
-        if (!isLoading && role !== 'Admin') {
+        if (!isLoading && !isAuthorized) {
             router.push('/dashboard');
         }
-    }, [role, isLoading, router]);
+    }, [role, isLoading, router, isAuthorized]);
 
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm]);
 
-    if (isLoading || role !== 'Admin') {
+    if (isLoading || !isAuthorized) {
         return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
     

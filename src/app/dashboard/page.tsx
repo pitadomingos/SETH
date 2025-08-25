@@ -1,3 +1,4 @@
+
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useSchoolData } from '@/context/school-data-context';
@@ -49,6 +50,12 @@ export default function DashboardPage() {
 
   switch (role) {
     case 'Admin':
+    case 'FinanceOfficer':
+    case 'AcademicDean':
+    case 'AdmissionsOfficer':
+    case 'Counselor':
+    case 'SportsDirector':
+    case 'ITAdmin':
       return <AdminDashboard />;
     case 'Teacher':
       return <TeacherDashboard />;

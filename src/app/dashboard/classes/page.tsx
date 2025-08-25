@@ -161,6 +161,8 @@ export default function ClassesPage() {
     const { classesData, teachersData } = useSchoolData();
     const router = useRouter();
 
+    const isAuthorized = role === 'Admin' || role === 'AcademicDean' || role === 'AdmissionsOfficer';
+
     const summaryStats = useMemo(() => {
         const totalStudents = classesData.reduce((acc, c) => acc + c.students, 0);
         const totalClasses = classesData.length;
@@ -169,12 +171,12 @@ export default function ClassesPage() {
     }, [classesData]);
 
     useEffect(() => {
-        if (!isLoading && role !== 'Admin') {
+        if (!isLoading && !isAuthorized) {
             router.push('/dashboard');
         }
-    }, [role, isLoading, router]);
+    }, [role, isLoading, router, isAuthorized]);
 
-    if (isLoading || role !== 'Admin') {
+    if (isLoading || !isAuthorized) {
         return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
     

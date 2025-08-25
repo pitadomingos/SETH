@@ -188,6 +188,8 @@ export default function TeachersPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
 
+    const isAuthorized = role === 'Admin' || role === 'AcademicDean';
+
     const filteredTeachers = useMemo(() => {
         return teachersData.filter(teacher =>
             teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -216,16 +218,16 @@ export default function TeachersPage() {
     }, [teachersData]);
 
     useEffect(() => {
-        if (!isLoading && role !== 'Admin') {
+        if (!isLoading && !isAuthorized) {
             router.push('/dashboard');
         }
-    }, [role, isLoading, router]);
+    }, [role, isLoading, router, isAuthorized]);
     
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm]);
 
-    if (isLoading || role !== 'Admin') {
+    if (isLoading || !isAuthorized) {
         return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 

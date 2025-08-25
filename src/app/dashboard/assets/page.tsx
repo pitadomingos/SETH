@@ -210,6 +210,14 @@ export default function AssetsPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
 
+  const isAuthorized = role === 'Admin' || role === 'FinanceOfficer' || role === 'ITAdmin' || role === 'SportsDirector';
+
+  useEffect(() => {
+    if (!isLoading && !isAuthorized) {
+      router.push('/dashboard');
+    }
+  }, [role, isLoading, router, isAuthorized]);
+
   const filteredAssets = useMemo(() => {
     const safeAssetsData = assetsData || [];
     return safeAssetsData.filter(asset =>
@@ -232,13 +240,7 @@ export default function AssetsPage() {
     return stats;
   }, [assetsData]);
 
-  useEffect(() => {
-    if (!isLoading && role !== 'Admin') {
-      router.push('/dashboard');
-    }
-  }, [role, isLoading, router]);
-
-  if (isLoading || role !== 'Admin') {
+  if (isLoading || !isAuthorized) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 

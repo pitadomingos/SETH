@@ -154,21 +154,18 @@ export default function AdmissionsPage() {
   const { toast } = useToast();
   
   const isLoading = authLoading || schoolLoading;
+  const isAuthorized = role === 'Admin' || role === 'AdmissionsOfficer';
 
   useEffect(() => {
-    if (!isLoading && role !== 'Admin') {
+    if (!isLoading && !isAuthorized) {
       router.push('/dashboard');
     }
-  }, [role, isLoading, router]);
+  }, [role, isLoading, router, isAuthorized]);
 
-  if (isLoading) {
+  if (isLoading || !isAuthorized) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
   
-  if (role !== 'Admin') {
-    return <div className="flex h-full items-center justify-center"><p>Access Denied</p></div>;
-  }
-
   if (schoolProfile?.tier === 'Starter') {
     return <FeatureLock featureName="Admissions" />;
   }
