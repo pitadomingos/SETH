@@ -33,7 +33,7 @@ export default function TakeTestPage() {
 
     const { deployed, saved } = testData;
 
-    const handleSubmit = (data: any) => {
+    const handleSubmit = async (data: any) => {
         if (!deployed || !saved || !user) return;
         setIsSubmitting(true);
 
@@ -51,13 +51,13 @@ export default function TakeTestPage() {
         const student = studentsData.find(s => s.email === user.email);
         if(student) {
             // Record the submission to prevent re-taking the test
-            addTestSubmission(deployed.id, student.id, score);
+            await addTestSubmission(deployed.id, student.id, score);
             
             // Add the grade to the gradebook
-            addGrade({
+            await addGrade({
                 studentId: student.id,
                 subject: saved.subject,
-                grade: String(gradeOutOf20),
+                grade: String(gradeOutOf20.toFixed(1)),
                 type: 'Test',
                 description: `AI Test: ${saved.topic}`,
             });
@@ -123,4 +123,3 @@ export default function TakeTestPage() {
         </div>
     );
 }
-
