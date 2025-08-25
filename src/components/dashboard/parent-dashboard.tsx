@@ -5,7 +5,7 @@ import { useAuth } from '@/context/auth-context';
 import { useSchoolData, NewAdmissionData, Competition, Team, Student } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb } from 'lucide-react';
+import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb, MessageSquare, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn, formatCurrency } from '@/lib/utils';
 import {
@@ -30,30 +30,63 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from '../ui/textarea';
 import { analyzeStudentPerformanceAction } from '@/app/actions/ai-actions';
 import { StudentAnalysis } from '@/ai/flows/student-analysis-flow';
+import { useRouter } from 'next/navigation';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import Image from 'next/image';
 
 
 const applicationSchema = z.object({
-  schoolId: z.string({ required_error: "Please select a school to apply to."}),
-  name: z.string().min(2, "Applicant name must be at least 2 characters."),
-  dateOfBirth: z.date({ required_error: "Date of birth is required." }),
-  sex: z.enum(['Male', 'Female'], { required_error: "Please select a gender." }),
-  appliedFor: z.string().min(1, "Please specify the grade being applied for."),
-  formerSchool: z.string().min(2, "Please enter the name of the former school."),
-  gradesSummary: z.string().min(10, "Please provide a brief summary of previous grades.").optional(),
-});
+  applicationType: z.enum(['new', 'transfer'], { required_error: 'Please select an application type.'}),
+  // Fields for new applicant
+  schoolId: z.string().optional(),
+  name: z.string().optional(),
+  dateOfBirth: z.date().optional(),
+  sex: z.enum(['Male', 'Female']).optional(),
+  appliedFor: z.string().optional(),
+  formerSchool: z.string().optional(),
+  gradesSummary: z.string().optional(),
+  idUrl: z.string().optional(),
+  reportUrl: z.string().optional(),
+  photoUrl: z.string().optional(),
+  // Fields for transfer
+  transferStudentId: z.string().optional(),
+  transferSchoolId: z.string().optional(),
+}).refine(data => {
+    if (data.applicationType === 'new') {
+        return !!data.schoolId && !!data.name && !!data.dateOfBirth && !!data.sex && !!data.appliedFor && !!data.formerSchool;
+    }
+    return true;
+}, { message: "Please fill all required fields for a new applicant." })
+.refine(data => {
+    if (data.applicationType === 'transfer') {
+        return !!data.transferStudentId && !!data.transferSchoolId;
+    }
+    return true;
+}, { message: "Please select a student and a school to transfer to." });
+
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 function NewApplicationDialog() {
-  const { addAdmission, allSchoolData } = useSchoolData();
+  const { addAdmission, allSchoolData, allStudents } = useSchoolData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
 
   const form = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema),
+    defaultValues: {
+        applicationType: 'new'
+    },
   });
-
+  
+  const applicationType = form.watch('applicationType');
   const selectedSchoolId = form.watch('schoolId');
   const selectedGradeStr = form.watch('appliedFor');
+  
+  const filteredStudents = useMemo(() => {
+    if (!searchTerm) return [];
+    return allStudents.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [searchTerm, allStudents]);
 
   const vacancies = useMemo(() => {
     if (!selectedSchoolId || !selectedGradeStr) return null;
@@ -68,63 +101,123 @@ function NewApplicationDialog() {
   }, [selectedSchoolId, selectedGradeStr, allSchoolData]);
 
   function onSubmit(values: ApplicationFormValues) {
-    addAdmission({
-      schoolId: values.schoolId,
-      name: values.name,
-      dateOfBirth: format(values.dateOfBirth, 'yyyy-MM-dd'),
-      sex: values.sex,
-      appliedFor: values.appliedFor,
-      formerSchool: values.formerSchool,
-      gradesSummary: values.gradesSummary || 'N/A',
-    });
-    toast({
-      title: 'Application Submitted',
-      description: `The application for ${values.name} has been sent to the school for review.`,
-    });
-    form.reset();
-    setIsDialogOpen(false);
+    if (values.applicationType === 'new') {
+      addAdmission({
+        type: 'New',
+        schoolId: values.schoolId!,
+        name: values.name!,
+        dateOfBirth: format(values.dateOfBirth!, 'yyyy-MM-dd'),
+        sex: values.sex!,
+        appliedFor: values.appliedFor!,
+        formerSchool: values.formerSchool!,
+        gradesSummary: values.gradesSummary || 'N/A',
+        idUrl: values.idUrl,
+        reportUrl: values.reportUrl,
+        photoUrl: values.photoUrl
+      });
+      toast({
+        title: 'Application Submitted',
+        description: `The application for ${values.name} has been sent to the school for review.`,
+      });
+    } else { // Transfer
+        const student = allStudents.find(s => s.id === values.transferStudentId);
+        if (!student || !values.transferSchoolId) return;
+
+        addAdmission({
+            type: 'Transfer',
+            schoolId: values.transferSchoolId,
+            name: student.name,
+            dateOfBirth: student.dateOfBirth,
+            sex: student.sex,
+            appliedFor: `Grade ${student.grade}`, // Assume same grade for transfer
+            formerSchool: student.schoolName,
+            gradesSummary: 'Records are available in the EduDesk network.',
+            fromSchoolId: student.schoolId,
+            studentIdToTransfer: student.id,
+        });
+        toast({
+            title: 'Transfer Request Submitted',
+            description: `The request to transfer ${student.name} has been sent for approval.`,
+        });
+    }
+
+    form.reset({ applicationType: 'new' });
+    setIsOpen(false);
   }
 
   const schoolList = allSchoolData ? Object.values(allSchoolData).map(s => s.profile) : [];
+  
+  const handleStudentSelect = (student: Student) => {
+    form.setValue('transferStudentId', student.id);
+    form.setValue('name', student.name);
+    setSearchTerm('');
+  };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <Dialog open={isDialogOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button><UserPlus className="mr-2 h-4 w-4" /> New Application</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Apply for a New Child</DialogTitle>
+          <DialogTitle>New Student Application</DialogTitle>
           <DialogDescription>
-            Fill out this form to submit a new admission application to a school.
+            Submit an application for a new student or request a transfer for an existing one.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
-            <FormField control={form.control} name="schoolId" render={({ field }) => ( <FormItem><FormLabel>School to Apply To</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select School" /></SelectTrigger></FormControl><SelectContent>{schoolList.map(school => <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
-            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Child's Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/>
-                <FormField control={form.control} name="sex" render={({ field }) => ( <FormItem><FormLabel>Sex</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-            </div>
-            <FormField control={form.control} name="appliedFor" render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Applying for Grade</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedSchoolId}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select Grade" /></SelectTrigger></FormControl>
-                        <SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(g => <SelectItem key={g} value={`Grade ${g}`}>Grade {g}</SelectItem>)}</SelectContent>
-                    </Select>
-                    <FormMessage />
-                </FormItem>
-            )} />
-             {vacancies !== null && (
-                <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md border">
-                    Available Vacancies for this grade: <span className="font-bold text-primary">{vacancies}</span>
-                    {vacancies === 0 && " (Applications will be added to the waitlist)"}
+            <FormField control={form.control} name="applicationType" render={({ field }) => ( <FormItem className="space-y-3"><FormLabel>Application Type</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4"><FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="new" /></FormControl><FormLabel className="font-normal">New Applicant</FormLabel></FormItem><FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="transfer" /></FormControl><FormLabel className="font-normal">Transfer Student</FormLabel></FormItem></RadioGroup></FormControl><FormMessage /></FormItem> )}/>
+             {applicationType === 'new' ? (
+                <div className="space-y-4 animate-in fade-in-50">
+                    <FormField control={form.control} name="schoolId" render={({ field }) => ( <FormItem><FormLabel>School to Apply To</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select School" /></SelectTrigger></FormControl><SelectContent>{schoolList.map(school => <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+                    <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Child's Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="dateOfBirth" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date of Birth</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+                        <FormField control={form.control} name="sex" render={({ field }) => ( <FormItem><FormLabel>Sex</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                    </div>
+                    <FormField control={form.control} name="appliedFor" render={({ field }) => (
+                        <FormItem><FormLabel>Applying for Grade</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedSchoolId}><FormControl><SelectTrigger><SelectValue placeholder="Select Grade" /></SelectTrigger></FormControl><SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(g => <SelectItem key={g} value={`Grade ${g}`}>Grade {g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                    )} />
+                    {vacancies !== null && (<div className="text-sm text-muted-foreground p-3 bg-muted rounded-md border">Available Vacancies for this grade: <span className="font-bold text-primary">{vacancies}</span>{vacancies === 0 && " (Applications will be added to the waitlist)"}</div>)}
+                    <FormField control={form.control} name="formerSchool" render={({ field }) => ( <FormItem><FormLabel>Previous School</FormLabel><FormControl><Input placeholder="e.g., Eastwood Elementary" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="gradesSummary" render={({ field }) => ( <FormItem><FormLabel>Previous Grades Summary</FormLabel><FormControl><Textarea placeholder="Briefly describe academic performance, e.g., 'Consistent A grades in Math and Science, B in English.'" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                     <div className="space-y-4 pt-4 border-t">
+                        <FormLabel className="font-semibold">Document Uploads</FormLabel>
+                        <FormField control={form.control} name="photoUrl" render={({ field }) => ( <FormItem className="flex items-center justify-between"><FormLabel>Student Photo (Passport Size)</FormLabel><Button type="button" variant="outline" size="sm" onClick={() => form.setValue('photoUrl', `https://placehold.co/200x200.png`)}><Upload className="mr-2 h-4 w-4"/>Upload</Button></FormItem> )} />
+                        <FormField control={form.control} name="idUrl" render={({ field }) => ( <FormItem className="flex items-center justify-between"><FormLabel>ID / Birth Certificate</FormLabel><Button type="button" variant="outline" size="sm" onClick={() => form.setValue('idUrl', `https://placehold.co/400x300.png`)}><Upload className="mr-2 h-4 w-4"/>Upload</Button></FormItem> )} />
+                        <FormField control={form.control} name="reportUrl" render={({ field }) => ( <FormItem className="flex items-center justify-between"><FormLabel>Previous School Report</FormLabel><Button type="button" variant="outline" size="sm" onClick={() => form.setValue('reportUrl', `https://placehold.co/600x800.png`)}><Upload className="mr-2 h-4 w-4"/>Upload</Button></FormItem> )} />
+                    </div>
                 </div>
+            ) : (
+                 <div className="space-y-4 animate-in fade-in-50">
+                    <FormField control={form.control} name="transferStudentId" render={({ field }) => (
+                         <FormItem>
+                            <FormLabel>Student to Transfer</FormLabel>
+                            <FormControl>
+                                <div className="relative">
+                                    <Input placeholder="Search for student by name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                                    {searchTerm && filteredStudents.length > 0 && (
+                                        <div className="absolute z-10 w-full bg-background border mt-1 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                            {filteredStudents.map(student => (
+                                                <div key={student.id} onClick={() => handleStudentSelect(student)} className="p-2 hover:bg-accent cursor-pointer">
+                                                    <p>{student.name} <span className="text-muted-foreground">({student.schoolName})</span></p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </FormControl>
+                            {field.value && <p className="text-sm pt-2 text-primary">Selected: {form.getValues('name')}</p>}
+                            <FormMessage/>
+                         </FormItem>
+                    )}/>
+                     <FormField control={form.control} name="transferSchoolId" render={({ field }) => ( <FormItem><FormLabel>New School</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select School to Transfer To" /></SelectTrigger></FormControl><SelectContent>{schoolList.map(school => <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+                     <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md border">
+                        <p>All academic and financial records for the selected student will be made available to the new school upon approval of this transfer request.</p>
+                    </div>
+                 </div>
             )}
-            <FormField control={form.control} name="formerSchool" render={({ field }) => ( <FormItem><FormLabel>Previous School</FormLabel><FormControl><Input placeholder="e.g., Eastwood Elementary" {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="gradesSummary" render={({ field }) => ( <FormItem><FormLabel>Previous Grades Summary</FormLabel><FormControl><Textarea placeholder="Briefly describe academic performance, e.g., 'Consistent A grades in Math and Science, B in English.'" {...field} /></FormControl><FormMessage /></FormItem> )} />
             
             <DialogFooter className="sticky bottom-0 bg-background pt-4 pr-0">
               <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
@@ -229,6 +322,38 @@ function AIGeneratedAdvice({ child, grades, attendance }) {
   )
 }
 
+function AITierLockMessage({ schoolName, schoolAdminEmail }) {
+  const router = useRouter();
+
+  const handleContactAdmin = () => {
+    const prefillData = {
+      recipientUsername: schoolAdminEmail,
+      subject: `Inquiry About EduDesk Pro Plan for ${schoolName}`,
+      body: `Dear ${schoolName} Administration,\n\nI am interested in the AI-powered parent features and would like to inquire about upgrading our school's subscription to the Pro plan to enable them.\n\nCould you please provide more information?\n\nThank you.`
+    };
+    sessionStorage.setItem('prefillMessage', JSON.stringify(prefillData));
+    router.push('/dashboard/messaging');
+  };
+
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Sparkles className="text-primary" /> AI-Powered Insights</CardTitle>
+        <CardDescription>This is a Pro-tier feature.</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col items-center justify-center text-center p-8">
+        <p className="text-muted-foreground mb-4">
+          The AI Academic Advisor is not available for students at {schoolName} because the school is on the Starter plan.
+        </p>
+        <Button onClick={handleContactAdmin}>
+          <MessageSquare className="mr-2 h-4 w-4" />
+          Contact School Admin to Upgrade
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
 function GradeDistribution({ grades }) {
   const chartData = useMemo(() => {
     return grades.map(grade => ({
@@ -238,10 +363,7 @@ function GradeDistribution({ grades }) {
   }, [grades]);
 
   const chartConfig = {
-    gpa: {
-      label: 'GPA',
-      color: 'hsl(var(--chart-2))',
-    },
+    gpa: { label: 'GPA', color: 'hsl(var(--chart-2))' },
   } satisfies ChartConfig;
 
   return (
@@ -336,7 +458,7 @@ const getStatusInfo = (fee) => {
 
 export default function ParentDashboard() {
   const { user } = useAuth();
-  const { studentsData, grades, attendance, financeData, schoolProfile, isLoading: schoolDataLoading } = useSchoolData();
+  const { allSchoolData, studentsData, grades, attendance, financeData, isLoading: schoolDataLoading } = useSchoolData();
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -346,6 +468,11 @@ export default function ParentDashboard() {
   }, [studentsData, selectedChildId]);
 
   const selectedChild = useMemo(() => studentsData.find(c => c.id === selectedChildId), [selectedChildId, studentsData]);
+  
+  const selectedChildSchool = useMemo(() => {
+    if (!selectedChild || !allSchoolData) return null;
+    return allSchoolData[selectedChild.schoolId!];
+  }, [selectedChild, allSchoolData]);
 
   const childGrades = useMemo(() => {
     if (!selectedChildId) return [];
@@ -365,12 +492,11 @@ export default function ParentDashboard() {
     if (!selectedChildId) return null;
     const childFees = financeData.filter(f => f.studentId === selectedChildId);
     if (childFees.length === 0) return null;
-    // Prioritize showing an overdue fee, then a partially paid/pending one.
     const overdue = childFees.find(f => (f.totalAmount - f.amountPaid > 0) && new Date(f.dueDate) < new Date());
     if (overdue) return overdue;
     const pending = childFees.find(f => f.totalAmount - f.amountPaid > 0);
     if (pending) return pending;
-    return childFees[0]; // Otherwise show the first one (likely a paid one)
+    return childFees[0];
   }, [financeData, selectedChildId]);
 
   if (schoolDataLoading) {
@@ -433,10 +559,13 @@ export default function ParentDashboard() {
         </div>
       </div>
       
-      {selectedChild ? (
+      {selectedChild && selectedChildSchool ? (
         <div className="space-y-6 animate-in fade-in-25">
            <div className="grid gap-6 lg:grid-cols-3">
-            {schoolProfile?.tier !== 'Starter' && selectedChild && <AIGeneratedAdvice child={selectedChild} grades={childGrades} attendance={childAttendance} />}
+            {selectedChildSchool.profile.tier !== 'Starter' 
+              ? <AIGeneratedAdvice child={selectedChild} grades={childGrades} attendance={childAttendance} />
+              : <AITierLockMessage schoolName={selectedChildSchool.profile.name} schoolAdminEmail={selectedChildSchool.profile.email} />
+            }
              <div className="space-y-6">
                 <Card>
                     <CardHeader className="pb-4">
@@ -446,7 +575,7 @@ export default function ParentDashboard() {
                     {childFinanceSummary ? (
                         <div className="flex justify-between items-center">
                             <div>
-                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid, schoolProfile?.currency)}</span></p>
+                                <p className="font-semibold">Balance: <span className="font-bold text-lg">{formatCurrency(childFinanceSummary.totalAmount - childFinanceSummary.amountPaid, selectedChildSchool.profile.currency)}</span></p>
                                 <p className="text-xs text-muted-foreground">Due: {new Date(childFinanceSummary.dueDate).toLocaleDateString()}</p>
                             </div>
                             <Badge variant={getStatusInfo(childFinanceSummary).variant}>{getStatusInfo(childFinanceSummary).text}</Badge>
@@ -467,7 +596,7 @@ export default function ParentDashboard() {
                               return (
                                 <li key={index} className="flex justify-between items-center text-sm">
                                     <span className="font-medium">{grade.subject}</span>
-                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, schoolProfile?.gradingSystem)}</Badge>
+                                    <Badge variant={numericGrade >= 17 ? 'secondary' : 'outline'}>{formatGradeDisplay(grade.grade, selectedChildSchool.profile.gradingSystem)}</Badge>
                                 </li>
                               )
                             }) : <p className="text-muted-foreground text-sm">No recent grades.</p>}

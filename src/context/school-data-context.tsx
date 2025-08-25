@@ -17,6 +17,7 @@ export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, Syllab
 interface SchoolDataContextType {
     // --- Data States ---
     allSchoolData: Record<string, SchoolData> | null;
+    allStudents: Student[];
     schoolProfile: SchoolProfile | null;
     studentsData: Student[];
     teachersData: Teacher[];
@@ -1003,6 +1004,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const value: SchoolDataContextType = {
     isLoading,
     allSchoolData: data,
+    allStudents,
     schoolProfile: schoolData?.profile || null,
     studentsData,
     teachersData: schoolData?.teachers || [],

@@ -1,5 +1,4 @@
 
-
 import { type Role } from "@/context/auth-context";
 
 // --- CORE DATA STRUCTURES ---
@@ -75,6 +74,8 @@ export interface Student {
     parentEmail: string;
     status: 'Active' | 'Inactive' | 'Transferred';
     behavioralAssessments: BehavioralAssessment[];
+    schoolId?: string; // Added for transfers
+    schoolName?: string; // Added for transfers
 }
 
 export interface Teacher {
@@ -123,6 +124,7 @@ export interface Syllabus {
 
 export interface Admission {
     id: string;
+    type: 'New' | 'Transfer';
     name: string;
     date: string;
     appliedFor: string;
@@ -133,6 +135,13 @@ export interface Admission {
     sex: 'Male' | 'Female';
     formerSchool: string;
     grades: string;
+    // For new applicants
+    idUrl?: string;
+    reportUrl?: string;
+    photoUrl?: string;
+    // For transfers
+    studentIdToTransfer?: string;
+    fromSchoolId?: string;
 }
 
 export interface FinanceRecord {
@@ -348,6 +357,7 @@ export interface NewMessageData {
 }
 
 export interface NewAdmissionData {
+  type: 'New' | 'Transfer';
   schoolId: string;
   name: string;
   dateOfBirth: string;
@@ -355,6 +365,13 @@ export interface NewAdmissionData {
   appliedFor: string;
   formerSchool: string;
   gradesSummary: string;
+  // For new applicants
+  idUrl?: string;
+  reportUrl?: string;
+  photoUrl?: string;
+  // For transfers
+  studentIdToTransfer?: string;
+  fromSchoolId?: string;
 }
 
 export interface NewSchoolData {
