@@ -509,15 +509,18 @@ const northwoodData: SchoolData = {
     classes: [
         { id: 'C01', name: 'Grade 10-A', grade: '10', teacher: 'Sérgio Almeida', students: 30, room: '101' },
         { id: 'C02', name: 'Grade 11-B', grade: '11', teacher: 'Catarina Martins', students: 28, room: '102' },
+        { id: 'C03', name: 'Grade 9-C', grade: '9', teacher: 'Sérgio Almeida', students: 25, room: '103' },
     ],
     courses: [
         { id: 'CRS01', subject: 'Mathematics', teacherId: 'T01', classId: 'C01', schedule: [{ day: 'Monday', startTime: '09:00', endTime: '10:00', room: '101' }] },
         { id: 'CRS02', subject: 'History', teacherId: 'T02', classId: 'C02', schedule: [{ day: 'Tuesday', startTime: '10:00', endTime: '11:00', room: '102' }] },
+        { id: 'CRS03', subject: 'Mathematics', teacherId: 'T01', classId: 'C03', schedule: [{ day: 'Wednesday', startTime: '11:00', endTime: '12:00', room: '103' }] },
     ],
     grades: [
         { id: 'G01', studentId: 'STU001', subject: 'Mathematics', grade: '18', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
         { id: 'G02', studentId: 'STU002', subject: 'Mathematics', grade: '14', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
         { id: 'G03', studentId: 'STU003', subject: 'History', grade: '16', date: new Date('2024-04-10T00:00:00Z'), type: 'Coursework', description: 'WWII Essay', teacherId: 'T02' },
+        { id: 'G04', studentId: 'STU201', subject: 'Mathematics', grade: '12', date: new Date('2023-11-20T00:00:00Z'), type: 'Exam', description: 'Final Geometry Exam', teacherId: 'T01' },
     ],
     finance: [
         { id: 'FIN01', studentId: 'STU001', studentName: 'Miguel Santos', description: 'Term 1 Tuition', totalAmount: 50000, amountPaid: 50000, dueDate: '2024-02-01', status: 'Paid' },
@@ -565,22 +568,33 @@ const maplewoodData: SchoolData = {
     students: [
         { id: 'STU101', name: 'Sofia Oliveira', email: 'sofia.oliveira@maplewood.edu', phone: '820000101', address: 'Rua do Comércio', sex: 'Female', dateOfBirth: '2007-11-22', grade: '11', class: 'A', parentName: 'Rui Oliveira', parentEmail: 'rui.oliveira@email.com', status: 'Active', behavioralAssessments: [] },
         { id: 'STU102', name: 'Diogo Costa', email: 'diogo.costa@maplewood.edu', phone: '820000102', address: 'Av. do Trabalho', sex: 'Male', dateOfBirth: '2007-03-30', grade: '11', class: 'A', parentName: 'Mariana Costa', parentEmail: 'mariana.costa@email.com', status: 'Active', behavioralAssessments: [] },
+        { id: 'STU201', name: 'Lucia Santos', email: 'lucia.santos@maplewood.edu', phone: '840000201', address: 'Rua de Kassuende', sex: 'Female', dateOfBirth: '2010-02-12', grade: '8', class: 'B', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] },
+        { id: 'STU202', name: 'Pedro Santos', email: 'pedro.santos@maplewood.edu', phone: '840000202', address: 'Rua de Kassuende', sex: 'Male', dateOfBirth: '2009-07-05', grade: '9', class: 'C', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] }
     ],
     teachers: [
         { id: 'T11', name: 'Laura Ferreira', email: 'laura.ferreira@maplewood.edu', phone: '840000011', address: 'Bairro do Jardim', sex: 'Female', subject: 'English', experience: '12 years', qualifications: 'Ph.D. English Literature', status: 'Active' },
+        { id: 'T12', name: 'André Sousa', email: 'andre.sousa@maplewood.edu', phone: '840000012', address: 'Bairro Central', sex: 'Male', subject: 'Science', experience: '6 years', qualifications: 'B.Sc. Biology', status: 'Active' },
     ],
     classes: [
         { id: 'C11', name: 'Grade 11-A', grade: '11', teacher: 'Laura Ferreira', students: 25, room: 'A1' },
+        { id: 'C12', name: 'Grade 8-B', grade: '8', teacher: 'André Sousa', students: 28, room: 'B2' },
+        { id: 'C13', name: 'Grade 9-C', grade: '9', teacher: 'André Sousa', students: 22, room: 'B3' },
     ],
     courses: [
         { id: 'CRS11', subject: 'English', teacherId: 'T11', classId: 'C11', schedule: [{ day: 'Monday', startTime: '11:00', endTime: '12:00', room: 'A1' }] },
+        { id: 'CRS12', subject: 'Science', teacherId: 'T12', classId: 'C12', schedule: [{ day: 'Thursday', startTime: '09:00', endTime: '10:00', room: 'B2' }] },
+        { id: 'CRS13', subject: 'Science', teacherId: 'T12', classId: 'C13', schedule: [{ day: 'Friday', startTime: '10:00', endTime: '11:00', room: 'B3' }] },
     ],
     grades: [
         { id: 'G11', studentId: 'STU101', subject: 'English', grade: '19', date: new Date('2024-04-01T00:00:00Z'), type: 'Coursework', description: 'Shakespeare Essay', teacherId: 'T11' },
         { id: 'G12', studentId: 'STU102', subject: 'English', grade: '15', date: new Date('2024-04-01T00:00:00Z'), type: 'Coursework', description: 'Shakespeare Essay', teacherId: 'T11' },
+        { id: 'G13', studentId: 'STU201', subject: 'Science', grade: '11', date: new Date('2024-04-05T00:00:00Z'), type: 'Test', description: 'Lab Safety Quiz', teacherId: 'T12' },
+        { id: 'G14', studentId: 'STU202', subject: 'Science', grade: '16', date: new Date('2024-04-12T00:00:00Z'), type: 'Test', description: 'Biology Mid-Term', teacherId: 'T12' },
     ],
     finance: [
         { id: 'FIN11', studentId: 'STU101', studentName: 'Sofia Oliveira', description: 'Annual Fees', totalAmount: 85000, amountPaid: 85000, dueDate: '2024-01-30', status: 'Paid' },
+        { id: 'FIN12', studentId: 'STU201', studentName: 'Lucia Santos', description: 'Term 1 Tuition', totalAmount: 30000, amountPaid: 30000, dueDate: '2024-02-15', status: 'Paid' },
+        { id: 'FIN13', studentId: 'STU202', studentName: 'Pedro Santos', description: 'Term 1 Tuition', totalAmount: 30000, amountPaid: 30000, dueDate: '2024-02-15', status: 'Paid' },
     ],
     activityLogs: [
         { id: 'LOG101', timestamp: new Date('2024-05-18T09:00:00Z'), schoolId: 'maplewood', user: 'Beatriz Silva', role: 'Admin', action: 'Create', details: 'Added new team: Varsity Lions' }
