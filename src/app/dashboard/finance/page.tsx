@@ -21,7 +21,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, subMonths } from 'date-fns';
 import { cn, formatCurrency } from '@/lib/utils';
 import Image from 'next/image';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -171,7 +171,14 @@ function BalanceSheetDialog({ financeData, expensesData, schoolProfile }) {
 
 
 const PAGE_SIZE = 10;
-const getStatusInfo = (fee: FinanceRecord) => { const balance = fee.totalAmount - fee.amountPaid; const isOverdue = new Date(fee.dueDate) < new Date() && balance > 0; if (balance <= 0) return { text: 'Paid', variant: 'secondary' as const }; if (isOverdue) return { text: 'Overdue', variant: 'destructive' as const }; if (fee.amountPaid > 0) return { text: 'Partially Paid', variant: 'outline' as const }; return { text: 'Pending', variant: 'outline' as const }; };
+const getStatusInfo = (fee: FinanceRecord) => { 
+    const balance = fee.totalAmount - fee.amountPaid; 
+    const isOverdue = new Date(fee.dueDate) < new Date() && balance > 0; 
+    if (balance <= 0) return { text: 'Paid', variant: 'secondary' as const }; 
+    if (isOverdue) return { text: 'Overdue', variant: 'destructive' as const }; 
+    if (fee.amountPaid > 0) return { text: 'Partially Paid', variant: 'outline' as const }; 
+    return { text: 'Pending', variant: 'outline' as const }; 
+};
 
 function AdminFinanceView() {
   const { financeData, recordPayment, expensesData, schoolProfile } = useSchoolData();
@@ -220,7 +227,7 @@ function AdminFinanceView() {
         <div className="flex gap-2"><NewTransactionDialog /><FinancialRecordDialog type="Income"><Button><ArrowUpCircle className="mr-2 h-4 w-4" /> Add Income</Button></FinancialRecordDialog><FinancialRecordDialog type="Expense"><Button variant="destructive"><ArrowDownCircle className="mr-2 h-4 w-4" /> Add Expense</Button></FinancialRecordDialog><BalanceSheetDialog financeData={financeData} expensesData={expensesData} schoolProfile={schoolProfile}/></div>
       </header>
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"><Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total Revenue (Fees)</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold text-green-500">{formatCurrency(totalRevenue, schoolProfile?.currency)}</div><p className="text-xs text-muted-foreground">From student fee payments</p></CardContent></Card><Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Pending Fees</CardTitle><Hourglass className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold text-orange-500">{formatCurrency(pendingFees, schoolProfile?.currency)}</div><p className="text-xs text-muted-foreground">Outstanding balance, not overdue</p></CardContent></Card><Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Overdue Fees</CardTitle><TrendingDown className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-500">{formatCurrency(overdueFees, schoolProfile?.currency)}</div><p className="text-xs text-muted-foreground">Outstanding balance, past due date</p></CardContent></Card><Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Net Operational Balance</CardTitle><BarChart2 className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(totalOtherIncome - totalExpenses, schoolProfile?.currency)}</div><p className="text-xs text-muted-foreground">Other Income minus Expenses</p></CardContent></Card></div>
-      <Tabs defaultValue="fees"><TabsList className="grid w-full grid-cols-2"><TabsTrigger value="fees">Student Fee Collections</TabsTrigger><TabsTrigger value="ledger">Income & Expense Ledger</TabsTrigger></TabsList>
+      <Tabs defaultValue="fees"><TabsList className="grid w-full grid-cols-2"><TabsTrigger value="fees">Student Fee Collections</TabsTrigger><TabsTrigger value="ledger">Income &amp; Expense Ledger</TabsTrigger></TabsList>
         <TabsContent value="fees" className="mt-6"><Card>
             <CardHeader>
                 <CardTitle>Fee Collection Status</CardTitle><CardDescription>An overview of student fee payments.</CardDescription>
@@ -230,12 +237,49 @@ function AdminFinanceView() {
                   <Select value={feePeriodFilter} onValueChange={setFeePeriodFilter}><SelectTrigger className="w-full md:w-[180px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Time</SelectItem><SelectItem value="this_month">This Month</SelectItem><SelectItem value="last_month">Last Month</SelectItem><SelectItem value="this_quarter">This Quarter</SelectItem><SelectItem value="last_quarter">Last Quarter</SelectItem></SelectContent></Select>
                 </div>
             </CardHeader>
-            <CardContent><Table><TableHeader><TableRow><TableHead>Student</TableHead><TableHead>Description</TableHead><TableHead className="text-right">Balance</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{paginatedFees.map(item => { const balance = item.totalAmount - item.amountPaid; const status = getStatusInfo(item); return ( <TableRow key={item.id}><TableCell className="font-medium">{item.studentName}</TableCell><TableCell>{item.description}</TableCell><TableCell className="text-right font-medium">{formatCurrency(balance, schoolProfile?.currency)}</TableCell><TableCell><Badge variant={status.variant}>{status.text}</Badge></TableCell><TableCell className="text-right"><RecordPaymentDialog fee={item} onRecordPayment={recordPayment} /></TableCell></TableRow> ); })} {paginatedFees.length === 0 && ( <TableRow><TableCell colSpan={5} className="h-24 text-center">No records found matching your search.</TableCell></TableRow> )}</TableBody></Table></CardContent>
+            <CardContent><Table><TableHeader><TableRow><TableHead>Student</TableHead><TableHead>Description</TableHead><TableHead className="text-right">Balance</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+            <TableBody>
+                {paginatedFees.length > 0 ? (
+                  paginatedFees.map(item => {
+                    const balance = item.totalAmount - item.amountPaid;
+                    const status = getStatusInfo(item);
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{item.studentName}</TableCell>
+                        <TableCell>{item.description}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(balance, schoolProfile?.currency)}</TableCell>
+                        <TableCell><Badge variant={status.variant}>{status.text}</Badge></TableCell>
+                        <TableCell className="text-right"><RecordPaymentDialog fee={item} onRecordPayment={recordPayment} /></TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow><TableCell colSpan={5} className="h-24 text-center">No records found matching your search.</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table></CardContent>
             {totalFeePages > 1 && (<CardFooter className="flex items-center justify-end space-x-2 border-t pt-4"><span className="text-sm text-muted-foreground">Page {feeCurrentPage} of {totalFeePages}</span><Button variant="outline" size="sm" onClick={() => setFeeCurrentPage(p => Math.max(p - 1, 1))} disabled={feeCurrentPage === 1}><ChevronLeft className="h-4 w-4" /> Previous</Button><Button variant="outline" size="sm" onClick={() => setFeeCurrentPage(p => Math.min(p + 1, totalFeePages))} disabled={feeCurrentPage === totalFeePages}>Next <ChevronRight className="h-4 w-4" /></Button></CardFooter>)}
         </Card></TabsContent>
         <TabsContent value="ledger" className="mt-6"><Card>
-            <CardHeader><CardTitle>Income & Expense Ledger</CardTitle><CardDescription>A log of all miscellaneous income and expenses.</CardDescription><div className="relative pt-4"><Search className="absolute left-2.5 top-6.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Search by description or category..." className="w-full rounded-lg bg-background pl-8 md:w-[300px]" value={expenseSearchTerm} onChange={(e) => setExpenseSearchTerm(e.target.value)}/></div></CardHeader>
-            <CardContent><Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Description</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Amount</TableHead><TableHead className="text-center">Proof</TableHead></TableRow></TableHeader><TableBody>{paginatedLedger.map(expense => ( <TableRow key={expense.id}><TableCell>{expense.date}</TableCell><TableCell><Badge variant={expense.type === 'Income' ? 'secondary' : 'destructive'}>{expense.type}</Badge></TableCell><TableCell className="font-medium">{expense.description}</TableCell><TableCell><Badge variant="outline">{expense.category}</Badge></TableCell><TableCell className="text-right font-mono">{formatCurrency(expense.amount, schoolProfile?.currency)}</TableCell><TableCell className="text-center">{expense.proofUrl ? <ViewProofDialog proofUrl={expense.proofUrl} description={expense.description} /> : '-'}</TableCell></TableRow> ))} {paginatedLedger.length === 0 && ( <TableRow><TableCell colSpan={6} className="h-24 text-center">No records found matching your search.</TableCell></TableRow> )}</TableBody></Table></CardContent>
+            <CardHeader><CardTitle>Income &amp; Expense Ledger</CardTitle><CardDescription>A log of all miscellaneous income and expenses.</CardDescription><div className="relative pt-4"><Search className="absolute left-2.5 top-6.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Search by description or category..." className="w-full rounded-lg bg-background pl-8 md:w-[300px]" value={expenseSearchTerm} onChange={(e) => setExpenseSearchTerm(e.target.value)}/></div></CardHeader>
+            <CardContent><Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Description</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Amount</TableHead><TableHead className="text-center">Proof</TableHead></TableRow></TableHeader>
+            <TableBody>
+                {paginatedLedger.length > 0 ? (
+                  paginatedLedger.map(expense => (
+                    <TableRow key={expense.id}>
+                      <TableCell>{expense.date}</TableCell>
+                      <TableCell><Badge variant={expense.type === 'Income' ? 'secondary' : 'destructive'}>{expense.type}</Badge></TableCell>
+                      <TableCell className="font-medium">{expense.description}</TableCell>
+                      <TableCell><Badge variant="outline">{expense.category}</Badge></TableCell>
+                      <TableCell className="text-right font-mono">{formatCurrency(expense.amount, schoolProfile?.currency)}</TableCell>
+                      <TableCell className="text-center">{expense.proofUrl ? <ViewProofDialog proofUrl={expense.proofUrl} description={expense.description} /> : '-'}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow><TableCell colSpan={6} className="h-24 text-center">No records found matching your search.</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table></CardContent>
             {totalLedgerPages > 1 && (<CardFooter className="flex items-center justify-end space-x-2 border-t pt-4"><span className="text-sm text-muted-foreground">Page {ledgerCurrentPage} of {totalLedgerPages}</span><Button variant="outline" size="sm" onClick={() => setLedgerCurrentPage(p => Math.max(p - 1, 1))} disabled={ledgerCurrentPage === 1}><ChevronLeft className="h-4 w-4" /> Previous</Button><Button variant="outline" size="sm" onClick={() => setLedgerCurrentPage(p => Math.min(p + 1, totalLedgerPages))} disabled={ledgerCurrentPage === totalLedgerPages}>Next <ChevronRight className="h-4 w-4" /></Button></CardFooter>)}
         </Card></TabsContent>
       </Tabs>
@@ -258,3 +302,4 @@ export default function FinancePage() {
   if (isLoading || !isAuthorized) { return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
   return ( <div className="animate-in fade-in-50">{(role === 'Admin' || role === 'FinanceOfficer') && <AdminFinanceView />}{role === 'Parent' && <ParentFinanceView />}</div> );
 }
+
