@@ -145,6 +145,33 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     fetchSchoolData();
   }, []);
 
+  const addLog = useCallback((schoolIdForLog: string, action: string, details: string) => {
+    if(!user || !role) return;
+    const newLog: ActivityLog = {
+      id: `LOG${Date.now()}`,
+      timestamp: new Date(),
+      schoolId: schoolIdForLog,
+      user: user.name,
+      role: role,
+      action: action,
+      details: details,
+    };
+    
+    setData(prevData => {
+        if (!prevData) return null;
+        const newData = { ...prevData };
+        // For Global Admins, log to the "system" (northwood) school to avoid cluttering other schools' logs
+        const targetSchoolId = role === 'GlobalAdmin' ? 'northwood' : schoolIdForLog;
+        if (newData[targetSchoolId]) {
+            newData[targetSchoolId] = {
+                ...newData[targetSchoolId],
+                activityLogs: [newLog, ...newData[targetSchoolId].activityLogs],
+            };
+        }
+        return newData;
+    });
+  }, [user, role]);
+
   const announceAwards = async () => {
     if (!data) return;
 
@@ -189,33 +216,6 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     addLog('northwood', 'Announcement', 'Annual awards have been announced network-wide.');
   };
 
-  const addLog = useCallback((schoolIdForLog: string, action: string, details: string) => {
-    if(!user || !role) return;
-    const newLog: ActivityLog = {
-      id: `LOG${Date.now()}`,
-      timestamp: new Date(),
-      schoolId: schoolIdForLog,
-      user: user.name,
-      role: role,
-      action: action,
-      details: details,
-    };
-    
-    setData(prevData => {
-        if (!prevData) return null;
-        const newData = { ...prevData };
-        // For Global Admins, log to the "system" (northwood) school to avoid cluttering other schools' logs
-        const targetSchoolId = role === 'GlobalAdmin' ? 'northwood' : schoolIdForLog;
-        if (newData[targetSchoolId]) {
-            newData[targetSchoolId] = {
-                ...newData[targetSchoolId],
-                activityLogs: [newLog, ...newData[targetSchoolId].activityLogs],
-            };
-        }
-        return newData;
-    });
-  }, [user, role]);
-
   const schoolId = useMemo(() => {
     if (role === 'GlobalAdmin') return null;
     return authSchoolId;
@@ -223,27 +223,26 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const schoolData = useMemo(() => {
     if (!data) return null;
-    if (role === 'GlobalAdmin') return data.northwood;
-    if (!schoolId) return null;
+    if (!schoolId) return data.northwood; // Default to a master record for GlobalAdmin if needed
     return data[schoolId];
-  }, [schoolId, data, role]);
-  
-  const schoolGroups = useMemo(() => {
-    return data?.['northwood']?.schoolGroups || {};
-  }, [data]);
+  }, [schoolId, data]);
   
   const allStudents = useMemo(() => {
     if (!data) return [];
     return Object.values(data).flatMap(d => d.students.map(s => ({...s, schoolName: d.profile.name, schoolId: d.profile.id })))
   }, [data]);
-
+  
   const studentsData = useMemo(() => {
-    if (role === 'Parent' && user?.email && allStudents.length > 0) {
+    if (role === 'Parent' && user?.email) {
       return allStudents.filter(student => student.parentEmail === user.email);
     }
     return schoolData?.students || [];
   }, [role, user, schoolData, allStudents]);
-  
+
+  const schoolGroups = useMemo(() => {
+    return data?.['northwood']?.schoolGroups || {};
+  }, [data]);
+
   const addSchool = (newSchoolData: SchoolData) => {
     setData(prev => {
         if (!prev) return { [newSchoolData.profile.id]: newSchoolData };
@@ -1032,6 +1031,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             const parentStudentIds = allStudents.filter(s => s.parentEmail === user.email).map(s => s.id);
             return Object.values(data).flatMap(d => d.grades.filter(g => parentStudentIds.includes(g.studentId)));
         }
+        if(role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.grades);
         return schoolData?.grades || [];
     }, [schoolData, data, role, user, allStudents]),
     attendance: useMemo(() => {
@@ -1040,6 +1040,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             const parentStudentIds = allStudents.filter(s => s.parentEmail === user.email).map(s => s.id);
             return Object.values(data).flatMap(d => d.attendance.filter(a => parentStudentIds.includes(a.studentId)));
         }
+        if(role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.attendance);
         return schoolData?.attendance || [];
     }, [schoolData, data, role, user, allStudents]),
     events: useMemo(() => {
@@ -1047,15 +1048,21 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         if (role === 'Parent' || role === 'Student') {
             return Object.values(data).flatMap(d => d.events.map(e => ({...e, schoolName: d.profile.name})));
         }
+        if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.events);
         return schoolData?.events || [];
     }, [schoolData, data, role]),
-    expensesData: schoolData?.expenses || [],
+    expensesData: useMemo(() => {
+        if(!data) return [];
+        if(role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.expenses);
+        return schoolData?.expenses || [];
+    }, [schoolData, data, role]),
     teamsData: useMemo(() => {
         if (!data || !user) return [];
         if (role === 'Parent') {
             const parentStudentIds = allStudents.filter(s => s.parentEmail === user.email).map(s => s.id);
             return Object.values(data).flatMap(d => d.teams.filter(t => t.playerIds.some(pId => parentStudentIds.includes(pId))));
         }
+        if(role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.teams);
         return schoolData?.teams || [];
     }, [schoolData, data, role, user, allStudents]),
     competitionsData: useMemo(() => {
@@ -1064,6 +1071,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
              const parentTeamIds = Object.values(data).flatMap(d => d.teams.filter(t => t.playerIds.some(pId => allStudents.filter(s => s.parentEmail === user.email).map(s => s.id).includes(pId)))).map(t => t.id);
             return Object.values(data).flatMap(d => d.competitions.filter(c => parentTeamIds.includes(c.ourTeamId)));
         }
+        if(role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.competitions);
         return schoolData?.competitions || [];
     }, [schoolData, data, role, user, allStudents]),
     kioskMedia: schoolData?.kioskMedia || [],
