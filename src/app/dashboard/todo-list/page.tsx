@@ -54,6 +54,10 @@ const completedTasks = [
   'Implemented full CRUD operations for Teachers and Classes management modules.',
   'Connected all core modules (Teachers, Classes, Admissions, Finance, Sports, etc.) to a persistent Firebase backend.',
   'Grouped all functionalities into clear, collapsible sidebar categories.',
+  'Implemented nuanced, per-child AI feature tier-locking for parents.',
+  'Fixed all syntax and hydration errors reported by Next.js.',
+  'Implemented a full financial module for the System Owner (Pixel Digital Solutions).',
+  'Added pagination and advanced filtering to all financial tables.'
 ];
 
 const upcomingFeatures = [
@@ -137,7 +141,7 @@ export default function TodoListPage() {
           </CardHeader>
           <CardContent>
              <ul className="space-y-3">
-              {upcomingFeatures.map((task, index) => (
+              {upcomingFeatures.sort().map((task, index) => (
                 <li key={index} className="flex items-start gap-3">
                   <Circle className="h-5 w-5 text-accent mt-0.5 shrink-0" />
                   <span className="text-sm text-muted-foreground">{task}</span>
