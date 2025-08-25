@@ -1,3 +1,4 @@
+
 'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
@@ -86,7 +87,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (username: string, pass: string): Promise<LoginResult> => {
     // On login, always fetch the freshest user list from the database
     const firestoreUsers = await getUsersFromFirestore();
-    const userSource = Object.keys(firestoreUsers).length > 0 ? firestoreUsers : mockUsers;
+    // Merge firestore users with mock users to ensure all demo accounts are available
+    const userSource = { ...mockUsers, ...firestoreUsers };
 
     const userRecord = userSource[username];
     if (userRecord && userRecord.password === pass) {
@@ -137,10 +139,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     // Always fetch the freshest user list from the database before impersonating
-    let allUsers = await getUsersFromFirestore();
-    if (Object.keys(allUsers).length === 0) {
-      allUsers = mockUsers;
-    }
+    let firestoreUsers = await getUsersFromFirestore();
+    const allUsers = { ...mockUsers, ...firestoreUsers };
 
     const userRecord = Object.values(allUsers).find(u => 
         u.user.email === email && u.user.role === targetRole
