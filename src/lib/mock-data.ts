@@ -520,7 +520,7 @@ const northwoodData: SchoolData = {
         { id: 'G01', studentId: 'STU001', subject: 'Mathematics', grade: '18', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
         { id: 'G02', studentId: 'STU002', subject: 'Mathematics', grade: '14', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
         { id: 'G03', studentId: 'STU003', subject: 'History', grade: '16', date: new Date('2024-04-10T00:00:00Z'), type: 'Coursework', description: 'WWII Essay', teacherId: 'T02' },
-        { id: 'G04', studentId: 'STU202', subject: 'History', grade: '19', date: new Date('2024-05-01T00:00:00Z'), type: 'Coursework', description: 'Cold War Presentation', teacherId: 'T02' },
+        { id: 'G14', studentId: 'STU202', subject: 'Science', grade: '16', date: new Date('2024-04-12T00:00:00Z'), type: 'Test', description: 'Biology Mid-Term', teacherId: 'T12' },
     ],
     finance: [
         { id: 'FIN01', studentId: 'STU001', studentName: 'Miguel Santos', description: 'Term 1 Tuition', totalAmount: 50000, amountPaid: 50000, dueDate: '2024-02-01', status: 'Paid' },
@@ -589,7 +589,6 @@ const maplewoodData: SchoolData = {
         { id: 'G11', studentId: 'STU101', subject: 'English', grade: '19', date: new Date('2024-04-01T00:00:00Z'), type: 'Coursework', description: 'Shakespeare Essay', teacherId: 'T11' },
         { id: 'G12', studentId: 'STU102', subject: 'English', grade: '15', date: new Date('2024-04-01T00:00:00Z'), type: 'Coursework', description: 'Shakespeare Essay', teacherId: 'T11' },
         { id: 'G13', studentId: 'STU201', subject: 'Science', grade: '11', date: new Date('2024-04-05T00:00:00Z'), type: 'Test', description: 'Lab Safety Quiz', teacherId: 'T12' },
-        { id: 'G14', studentId: 'STU202', subject: 'Science', grade: '16', date: new Date('2024-04-12T00:00:00Z'), type: 'Test', description: 'Biology Mid-Term', teacherId: 'T12' },
     ],
     finance: [
         { id: 'FIN11', studentId: 'STU101', studentName: 'Sofia Oliveira', description: 'Annual Fees', totalAmount: 85000, amountPaid: 85000, dueDate: '2024-01-30', status: 'Paid' },
