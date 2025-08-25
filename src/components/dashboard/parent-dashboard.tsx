@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
@@ -165,7 +166,7 @@ function NewApplicationDialog() {
         });
     }
 
-    form.reset({ applicationType: 'new' });
+    form.reset({ applicationType: 'new', name: '', sex: undefined, schoolId: '', appliedFor: '', formerSchool: '', gradesSummary: '', idUrl: '', photoUrl: '', reportUrl: '', transferGrade: '', transferSchoolId: '', transferStudentId: '', reasonForTransfer: '' });
     setIsDialogOpen(false);
   }
 
