@@ -1,4 +1,5 @@
 
+
 import { type Role } from "@/context/auth-context";
 
 // --- CORE DATA STRUCTURES ---
@@ -143,6 +144,7 @@ export interface Admission {
     studentIdToTransfer?: string;
     fromSchoolId?: string;
     reasonForTransfer?: string;
+    transferGrade?: string;
 }
 
 export interface FinanceRecord {
@@ -374,6 +376,7 @@ export interface NewAdmissionData {
   studentIdToTransfer?: string;
   fromSchoolId?: string;
   reasonForTransfer?: string;
+  transferGrade?: string;
 }
 
 export interface NewSchoolData {

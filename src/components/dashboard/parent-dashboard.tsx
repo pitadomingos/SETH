@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
@@ -52,6 +53,7 @@ const applicationSchema = z.object({
   transferStudentId: z.string().optional(),
   transferSchoolId: z.string().optional(),
   reasonForTransfer: z.string().optional(),
+  transferGrade: z.string().optional(),
 }).refine(data => {
     if (data.applicationType === 'new') {
         return !!data.schoolId && !!data.name && !!data.dateOfBirth && !!data.sex && !!data.appliedFor && !!data.formerSchool;
@@ -60,10 +62,11 @@ const applicationSchema = z.object({
 }, { message: "Please fill all required fields for a new applicant." })
 .refine(data => {
     if (data.applicationType === 'transfer') {
-        return !!data.transferStudentId && !!data.transferSchoolId && !!data.reasonForTransfer && data.reasonForTransfer.length > 10;
+        return !!data.transferStudentId && !!data.transferSchoolId && !!data.reasonForTransfer && data.reasonForTransfer.length > 10 && !!data.transferGrade;
     }
     return true;
-}, { message: "Please select a student, a school, and provide a reason for transfer (min 10 characters).", path: ["reasonForTransfer"] });
+}, { message: "Please select a student, a school, a grade, and provide a reason for transfer (min 10 characters).", path: ["reasonForTransfer"] });
+
 
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
@@ -130,12 +133,13 @@ function NewApplicationDialog() {
             name: student.name,
             dateOfBirth: student.dateOfBirth,
             sex: student.sex,
-            appliedFor: `Grade ${student.grade}`, // Assume same grade for transfer
+            appliedFor: values.transferGrade!,
             formerSchool: student.schoolName!,
             gradesSummary: 'Records are available in the EduDesk network.',
             fromSchoolId: student.schoolId,
             studentIdToTransfer: student.id,
             reasonForTransfer: values.reasonForTransfer,
+            transferGrade: values.transferGrade,
         });
         toast({
             title: 'Transfer Request Submitted',
@@ -215,6 +219,9 @@ function NewApplicationDialog() {
                          </FormItem>
                     )}/>
                      <FormField control={form.control} name="transferSchoolId" render={({ field }) => ( <FormItem><FormLabel>New School</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select School to Transfer To" /></SelectTrigger></FormControl><SelectContent>{schoolList.map(school => <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+                      <FormField control={form.control} name="transferGrade" render={({ field }) => (
+                        <FormItem><FormLabel>Transferring to Grade</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select Grade" /></SelectTrigger></FormControl><SelectContent>{Array.from({ length: 12 }, (_, i) => i + 1).map(g => <SelectItem key={g} value={`Grade ${g}`}>Grade {g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                    )} />
                      <FormField control={form.control} name="reasonForTransfer" render={({ field }) => ( <FormItem><FormLabel>Reason for Transfer</FormLabel><FormControl><Textarea placeholder="Please provide a brief reason for the transfer request..." {...field} /></FormControl><FormMessage /></FormItem> )} />
                      <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md border">
                         <p>All academic and financial records for the selected student will be made available to the new school upon approval of this transfer request.</p>
