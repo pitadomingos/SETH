@@ -1,18 +1,18 @@
-
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Building, Users, Presentation, Settings, Search, PlusCircle } from 'lucide-react';
+import { Loader2, Building, Users, Presentation, Settings, Search, PlusCircle, LogIn } from 'lucide-react';
 import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from '@/components/ui/dropdown-menu';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { NewSchoolDialog, EditSchoolDialog, DeleteSchoolDialog } from '@/components/global-admin/new-school-dialog';
+import { mockUsers } from '@/lib/mock-data';
 
 export default function ManageSchoolsPage() {
   const { role, user, isLoading: authLoading, impersonateUser } = useAuth();
@@ -44,17 +44,8 @@ export default function ManageSchoolsPage() {
     );
   }, [schoolsToDisplay, searchTerm]);
   
-  const handleManageSchool = (schoolId: string) => {
-    const school = allSchoolData?.[schoolId];
-    if (school?.profile?.email) {
-        impersonateUser(school.profile.email, 'Admin');
-    } else {
-        toast({
-            variant: 'destructive',
-            title: "Operation Failed",
-            description: `Could not find an administrator for this school.`,
-        });
-    }
+  const handleImpersonate = (email: string, role: any) => {
+    impersonateUser(email, role);
   };
   
   const handleStatusChange = (schoolId: string, status: SchoolProfile['status']) => {
@@ -107,7 +98,9 @@ export default function ManageSchoolsPage() {
       </div>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredSchools.map(school => (
+        {filteredSchools.map(school => {
+            const schoolUsers = Object.values(mockUsers).filter(u => u.user.schoolId === school.profile.id && u.user.role !== 'Student' && u.user.role !== 'Parent');
+            return (
             <Card key={school.profile.id}>
                 <CardHeader>
                     <div className="flex items-start justify-between gap-4">
@@ -150,17 +143,39 @@ export default function ManageSchoolsPage() {
                     </div>
                 </CardContent>
                 <CardFooter className="flex justify-between items-center">
-                    <Button variant="outline" className="w-full" onClick={() => handleManageSchool(school.profile.id)}>
-                        <Settings className="mr-2 h-4 w-4" />
-                        Manage School
-                    </Button>
-                    <div className="flex">
-                        <EditSchoolDialog school={school.profile} />
-                        <DeleteSchoolDialog schoolId={school.profile.id} schoolName={school.profile.name} removeSchool={removeSchool} />
+                    <div className="flex w-full justify-between items-center">
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="w-full">
+                                    <Settings className="mr-2 h-4 w-4" />
+                                    Manage
+                                </Button>
+                            </DropdownMenuTrigger>
+                             <DropdownMenuContent>
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger>
+                                        <LogIn className="mr-2 h-4 w-4" />
+                                        <span>Impersonate User</span>
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
+                                        {schoolUsers.map(u => (
+                                             <DropdownMenuItem key={u.user.email} onClick={() => handleImpersonate(u.user.email, u.user.role)}>
+                                                {u.user.name} ({u.user.role})
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                                <DropdownMenuSeparator />
+                                <EditSchoolDialog school={school.profile} />
+                                <DeleteSchoolDialog schoolId={school.profile.id} schoolName={school.profile.name} removeSchool={removeSchool} />
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </CardFooter>
             </Card>
-        ))}
+        )})}
         {filteredSchools.length === 0 && (
           <p className="text-muted-foreground col-span-full text-center py-10">No schools found matching your search.</p>
         )}

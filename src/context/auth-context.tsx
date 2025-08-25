@@ -1,5 +1,3 @@
-
-
 'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
@@ -130,7 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUsers(prev => ({...prev, [username]: profile }));
   }
   
-  const impersonateUser = async (email: string, targetRole?: Role) => {
+  const impersonateUser = async (email: string, targetRole: Role) => {
     if (!user) return;
 
     if (!sessionStorage.getItem('originalUser')) {
@@ -145,8 +143,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const userRecord = Object.values(allUsers).find(u => 
-        u.user.email === email && 
-        (targetRole ? u.user.role === targetRole : true)
+        u.user.email === email && u.user.role === targetRole
     );
     
     if (userRecord) {
