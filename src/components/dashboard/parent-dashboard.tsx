@@ -142,7 +142,7 @@ function NewApplicationDialog() {
     }
 
     form.reset({ applicationType: 'new' });
-    setIsOpen(false);
+    setIsDialogOpen(false);
   }
 
   const schoolList = allSchoolData ? Object.values(allSchoolData).map(s => s.profile) : [];
@@ -154,7 +154,7 @@ function NewApplicationDialog() {
   };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
         <Button><UserPlus className="mr-2 h-4 w-4" /> New Application</Button>
       </DialogTrigger>
