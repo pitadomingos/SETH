@@ -1,3 +1,4 @@
+
 'use client';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabus, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, SchoolProfile, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, mockUsers, UserProfile, SyllabusTopic, BehavioralAssessment } from '@/lib/mock-data';
@@ -486,14 +487,17 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const addAsset = async (asset: Omit<any, 'id'>) => {
-      if (!schoolId) return { success: false, error: 'School ID not found.'};
-      const result = await addAssetAction(schoolId, asset);
+      const targetSchoolId = role === 'GlobalAdmin' ? 'northwood' : schoolId;
+      if (!targetSchoolId) return { success: false, error: 'School ID not found.'};
+      
+      const result = await addAssetAction(targetSchoolId, asset);
+      
       if (result.success && result.asset) {
         setData(prev => {
             if (!prev) return null;
             const newData = { ...prev };
-            newData[schoolId].assets.push(result.asset!);
-            addLog(schoolId, 'Create', `Added new asset: ${asset.name}`);
+            newData[targetSchoolId].assets.push(result.asset!);
+            addLog(targetSchoolId, 'Create', `Added new asset: ${asset.name}`);
             return newData;
         });
         return { success: true };
@@ -609,14 +613,15 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addExpense = async (expense: Omit<Expense, 'id'>) => {
-    if(!schoolId) return;
-    const result = await addExpenseAction(schoolId, expense);
+    const targetSchoolId = role === 'GlobalAdmin' ? 'northwood' : schoolId;
+    if(!targetSchoolId) return;
+    const result = await addExpenseAction(targetSchoolId, expense);
     if(result.success && result.expense) {
         setData(prev => {
           if (!prev) return null;
           const newData = { ...prev };
-          newData[schoolId].expenses.push(result.expense!);
-          addLog(schoolId, 'Create', `Added expense: ${expense.description}`);
+          newData[targetSchoolId].expenses.push(result.expense!);
+          addLog(targetSchoolId, 'Create', `Added expense: ${expense.description}`);
           return newData;
       });
     }
@@ -730,6 +735,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             const school = newData[schoolId];
             school.students = school.students.map(s => {
                 if(s.id === assessment.studentId) {
+                    if(!s.behavioralAssessments) s.behavioralAssessments = [];
                     s.behavioralAssessments.push(result.assessment!);
                 }
                 return s;
