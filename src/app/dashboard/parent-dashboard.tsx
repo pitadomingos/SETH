@@ -51,6 +51,13 @@ function NewApplicationDialog() {
 
   const form = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema),
+    defaultValues: {
+      schoolId: '',
+      name: '',
+      appliedFor: '',
+      formerSchool: '',
+      gradesSummary: '',
+    },
   });
 
   const selectedSchoolId = form.watch('schoolId');
