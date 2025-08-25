@@ -520,7 +520,8 @@ const northwoodData: SchoolData = {
         { id: 'G01', studentId: 'STU001', subject: 'Mathematics', grade: '18', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
         { id: 'G02', studentId: 'STU002', subject: 'Mathematics', grade: '14', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
         { id: 'G03', studentId: 'STU003', subject: 'History', grade: '16', date: new Date('2024-04-10T00:00:00Z'), type: 'Coursework', description: 'WWII Essay', teacherId: 'T02' },
-        { id: 'G14', studentId: 'STU202', subject: 'Science', grade: '16', date: new Date('2024-04-12T00:00:00Z'), type: 'Test', description: 'Biology Mid-Term', teacherId: 'T12' },
+        { id: 'G14', studentId: 'STU202', subject: 'Science', grade: '12', date: new Date('2024-04-12T00:00:00Z'), type: 'Test', description: 'Biology Mid-Term', teacherId: 'T12' },
+        { id: 'G15', studentId: 'STU202', subject: 'History', grade: '17', date: new Date('2024-03-10T00:00:00Z'), type: 'Coursework', description: 'Ancient Civilizations Essay', teacherId: 'T02' }
     ],
     finance: [
         { id: 'FIN01', studentId: 'STU001', studentName: 'Miguel Santos', description: 'Term 1 Tuition', totalAmount: 50000, amountPaid: 50000, dueDate: '2024-02-01', status: 'Paid' },
@@ -569,7 +570,7 @@ const maplewoodData: SchoolData = {
         { id: 'STU101', name: 'Sofia Oliveira', email: 'sofia.oliveira@maplewood.edu', phone: '820000101', address: 'Rua do Comércio', sex: 'Female', dateOfBirth: '2007-11-22', grade: '11', class: 'A', parentName: 'Rui Oliveira', parentEmail: 'rui.oliveira@email.com', status: 'Active', behavioralAssessments: [] },
         { id: 'STU102', name: 'Diogo Costa', email: 'diogo.costa@maplewood.edu', phone: '820000102', address: 'Av. do Trabalho', sex: 'Male', dateOfBirth: '2007-03-30', grade: '11', class: 'A', parentName: 'Mariana Costa', parentEmail: 'mariana.costa@email.com', status: 'Active', behavioralAssessments: [] },
         { id: 'STU201', name: 'Lucia Santos', email: 'lucia.santos@maplewood.edu', phone: '840000201', address: 'Rua de Kassuende', sex: 'Female', dateOfBirth: '2010-02-12', grade: '8', class: 'B', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] },
-        { id: 'STU202', name: 'Pedro Santos', email: 'pedro.santos@maplewood.edu', phone: '840000202', address: 'Rua de Kassuende', sex: 'Male', dateOfBirth: '2009-07-05', grade: '9', class: 'C', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Transferred', behavioralAssessments: [] }
+        { id: 'STU202', name: 'Pedro Santos', email: 'pedro.santos@maplewood.edu', phone: '840000202', address: 'Rua de Kassuende', sex: 'Male', dateOfBirth: '2009-07-05', grade: '9', class: 'C', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] }
     ],
     teachers: [
         { id: 'T11', name: 'Laura Ferreira', email: 'laura.ferreira@maplewood.edu', phone: '840000011', address: 'Bairro do Jardim', sex: 'Female', subject: 'English', experience: '12 years', qualifications: 'Ph.D. English Literature', status: 'Active' },
@@ -638,6 +639,7 @@ const miniArteData: SchoolData = {
 
 const miniArteMatolaData: SchoolData = {
   ...miniArteData,
+  students: [ { id: 'STU301', name: 'Julio Silva', email: 'julio.silva@miniarte.edu', phone: '860000301', address: 'Bairro Tsalala', sex: 'Male', dateOfBirth: '2012-09-01', grade: '6', class: 'A', parentName: 'Fernanda Silva', parentEmail: 'fernanda.silva@email.com', status: 'Active', behavioralAssessments: [] }],
   profile: {
     ...miniArteData.profile,
     id: 'miniarte_matola',
@@ -655,6 +657,7 @@ const miniArteMatolaData: SchoolData = {
 
 const miniArteBeiraData: SchoolData = {
   ...miniArteData,
+  students: [{ id: 'STU401', name: 'Mariana Lopes', email: 'mariana.lopes@miniarte.edu', phone: '860000401', address: 'Bairro da Ponta Gêa', sex: 'Female', dateOfBirth: '2011-12-25', grade: '7', class: 'A', parentName: 'Sérgio Lopes', parentEmail: 'sergio.lopes@email.com', status: 'Active', behavioralAssessments: [] }],
   profile: {
     ...miniArteData.profile,
     id: 'miniarte_beira',
@@ -677,3 +680,4 @@ export const initialSchoolData: Record<string, SchoolData> = {
     'miniarte_matola': miniArteMatolaData,
     'miniarte_beira': miniArteBeiraData,
 };
+
