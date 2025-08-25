@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Database, Layers, Cloud, KeyRound, Server, UploadCloud, GitBranch, FolderTree, Puzzle, UserCheck, BrainCircuit, Download, Trophy, DollarSign, LifeBuoy, Lightbulb, TrendingUp } from 'lucide-react';
+import { Loader2, Database, Layers, Cloud, KeyRound, Server, UploadCloud, GitBranch, FolderTree, Puzzle, UserCheck, BrainCircuit, Download, Trophy, DollarSign, LifeBuoy, Lightbulb, TrendingUp, BookCopy, Award, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound as KeyRoundIcon, MonitorPlay, Users } from 'lucide-react';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -149,7 +149,7 @@ export default function SystemDocumentationPage() {
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
             <div className="flex items-start gap-3">
-                <KeyRound className="h-4 w-4 text-accent mt-1 shrink-0" />
+                <KeyRoundIcon className="h-4 w-4 text-accent mt-1 shrink-0" />
                 <div>
                     <h4 className="font-semibold text-card-foreground">1. Firebase Authentication</h4>
                     <p className="text-muted-foreground">Manages all user identities, sessions, and provides the foundation for role-based access control. All user profiles are stored in Firestore.</p>
