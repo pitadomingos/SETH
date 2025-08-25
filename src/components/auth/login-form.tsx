@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -24,7 +23,7 @@ const formSchema = z.object({
 type LoginFormValues = z.infer<typeof formSchema>;
 
 export function LoginForm() {
-  const { login, mockUsers } = useAuth();
+  const { login } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -53,8 +52,6 @@ export function LoginForm() {
       setIsLoggingIn(false);
     }
   }
-  
-  const demoUsers = mockUsers ? Object.values(mockUsers) : [];
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
@@ -100,23 +97,25 @@ export function LoginForm() {
               {isLoggingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
-            {demoUsers.length > 0 && (
-              <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="item-1">
-                      <AccordionTrigger className="text-sm text-muted-foreground">View Demo Credentials</AccordionTrigger>
-                      <AccordionContent>
-                          <ul className="space-y-1 text-xs text-muted-foreground">
-                              {demoUsers.map(({ user, password }) => (
-                                  <li key={user.username} className="flex justify-between">
-                                      <span className="font-semibold">{user.role}:</span>
-                                      <span>{user.username} / {password}</span>
-                                  </li>
-                              ))}
-                          </ul>
-                      </AccordionContent>
-                  </AccordionItem>
-              </Accordion>
-            )}
+            <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="item-1">
+                    <AccordionTrigger className="text-sm text-muted-foreground">View Demo Credentials</AccordionTrigger>
+                    <AccordionContent>
+                        <ul className="space-y-1 text-xs text-muted-foreground">
+                            <li className="flex justify-between"><span className="font-semibold">Global Admin:</span> <span>developer / password</span></li>
+                            <li className="flex justify-between"><span className="font-semibold">Premium Admin (MiniArte):</span> <span>admin3 / password</span></li>
+                            <li className="flex justify-between"><span className="font-semibold">Northwood Admin:</span> <span>admin1 / password</span></li>
+                            <li className="flex justify-between"><span className="font-semibold">Maplewood Admin:</span> <span>admin2 / password</span></li>
+                            <li className="flex justify-between"><span className="font-semibold">Northwood Teacher:</span> <span>teacher1 / password</span></li>
+                            <li className="flex justify-between"><span className="font-semibold">Maplewood Teacher:</span> <span>teacher2 / password</span></li>
+                            <li className="flex justify-between"><span className="font-semibold">Northwood Student:</span> <span>student1 / password</span></li>
+                            <li className="flex justify-between"><span className="font-semibold">Maplewood Student:</span> <span>student2 / password</span></li>
+                            <li className="flex justify-between"><span className="font-semibold">Northwood Parent:</span> <span>parent1 / password</span></li>
+                            <li className="flex justify-between"><span className="font-semibold">Maplewood Parent:</span> <span>parent2 / password</span></li>
+                        </ul>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
           </CardFooter>
         </form>
       </Form>
