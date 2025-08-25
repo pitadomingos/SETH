@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useSchoolData, FinanceRecord } from '@/context/school-data-context';
+import { useSchoolData, FinanceRecord, Student } from '@/context/school-data-context';
 import { DollarSign, TrendingDown, Hourglass, PlusCircle, Loader2, CreditCard, Receipt, Calendar as CalendarIcon, Eye, BarChart2, Search, ArrowUpCircle, ArrowDownCircle, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
@@ -18,12 +18,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfQuarter, subMonths } from 'date-fns';
 import { cn, formatCurrency } from '@/lib/utils';
 import Image from 'next/image';
 import { Bar, BarChart } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 
 
 // --- Schemas ---
@@ -147,28 +148,32 @@ function BalanceSheetDialog({ financeData, expensesData, schoolProfile }) {
   return (
     <Dialog>
       <DialogTrigger asChild><Button variant="secondary"><Printer className="mr-2 h-4 w-4" /> Print Balance Sheet</Button></DialogTrigger>
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-xl print-content">
+        <DialogHeader className="print-hidden">
           <DialogTitle>Financial Balance Sheet</DialogTitle>
           <DialogDescription>A summary of the school's financial position as of {format(new Date(), 'PPP')}.</DialogDescription>
         </DialogHeader>
-        <div className="py-4 space-y-4">
-          <Table>
-            <TableHeader><TableRow><TableHead>Account</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
-            <TableBody>
-              <TableRow><TableCell className="font-medium text-green-600">Total Revenue (Fees)</TableCell><TableCell className="text-right text-green-600">{formatCurrency(totalRevenue, schoolProfile?.currency)}</TableCell></TableRow>
-              <TableRow><TableCell className="font-medium text-green-600">Other Income</TableCell><TableCell className="text-right text-green-600">{formatCurrency(totalOtherIncome, schoolProfile?.currency)}</TableCell></TableRow>
-              <TableRow><TableCell className="font-medium text-red-600">Total Expenses</TableCell><TableCell className="text-right text-red-600">{formatCurrency(totalExpenses, schoolProfile?.currency)}</TableCell></TableRow>
-              <TableRow className="bg-muted"><TableCell className="font-bold">Net Balance</TableCell><TableCell className={`text-right font-bold ${netBalance >= 0 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(netBalance, schoolProfile?.currency)}</TableCell></TableRow>
-            </TableBody>
-          </Table>
+         <div className="py-4 space-y-4">
+            <div className="text-center print-only mb-6">
+              <h3 className="text-xl font-bold">{schoolProfile?.name}</h3>
+              <p>Financial Balance Sheet</p>
+              <p className="text-sm text-muted-foreground">As of {format(new Date(), 'PPP')}</p>
+            </div>
+            <Table>
+                <TableHeader><TableRow><TableHead>Account</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+                <TableBody>
+                <TableRow><TableCell className="font-medium text-green-600">Total Revenue (Fees)</TableCell><TableCell className="text-right text-green-600">{formatCurrency(totalRevenue, schoolProfile?.currency)}</TableCell></TableRow>
+                <TableRow><TableCell className="font-medium text-green-600">Other Income</TableCell><TableCell className="text-right text-green-600">{formatCurrency(totalOtherIncome, schoolProfile?.currency)}</TableCell></TableRow>
+                <TableRow><TableCell className="font-medium text-red-600">Total Expenses</TableCell><TableCell className="text-right text-red-600">{formatCurrency(totalExpenses, schoolProfile?.currency)}</TableCell></TableRow>
+                <TableRow className="bg-muted"><TableCell className="font-bold">Net Balance</TableCell><TableCell className={`text-right font-bold ${netBalance >= 0 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(netBalance, schoolProfile?.currency)}</TableCell></TableRow>
+                </TableBody>
+            </Table>
         </div>
-        <DialogFooter><Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Print</Button></DialogFooter>
+        <DialogFooter className="print-hidden"><Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Print</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-
 
 const PAGE_SIZE = 10;
 const getStatusInfo = (fee: FinanceRecord) => { 
@@ -239,7 +244,7 @@ function AdminFinanceView() {
             </CardHeader>
             <CardContent><Table><TableHeader><TableRow><TableHead>Student</TableHead><TableHead>Description</TableHead><TableHead className="text-right">Balance</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
             <TableBody>
-                {paginatedFees.length > 0 ? (
+              {paginatedFees.length > 0 ? (
                   paginatedFees.map(item => {
                     const balance = item.totalAmount - item.amountPaid;
                     const status = getStatusInfo(item);
@@ -256,7 +261,7 @@ function AdminFinanceView() {
                 ) : (
                   <TableRow><TableCell colSpan={5} className="h-24 text-center">No records found matching your search.</TableCell></TableRow>
                 )}
-              </TableBody>
+            </TableBody>
             </Table></CardContent>
             {totalFeePages > 1 && (<CardFooter className="flex items-center justify-end space-x-2 border-t pt-4"><span className="text-sm text-muted-foreground">Page {feeCurrentPage} of {totalFeePages}</span><Button variant="outline" size="sm" onClick={() => setFeeCurrentPage(p => Math.max(p - 1, 1))} disabled={feeCurrentPage === 1}><ChevronLeft className="h-4 w-4" /> Previous</Button><Button variant="outline" size="sm" onClick={() => setFeeCurrentPage(p => Math.min(p + 1, totalFeePages))} disabled={feeCurrentPage === totalFeePages}>Next <ChevronRight className="h-4 w-4" /></Button></CardFooter>)}
         </Card></TabsContent>
@@ -264,7 +269,7 @@ function AdminFinanceView() {
             <CardHeader><CardTitle>Income &amp; Expense Ledger</CardTitle><CardDescription>A log of all miscellaneous income and expenses.</CardDescription><div className="relative pt-4"><Search className="absolute left-2.5 top-6.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Search by description or category..." className="w-full rounded-lg bg-background pl-8 md:w-[300px]" value={expenseSearchTerm} onChange={(e) => setExpenseSearchTerm(e.target.value)}/></div></CardHeader>
             <CardContent><Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Description</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Amount</TableHead><TableHead className="text-center">Proof</TableHead></TableRow></TableHeader>
             <TableBody>
-                {paginatedLedger.length > 0 ? (
+                 {paginatedLedger.length > 0 ? (
                   paginatedLedger.map(expense => (
                     <TableRow key={expense.id}>
                       <TableCell>{expense.date}</TableCell>
@@ -278,7 +283,7 @@ function AdminFinanceView() {
                 ) : (
                   <TableRow><TableCell colSpan={6} className="h-24 text-center">No records found matching your search.</TableCell></TableRow>
                 )}
-              </TableBody>
+            </TableBody>
             </Table></CardContent>
             {totalLedgerPages > 1 && (<CardFooter className="flex items-center justify-end space-x-2 border-t pt-4"><span className="text-sm text-muted-foreground">Page {ledgerCurrentPage} of {totalLedgerPages}</span><Button variant="outline" size="sm" onClick={() => setLedgerCurrentPage(p => Math.max(p - 1, 1))} disabled={ledgerCurrentPage === 1}><ChevronLeft className="h-4 w-4" /> Previous</Button><Button variant="outline" size="sm" onClick={() => setLedgerCurrentPage(p => Math.min(p + 1, totalLedgerPages))} disabled={ledgerCurrentPage === totalLedgerPages}>Next <ChevronRight className="h-4 w-4" /></Button></CardFooter>)}
         </Card></TabsContent>
@@ -287,12 +292,123 @@ function AdminFinanceView() {
   );
 }
 
+function PrintStatementDialog({ student, fees, schoolProfile, user }) {
+  const handlePrint = () => window.print();
+
+  const totalBilled = fees.reduce((acc, fee) => acc + fee.totalAmount, 0);
+  const totalPaid = fees.reduce((acc, fee) => acc + fee.amountPaid, 0);
+  const balanceDue = totalBilled - totalPaid;
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild><Button variant="outline"><Printer className="mr-2 h-4 w-4" /> Print Statement</Button></DialogTrigger>
+      <DialogContent className="max-w-2xl print-content">
+        <DialogHeader className="print-hidden">
+          <DialogTitle>Family Fee Statement</DialogTitle>
+          <DialogDescription>A printable summary of all fees for {student.name}.</DialogDescription>
+        </DialogHeader>
+        <div className="py-4 space-y-6">
+          <div className="flex justify-between items-start">
+              <div className="flex items-center gap-4">
+                  <Image src={schoolProfile?.logoUrl || "https://placehold.co/100x100.png"} alt="School Logo" width={64} height={64} data-ai-hint="school logo"/>
+                  <div>
+                      <h3 className="text-lg font-bold">{schoolProfile?.name}</h3>
+                      <p className="text-xs text-muted-foreground">{schoolProfile?.address}</p>
+                  </div>
+              </div>
+              <div className="text-right">
+                  <h4 className="font-semibold">Fee Statement</h4>
+                  <p className="text-xs text-muted-foreground">Date: {format(new Date(), 'PPP')}</p>
+              </div>
+          </div>
+          <Separator />
+          <div className="text-sm">
+            <p><strong>To:</strong> {user?.name}</p>
+            <p><strong>For Student:</strong> {student.name}</p>
+          </div>
+          <Table>
+            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Description</TableHead><TableHead className="text-right">Billed</TableHead><TableHead className="text-right">Paid</TableHead><TableHead className="text-right">Balance</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {fees.map(fee => (
+                <TableRow key={fee.id}>
+                  <TableCell>{fee.dueDate}</TableCell>
+                  <TableCell>{fee.description}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(fee.totalAmount, schoolProfile?.currency)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(fee.amountPaid, schoolProfile?.currency)}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(fee.totalAmount - fee.amountPaid, schoolProfile?.currency)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+            <TableFooter>
+                <TableRow><TableCell colSpan={4} className="text-right font-bold">Total Billed:</TableCell><TableCell className="text-right font-bold">{formatCurrency(totalBilled, schoolProfile?.currency)}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={4} className="text-right font-bold">Total Paid:</TableCell><TableCell className="text-right font-bold">{formatCurrency(totalPaid, schoolProfile?.currency)}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={4} className="text-right font-bold text-lg">Balance Due:</TableCell><TableCell className="text-right font-bold text-lg">{formatCurrency(balanceDue, schoolProfile?.currency)}</TableCell></TableRow>
+            </TableFooter>
+          </Table>
+        </div>
+        <DialogFooter className="print-hidden"><Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Print</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ParentFinanceView() {
+    const { user } = useAuth();
     const { studentsData, financeData, schoolProfile } = useSchoolData();
+
+    const familyFees = useMemo(() => {
+        const studentIds = studentsData.map(s => s.id);
+        return financeData.filter(f => studentIds.includes(f.studentId));
+    }, [studentsData, financeData]);
+
     return (
-        <div className="space-y-6"><header><h2 className="text-3xl font-bold tracking-tight">Family Fee Portal</h2><p className="text-muted-foreground">Manage tuition and fee payments for your children.</p></header><Card><CardHeader><CardTitle>Fee Status per Child</CardTitle><CardDescription>An overview of current and upcoming fee payments for your family.</CardDescription></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Child's Name</TableHead><TableHead>Description</TableHead><TableHead className="text-right">Total Due</TableHead><TableHead className="text-right">Amount Paid</TableHead><TableHead className="text-right">Balance</TableHead><TableHead>Due Date</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{studentsData.map(child => { const feesForChild = financeData.filter(f => f.studentId === child.id); if (feesForChild.length === 0) { return ( <TableRow key={child.id}><TableCell className="font-medium">{child.name}</TableCell><TableCell colSpan={6} className="text-muted-foreground text-center">No fee information available for {child.name}</TableCell></TableRow> ); } return feesForChild.map(feeInfo => { const balance = feeInfo.totalAmount - feeInfo.amountPaid; const status = getStatusInfo(feeInfo); return ( <TableRow key={feeInfo.id}><TableCell className="font-medium">{child.name}</TableCell><TableCell>{feeInfo.description}</TableCell><TableCell className="text-right">{formatCurrency(feeInfo.totalAmount, schoolProfile?.currency)}</TableCell><TableCell className="text-right">{formatCurrency(feeInfo.amountPaid, schoolProfile?.currency)}</TableCell><TableCell className="text-right font-medium">{formatCurrency(balance, schoolProfile?.currency)}</TableCell><TableCell>{feeInfo.dueDate}</TableCell><TableCell><Badge variant={status.variant}>{status.text}</Badge></TableCell></TableRow> ); }); })}</TableBody></Table></CardContent></Card></div>
+        <div className="space-y-6">
+            <header className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">Family Fee Portal</h2>
+                    <p className="text-muted-foreground">Manage tuition and fee payments for your children.</p>
+                </div>
+                {studentsData.length > 0 && <PrintStatementDialog student={studentsData[0]} fees={familyFees} schoolProfile={schoolProfile} user={user} />}
+            </header>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Fee Status per Child</CardTitle>
+                    <CardDescription>An overview of current and upcoming fee payments for your family.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader><TableRow><TableHead>Child's Name</TableHead><TableHead>School</TableHead><TableHead>Description</TableHead><TableHead className="text-right">Total Due</TableHead><TableHead className="text-right">Amount Paid</TableHead><TableHead className="text-right">Balance</TableHead><TableHead>Due Date</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                            {familyFees.length > 0 ? (
+                                familyFees.map(feeInfo => {
+                                    const child = studentsData.find(c => c.id === feeInfo.studentId);
+                                    if (!child) return null;
+                                    const balance = feeInfo.totalAmount - feeInfo.amountPaid;
+                                    const status = getStatusInfo(feeInfo);
+                                    return (
+                                        <TableRow key={feeInfo.id}>
+                                            <TableCell className="font-medium">{child.name}</TableCell>
+                                            <TableCell>{child.schoolName}</TableCell>
+                                            <TableCell>{feeInfo.description}</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(feeInfo.totalAmount, schoolProfile?.currency)}</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(feeInfo.amountPaid, schoolProfile?.currency)}</TableCell>
+                                            <TableCell className="text-right font-medium">{formatCurrency(balance, schoolProfile?.currency)}</TableCell>
+                                            <TableCell>{feeInfo.dueDate}</TableCell>
+                                            <TableCell><Badge variant={status.variant}>{status.text}</Badge></TableCell>
+                                        </TableRow>
+                                    );
+                                })
+                            ) : (
+                                <TableRow><TableCell colSpan={8} className="text-center h-24">No fee information available for your family.</TableCell></TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
     );
 }
+
 
 export default function FinancePage() {
   const { role, isLoading } = useAuth();
@@ -302,4 +418,3 @@ export default function FinancePage() {
   if (isLoading || !isAuthorized) { return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
   return ( <div className="animate-in fade-in-50">{(role === 'Admin' || role === 'FinanceOfficer') && <AdminFinanceView />}{role === 'Parent' && <ParentFinanceView />}</div> );
 }
-

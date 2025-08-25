@@ -83,4 +83,21 @@
   [data-radix-accordion-item] {
     break-inside: avoid;
   }
+
+  .print-hidden {
+    display: none;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  body {
+    background-color: #fff;
+  }
+  
+  .print-content {
+    box-shadow: none;
+    border: none;
+  }
 }
