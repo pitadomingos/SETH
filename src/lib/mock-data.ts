@@ -1,4 +1,5 @@
 
+'use client';
 import { type Role } from "@/context/auth-context";
 
 // --- CORE DATA STRUCTURES ---
@@ -645,6 +646,7 @@ const miniArteMatolaData: SchoolData = {
         name: 'MiniArte Matola Campus',
         head: 'Isabel Rocha',
         address: 'Bairro Tsalala, Matola',
+        phone: '860000302',
         email: 'isabel.rocha@miniarte.edu',
         motto: 'Nurturing Young Artists',
         tier: 'Premium',
@@ -670,6 +672,7 @@ const miniArteBeiraData: SchoolData = {
         name: 'MiniArte Beira Campus',
         head: 'Pedro Gonçalves',
         address: 'Bairro da Ponta Gêa, Beira',
+        phone: '860000402',
         email: 'pedro.goncalves@miniarte.edu',
         motto: 'Artistry by the Sea',
         tier: 'Premium',
