@@ -432,6 +432,42 @@ export const mockUsers: Record<string, UserProfile> = {
     user: { username: 'student1', name: 'Miguel Santos', role: 'Student', email: 'miguel.santos@northwood.edu', schoolId: 'northwood' },
     password: 'password'
   },
+  ines_pereira: {
+    user: { username: 'ines_pereira', name: 'Inês Pereira', role: 'Student', email: 'ines.pereira@northwood.edu', schoolId: 'northwood' },
+    password: 'password'
+  },
+  tiago_rodrigues: {
+    user: { username: 'tiago_rodrigues', name: 'Tiago Rodrigues', role: 'Student', email: 'tiago.rodrigues@northwood.edu', schoolId: 'northwood' },
+    password: 'password'
+  },
+  lucia_santos: {
+    user: { username: 'lucia_santos', name: 'Lucia Santos', role: 'Student', email: 'lucia.santos@northwood.edu', schoolId: 'northwood' },
+    password: 'password'
+  },
+  pedro_santos: {
+    user: { username: 'pedro_santos', name: 'Pedro Santos', role: 'Student', email: 'pedro.santos@northwood.edu', schoolId: 'northwood' },
+    password: 'password'
+  },
+  julio_silva: {
+    user: { username: 'julio_silva', name: 'Julio Silva', role: 'Student', email: 'julio.silva@miniarte.edu', schoolId: 'miniarte_matola' },
+    password: 'password'
+  },
+  mariana_lopes: {
+    user: { username: 'mariana_lopes', name: 'Mariana Lopes', role: 'Student', email: 'mariana.lopes@miniarte.edu', schoolId: 'miniarte_beira' },
+    password: 'password'
+  },
+  laura_moreira: {
+    user: { username: 'laura_moreira', name: 'Laura Moreira', role: 'Student', email: 'laura.moreira@logix.edu', schoolId: 'logixsystems' },
+    password: 'password'
+  },
+  daniela_fernandes: {
+    user: { username: 'daniela_fernandes', name: 'Daniela Fernandes', role: 'Student', email: 'daniela.fernandes@plc.edu', schoolId: 'plc' },
+    password: 'password'
+  },
+  andre_ramos: {
+    user: { username: 'andre_ramos', name: 'Andre Ramos', role: 'Student', email: 'andre.ramos@trialschool.edu', schoolId: 'trialschool' },
+    password: 'password'
+  },
   parent1: {
     user: { username: 'parent1', name: 'Ana Santos', role: 'Parent', email: 'ana.santos@email.com' },
     password: 'password'
