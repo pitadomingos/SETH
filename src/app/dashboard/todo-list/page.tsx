@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2, Circle, Clock, Loader2, Download } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Loader2, Download, CloudCog } from 'lucide-react';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -70,8 +70,6 @@ const upcomingFeatures = [
   // Admin & Management Features
   'Implement batch user/class import for Admins (bulk upload).',
   'Create a flexible custom report generator for financial and academic data.',
-  'Develop list export (PDF/DOCX) for students, classes, and grades with custom branding.',
-  'Incorporate an approval workflow with history for financial transactions.',
   
   // Teacher Features
   'Enhance the grade entry system to support concepts, weights, and modules per national standards.',
@@ -86,6 +84,14 @@ const upcomingFeatures = [
   'Develop district, provincial, and national data views for higher-level administration.',
   'Validate and implement automatic data synchronization between accounts and profiles.',
 ];
+
+const placeholderFeatures = [
+  'Implement full Firebase Storage integration for all file uploads (profile pictures, admission documents, kiosk media, etc.) to replace current placeholder URLs.',
+  'Integrate a real email service provider (e.g., SendGrid, Mailgun) to replace the console-based email simulation for welcome emails and notifications.',
+  'Develop a server-side PDF generation service (e.g., using pdf-lib or a dedicated API) for creating branded, official documents like certificates, transcripts, and financial statements.',
+  'Build a dedicated, scalable notification system with read/unread status and user-specific targeting, replacing the current system which uses activity logs.',
+];
+
 
 export default function TodoListPage() {
   const { role, isLoading } = useAuth();
@@ -116,7 +122,7 @@ export default function TodoListPage() {
         <Button onClick={handlePrint}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
       </header>
       
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2 print:grid-cols-1">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><CheckCircle2 className="text-green-500" />Completed Tasks ({completedTasks.length})</CardTitle>
@@ -134,22 +140,41 @@ export default function TodoListPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Clock className="text-accent" />Upcoming Features ({upcomingFeatures.length})</CardTitle>
-            <CardDescription>The next set of features to be developed, based on stakeholder feedback and priorities.</CardDescription>
-          </CardHeader>
-          <CardContent>
-             <ul className="space-y-3">
-              {upcomingFeatures.sort().map((task, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <Circle className="h-5 w-5 text-accent mt-0.5 shrink-0" />
-                  <span className="text-sm text-muted-foreground">{task}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Clock className="text-accent" />Upcoming Features ({upcomingFeatures.length})</CardTitle>
+                <CardDescription>The next set of features to be developed, based on stakeholder feedback and priorities.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                 <ul className="space-y-3">
+                  {upcomingFeatures.sort().map((task, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <Circle className="h-5 w-5 text-accent mt-0.5 shrink-0" />
+                      <span className="text-sm text-muted-foreground">{task}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><CloudCog className="text-blue-500" />From Prototype to Production ({placeholderFeatures.length})</CardTitle>
+                <CardDescription>Placeholder features that require full backend implementation for a production launch.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                 <ul className="space-y-3">
+                  {placeholderFeatures.sort().map((task, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <CloudCog className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
+                      <span className="text-sm text-muted-foreground">{task}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+        </div>
       </div>
     </div>
   );
