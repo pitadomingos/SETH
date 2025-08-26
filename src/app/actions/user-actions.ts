@@ -1,3 +1,4 @@
+
 'use server';
 
 import { doc, updateDoc } from 'firebase/firestore';
@@ -6,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 
 export async function updateUserProfileAction(
   username: string,
-  data: { name?: string; phone?: string }
+  data: { name?: string; phone?: string; profilePictureUrl?: string }
 ) {
   try {
     const userRef = doc(db, 'users', username);
@@ -14,6 +15,7 @@ export async function updateUserProfileAction(
     const updateData: Record<string, string> = {};
     if (data.name) updateData['user.name'] = data.name;
     if (data.phone) updateData['user.phone'] = data.phone;
+    if (data.profilePictureUrl) updateData['user.profilePictureUrl'] = data.profilePictureUrl;
     
     if (Object.keys(updateData).length === 0) {
         return { success: true }; // Nothing to update

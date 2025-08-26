@@ -27,7 +27,7 @@ interface SchoolDataContextType {
     admissionsData: Admission[];
     financeData: FinanceRecord[];
     assetsData: any[];
-    examsData: Exam[];
+    exams: Exam[];
     grades: Grade[];
     attendance: Attendance[];
     events: Event[];
@@ -128,16 +128,13 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const fetchSchoolData = async () => {
         setIsLoading(true);
         try {
-            // Always seed the database from mock data on startup for consistent development
-            console.log("Seeding database from mock data...");
-            await seedInitialData();
+            await seedInitialData(); // Always seed the database on startup
             const firestoreData = await getSchoolsFromFirestore();
             
             setData(firestoreData);
             setAwardsAnnounced(firestoreData['northwood']?.profile.awards && firestoreData['northwood'].profile.awards.length > 0);
         } catch (error) {
             console.error("Failed to fetch or seed school data.", error);
-            // Fallback to mock data in case of severe firestore error
             setData(initialSchoolData);
             setAwardsAnnounced(initialSchoolData['northwood']?.profile.awards && initialSchoolData['northwood'].profile.awards.length > 0);
         } finally {
@@ -163,14 +160,14 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     return Object.values(data).flatMap(d => d.students.map(s => ({...s, schoolName: d.profile.name, schoolId: d.profile.id })));
   }, [data]);
 
-    const studentsData = useMemo(() => {
-        if (!user || !role || !allStudents.length) return [];
-        if (role === 'Parent') {
-            return allStudents.filter(student => student.parentEmail === user.email);
-        }
-        if (!schoolData) return [];
-        return schoolData.students;
-    }, [role, user, schoolData, allStudents]);
+  const studentsData = useMemo(() => {
+    if (!user || !role || !allStudents.length) return [];
+    if (role === 'Parent') {
+        return allStudents.filter(student => student.parentEmail === user.email);
+    }
+    if (!schoolData) return [];
+    return schoolData.students;
+  }, [role, user, schoolData, allStudents]);
 
   const schoolGroups = useMemo(() => {
     return data?.['northwood']?.schoolGroups || {};
@@ -787,17 +784,19 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     let recipientSchoolId: string | undefined = undefined;
     for (const sId in data) {
       const school = data[sId];
-      if (school.profile.email === messageData.recipientUsername || school.teachers.some(t => t.email === messageData.recipientUsername)) {
+      if (school.profile.email === messageData.recipientUsername || school.teachers.some(t => t.email === messageData.recipientUsername) || school.students.some(s => s.parentEmail === messageData.recipientUsername)) {
         recipientSchoolId = sId;
         break;
       }
     }
     
-    // Fallback for parents, who don't have a direct school link in their user profile
-    if (!recipientSchoolId && role === 'Parent') {
-        const student = allStudents.find(s => s.parentEmail === user.email);
-        if (student) {
-            recipientSchoolId = student.schoolId;
+    if (!recipientSchoolId) {
+        const parentUser = Object.values(mockUsers).find(u => u.user.email === messageData.recipientUsername && u.user.role === 'Parent');
+        if (parentUser) {
+            const student = allStudents.find(s => s.parentEmail === parentUser.user.email);
+            if (student) {
+                recipientSchoolId = student.schoolId;
+            }
         }
     }
     
@@ -1082,7 +1081,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         return schoolData?.finance || [];
     }, [schoolData, data, role, user, allStudents]),
     assetsData: schoolData?.assets || [],
-    examsData: schoolData?.exams || [],
+    exams: schoolData?.exams || [],
     grades: useMemo(() => {
         if (!data) return [];
         if (role === 'Parent') {
@@ -1190,4 +1189,3 @@ export const useSchoolData = () => {
   }
   return context;
 };
-
