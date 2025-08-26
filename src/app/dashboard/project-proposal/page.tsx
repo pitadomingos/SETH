@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download, Languages, MonitorPlay } from 'lucide-react';
+import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download, Languages, MonitorPlay, CloudCog } from 'lucide-react';
 import { useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -206,41 +206,41 @@ export default function ProjectProposalPage() {
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="secondary">
-                    <GitBranch className="mr-2 h-4 w-4" /> View Firebase Integration Details
+                    <CloudCog className="mr-2 h-4 w-4" /> From Prototype to Production
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2"><Cloud /> Backend & Firebase Integration Details</DialogTitle>
-                      <DialogDescription>An overview of the completed Firebase backend implementation.</DialogDescription>
+                      <DialogTitle className="flex items-center gap-2"><CloudCog /> From Prototype to Production</DialogTitle>
+                      <DialogDescription>A checklist of placeholder features that require full backend implementation for a production launch.</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
-                        <div className="flex items-start gap-3">
-                            <KeyRound className="h-5 w-5 text-accent mt-1 shrink-0" />
-                            <div>
-                                <h4 className="font-semibold">1. Firebase Authentication</h4>
-                                <p className="text-sm text-muted-foreground">The mock login system has been replaced with Firebase Authentication, securely managing user sessions and roles.</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <Server className="h-5 w-5 text-accent mt-1 shrink-0" />
-                            <div>
-                                <h4 className="font-semibold">2. Firestore Database & Data Modeling</h4>
-                                <p className="text-sm text-muted-foreground">All application data is now stored in Firestore collections designed for efficient, multi-tenant queries. The `mock-data.ts` file is only used for initial database seeding.</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-3">
+                       <div className="flex items-start gap-3">
                             <UploadCloud className="h-5 w-5 text-accent mt-1 shrink-0" />
                             <div>
-                                <h4 className="font-semibold">3. Cloud Storage & API Layer</h4>
-                                <p className="text-sm text-muted-foreground">Firebase Storage handles all file uploads. A robust API layer using Next.js Server Actions manages all Create, Read, Update, and Delete (CRUD) operations.</p>
+                                <h4 className="font-semibold">Firebase Storage Integration</h4>
+                                <p className="text-sm text-muted-foreground">Implement full Firebase Storage integration for all file uploads (profile pictures, admission documents, kiosk media, etc.) to replace current placeholder URLs.</p>
+                            </div>
+                        </div>
+                         <div className="flex items-start gap-3">
+                            <Mail className="h-5 w-5 text-accent mt-1 shrink-0" />
+                            <div>
+                                <h4 className="font-semibold">Email Service Integration</h4>
+                                <p className="text-sm text-muted-foreground">Integrate a real email service provider (e.g., SendGrid, Mailgun) to replace the console-based email simulation for welcome emails and notifications.</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3">
-                            <Database className="h-5 w-5 text-accent mt-1 shrink-0" />
+                            <FileText className="h-5 w-5 text-accent mt-1 shrink-0" />
                             <div>
-                                <h4 className="font-semibold">4. Data Fetching & Mutation</h4>
-                                <p className="text-sm text-muted-foreground">The `SchoolDataProvider` now fetches data directly from the live Firestore database and calls the API layer for all mutations, ensuring data persistence.</p>
+                                <h4 className="font-semibold">PDF Generation Service</h4>
+                                <p className="text-sm text-muted-foreground">Develop a server-side PDF generation service (e.g., using `pdf-lib` or a dedicated API) for creating branded, official documents like certificates, transcripts, and financial statements.</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <Users className="h-5 w-5 text-accent mt-1 shrink-0" />
+                            <div>
+                                <h4 className="font-semibold">Notification System</h4>
+                                <p className="text-sm text-muted-foreground">Build a dedicated, scalable notification system with read/unread status and user-specific targeting, replacing the current system which uses activity logs.</p>
                             </div>
                         </div>
                     </div>
