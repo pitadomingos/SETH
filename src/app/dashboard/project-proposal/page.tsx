@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download, Languages, MonitorPlay, CloudCog } from 'lucide-react';
+import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download, Languages, MonitorPlay, CloudCog, Mail, FileText } from 'lucide-react';
 import { useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
