@@ -7,7 +7,7 @@ import type { Role } from './auth-context';
 import { getSchoolsFromFirestore, seedInitialData } from '@/lib/firebase/firestore-service';
 import { getGpaFromNumeric } from '@/lib/utils';
 import { updateSchoolProfileAction } from '@/app/actions/update-school-action';
-import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction, addSyllabusAction, addCourseAction, updateCourseAction, deleteCourseFromFirestore, addFeeAction, recordPaymentAction, addExpenseAction, addTeamAction, deleteTeamAction, addPlayerToTeamAction, removePlayerFromTeamAction, addCompetitionAction, addCompetitionResultAction, updateAdmissionStatusAction, addStudentFromAdmissionAction, addAssetAction, addKioskMediaAction, removeKioskMediaFromFirestore, addBehavioralAssessmentAction, addGradeAction, addLessonAttendanceAction, addTestSubmissionAction } from '@/app/actions/school-actions';
+import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction, addSyllabusAction, addCourseAction, updateCourseAction, deleteCourseAction, addFeeAction, recordPaymentAction, addExpenseAction, addTeamAction, deleteTeamAction, addPlayerToTeamAction, removePlayerFromTeamAction, addCompetitionAction, addCompetitionResultAction, updateAdmissionStatusAction, addStudentFromAdmissionAction, addAssetAction, addKioskMediaAction, removeKioskMediaAction, addBehavioralAssessmentAction, addGradeAction, addLessonAttendanceAction, addTestSubmissionAction } from '@/app/actions/school-actions';
 import { addTermAction, addHolidayAction, addExamBoardAction, deleteExamBoardAction, addFeeDescriptionAction, deleteFeeDescriptionAction, addAudienceAction, deleteAudienceAction } from '@/app/actions/academic-year-actions';
 import { sendMessageAction } from '@/app/actions/messaging-actions';
 
@@ -128,12 +128,11 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const fetchSchoolData = async () => {
         setIsLoading(true);
         try {
-            let firestoreData = await getSchoolsFromFirestore();
-            if (Object.keys(firestoreData).length === 0) {
-                console.log("Database is empty, seeding with initial data...");
-                await seedInitialData();
-                firestoreData = await getSchoolsFromFirestore(); // Re-fetch after seeding
-            }
+            // Always seed the database from mock data on startup for consistent development
+            console.log("Seeding database from mock data...");
+            await seedInitialData();
+            const firestoreData = await getSchoolsFromFirestore();
+            
             setData(firestoreData);
             setAwardsAnnounced(firestoreData['northwood']?.profile.awards && firestoreData['northwood'].profile.awards.length > 0);
         } catch (error) {
@@ -1191,3 +1190,4 @@ export const useSchoolData = () => {
   }
   return context;
 };
+
