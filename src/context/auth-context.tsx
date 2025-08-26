@@ -142,9 +142,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let firestoreUsers = await getUsersFromFirestore();
     const allUsers = { ...mockUsers, ...firestoreUsers };
 
-    const userRecord = Object.values(allUsers).find(u => 
-        u.user.email === email && u.user.role === targetRole
-    );
+    const userRecord = Object.values(allUsers).find(u => {
+      // For parents, schoolId is not on the user object, so we match on email and role only.
+      if (targetRole === 'Parent') {
+        return u.user.email === email && u.user.role === targetRole;
+      }
+      return u.user.email === email && u.user.role === targetRole;
+    });
     
     if (userRecord) {
         const targetUser: User = {

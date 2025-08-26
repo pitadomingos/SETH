@@ -1,5 +1,4 @@
 
-
 import { type Role } from "@/context/auth-context";
 
 // --- CORE DATA STRUCTURES ---
@@ -425,7 +424,35 @@ export const mockUsers: Record<string, UserProfile> = {
     password: 'password'
   },
   parent1: {
-    user: { username: 'parent1', name: 'Ana Santos', role: 'Parent', email: 'ana.santos@email.com', schoolId: 'northwood' },
+    user: { username: 'parent1', name: 'Ana Santos', role: 'Parent', email: 'ana.santos@email.com' },
+    password: 'password'
+  },
+  parent_pereira: {
+    user: { username: 'parent_pereira', name: 'João Pereira', role: 'Parent', email: 'joao.pereira@email.com' },
+    password: 'password'
+  },
+  parent_rodrigues: {
+    user: { username: 'parent_rodrigues', name: 'Carla Rodrigues', role: 'Parent', email: 'carla.rodrigues@email.com' },
+    password: 'password'
+  },
+  parent_silva: {
+    user: { username: 'parent_silva', name: 'Fernanda Silva', role: 'Parent', email: 'fernanda.silva@email.com' },
+    password: 'password'
+  },
+  parent_lopes: {
+    user: { username: 'parent_lopes', name: 'Sérgio Lopes', role: 'Parent', email: 'sergio.lopes@email.com' },
+    password: 'password'
+  },
+  parent_moreira: {
+    user: { username: 'parent_moreira', name: 'Joana Moreira', role: 'Parent', email: 'joana.moreira@email.com' },
+    password: 'password'
+  },
+  parent_fernandes: {
+    user: { username: 'parent_fernandes', name: 'Rui Fernandes', role: 'Parent', email: 'rui.fernandes@email.com' },
+    password: 'password'
+  },
+  parent_ramos: {
+    user: { username: 'parent_ramos', name: 'Paula Ramos', role: 'Parent', email: 'paula.ramos@email.com' },
     password: 'password'
   },
   acdean1: {
@@ -757,6 +784,3 @@ export const initialSchoolData: Record<string, SchoolData> = {
     'plc': plcData,
     'trialschool': trialSchoolData,
 };
-
-
-
