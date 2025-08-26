@@ -128,14 +128,13 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const fetchSchoolData = async () => {
         setIsLoading(true);
         try {
-            await seedInitialData(); // Always seed the database on startup
-            const firestoreData = await getSchoolsFromFirestore();
-            
-            setData(firestoreData);
-            setAwardsAnnounced(firestoreData['northwood']?.profile.awards && firestoreData['northwood'].profile.awards.length > 0);
+            await seedInitialData();
+            const seededData = await getSchoolsFromFirestore();
+            setData(seededData);
+            setAwardsAnnounced(seededData['northwood']?.profile.awards && seededData['northwood'].profile.awards.length > 0);
         } catch (error) {
             console.error("Failed to fetch or seed school data.", error);
-            setData(initialSchoolData);
+            setData(initialSchoolData); // Fallback to local mock
             setAwardsAnnounced(initialSchoolData['northwood']?.profile.awards && initialSchoolData['northwood'].profile.awards.length > 0);
         } finally {
             setIsLoading(false);
@@ -829,7 +828,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const { schoolId, ...rest } = admission;
     if (!schoolId || !user) return;
     const newAdmission: Admission = {
-        id: `ADM${Date.now()}${Math.floor(Math.random() * 1000)}`,
+        id: `ADM${Date.now()}${Math.random()}`,
         status: 'Pending',
         date: new Date().toISOString().split('T')[0],
         parentName: user.name,
