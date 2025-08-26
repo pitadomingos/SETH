@@ -2,7 +2,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download, Languages, MonitorPlay, Maximize, Minimize, GraduationCap, CloudCog, Mail, FileText, LifeBuoy } from 'lucide-react';
+import { Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download, Languages, MonitorPlay, Maximize, Minimize, GraduationCap, CloudCog, Mail, FileText, LifeBuoy, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const slideVariants = {
@@ -41,17 +41,15 @@ const slides = [
     content: (
       <div className="p-16 w-full max-w-6xl">
         <h2 className="text-6xl font-bold flex items-center gap-4"><Rocket className="text-primary"/> Executive Summary</h2>
-        <p className="text-3xl mt-8 text-muted-foreground leading-relaxed">
-          The landscape of education in Mozambique and the broader Southern African region is at a critical inflection point. While rich in potential, it faces significant challenges related to administrative efficiency, resource allocation, and data-driven decision-making. EduDesk is a comprehensive, multi-tenant SaaS platform engineered not just to manage schools, but to transform them. By integrating a suite of powerful, AI-driven tools into a single, accessible system, EduDesk will empower educators, engage parents, and provide administrators with the insights needed to elevate educational standards.
-        </p>
-         <p className="text-3xl mt-8 text-muted-foreground leading-relaxed">
-            Our prototype has successfully validated the core thesis: that a unified, intelligent platform can drastically reduce administrative overhead and unlock a new level of academic oversight. We are now seeking seed funding to transition from our robust prototype to a production-ready Firebase backend, enabling us to launch in Mozambique and subsequently scale across the SADC region. This investment will fuel a sustainable business model designed for long-term social impact, making modern educational tools accessible and affordable.
-        </p>
+        <div className="text-3xl mt-8 text-muted-foreground leading-relaxed space-y-8">
+            <p>The landscape of education in Mozambique and the broader Southern African region is at a critical inflection point. While rich in potential, it faces significant challenges related to administrative efficiency, resource allocation, and data-driven decision-making. EduDesk is a comprehensive, multi-tenant SaaS platform engineered not just to manage schools, but to transform them. By integrating a suite of powerful, AI-driven tools into a single, accessible system, EduDesk will empower educators, engage parents, and provide administrators with the insights needed to elevate educational standards.</p>
+            <p>Our prototype has successfully validated the core thesis: that a unified, intelligent platform can drastically reduce administrative overhead and unlock a new level of academic oversight. We are now seeking seed funding to transition from our robust prototype to a production-ready Firebase backend, enabling us to launch in Mozambique and subsequently scale across the SADC region. This investment will fuel a sustainable business model designed for long-term social impact, making modern educational tools accessible and affordable.</p>
+        </div>
       </div>
     ),
     bg: 'bg-muted/30',
   },
-  // Slide 3: The Challenge & Opportunity
+  // Slide 3: The Challenge & The Opportunity
   {
     content: (
       <div className="p-16 w-full max-w-6xl">
@@ -226,7 +224,7 @@ export default function ProposalSlidesPage() {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [paginate]);
 
   return (
     <div className="relative w-full h-full flex items-center justify-center cursor-pointer overflow-hidden bg-background">
@@ -247,8 +245,26 @@ export default function ProposalSlidesPage() {
           {slides[slideIndex].content}
         </motion.div>
       </AnimatePresence>
+      
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 h-16 w-16 rounded-full bg-background/30 hover:bg-background/70"
+        onClick={(e) => { e.stopPropagation(); paginate(-1); }}
+      >
+        <ChevronLeft className="h-8 w-8" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 h-16 w-16 rounded-full bg-background/30 hover:bg-background/70"
+        onClick={(e) => { e.stopPropagation(); paginate(1); }}
+      >
+        <ChevronRight className="h-8 w-8" />
+      </Button>
+
       <div className="absolute bottom-4 left-0 right-0 flex justify-center">
-          <div className="flex gap-2 p-2 bg-muted/50 rounded-full">
+          <div className="flex gap-2 p-2 bg-muted/50 rounded-full backdrop-blur-sm">
             {slides.map((_, i) => (
               <div
                 key={i}
@@ -258,6 +274,7 @@ export default function ProposalSlidesPage() {
             ))}
           </div>
       </div>
+      
       <Button
         variant="outline"
         size="icon"
@@ -270,5 +287,3 @@ export default function ProposalSlidesPage() {
     </div>
   );
 }
-
-    
