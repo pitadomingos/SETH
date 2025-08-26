@@ -1,9 +1,8 @@
 
-
 'use client';
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download, Languages, MonitorPlay, Maximize, Minimize } from 'lucide-react';
+import { Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download, Languages, MonitorPlay, Maximize, Minimize, GraduationCap, CloudCog, Mail, FileText, LifeBuoy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const slideVariants = {
@@ -43,24 +42,27 @@ const slides = [
       <div className="p-16 w-full max-w-6xl">
         <h2 className="text-6xl font-bold flex items-center gap-4"><Rocket className="text-primary"/> Executive Summary</h2>
         <p className="text-3xl mt-8 text-muted-foreground leading-relaxed">
-          EduDesk is a comprehensive, AI-powered SaaS platform engineered to transform schools in Southern Africa by unifying administrative tasks, providing data-driven insights, and fostering collaboration between educators, parents, and administrators to elevate educational standards.
+          The landscape of education in Mozambique and the broader Southern African region is at a critical inflection point. While rich in potential, it faces significant challenges related to administrative efficiency, resource allocation, and data-driven decision-making. EduDesk is a comprehensive, multi-tenant SaaS platform engineered not just to manage schools, but to transform them. By integrating a suite of powerful, AI-driven tools into a single, accessible system, EduDesk will empower educators, engage parents, and provide administrators with the insights needed to elevate educational standards.
+        </p>
+         <p className="text-3xl mt-8 text-muted-foreground leading-relaxed">
+            Our prototype has successfully validated the core thesis: that a unified, intelligent platform can drastically reduce administrative overhead and unlock a new level of academic oversight. We are now seeking seed funding to transition from our robust prototype to a production-ready Firebase backend, enabling us to launch in Mozambique and subsequently scale across the SADC region. This investment will fuel a sustainable business model designed for long-term social impact, making modern educational tools accessible and affordable.
         </p>
       </div>
     ),
-    bg: 'bg-background',
+    bg: 'bg-muted/30',
   },
   // Slide 3: The Challenge & Opportunity
   {
     content: (
       <div className="p-16 w-full max-w-6xl">
-        <h2 className="text-6xl font-bold flex items-center gap-4"><Lightbulb className="text-primary"/> The Challenge & Opportunity</h2>
-        <div className="grid grid-cols-2 gap-12 mt-12 text-2xl leading-relaxed text-muted-foreground">
-          <div><h3 className="font-semibold text-3xl text-foreground mb-4">The Challenge</h3><p>Schools rely on manual, fragmented systems, leading to administrative bottlenecks, wasted teacher time, and a lack of strategic insight, directly impacting educational quality.</p></div>
-          <div><h3 className="font-semibold text-3xl text-foreground mb-4">The Opportunity</h3><p>To replace this patchwork with a single, intelligent platform that automates tasks and uses AI to provide actionable insights, freeing educators to focus on teaching.</p></div>
+        <h2 className="text-6xl font-bold flex items-center gap-4"><Lightbulb className="text-primary"/> The Challenge & The Opportunity</h2>
+        <div className="grid grid-cols-2 gap-12 mt-12 text-2xl leading-relaxed">
+          <div><h3 className="font-semibold text-3xl text-foreground mb-4">Current State: The Administrative Bottleneck</h3><p className="text-muted-foreground">Many schools rely on manual, paper-based processes or a fragmented collection of outdated software. This results in critical data being siloed in disparate spreadsheets and physical files. Teachers spend valuable hours on administrative tasks instead of instructional planning, and school leaders lack the timely, aggregated data required for strategic decision-making. This inefficiency directly impacts the quality of education and hinders student progress.</p></div>
+          <div><h3 className="font-semibold text-3xl text-foreground mb-4">Our Solution: A Unified, Intelligent Ecosystem</h3><p className="text-muted-foreground">EduDesk replaces this disconnected patchwork with a single, cloud-native platform. Our key differentiator is the deep integration of AI to not just manage data, but to provide actionable insights—from performance-aware lesson planning for teachers to strategic system-wide analysis for administrators. By automating administrative tasks and providing clear, visual data, we free up educators to do what they do best: teach.</p></div>
         </div>
       </div>
     ),
-    bg: 'bg-muted/30',
+    bg: 'bg-background',
   },
   // Slide 4: How EduDesk Elevates Standards
   {
@@ -68,26 +70,27 @@ const slides = [
       <div className="p-16 w-full max-w-6xl">
         <h2 className="text-6xl font-bold text-center mb-16">How EduDesk Elevates Standards</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div className="text-center"><BrainCircuit className="h-20 w-20 mx-auto text-primary"/><h3 className="text-3xl font-semibold mt-4">Empowering Teachers</h3><p className="text-xl text-muted-foreground mt-2">AI-powered lesson planning and test generation tailored to student performance.</p></div>
-            <div className="text-center"><BookCopy className="h-20 w-20 mx-auto text-primary"/><h3 className="text-3xl font-semibold mt-4">Enabling Leaders</h3><p className="text-xl text-muted-foreground mt-2">Instant AI analysis of school-wide data for strategic decision-making.</p></div>
-            <div className="text-center"><Users className="h-20 w-20 mx-auto text-primary"/><h3 className="text-3xl font-semibold mt-4">Engaging Parents</h3><p className="text-xl text-muted-foreground mt-2">A unified portal with real-time updates and AI-powered academic advice.</p></div>
-        </div>
-      </div>
-    ),
-    bg: 'bg-background',
-  },
-  // Slide 5: Monetization & GTM
-  {
-    content: (
-      <div className="p-16 w-full max-w-6xl">
-        <h2 className="text-6xl font-bold flex items-center gap-4"><Target className="text-primary"/> Go-to-Market & Monetization</h2>
-        <div className="grid grid-cols-2 gap-12 mt-12 text-2xl">
-          <div><h3 className="font-semibold text-3xl text-foreground mb-4">Tiered SaaS Model</h3><p className="text-muted-foreground">Annual per-student billing with Starter, Pro (AI tools), and Premium (Multi-School) tiers to ensure affordability and predictable revenue.</p></div>
-          <div><h3 className="font-semibold text-3xl text-foreground mb-4">Phased Regional Rollout</h3><p className="text-muted-foreground">Launch in Mozambique with pilot programs, then expand to neighboring SADC countries, leveraging case studies and local partnerships.</p></div>
+            <div className="text-center"><BrainCircuit className="h-20 w-20 mx-auto text-primary"/><h3 className="text-3xl font-semibold mt-4">Empowering Teachers with AI</h3><p className="text-xl text-muted-foreground mt-2">Instead of generic lesson plans, teachers can use our AI to generate plans tailored to their students' recent performance, ensuring no one is left behind. Ad-hoc tests can be created in minutes, not hours.</p></div>
+            <div className="text-center"><BookCopy className="h-20 w-20 mx-auto text-primary"/><h3 className="text-3xl font-semibold mt-4">Enabling Data-Driven Leadership</h3><p className="text-xl text-muted-foreground mt-2">School administrators can move from guesswork to strategy. Our AI reports provide instant analysis of school-wide performance, class struggles, and teacher effectiveness, identifying areas for intervention and improvement.</p></div>
+            <div className="text-center"><Users className="h-20 w-20 mx-auto text-primary"/><h3 className="text-3xl font-semibold mt-4">Engaging Parents in Partnership</h3><p className="text-xl text-muted-foreground mt-2">The Parent Portal bridges the communication gap. Parents receive real-time updates on finances and can access AI-powered advice on how to support their child's specific academic needs, fostering a collaborative educational environment.</p></div>
         </div>
       </div>
     ),
     bg: 'bg-muted/30',
+  },
+  // Slide 5: Go-to-Market, Monetization & Partnerships
+  {
+    content: (
+      <div className="p-16 w-full max-w-6xl">
+        <h2 className="text-6xl font-bold flex items-center gap-4 mb-12"><Target className="text-primary"/> Go-to-Market, Monetization & Partnerships</h2>
+        <div className="space-y-8 text-xl">
+            <div><h3 className="font-semibold text-3xl text-foreground mb-2">Sustainable Monetization Model</h3><p className="text-muted-foreground">Our business model is a B2B SaaS subscription sold directly to educational institutions. We use a tiered, annual per-student pricing model, billed to the school in their local currency. This ensures predictable revenue for us and makes the platform accessible for institutions of all sizes.</p></div>
+            <div><h3 className="font-semibold text-3xl text-foreground mb-2">Sales & Marketing Strategy</h3><p className="text-muted-foreground">Our strategy involves a phased regional rollout starting in Mozambique, direct sales with pilot programs for early adopters, and targeted digital marketing campaigns to establish thought leadership.</p></div>
+            <div><h3 className="font-semibold text-3xl text-foreground mb-2">Partnership & Ecosystem Building</h3><p className="text-muted-foreground">We will build an ecosystem by integrating with local mobile money providers, partnering with hardware vendors, and engaging with Ministries of Education and Private School Associations to gain endorsements.</p></div>
+        </div>
+      </div>
+    ),
+    bg: 'bg-background',
   },
   // Slide 6: The EduDesk Awards
   {
@@ -95,11 +98,11 @@ const slides = [
       <div className="p-16 w-full max-w-5xl text-center">
         <h2 className="text-6xl font-bold flex items-center justify-center gap-4"><Trophy className="text-primary"/> The EduDesk Awards</h2>
         <p className="text-3xl mt-8 text-muted-foreground leading-relaxed max-w-4xl mx-auto">
-          An annual, data-driven awards program to recognize top-performing schools, teachers, and students, fostering a culture of excellence and opening a valuable revenue stream through corporate sponsorships.
+          To further drive engagement and celebrate success, we will establish the annual EduDesk Excellence Awards. These awards will recognize top-performing schools, teachers, and students across the network, based on data-driven metrics pulled from the platform. This initiative creates a positive feedback loop and opens up a valuable revenue stream through corporate sponsorships.
         </p>
       </div>
     ),
-    bg: 'bg-background',
+    bg: 'bg-muted/30',
   },
   // Slide 7: Development Roadmap
   {
@@ -107,15 +110,30 @@ const slides = [
       <div className="p-16 w-full max-w-6xl">
         <h2 className="text-6xl font-bold flex items-center gap-4"><CalendarClock className="text-primary"/> Development Roadmap</h2>
         <div className="mt-12 space-y-10">
-            <div className="flex items-start gap-6"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-2xl shrink-0">1</span><div><h3 className="text-3xl font-semibold">Phase 1 (Completed): Production Backend</h3><p className="text-xl text-muted-foreground mt-1">Full transition to a live Firebase backend (Firestore, Auth, Storage) with persistent data and security rules.</p></div></div>
-            <div className="flex items-start gap-6"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-2xl shrink-0">2</span><div><h3 className="text-3xl font-semibold">Phase 2 (Q4 2025): Financial Integration</h3><p className="text-xl text-muted-foreground mt-1">Integrate with regional mobile money providers (M-Pesa, eMola) to enable automated invoicing and fee payments.</p></div></div>
-            <div className="flex items-start gap-6"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-2xl shrink-0">3</span><div><h3 className="text-3xl font-semibold">Phase 3 (Q1 2026): Pilot Program & Launch</h3><p className="text-xl text-muted-foreground mt-1">Launch pilot program with select schools in Mozambique, gather feedback, and initiate full market launch.</p></div></div>
+            <div className="flex items-start gap-6"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-2xl shrink-0">1</span><div><h3 className="text-3xl font-semibold">Phase 1 (Completed): Production Backend & Core Services</h3><p className="text-xl text-muted-foreground mt-1">Transition from mock data to a full Firebase backend (Firestore, Auth, Storage) is complete. All core CRUD operations are persistent and governed by security rules.</p></div></div>
+            <div className="flex items-start gap-6"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-2xl shrink-0">2</span><div><h3 className="text-3xl font-semibold">Phase 2 (Q4 2025): Financial Integration & Automation</h3><p className="text-xl text-muted-foreground mt-1">This phase focuses on creating a frictionless financial ecosystem. We will integrate with key regional payment providers including mobile money (M-Pesa, eMola, EcoCash) and traditional banking systems. This will enable automated invoicing, one-click fee payments, and automated reminders for overdue fees.</p></div></div>
+            <div className="flex items-start gap-6"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-2xl shrink-0">3</span><div><h3 className="text-3xl font-semibold">Phase 3 (Q1 2026): Pilot Program & Market Launch</h3><p className="text-xl text-muted-foreground mt-1">Launch a pilot program with a select group of schools in Mozambique to gather feedback and refine features. Initiate targeted marketing campaigns for a full market launch.</p></div></div>
+        </div>
+      </div>
+    ),
+    bg: 'bg-background',
+  },
+  // Slide 8: From Prototype to Production
+  {
+    content: (
+      <div className="p-16 w-full max-w-6xl">
+        <h2 className="text-6xl font-bold flex items-center gap-4 mb-12"><CloudCog className="text-primary"/> From Prototype to Production</h2>
+        <div className="space-y-8 text-2xl">
+            <div className="flex items-start gap-4"><UploadCloud className="h-8 w-8 text-accent mt-1 shrink-0" /><p><span className="font-semibold text-foreground">Firebase Storage Integration:</span> Implement for all file uploads (logos, documents, media).</p></div>
+            <div className="flex items-start gap-4"><Mail className="h-8 w-8 text-accent mt-1 shrink-0" /><p><span className="font-semibold text-foreground">Email Service Integration:</span> Replace console simulations with a real email service (e.g., SendGrid) for notifications.</p></div>
+            <div className="flex items-start gap-4"><FileText className="h-8 w-8 text-accent mt-1 shrink-0" /><p><span className="font-semibold text-foreground">PDF Generation Service:</span> Develop a server-side service for creating branded certificates and transcripts.</p></div>
+            <div className="flex items-start gap-4"><Users className="h-8 w-8 text-accent mt-1 shrink-0" /><p><span className="font-semibold text-foreground">Notification System:</span> Build a scalable notification system with read/unread status to replace activity log notifications.</p></div>
         </div>
       </div>
     ),
     bg: 'bg-muted/30',
   },
-  // Slide 8: Continuous Improvement
+  // Slide 9: Continuous Improvement
   {
     content: (
       <div className="p-16 w-full max-w-6xl">
@@ -132,7 +150,7 @@ const slides = [
     ),
     bg: 'bg-background',
   },
-  // Slide 9: The Future Vision
+  // Slide 10: The Future Vision
   {
     content: (
       <div className="p-16 w-full max-w-6xl text-center">
@@ -149,7 +167,7 @@ const slides = [
     ),
     bg: 'bg-muted/30',
   },
-  // Slide 10: Funding Request
+  // Slide 11: Funding Request
   {
     content: (
       <div className="p-16 w-full max-w-6xl">
@@ -164,16 +182,6 @@ const slides = [
           <div><span className="font-bold">15%</span> - Cloud Infrastructure</div>
           <div><span className="font-bold">10%</span> - Administrative</div>
         </div>
-      </div>
-    ),
-    bg: 'bg-background',
-  },
-   // Slide 11: Thank You
-  {
-    content: (
-      <div className="flex flex-col items-center justify-center text-center">
-        <motion.h1 className="text-8xl font-bold tracking-tight" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>Thank You</motion.h1>
-        <motion.p className="text-4xl text-muted-foreground mt-4" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4, duration: 0.5 }}>Questions?</motion.p>
       </div>
     ),
     bg: 'bg-background',
@@ -262,3 +270,5 @@ export default function ProposalSlidesPage() {
     </div>
   );
 }
+
+    
