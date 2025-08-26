@@ -110,6 +110,9 @@ interface SchoolDataContextType {
     addAudience: (aud: string) => Promise<void>;
     deleteAudience: (aud: string) => Promise<void>;
     addSavedReport: (report: Omit<SavedReport, 'id'>) => void;
+    addDeployedTest: (test: Omit<DeployedTest, 'id' | 'submissions'>) => void;
+    addSavedTest: (test: Omit<SavedTest, 'id' | 'createdAt'>) => void;
+    deleteSavedTest: (testId: string) => void;
 }
 
 const SchoolDataContext = createContext<SchoolDataContextType | undefined>(undefined);
@@ -669,7 +672,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             const school = newData[currentSchoolId];
             school.teams = school.teams.map(t => {
                 if (t.id === teamId && !t.playerIds.includes(studentId)) {
-                    t.playerIds.push(studentId);
+                    return { ...t, playerIds: [...t.playerIds, studentId] };
                 }
                 return t;
             });
@@ -688,7 +691,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             const school = newData[currentSchoolId];
             school.teams = school.teams.map(t => {
                 if (t.id === teamId) {
-                    t.playerIds = t.playerIds.filter(id => id !== studentId);
+                    return { ...t, playerIds: t.playerIds.filter(id => id !== studentId) };
                 }
                 return t;
             });
@@ -789,7 +792,19 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         break;
       }
     }
+    
+    // Fallback for parents, who don't have a direct school link in their user profile
+    if (!recipientSchoolId) {
+        const student = allStudents.find(s => s.parentEmail === user.email);
+        if (student) {
+            recipientSchoolId = student.schoolId;
+        }
+    }
+    
     if (!recipientSchoolId) return;
+
+    const recipient = mockUsers[messageData.recipientUsername] || Object.values(mockUsers).find(u => u.user.email === messageData.recipientUsername);
+
 
     const result = await sendMessageAction(senderSchoolId, recipientSchoolId, { ...messageData, senderName: user.name, senderRole: role });
     if (result.success && result.message) {
@@ -1158,7 +1173,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     addTerm, addHoliday,
     addSavedReport,
     addBehavioralAssessment,
-    addExamBoard, deleteExamBoard, addFeeDescription, deleteFeeDescription, addAudience, deleteAudience
+    addExamBoard, deleteExamBoard, addFeeDescription, deleteFeeDescription, addAudience, deleteAudience,
+    addDeployedTest, addSavedTest, deleteSavedTest,
   };
 
   return (
