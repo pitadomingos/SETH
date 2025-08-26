@@ -1,5 +1,4 @@
 
-
 'use client';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabus, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, SchoolProfile, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, mockUsers, UserProfile, SyllabusTopic, BehavioralAssessment } from '@/lib/mock-data';
@@ -120,6 +119,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const [data, setData] = useState<Record<string, SchoolData> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [awardsAnnounced, setAwardsAnnounced] = useState(false);
+  const [parentStatusOverrides, setParentStatusOverrides] = useState<Record<string, 'Active' | 'Suspended'>>({});
 
   useEffect(() => {
     const fetchSchoolData = async () => {
@@ -145,7 +145,34 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
     fetchSchoolData();
   }, []);
+  
+  const currentSchoolId = useMemo(() => {
+    if (role === 'GlobalAdmin') return null;
+    return authSchoolId;
+  }, [authSchoolId, role]);
 
+  const schoolData = useMemo(() => {
+    if (!data || !currentSchoolId) return null;
+    return data[currentSchoolId];
+  }, [currentSchoolId, data]);
+
+  const allStudents = useMemo(() => {
+    if (!data) return [];
+    return Object.values(data).flatMap(d => d.students.map(s => ({...s, schoolName: d.profile.name, schoolId: d.profile.id })));
+  }, [data]);
+  
+  const studentsData = useMemo(() => {
+    if (!data || !user || !role) return [];
+    if (role === 'Parent') {
+      return allStudents.filter(student => student.parentEmail === user.email);
+    }
+    return data[currentSchoolId!]?.students || [];
+  }, [role, user, data, currentSchoolId, allStudents]);
+
+  const schoolGroups = useMemo(() => {
+    return data?.['northwood']?.schoolGroups || {};
+  }, [data]);
+  
   const addLog = useCallback((schoolIdForLog: string, action: string, details: string) => {
     if(!user || !role) return;
     const newLog: ActivityLog = {
@@ -216,34 +243,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
     addLog('northwood', 'Announcement', 'Annual awards have been announced network-wide.');
   };
-
-  const schoolId = useMemo(() => {
-    if (role === 'GlobalAdmin') return null;
-    return authSchoolId;
-  }, [authSchoolId, role]);
-
-  const schoolData = useMemo(() => {
-    if (!data) return null;
-    if (!schoolId) return data.northwood; // Default to a master record for GlobalAdmin if needed
-    return data[schoolId];
-  }, [schoolId, data]);
   
-  const allStudents = useMemo(() => {
-    if (!data) return [];
-    return Object.values(data).flatMap(d => d.students.map(s => ({...s, schoolName: d.profile.name, schoolId: d.profile.id })))
-  }, [data]);
-  
-  const studentsData = useMemo(() => {
-    if (role === 'Parent' && user?.email) {
-      return allStudents.filter(student => student.parentEmail === user.email);
-    }
-    return schoolData?.students || [];
-  }, [role, user, schoolData, allStudents]);
-
-  const schoolGroups = useMemo(() => {
-    return data?.['northwood']?.schoolGroups || {};
-  }, [data]);
-
   const addSchool = (newSchoolData: SchoolData) => {
     setData(prev => {
         if (!prev) return { [newSchoolData.profile.id]: newSchoolData };
@@ -272,7 +272,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateSchoolProfile = async (profileData: Partial<SchoolProfile>, targetSchoolId?: string): Promise<boolean> => {
-    const sId = targetSchoolId || schoolId;
+    const sId = targetSchoolId || currentSchoolId;
     if (!sId) return false;
 
     const result = await updateSchoolProfileAction(sId, profileData);
@@ -299,129 +299,129 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const addTeacher = async (teacher: Omit<Teacher, 'id' | 'status'>) => {
-    if (!schoolId) return;
-    const result = await addTeacherAction(schoolId, teacher);
+    if (!currentSchoolId) return;
+    const result = await addTeacherAction(currentSchoolId, teacher);
     if(result.success && result.teacher) {
         setData(prev => {
             if (!prev) return null;
             const newData = { ...prev };
-            newData[schoolId].teachers.push(result.teacher!);
+            newData[currentSchoolId].teachers.push(result.teacher!);
             return newData;
         });
-        addLog(schoolId, 'Create', `Added new teacher: ${teacher.name}`);
+        addLog(currentSchoolId, 'Create', `Added new teacher: ${teacher.name}`);
     }
   };
 
   const updateTeacher = async (id: string, teacherData: Partial<Teacher>) => {
-      if (!schoolId) return;
-      const result = await updateTeacherAction(schoolId, id, teacherData);
+      if (!currentSchoolId) return;
+      const result = await updateTeacherAction(currentSchoolId, id, teacherData);
       if(result.success) {
         setData(prev => {
             if (!prev) return null;
             const newData = { ...prev };
-            const school = newData[schoolId];
+            const school = newData[currentSchoolId];
             school.teachers = school.teachers.map(t => t.id === id ? {...t, ...teacherData} : t);
             return newData;
         });
-        addLog(schoolId, 'Update', `Updated profile for teacher: ${teacherData.name || id}`);
+        addLog(currentSchoolId, 'Update', `Updated profile for teacher: ${teacherData.name || id}`);
       }
   };
 
   const deleteTeacher = async (teacherId: string) => {
-    if (!schoolId) return;
-    const teacherName = data?.[schoolId]?.teachers.find(t => t.id === teacherId)?.name || 'Unknown';
-    const result = await deleteTeacherAction(schoolId, teacherId);
+    if (!currentSchoolId) return;
+    const teacherName = data?.[currentSchoolId]?.teachers.find(t => t.id === teacherId)?.name || 'Unknown';
+    const result = await deleteTeacherAction(currentSchoolId, teacherId);
     if(result.success) {
         setData(prev => {
             if (!prev) return null;
             const newData = { ...prev };
-            newData[schoolId].teachers = newData[schoolId].teachers.filter(t => t.id !== teacherId);
+            newData[currentSchoolId].teachers = newData[currentSchoolId].teachers.filter(t => t.id !== teacherId);
             return newData;
         });
-        addLog(schoolId, 'Delete', `Deleted teacher: ${teacherName}`);
+        addLog(currentSchoolId, 'Delete', `Deleted teacher: ${teacherName}`);
     }
   };
   
   const addClass = async (classData: Omit<Class, 'id'>) => {
-    if (!schoolId) return;
-    const result = await addClassAction(schoolId, classData);
+    if (!currentSchoolId) return;
+    const result = await addClassAction(currentSchoolId, classData);
     if(result.success && result.class) {
         setData(prev => {
             if (!prev) return null;
             const newData = { ...prev };
-            newData[schoolId].classes.push(result.class!);
+            newData[currentSchoolId].classes.push(result.class!);
             return newData;
         });
-        addLog(schoolId, 'Create', `Created new class: ${classData.name}`);
+        addLog(currentSchoolId, 'Create', `Created new class: ${classData.name}`);
     }
   };
 
    const updateClass = async (id: string, classData: Partial<Class>) => {
-    if (!schoolId) return;
-    const result = await updateClassAction(schoolId, id, classData);
+    if (!currentSchoolId) return;
+    const result = await updateClassAction(currentSchoolId, id, classData);
     if(result.success) {
         setData(prev => {
             if (!prev) return null;
             const newData = { ...prev };
-            newData[schoolId].classes = newData[schoolId].classes.map(c => c.id === id ? { ...c, ...classData } : c);
+            newData[currentSchoolId].classes = newData[currentSchoolId].classes.map(c => c.id === id ? { ...c, ...classData } : c);
             return newData;
         });
-        addLog(schoolId, 'Update', `Updated class: ${classData.name || id}`);
+        addLog(currentSchoolId, 'Update', `Updated class: ${classData.name || id}`);
     }
   };
 
   const deleteClass = async (id: string) => {
-    if (!schoolId) return;
-    const className = data?.[schoolId]?.classes.find(c => c.id === id)?.name || 'Unknown';
-    const result = await deleteClassAction(schoolId, id);
+    if (!currentSchoolId) return;
+    const className = data?.[currentSchoolId]?.classes.find(c => c.id === id)?.name || 'Unknown';
+    const result = await deleteClassAction(currentSchoolId, id);
     if(result.success) {
         setData(prev => {
             if (!prev) return null;
             const newData = { ...prev };
-            newData[schoolId].classes = newData[schoolId].classes.filter(c => c.id !== id);
-            newData[schoolId].courses = newData[schoolId].courses.filter(c => c.classId !== id);
+            newData[currentSchoolId].classes = newData[currentSchoolId].classes.filter(c => c.id !== id);
+            newData[currentSchoolId].courses = newData[currentSchoolId].courses.filter(c => c.classId !== id);
             return newData;
         });
-        addLog(schoolId, 'Delete', `Deleted class: ${className}`);
+        addLog(currentSchoolId, 'Delete', `Deleted class: ${className}`);
     }
   };
   
   const addCourse = async (course: Omit<Course, 'id'>) => {
-    if (!schoolId) return;
-    const result = await addCourseAction(schoolId, course);
+    if (!currentSchoolId) return;
+    const result = await addCourseAction(currentSchoolId, course);
     if (result.success && result.course) {
         setData(prev => {
             if (!prev) return null;
             const newData = { ...prev };
-            newData[schoolId].courses.push(result.course!);
-            addLog(schoolId, 'Create', `Created new course: ${course.subject}`);
+            newData[currentSchoolId].courses.push(result.course!);
+            addLog(currentSchoolId, 'Create', `Created new course: ${course.subject}`);
             return newData;
         });
     }
   };
 
   const addSyllabus = async (syllabus: Omit<Syllabus, 'id'|'topics'>) => {
-      if(!schoolId) return;
-      const result = await addSyllabusAction(schoolId, syllabus);
+      if(!currentSchoolId) return;
+      const result = await addSyllabusAction(currentSchoolId, syllabus);
       if(result.success && result.syllabus) {
         setData(prev => {
             if (!prev) return null;
             const newData = { ...prev };
-            newData[schoolId].syllabi.push(result.syllabus!);
-            addLog(schoolId, 'Create', `Created syllabus for ${syllabus.subject} Grade ${syllabus.grade}`);
+            newData[currentSchoolId].syllabi.push(result.syllabus!);
+            addLog(currentSchoolId, 'Create', `Created syllabus for ${syllabus.subject} Grade ${syllabus.grade}`);
             return newData;
         });
       }
   };
   
   const updateSyllabusTopic = async (subject: string, grade: string, topic: SyllabusTopic) => {
-    if(!schoolId) return;
-    const result = await updateSyllabusTopicAction(schoolId, subject, grade, topic);
+    if(!currentSchoolId) return;
+    const result = await updateSyllabusTopicAction(currentSchoolId, subject, grade, topic);
     if (result.success) {
         setData(prev => {
             if (!prev) return null;
             const newData = {...prev};
-            const school = newData[schoolId];
+            const school = newData[currentSchoolId];
             const syllabusIndex = school.syllabi.findIndex(s => s.subject === subject && s.grade === grade);
 
             if (syllabusIndex > -1) {
@@ -436,59 +436,59 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             }
             return newData;
         });
-        addLog(schoolId, 'Update', `Updated syllabus topic "${topic.topic}" for ${subject}`);
+        addLog(currentSchoolId, 'Update', `Updated syllabus topic "${topic.topic}" for ${subject}`);
     }
   };
   
   const deleteSyllabusTopic = async (subject: string, grade: string, topicId: string) => {
-      if(!schoolId) return;
-      const result = await deleteSyllabusTopicAction(schoolId, subject, grade, topicId);
+      if(!currentSchoolId) return;
+      const result = await deleteSyllabusTopicAction(currentSchoolId, subject, grade, topicId);
       if (result.success) {
           setData(prev => {
               if (!prev) return null;
               const newData = {...prev};
-              const school = newData[schoolId];
+              const school = newData[currentSchoolId];
               const syllabusIndex = school.syllabi.findIndex(s => s.subject === subject && s.grade === grade);
               if (syllabusIndex > -1) {
                   school.syllabi[syllabusIndex].topics = school.syllabi[syllabusIndex].topics.filter(t => t.id !== topicId);
               }
               return newData;
           });
-          addLog(schoolId, 'Delete', `Deleted a topic from ${subject} syllabus}`);
+          addLog(currentSchoolId, 'Delete', `Deleted a topic from ${subject} syllabus}`);
       }
   };
 
   const updateApplicationStatus = async (id: string, status: Admission['status']) => {
-      if (!schoolId) return;
-      const result = await updateAdmissionStatusAction(schoolId, id, status);
+      if (!currentSchoolId) return;
+      const result = await updateAdmissionStatusAction(currentSchoolId, id, status);
       if (result.success) {
         setData(prev => {
           if (!prev) return null;
           const newData = { ...prev };
-          const school = newData[schoolId];
+          const school = newData[currentSchoolId];
           school.admissions = school.admissions.map(a => a.id === id ? { ...a, status } : a);
-          addLog(schoolId, 'Update', `Updated application ${id} status to ${status}`);
+          addLog(currentSchoolId, 'Update', `Updated application ${id} status to ${status}`);
           return newData;
         });
       }
   };
 
   const addStudentFromAdmission = async (application: Admission) => {
-      if (!schoolId) return;
-      const result = await addStudentFromAdmissionAction(schoolId, application);
+      if (!currentSchoolId) return;
+      const result = await addStudentFromAdmissionAction(currentSchoolId, application);
       if (result.success && result.newStudent) {
         setData(prev => {
             if (!prev) return null;
             const newData = { ...prev };
-            newData[schoolId].students.push(result.newStudent!);
-            addLog(schoolId, 'Create', `Enrolled new student ${result.newStudent.name} from admission.`);
+            newData[currentSchoolId].students.push(result.newStudent!);
+            addLog(currentSchoolId, 'Create', `Enrolled new student ${result.newStudent.name} from admission.`);
             return newData;
         });
       }
   };
   
   const addAsset = async (asset: Omit<any, 'id'>) => {
-      const targetSchoolId = role === 'GlobalAdmin' ? 'northwood' : schoolId;
+      const targetSchoolId = role === 'GlobalAdmin' ? 'northwood' : currentSchoolId;
       if (!targetSchoolId) return { success: false, error: 'School ID not found.'};
       
       const result = await addAssetAction(targetSchoolId, asset);
@@ -507,8 +507,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const addLessonAttendance = async (courseId: string, date: string, studentStatuses: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => {
-    if(!schoolId) return;
-    const result = await addLessonAttendanceAction(schoolId, courseId, date, studentStatuses);
+    if(!currentSchoolId) return;
+    const result = await addLessonAttendanceAction(currentSchoolId, courseId, date, studentStatuses);
     if(result.success) {
         const newRecords: Attendance[] = Object.entries(studentStatuses).map(([studentId, status]) => ({
             id: `ATT${Date.now()}${studentId}`, studentId, date: new Date(date), status, courseId,
@@ -517,40 +517,40 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         setData(prev => {
             if (!prev) return null;
             const newData = {...prev};
-            const school = newData[schoolId];
+            const school = newData[currentSchoolId];
             school.attendance = school.attendance.filter(a => !(new Date(a.date).toISOString().split('T')[0] === date && a.courseId === courseId));
             school.attendance.push(...newRecords);
-            addLog(schoolId, 'Create', `Recorded attendance for course ${courseId} on ${date}`);
+            addLog(currentSchoolId, 'Create', `Recorded attendance for course ${courseId} on ${date}`);
             return newData;
         });
     }
   };
 
   const addEvent = (event: Omit<Event, 'id' | 'schoolName'>) => {
-    if(!schoolId || !schoolProfile) return;
+    if(!currentSchoolId || !schoolProfile) return;
     const newEvent: Event = { id: `EVT${Date.now()}`, schoolName: schoolProfile.name, ...event };
     setData(prev => {
         if (!prev) return null;
         const newData = { ...prev };
-        newData[schoolId].events.push(newEvent);
-        addLog(schoolId, 'Create', `Scheduled new event: ${event.title}`);
+        newData[currentSchoolId].events.push(newEvent);
+        addLog(currentSchoolId, 'Create', `Scheduled new event: ${event.title}`);
         return newData;
     });
   };
 
   const teacher = useMemo(() => {
-    if (role !== 'Teacher' || !user?.email) return null;
-    return schoolData?.teachers.find(t => t.email === user.email);
+    if (role !== 'Teacher' || !user?.email || !schoolData) return null;
+    return schoolData.teachers.find(t => t.email === user.email);
   }, [role, user, schoolData]);
   
   const addGrade = async (grade: Omit<Grade, 'id' | 'date'>): Promise<boolean> => {
-    if(!schoolId || !teacher) return false;
-    const result = await addGradeAction(schoolId, {...grade, teacherId: teacher.id });
+    if(!currentSchoolId || !teacher) return false;
+    const result = await addGradeAction(currentSchoolId, {...grade, teacherId: teacher.id });
     if(result.success && result.grade) {
         setData(prev => {
             if (!prev) return null;
             const newData = { ...prev };
-            newData[schoolId].grades.push(result.grade!);
+            newData[currentSchoolId].grades.push(result.grade!);
             return newData;
         });
         return true;
@@ -559,13 +559,13 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const addTestSubmission = async (testId: string, studentId: string, score: number) => {
-    if (!schoolId) return;
-    const result = await addTestSubmissionAction(schoolId, testId, studentId, score);
+    if (!currentSchoolId) return;
+    const result = await addTestSubmissionAction(currentSchoolId, testId, studentId, score);
     if (result.success) {
         setData(prevData => {
             if (!prevData) return null;
             const newData = { ...prevData };
-            const school = newData[schoolId];
+            const school = newData[currentSchoolId];
             const testIndex = school.deployedTests.findIndex(t => t.id === testId);
             if (testIndex > -1) {
                 school.deployedTests[testIndex].submissions.push({
@@ -574,47 +574,47 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
                     submittedAt: new Date(),
                 });
             }
-            addLog(schoolId, 'Create', `Student ${studentId} submitted test ${testId}`);
+            addLog(currentSchoolId, 'Create', `Student ${studentId} submitted test ${testId}`);
             return newData;
         });
     }
   };
 
   const recordPayment = async (feeId: string, amount: number) => {
-    if (!schoolId) return;
-    const result = await recordPaymentAction(schoolId, feeId, amount);
+    if (!currentSchoolId) return;
+    const result = await recordPaymentAction(currentSchoolId, feeId, amount);
     if (result.success && result.fee) {
         setData(prev => {
             if (!prev) return null;
             const newData = { ...prev };
-            const school = newData[schoolId];
+            const school = newData[currentSchoolId];
             school.finance = school.finance.map(f => f.id === feeId ? result.fee! : f);
-            addLog(schoolId, 'Update', `Recorded payment of ${amount} for fee ${result.fee.description}`);
+            addLog(currentSchoolId, 'Update', `Recorded payment of ${amount} for fee ${result.fee.description}`);
             return newData;
         });
     }
   };
 
   const addFee = async (fee: Omit<FinanceRecord, 'id' | 'studentName' | 'status' | 'amountPaid'>) => {
-    if (!schoolId) return;
-    const student = schoolData?.students.find(s => s.id === fee.studentId);
+    if (!currentSchoolId || !schoolData) return;
+    const student = schoolData.students.find(s => s.id === fee.studentId);
     if (!student) return;
 
-    const result = await addFeeAction(schoolId, fee, student.name);
+    const result = await addFeeAction(currentSchoolId, fee, student.name);
 
     if (result.success && result.fee) {
         setData(prev => {
             if (!prev) return null;
             const newData = { ...prev };
-            newData[schoolId].finance.push(result.fee!);
-            addLog(schoolId, 'Create', `Created new fee for ${student.name}: ${fee.description}`);
+            newData[currentSchoolId].finance.push(result.fee!);
+            addLog(currentSchoolId, 'Create', `Created new fee for ${student.name}: ${fee.description}`);
             return newData;
         });
     }
   };
 
   const addExpense = async (expense: Omit<Expense, 'id'>) => {
-    const targetSchoolId = role === 'GlobalAdmin' ? 'northwood' : schoolId;
+    const targetSchoolId = role === 'GlobalAdmin' ? 'northwood' : currentSchoolId;
     if(!targetSchoolId) return;
     const result = await addExpenseAction(targetSchoolId, expense);
     if(result.success && result.expense) {
@@ -629,44 +629,44 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const addTeam = async (team: Omit<Team, 'id' | 'playerIds'>) => {
-    if (!schoolId) return;
-    const result = await addTeamAction(schoolId, team);
+    if (!currentSchoolId) return;
+    const result = await addTeamAction(currentSchoolId, team);
     if (result.success && result.team) {
       setData(prev => {
         if (!prev) return null;
         const newData = { ...prev };
-        newData[schoolId].teams.push(result.team!);
-        addLog(schoolId, 'Create', `Created new sports team: ${team.name}`);
+        newData[currentSchoolId].teams.push(result.team!);
+        addLog(currentSchoolId, 'Create', `Created new sports team: ${team.name}`);
         return newData;
       });
     }
   };
   
   const deleteTeam = async (teamId: string) => {
-    if (!schoolId) return;
-    const result = await deleteTeamAction(schoolId, teamId);
+    if (!currentSchoolId) return;
+    const result = await deleteTeamAction(currentSchoolId, teamId);
     if (result.success) {
       setData(prev => {
         if (!prev) return null;
         const newData = { ...prev };
-        const school = newData[schoolId];
+        const school = newData[currentSchoolId];
         const teamName = school.teams.find(t => t.id === teamId)?.name;
         school.teams = school.teams.filter(t => t.id !== teamId);
         school.competitions = school.competitions.filter(c => c.ourTeamId !== teamId);
-        addLog(schoolId, 'Delete', `Deleted team: ${teamName}`);
+        addLog(currentSchoolId, 'Delete', `Deleted team: ${teamName}`);
         return newData;
       });
     }
   };
 
   const addPlayerToTeam = async (teamId: string, studentId: string) => {
-      if(!schoolId) return;
-      const result = await addPlayerToTeamAction(schoolId, teamId, studentId);
+      if(!currentSchoolId) return;
+      const result = await addPlayerToTeamAction(currentSchoolId, teamId, studentId);
       if (result.success) {
         setData(prev => {
             if (!prev) return null;
             const newData = {...prev};
-            const school = newData[schoolId];
+            const school = newData[currentSchoolId];
             school.teams = school.teams.map(t => {
                 if (t.id === teamId && !t.playerIds.includes(studentId)) {
                     t.playerIds.push(studentId);
@@ -679,13 +679,13 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const removePlayerFromTeam = async (teamId: string, studentId: string) => {
-      if(!schoolId) return;
-      const result = await removePlayerFromTeamAction(schoolId, teamId, studentId);
+      if(!currentSchoolId) return;
+      const result = await removePlayerFromTeamAction(currentSchoolId, teamId, studentId);
       if (result.success) {
         setData(prev => {
             if (!prev) return null;
             const newData = {...prev};
-            const school = newData[schoolId];
+            const school = newData[currentSchoolId];
             school.teams = school.teams.map(t => {
                 if (t.id === teamId) {
                     t.playerIds = t.playerIds.filter(id => id !== studentId);
@@ -698,42 +698,42 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const addCompetition = async (competition: Omit<Competition, 'id'>) => {
-    if(!schoolId) return;
-    const result = await addCompetitionAction(schoolId, competition);
+    if(!currentSchoolId) return;
+    const result = await addCompetitionAction(currentSchoolId, competition);
     if (result.success && result.competition) {
       setData(prev => {
           if (!prev) return null;
           const newData = {...prev};
-          newData[schoolId].competitions.push(result.competition!);
-          addLog(schoolId, 'Create', `Scheduled competition: ${competition.title}`);
+          newData[currentSchoolId].competitions.push(result.competition!);
+          addLog(currentSchoolId, 'Create', `Scheduled competition: ${competition.title}`);
           return newData;
       });
     }
   };
   
   const addCompetitionResult = async (competitionId: string, result: Competition['result']) => {
-    if (!schoolId) return;
-    const actionResult = await addCompetitionResultAction(schoolId, competitionId, result);
+    if (!currentSchoolId) return;
+    const actionResult = await addCompetitionResultAction(currentSchoolId, competitionId, result);
     if (actionResult.success && actionResult.competition) {
       setData(prev => {
         if (!prev) return null;
         const newData = { ...prev };
-        const school = newData[schoolId];
+        const school = newData[currentSchoolId];
         school.competitions = school.competitions.map(c => c.id === competitionId ? actionResult.competition! : c);
-        addLog(schoolId, 'Update', `Recorded result for competition ${competitionId}`);
+        addLog(currentSchoolId, 'Update', `Recorded result for competition ${competitionId}`);
         return newData;
       });
     }
   };
   
   const addBehavioralAssessment = async (assessment: Omit<any, 'id'|'date'>) => {
-    if(!schoolId) return;
-    const result = await addBehavioralAssessmentAction(schoolId, assessment);
+    if(!currentSchoolId) return;
+    const result = await addBehavioralAssessmentAction(currentSchoolId, assessment);
     if(result.success && result.assessment) {
         setData(prev => {
             if (!prev) return null;
             const newData = {...prev};
-            const school = newData[schoolId];
+            const school = newData[currentSchoolId];
             school.students = school.students.map(s => {
                 if(s.id === assessment.studentId) {
                     if(!s.behavioralAssessments) s.behavioralAssessments = [];
@@ -741,35 +741,35 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
                 }
                 return s;
             });
-            addLog(schoolId, 'Create', `Added behavioral assessment for student ${assessment.studentId}`);
+            addLog(currentSchoolId, 'Create', `Added behavioral assessment for student ${assessment.studentId}`);
             return newData;
         });
     }
   };
   
   const addKioskMedia = async (media: Omit<KioskMedia, 'id' | 'createdAt'>) => {
-    if (!schoolId) return;
-    const result = await addKioskMediaAction(schoolId, media);
+    if (!currentSchoolId) return;
+    const result = await addKioskMediaAction(currentSchoolId, media);
     if (result.success && result.media) {
       setData(prev => {
         if (!prev) return null;
         const newData = { ...prev };
-        newData[schoolId].kioskMedia.push(result.media!);
-        addLog(schoolId, 'Create', `Added kiosk media: ${media.title}`);
+        newData[currentSchoolId].kioskMedia.push(result.media!);
+        addLog(currentSchoolId, 'Create', `Added kiosk media: ${media.title}`);
         return newData;
       });
     }
   };
   
   const removeKioskMedia = async (id: string) => {
-      if(!schoolId) return;
-      const result = await removeKioskMediaAction(schoolId, id);
+      if(!currentSchoolId) return;
+      const result = await removeKioskMediaAction(currentSchoolId, id);
       if (result.success) {
           setData(prev => {
               if (!prev) return null;
               const newData = {...prev};
-              newData[schoolId].kioskMedia = newData[schoolId].kioskMedia.filter(m => m.id !== id);
-              addLog(schoolId, 'Delete', `Removed kiosk media item ${id}`);
+              newData[currentSchoolId].kioskMedia = newData[currentSchoolId].kioskMedia.filter(m => m.id !== id);
+              addLog(currentSchoolId, 'Delete', `Removed kiosk media item ${id}`);
               return newData;
           });
       }
@@ -885,121 +885,163 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         return newData;
     });
   };
-
-  const [parentStatusOverrides, setParentStatusOverrides] = useState<Record<string, 'Active' | 'Suspended'>>({});
+  
   const updateParentStatus = (parentEmail: string, status: 'Active' | 'Suspended') => {
     setParentStatusOverrides(prev => ({...prev, [parentEmail]: status}));
   };
   
   const addExamBoard = async (board: string) => {
-    if(!schoolId) return;
-    const result = await addExamBoardAction(schoolId, board);
+    if(!currentSchoolId) return;
+    const result = await addExamBoardAction(currentSchoolId, board);
     if(result.success && result.board) {
       setData(prev => {
           if (!prev) return null;
           const newData = {...prev};
-          newData[schoolId].examBoards.push(result.board!);
+          newData[currentSchoolId].examBoards.push(result.board!);
           return newData;
       });
     }
   };
   const deleteExamBoard = async (board: string) => {
-    if(!schoolId) return;
-    const result = await deleteExamBoardAction(schoolId, board);
+    if(!currentSchoolId) return;
+    const result = await deleteExamBoardAction(currentSchoolId, board);
     if(result.success) {
       setData(prev => {
           if (!prev) return null;
           const newData = {...prev};
-          newData[schoolId].examBoards = newData[schoolId].examBoards.filter(b => b !== board);
+          newData[currentSchoolId].examBoards = newData[currentSchoolId].examBoards.filter(b => b !== board);
           return newData;
       });
     }
   };
   const addFeeDescription = async (desc: string) => {
-    if(!schoolId) return;
-    const result = await addFeeDescriptionAction(schoolId, desc);
+    if(!currentSchoolId) return;
+    const result = await addFeeDescriptionAction(currentSchoolId, desc);
     if(result.success && result.description) {
       setData(prev => {
           if (!prev) return null;
           const newData = {...prev};
-          newData[schoolId].feeDescriptions.push(result.description!);
+          newData[currentSchoolId].feeDescriptions.push(result.description!);
           return newData;
       });
     }
   };
   const deleteFeeDescription = async (desc: string) => {
-    if(!schoolId) return;
-    const result = await deleteFeeDescriptionAction(schoolId, desc);
+    if(!currentSchoolId) return;
+    const result = await deleteFeeDescriptionAction(currentSchoolId, desc);
     if (result.success) {
       setData(prev => {
           if (!prev) return null;
           const newData = {...prev};
-          newData[schoolId].feeDescriptions = newData[schoolId].feeDescriptions.filter(d => d !== desc);
+          newData[currentSchoolId].feeDescriptions = newData[currentSchoolId].feeDescriptions.filter(d => d !== desc);
           return newData;
       });
     }
   };
   const addAudience = async (aud: string) => {
-    if(!schoolId) return;
-    const result = await addAudienceAction(schoolId, aud);
+    if(!currentSchoolId) return;
+    const result = await addAudienceAction(currentSchoolId, aud);
     if(result.success && result.audience) {
       setData(prev => {
           if (!prev) return null;
           const newData = {...prev};
-          newData[schoolId].audiences.push(result.audience!);
+          newData[currentSchoolId].audiences.push(result.audience!);
           return newData;
       });
     }
   };
   const deleteAudience = async (aud: string) => {
-    if(!schoolId) return;
-    const result = await deleteAudienceAction(schoolId, aud);
+    if(!currentSchoolId) return;
+    const result = await deleteAudienceAction(currentSchoolId, aud);
     if(result.success) {
       setData(prev => {
           if (!prev) return null;
           const newData = {...prev};
-          newData[schoolId].audiences = newData[schoolId].audiences.filter(a => a !== aud);
+          newData[currentSchoolId].audiences = newData[currentSchoolId].audiences.filter(a => a !== aud);
           return newData;
       });
     }
   };
   
   const addTerm = async (term: any) => {
-    if (!schoolId) return;
-    const result = await addTermAction(schoolId, term);
+    if (!currentSchoolId) return;
+    const result = await addTermAction(currentSchoolId, term);
     if (result.success && result.term) {
         setData(prev => {
             if (!prev) return null;
             const newData = {...prev};
-            newData[schoolId].terms.push(result.term!);
+            newData[currentSchoolId].terms.push(result.term!);
             return newData;
         });
     }
   };
 
   const addHoliday = async (holiday: any) => {
-      if (!schoolId) return;
-      const result = await addHolidayAction(schoolId, holiday);
+      if (!currentSchoolId) return;
+      const result = await addHolidayAction(currentSchoolId, holiday);
       if (result.success && result.holiday) {
         setData(prev => {
             if (!prev) return null;
             const newData = {...prev};
-            newData[schoolId].holidays.push(result.holiday!);
+            newData[currentSchoolId].holidays.push(result.holiday!);
             return newData;
         });
       }
   };
   
   const addSavedReport = (report: Omit<SavedReport, 'id'>) => {
-      if (!schoolId) return;
+      if (!currentSchoolId) return;
       const newReport: SavedReport = { id: `REP${Date.now()}`, ...report };
       setData(prev => {
           if (!prev) return null;
           const newData = {...prev};
-          newData[schoolId].savedReports.push(newReport);
+          newData[currentSchoolId].savedReports.push(newReport);
           return newData;
       });
   };
+
+  const addDeployedTest = (test: Omit<DeployedTest, 'id' | 'submissions'>) => {
+    if(!currentSchoolId) return;
+    const newTest: DeployedTest = {
+      id: `DT${Date.now()}`,
+      submissions: [],
+      ...test,
+    };
+     setData(prev => {
+      if (!prev) return null;
+      const newData = {...prev};
+      newData[currentSchoolId].deployedTests.push(newTest);
+      return newData;
+    });
+  }
+
+  const addSavedTest = (test: Omit<SavedTest, 'id' | 'createdAt'>) => {
+    if(!currentSchoolId) return;
+    const newTest: SavedTest = {
+      id: `ST${Date.now()}`,
+      createdAt: new Date(),
+      ...test,
+    };
+    setData(prev => {
+      if (!prev) return null;
+      const newData = {...prev};
+      newData[currentSchoolId].savedTests.push(newTest);
+      return newData;
+    });
+  };
+  
+  const deleteSavedTest = (testId: string) => {
+    if(!currentSchoolId) return;
+    setData(prev => {
+      if (!prev) return null;
+      const newData = {...prev};
+      newData[currentSchoolId].savedTests = newData[currentSchoolId].savedTests.filter(t => t.id !== testId);
+      // Also remove deployments of this test
+      newData[currentSchoolId].deployedTests = newData[currentSchoolId].deployedTests.filter(t => t.testId !== testId);
+      return newData;
+    });
+  }
+  
 
   const value: SchoolDataContextType = {
     isLoading,

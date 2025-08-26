@@ -30,22 +30,30 @@ export default function GlobalParentsPage() {
 
   const allParents = useMemo(() => {
     if (!allSchoolData) return [];
-    
+
     const parentMap = new Map();
+    const childrenMap = new Map(); // Use a separate map to track unique children per parent
 
     Object.values(allSchoolData).forEach(school => {
       school.students.forEach(student => {
         if (student.parentEmail) {
           if (!parentMap.has(student.parentEmail)) {
-            parentMap.set(student.parentEmail, {
-              name: student.parentName,
+ parentMap.set(student.parentEmail, {
+ name: student.parentName,
               email: student.parentEmail,
               children: [],
               schools: new Set(),
             });
           }
+
           const parent = parentMap.get(student.parentEmail);
-          parent.children.push({ name: student.name, grade: student.grade });
+
+          // Use a unique identifier for the child (e.g., schoolId + studentId or just student name + grade + school name)
+          const childIdentifier = `${student.name}-${student.grade}-${school.profile.id}`; 
+          if (!childrenMap.has(`${parent.email}-${childIdentifier}`)) {
+            parent.children.push({ name: student.name, grade: student.grade, school: school.profile.name });
+            childrenMap.set(`${parent.email}-${childIdentifier}`, true);
+          }
           parent.schools.add(school.profile.name);
         }
       });
@@ -64,7 +72,7 @@ export default function GlobalParentsPage() {
     const grades = new Set(allParents.flatMap(p => p.childrenGrades));
     return ['all', ...Array.from(grades).sort((a, b) => parseInt(a) - parseInt(b))];
   }, [allParents]);
-  
+
   const filteredParents = useMemo(() => {
     return allParents.filter(parent => {
       const matchesSearch = parent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
