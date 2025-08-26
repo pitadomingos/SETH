@@ -159,52 +159,19 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     return data[currentSchoolId];
   }, [currentSchoolId, data]);
 
-    const allStudentsWithInjection = useMemo(() => {
-        if (!data) return [];
-        const baseStudents = Object.values(data).flatMap(d => d.students.map(s => ({...s, schoolName: d.profile.name, schoolId: d.profile.id })));
-        
-        // --- DATA INJECTION ---
-        const injectedStudents: Student[] = [
-            { id: 'STU201', name: 'Lucia Santos', email: 'lucia.santos@northwood.edu', phone: '840000201', address: 'Rua de Kassuende', sex: 'Female', dateOfBirth: '2010-02-12', grade: '8', class: 'B', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [], schoolName: 'Northwood High', schoolId: 'northwood' },
-            { id: 'STU202', name: 'Pedro Santos', email: 'pedro.santos@northwood.edu', phone: '840000202', address: 'Rua de Kassuende', sex: 'Male', dateOfBirth: '2009-07-05', grade: '9', class: 'C', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [], schoolName: 'Northwood High', schoolId: 'northwood' }
-        ];
-
-        const baseStudentIds = new Set(baseStudents.map(s => s.id));
-        const studentsToAdd = injectedStudents.filter(s => !baseStudentIds.has(s.id));
-        
-        return [...baseStudents, ...studentsToAdd];
-    }, [data]);
-
-    const allGradesWithInjection = useMemo(() => {
-        if (!data) return [];
-        const baseGrades = Object.values(data).flatMap(d => d.grades);
-
-        // --- DATA INJECTION ---
-        const injectedGrades: Grade[] = [
-             { id: 'G14', studentId: 'STU201', subject: 'Science', grade: '12', date: new Date('2024-04-12T00:00:00Z'), type: 'Test', description: 'Biology Mid-Term', teacherId: 'T02' },
-             { id: 'G15', studentId: 'STU202', subject: 'History', grade: '17', date: new Date('2024-03-10T00:00:00Z'), type: 'Coursework', description: 'Ancient Civilizations Essay', teacherId: 'T02' }
-        ];
-
-        const baseGradeIds = new Set(baseGrades.map(g => g.id));
-        const gradesToAdd = injectedGrades.filter(g => !baseGradeIds.has(g.id));
-
-        return [...baseGrades, ...gradesToAdd];
-    }, [data]);
-
-
-    const allStudents = useMemo(() => allStudentsWithInjection, [allStudentsWithInjection]);
+  const allStudents = useMemo(() => {
+    if (!data) return [];
+    return Object.values(data).flatMap(d => d.students.map(s => ({...s, schoolName: d.profile.name, schoolId: d.profile.id })));
+  }, [data]);
 
     const studentsData = useMemo(() => {
-        if (!user || !role) return [];
+        if (!user || !role || !allStudents.length) return [];
         if (role === 'Parent') {
             return allStudents.filter(student => student.parentEmail === user.email);
         }
-        if (!data || !currentSchoolId) return [];
-        
-        // Ensure local school view also gets injected students if they belong to that school
-        const schoolStudents = allStudents.filter(s => s.schoolId === currentSchoolId);
-        return schoolStudents;
-    }, [role, user, data, currentSchoolId, allStudents]);
+        if (!schoolData) return [];
+        return schoolData.students;
+    }, [role, user, schoolData, allStudents]);
 
   const schoolGroups = useMemo(() => {
     return data?.['northwood']?.schoolGroups || {};
@@ -828,7 +795,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }
     
     // Fallback for parents, who don't have a direct school link in their user profile
-    if (!recipientSchoolId) {
+    if (!recipientSchoolId && role === 'Parent') {
         const student = allStudents.find(s => s.parentEmail === user.email);
         if (student) {
             recipientSchoolId = student.schoolId;
@@ -1117,7 +1084,14 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }, [schoolData, data, role, user, allStudents]),
     assetsData: schoolData?.assets || [],
     examsData: schoolData?.exams || [],
-    grades: allGradesWithInjection,
+    grades: useMemo(() => {
+        if (!data) return [];
+        if (role === 'Parent') {
+          const parentStudentIds = allStudents.filter(s => s.parentEmail === user.email).map(s => s.id);
+          return Object.values(data).flatMap(d => d.grades.filter(g => parentStudentIds.includes(g.studentId)));
+        }
+        return schoolData?.grades || [];
+    }, [schoolData, data, role, user, allStudents]),
     attendance: useMemo(() => {
         if (!data || !user) return [];
         if (role === 'Parent') {
