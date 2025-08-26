@@ -829,7 +829,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const { schoolId, ...rest } = admission;
     if (!schoolId || !user) return;
     const newAdmission: Admission = {
-        id: `ADM${Date.now()}`,
+        id: `ADM${Date.now()}${Math.floor(Math.random() * 1000)}`,
         status: 'Pending',
         date: new Date().toISOString().split('T')[0],
         parentName: user.name,
