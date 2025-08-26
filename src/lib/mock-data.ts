@@ -508,8 +508,6 @@ const northwoodData: SchoolData = {
         { id: 'STU001', name: 'Miguel Santos', email: 'miguel.santos@northwood.edu', phone: '840000001', address: 'Rua de Kassuende', sex: 'Male', dateOfBirth: '2008-05-10', grade: '10', class: 'A', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] },
         { id: 'STU002', name: 'Inês Pereira', email: 'ines.pereira@northwood.edu', phone: '840000002', address: 'Av. 24 de Julho', sex: 'Female', dateOfBirth: '2008-08-15', grade: '10', class: 'A', parentName: 'João Pereira', parentEmail: 'joao.pereira@email.com', status: 'Active', behavioralAssessments: [] },
         { id: 'STU003', name: 'Tiago Rodrigues', email: 'tiago.rodrigues@northwood.edu', phone: '840000003', address: 'Av. da Marginal', sex: 'Male', dateOfBirth: '2007-01-20', grade: '11', class: 'B', parentName: 'Carla Rodrigues', parentEmail: 'carla.rodrigues@email.com', status: 'Active', behavioralAssessments: [] },
-        { id: 'STU201', name: 'Lucia Santos', email: 'lucia.santos@northwood.edu', phone: '840000201', address: 'Rua de Kassuende', sex: 'Female', dateOfBirth: '2010-02-12', grade: '8', class: 'B', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] },
-        { id: 'STU202', name: 'Pedro Santos', email: 'pedro.santos@northwood.edu', phone: '840000202', address: 'Rua de Kassuende', sex: 'Male', dateOfBirth: '2009-07-05', grade: '9', class: 'C', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] }
     ],
     teachers: [
         { id: 'T01', name: 'Sérgio Almeida', email: 'sergio.almeida@northwood.edu', phone: '820000001', address: 'Av. da Guerra Popular', sex: 'Male', subject: 'Mathematics', experience: '10 years', qualifications: 'M.Sc. Mathematics', status: 'Active' },
@@ -530,8 +528,6 @@ const northwoodData: SchoolData = {
         { id: 'G01', studentId: 'STU001', subject: 'Mathematics', grade: '18', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
         { id: 'G02', studentId: 'STU002', subject: 'Mathematics', grade: '14', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
         { id: 'G03', studentId: 'STU003', subject: 'History', grade: '16', date: new Date('2024-04-10T00:00:00Z'), type: 'Coursework', description: 'WWII Essay', teacherId: 'T02' },
-        { id: 'G14', studentId: 'STU202', subject: 'Science', grade: '12', date: new Date('2024-04-12T00:00:00Z'), type: 'Test', description: 'Biology Mid-Term', teacherId: 'T02' },
-        { id: 'G15', studentId: 'STU202', subject: 'History', grade: '17', date: new Date('2024-03-10T00:00:00Z'), type: 'Coursework', description: 'Ancient Civilizations Essay', teacherId: 'T02' }
     ],
     finance: [
         { id: 'FIN01', studentId: 'STU001', studentName: 'Miguel Santos', description: 'Term 1 Tuition', totalAmount: 50000, amountPaid: 50000, dueDate: '2024-02-01', status: 'Paid' },
@@ -554,10 +550,32 @@ const northwoodData: SchoolData = {
     schoolGroups: {
       'miniarte_group': ['miniarte', 'miniarte_matola', 'miniarte_beira'],
     },
-    syllabi: [], admissions: [], assets: [], exams: [], attendance: [], events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'], audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'], expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], messages: [], savedReports: [], examBoards: ['Internal', 'Cambridge', 'IEB'], lessonPlans: [],
+    ...emptySchoolData,
+    profile: {
+        id: 'northwood',
+        name: 'Northwood High',
+        head: 'Amelia Costa',
+        address: 'Av. Julius Nyerere, Maputo',
+        phone: '+258 84 123 4567',
+        email: 'amelia.costa@northwood.edu',
+        motto: 'Excellence in Education',
+        tier: 'Pro',
+        logoUrl: 'https://placehold.co/100x100.png',
+        certificateTemplateUrl: 'https://placehold.co/800x600.png',
+        transcriptTemplateUrl: 'https://placehold.co/600x800.png',
+        gradingSystem: '20-Point',
+        currency: 'MZN',
+        status: 'Active',
+        schoolLevel: 'Full',
+        gradeCapacity: { "1": 30, "2": 30, "3": 30, "4": 30, "5": 30, "6": 35, "7": 35, "8": 35, "9": 40, "10": 40, "11": 40, "12": 40 },
+        kioskConfig: defaultKioskConfig,
+        subscription: { status: 'Paid', amount: 300, dueDate: '2025-01-01' },
+        awards: [],
+    },
 };
 
 const miniArteData: SchoolData = {
+    ...emptySchoolData,
     profile: {
         id: 'miniarte',
         name: 'MiniArte Creative School',
@@ -579,68 +597,60 @@ const miniArteData: SchoolData = {
         subscription: { status: 'Paid', amount: 500, dueDate: '2025-01-01' },
         awards: [],
     },
-    students: [],
-    teachers: [],
-    classes: [],
-    courses: [],
-    grades: [],
-    finance: [],
-    schoolGroups: {},
-    activityLogs: [],
-    syllabi: [], admissions: [], assets: [], exams: [], attendance: [], events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'], audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'], expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], messages: [], savedReports: [], examBoards: ['Internal', 'Cambridge', 'IEB'], deployedTests: [], lessonPlans: [], savedTests: []
 };
 
 const miniArteMatolaData: SchoolData = {
-  profile: {
-    id: 'miniarte_matola',
-    name: 'MiniArte Matola Campus',
-    head: 'Isabel Rocha',
-    address: 'Bairro Tsalala, Matola',
-    email: 'isabel.rocha@miniarte.edu',
-    motto: 'Nurturing Young Artists',
-    tier: 'Premium',
-    logoUrl: 'https://placehold.co/100x100.png',
-    certificateTemplateUrl: 'https://placehold.co/800x600.png',
-    transcriptTemplateUrl: 'https://placehold.co/600x800.png',
-    gradingSystem: '20-Point',
-    currency: 'USD',
-    status: 'Active',
-    schoolLevel: 'Full',
-    gradeCapacity: { "1": 20, "2": 20, "3": 20, "4": 25, "5": 25, "6": 25, "7": 30, "8": 30, "9": 30, "10": 30, "11": 30, "12": 30 },
-    kioskConfig: defaultKioskConfig,
-    subscription: { status: 'Paid', amount: 250, dueDate: '2025-01-01' },
-    awards: [],
-  },
-  students: [ { id: 'STU301', name: 'Julio Silva', email: 'julio.silva@miniarte.edu', phone: '860000301', address: 'Bairro Tsalala', sex: 'Male', dateOfBirth: '2012-09-01', grade: '6', class: 'A', parentName: 'Fernanda Silva', parentEmail: 'fernanda.silva@email.com', status: 'Active', behavioralAssessments: [] }],
-  ...emptySchoolData,
+    ...emptySchoolData,
+    profile: {
+        id: 'miniarte_matola',
+        name: 'MiniArte Matola Campus',
+        head: 'Isabel Rocha',
+        address: 'Bairro Tsalala, Matola',
+        email: 'isabel.rocha@miniarte.edu',
+        motto: 'Nurturing Young Artists',
+        tier: 'Premium',
+        logoUrl: 'https://placehold.co/100x100.png',
+        certificateTemplateUrl: 'https://placehold.co/800x600.png',
+        transcriptTemplateUrl: 'https://placehold.co/600x800.png',
+        gradingSystem: '20-Point',
+        currency: 'USD',
+        status: 'Active',
+        schoolLevel: 'Full',
+        gradeCapacity: { "1": 20, "2": 20, "3": 20, "4": 25, "5": 25, "6": 25, "7": 30, "8": 30, "9": 30, "10": 30, "11": 30, "12": 30 },
+        kioskConfig: defaultKioskConfig,
+        subscription: { status: 'Paid', amount: 250, dueDate: '2025-01-01' },
+        awards: [],
+    },
+    students: [ { id: 'STU301', name: 'Julio Silva', email: 'julio.silva@miniarte.edu', phone: '860000301', address: 'Bairro Tsalala', sex: 'Male', dateOfBirth: '2012-09-01', grade: '6', class: 'A', parentName: 'Fernanda Silva', parentEmail: 'fernanda.silva@email.com', status: 'Active', behavioralAssessments: [] }],
 };
 
 const miniArteBeiraData: SchoolData = {
-  profile: {
-    id: 'miniarte_beira',
-    name: 'MiniArte Beira Campus',
-    head: 'Pedro Gonçalves',
-    address: 'Bairro da Ponta Gêa, Beira',
-    email: 'pedro.goncalves@miniarte.edu',
-    motto: 'Artistry by the Sea',
-    tier: 'Premium',
-    logoUrl: 'https://placehold.co/100x100.png',
-    certificateTemplateUrl: 'https://placehold.co/800x600.png',
-    transcriptTemplateUrl: 'https://placehold.co/600x800.png',
-    gradingSystem: '20-Point',
-    currency: 'USD',
-    status: 'Active',
-    schoolLevel: 'Full',
-    gradeCapacity: { "1": 20, "2": 20, "3": 20, "4": 25, "5": 25, "6": 25, "7": 30, "8": 30, "9": 30, "10": 30, "11": 30, "12": 30 },
-    kioskConfig: defaultKioskConfig,
-    subscription: { status: 'Paid', amount: 250, dueDate: '2025-01-01' },
-    awards: [],
-  },
-  students: [{ id: 'STU401', name: 'Mariana Lopes', email: 'mariana.lopes@miniarte.edu', phone: '860000401', address: 'Bairro da Ponta Gêa', sex: 'Female', dateOfBirth: '2011-12-25', grade: '7', class: 'A', parentName: 'Sérgio Lopes', parentEmail: 'sergio.lopes@email.com', status: 'Active', behavioralAssessments: [] }],
-  ...emptySchoolData,
+    ...emptySchoolData,
+    profile: {
+        id: 'miniarte_beira',
+        name: 'MiniArte Beira Campus',
+        head: 'Pedro Gonçalves',
+        address: 'Bairro da Ponta Gêa, Beira',
+        email: 'pedro.goncalves@miniarte.edu',
+        motto: 'Artistry by the Sea',
+        tier: 'Premium',
+        logoUrl: 'https://placehold.co/100x100.png',
+        certificateTemplateUrl: 'https://placehold.co/800x600.png',
+        transcriptTemplateUrl: 'https://placehold.co/600x800.png',
+        gradingSystem: '20-Point',
+        currency: 'USD',
+        status: 'Active',
+        schoolLevel: 'Full',
+        gradeCapacity: { "1": 20, "2": 20, "3": 20, "4": 25, "5": 25, "6": 25, "7": 30, "8": 30, "9": 30, "10": 30, "11": 30, "12": 30 },
+        kioskConfig: defaultKioskConfig,
+        subscription: { status: 'Paid', amount: 250, dueDate: '2025-01-01' },
+        awards: [],
+    },
+    students: [{ id: 'STU401', name: 'Mariana Lopes', email: 'mariana.lopes@miniarte.edu', phone: '860000401', address: 'Bairro da Ponta Gêa', sex: 'Female', dateOfBirth: '2011-12-25', grade: '7', class: 'A', parentName: 'Sérgio Lopes', parentEmail: 'sergio.lopes@email.com', status: 'Active', behavioralAssessments: [] }],
 };
 
 const logixSystemsData: SchoolData = {
+    ...emptySchoolData,
     profile: {
         id: 'logixsystems',
         name: 'Logix Systems School',
@@ -670,10 +680,10 @@ const logixSystemsData: SchoolData = {
     classes: [
         { id: 'C501', name: 'Grade 8-A', grade: '8', teacher: 'Jorge Dias', students: 1, room: 'S1' }
     ],
-    ...emptySchoolData,
 };
 
 const plcData: SchoolData = {
+    ...emptySchoolData,
     profile: {
         id: 'plc',
         name: 'Progressive Learning Center',
@@ -703,10 +713,10 @@ const plcData: SchoolData = {
     classes: [
         { id: 'C601', name: 'Grade 11-A', grade: '11', teacher: 'Sofia Carvalho', students: 1, room: 'E1' }
     ],
-    ...emptySchoolData,
 };
 
 const trialSchoolData: SchoolData = {
+    ...emptySchoolData,
     profile: {
         id: 'trialschool',
         name: 'Trial School',
@@ -736,7 +746,6 @@ const trialSchoolData: SchoolData = {
     classes: [
         { id: 'C701', name: 'Grade 4-A', grade: '4', teacher: 'Filipe Correia', students: 1, room: 'P1' }
     ],
-    ...emptySchoolData,
 };
 
 export const initialSchoolData: Record<string, SchoolData> = {
@@ -748,4 +757,5 @@ export const initialSchoolData: Record<string, SchoolData> = {
     'plc': plcData,
     'trialschool': trialSchoolData,
 };
+
 
