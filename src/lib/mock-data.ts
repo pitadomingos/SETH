@@ -591,43 +591,56 @@ const miniArteData: SchoolData = {
 };
 
 const miniArteMatolaData: SchoolData = {
-  ...emptySchoolData,
-  students: [ { id: 'STU301', name: 'Julio Silva', email: 'julio.silva@miniarte.edu', phone: '860000301', address: 'Bairro Tsalala', sex: 'Male', dateOfBirth: '2012-09-01', grade: '6', class: 'A', parentName: 'Fernanda Silva', parentEmail: 'fernanda.silva@email.com', status: 'Active', behavioralAssessments: [] }],
   profile: {
-    ...miniArteData.profile,
     id: 'miniarte_matola',
     name: 'MiniArte Matola Campus',
     head: 'Isabel Rocha',
     address: 'Bairro Tsalala, Matola',
     email: 'isabel.rocha@miniarte.edu',
+    motto: 'Nurturing Young Artists',
+    tier: 'Premium',
+    logoUrl: 'https://placehold.co/100x100.png',
+    certificateTemplateUrl: 'https://placehold.co/800x600.png',
+    transcriptTemplateUrl: 'https://placehold.co/600x800.png',
+    gradingSystem: '20-Point',
+    currency: 'USD',
+    status: 'Active',
+    schoolLevel: 'Full',
+    gradeCapacity: { "1": 20, "2": 20, "3": 20, "4": 25, "5": 25, "6": 25, "7": 30, "8": 30, "9": 30, "10": 30, "11": 30, "12": 30 },
     kioskConfig: defaultKioskConfig,
     subscription: { status: 'Paid', amount: 250, dueDate: '2025-01-01' },
     awards: [],
   },
-  schoolGroups: {},
-  activityLogs: [],
+  students: [ { id: 'STU301', name: 'Julio Silva', email: 'julio.silva@miniarte.edu', phone: '860000301', address: 'Bairro Tsalala', sex: 'Male', dateOfBirth: '2012-09-01', grade: '6', class: 'A', parentName: 'Fernanda Silva', parentEmail: 'fernanda.silva@email.com', status: 'Active', behavioralAssessments: [] }],
+  ...emptySchoolData,
 };
 
 const miniArteBeiraData: SchoolData = {
-  ...emptySchoolData,
-  students: [{ id: 'STU401', name: 'Mariana Lopes', email: 'mariana.lopes@miniarte.edu', phone: '860000401', address: 'Bairro da Ponta Gêa', sex: 'Female', dateOfBirth: '2011-12-25', grade: '7', class: 'A', parentName: 'Sérgio Lopes', parentEmail: 'sergio.lopes@email.com', status: 'Active', behavioralAssessments: [] }],
   profile: {
-    ...miniArteData.profile,
     id: 'miniarte_beira',
     name: 'MiniArte Beira Campus',
     head: 'Pedro Gonçalves',
     address: 'Bairro da Ponta Gêa, Beira',
     email: 'pedro.goncalves@miniarte.edu',
+    motto: 'Artistry by the Sea',
+    tier: 'Premium',
+    logoUrl: 'https://placehold.co/100x100.png',
+    certificateTemplateUrl: 'https://placehold.co/800x600.png',
+    transcriptTemplateUrl: 'https://placehold.co/600x800.png',
+    gradingSystem: '20-Point',
+    currency: 'USD',
+    status: 'Active',
+    schoolLevel: 'Full',
+    gradeCapacity: { "1": 20, "2": 20, "3": 20, "4": 25, "5": 25, "6": 25, "7": 30, "8": 30, "9": 30, "10": 30, "11": 30, "12": 30 },
     kioskConfig: defaultKioskConfig,
     subscription: { status: 'Paid', amount: 250, dueDate: '2025-01-01' },
     awards: [],
   },
-  schoolGroups: {},
-  activityLogs: [],
+  students: [{ id: 'STU401', name: 'Mariana Lopes', email: 'mariana.lopes@miniarte.edu', phone: '860000401', address: 'Bairro da Ponta Gêa', sex: 'Female', dateOfBirth: '2011-12-25', grade: '7', class: 'A', parentName: 'Sérgio Lopes', parentEmail: 'sergio.lopes@email.com', status: 'Active', behavioralAssessments: [] }],
+  ...emptySchoolData,
 };
 
 const logixSystemsData: SchoolData = {
-    ...emptySchoolData,
     profile: {
         id: 'logixsystems',
         name: 'Logix Systems School',
@@ -656,11 +669,11 @@ const logixSystemsData: SchoolData = {
     ],
     classes: [
         { id: 'C501', name: 'Grade 8-A', grade: '8', teacher: 'Jorge Dias', students: 1, room: 'S1' }
-    ]
+    ],
+    ...emptySchoolData,
 };
 
 const plcData: SchoolData = {
-    ...emptySchoolData,
     profile: {
         id: 'plc',
         name: 'Progressive Learning Center',
@@ -689,11 +702,11 @@ const plcData: SchoolData = {
     ],
     classes: [
         { id: 'C601', name: 'Grade 11-A', grade: '11', teacher: 'Sofia Carvalho', students: 1, room: 'E1' }
-    ]
+    ],
+    ...emptySchoolData,
 };
 
 const trialSchoolData: SchoolData = {
-    ...emptySchoolData,
     profile: {
         id: 'trialschool',
         name: 'Trial School',
@@ -722,7 +735,8 @@ const trialSchoolData: SchoolData = {
     ],
     classes: [
         { id: 'C701', name: 'Grade 4-A', grade: '4', teacher: 'Filipe Correia', students: 1, room: 'P1' }
-    ]
+    ],
+    ...emptySchoolData,
 };
 
 export const initialSchoolData: Record<string, SchoolData> = {
@@ -734,3 +748,4 @@ export const initialSchoolData: Record<string, SchoolData> = {
     'plc': plcData,
     'trialschool': trialSchoolData,
 };
+
