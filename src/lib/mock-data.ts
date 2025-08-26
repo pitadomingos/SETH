@@ -403,6 +403,14 @@ export const mockUsers: Record<string, UserProfile> = {
     user: { username: 'admin3', name: 'Carlos Pereira', role: 'Admin', email: 'carlos.pereira@miniarte.edu', schoolId: 'miniarte' },
     password: 'password'
   },
+  admin_miniarte_matola: {
+    user: { username: 'admin_miniarte_matola', name: 'Isabel Rocha', role: 'Admin', email: 'isabel.rocha@miniarte.edu', schoolId: 'miniarte_matola' },
+    password: 'password'
+  },
+  admin_miniarte_beira: {
+    user: { username: 'admin_miniarte_beira', name: 'Pedro Gonçalves', role: 'Admin', email: 'pedro.goncalves@miniarte.edu', schoolId: 'miniarte_beira' },
+    password: 'password'
+  },
   admin_logix: {
     user: { username: 'admin_logix', name: 'Ricardo Jorge', role: 'Admin', email: 'ricardo.jorge@logix.edu', schoolId: 'logixsystems' },
     password: 'password'
@@ -535,6 +543,8 @@ const northwoodData: SchoolData = {
         { id: 'STU001', name: 'Miguel Santos', email: 'miguel.santos@northwood.edu', phone: '840000001', address: 'Rua de Kassuende', sex: 'Male', dateOfBirth: '2008-05-10', grade: '10', class: 'A', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] },
         { id: 'STU002', name: 'Inês Pereira', email: 'ines.pereira@northwood.edu', phone: '840000002', address: 'Av. 24 de Julho', sex: 'Female', dateOfBirth: '2008-08-15', grade: '10', class: 'A', parentName: 'João Pereira', parentEmail: 'joao.pereira@email.com', status: 'Active', behavioralAssessments: [] },
         { id: 'STU003', name: 'Tiago Rodrigues', email: 'tiago.rodrigues@northwood.edu', phone: '840000003', address: 'Av. da Marginal', sex: 'Male', dateOfBirth: '2007-01-20', grade: '11', class: 'B', parentName: 'Carla Rodrigues', parentEmail: 'carla.rodrigues@email.com', status: 'Active', behavioralAssessments: [] },
+        { id: 'STU004', name: 'Lucia Santos', email: 'lucia.santos@northwood.edu', phone: '840000004', address: 'Rua de Kassuende', sex: 'Female', dateOfBirth: '2010-02-12', grade: '8', class: 'A', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] },
+        { id: 'STU005', name: 'Pedro Santos', email: 'pedro.santos@northwood.edu', phone: '840000005', address: 'Rua de Kassuende', sex: 'Male', dateOfBirth: '2013-11-05', grade: '5', class: 'B', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] },
     ],
     teachers: [
         { id: 'T01', name: 'Sérgio Almeida', email: 'sergio.almeida@northwood.edu', phone: '820000001', address: 'Av. da Guerra Popular', sex: 'Male', subject: 'Mathematics', experience: '10 years', qualifications: 'M.Sc. Mathematics', status: 'Active' },
@@ -555,6 +565,8 @@ const northwoodData: SchoolData = {
         { id: 'G01', studentId: 'STU001', subject: 'Mathematics', grade: '18', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
         { id: 'G02', studentId: 'STU002', subject: 'Mathematics', grade: '14', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
         { id: 'G03', studentId: 'STU003', subject: 'History', grade: '16', date: new Date('2024-04-10T00:00:00Z'), type: 'Coursework', description: 'WWII Essay', teacherId: 'T02' },
+        { id: 'G04', studentId: 'STU004', subject: 'History', grade: '19', date: new Date('2024-04-12T00:00:00Z'), type: 'Coursework', description: 'Mozambique History Presentation', teacherId: 'T02' },
+        { id: 'G05', studentId: 'STU005', subject: 'Mathematics', grade: '17', date: new Date('2024-04-18T00:00:00Z'), type: 'Test', description: 'Geometry Quiz', teacherId: 'T01' },
     ],
     finance: [
         { id: 'FIN01', studentId: 'STU001', studentName: 'Miguel Santos', description: 'Term 1 Tuition', totalAmount: 50000, amountPaid: 50000, dueDate: '2024-02-01', status: 'Paid' },
