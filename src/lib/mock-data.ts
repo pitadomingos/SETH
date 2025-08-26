@@ -176,7 +176,7 @@ export interface Grade {
     studentId: string;
     subject: string;
     grade: string;
-    date: Date;
+    date: any; // Allow both Date and Timestamp
     type: 'Coursework' | 'Test' | 'Exam';
     description: string;
     teacherId: string;
@@ -185,7 +185,7 @@ export interface Grade {
 export interface Attendance {
     id: string;
     studentId: string;
-    date: Date;
+    date: any; // Allow both Date and Timestamp
     status: 'Present' | 'Late' | 'Absent' | 'Sick';
     courseId: string;
 }
@@ -193,7 +193,7 @@ export interface Attendance {
 export interface Event {
     id: string;
     title: string;
-    date: Date;
+    date: any; // Allow both Date and Timestamp
     location: string;
     organizer: string;
     audience: string;
@@ -224,7 +224,7 @@ export interface Competition {
     title: string;
     ourTeamId: string;
     opponent: string;
-    date: Date;
+    date: any; // Allow both Date and Timestamp
     time: string;
     location: string;
     result?: {
@@ -257,7 +257,7 @@ export interface KioskMedia {
 
 export interface ActivityLog {
     id: string;
-    timestamp: Date;
+    timestamp: any; // Allow both Date and Timestamp
     schoolId: string;
     user: string;
     role: Role;
@@ -308,7 +308,7 @@ export interface DeployedTest {
     id: string;
     testId: string;
     classId: string;
-    deadline: Date;
+    deadline: any; // Allow both Date and Timestamp
     submissions: Array<{
         studentId: string;
         score: number;
@@ -404,6 +404,18 @@ export const mockUsers: Record<string, UserProfile> = {
     user: { username: 'admin3', name: 'Carlos Pereira', role: 'Admin', email: 'carlos.pereira@miniarte.edu', schoolId: 'miniarte' },
     password: 'password'
   },
+  admin_logix: {
+    user: { username: 'admin_logix', name: 'Ricardo Jorge', role: 'Admin', email: 'ricardo.jorge@logix.edu', schoolId: 'logixsystems' },
+    password: 'password'
+  },
+  admin_plc: {
+    user: { username: 'admin_plc', name: 'Beatriz Lima', role: 'Admin', email: 'beatriz.lima@plc.edu', schoolId: 'plc' },
+    password: 'password'
+  },
+  admin_trial: {
+    user: { username: 'admin_trial', name: 'Sofia Mendes', role: 'Admin', email: 'sofia.mendes@trialschool.edu', schoolId: 'trialschool' },
+    password: 'password'
+  },
   teacher1: {
     user: { username: 'teacher1', name: 'Sérgio Almeida', role: 'Teacher', email: 'sergio.almeida@northwood.edu', schoolId: 'northwood' },
     password: 'password'
@@ -416,7 +428,6 @@ export const mockUsers: Record<string, UserProfile> = {
     user: { username: 'parent1', name: 'Ana Santos', role: 'Parent', email: 'ana.santos@email.com', schoolId: 'northwood' },
     password: 'password'
   },
-  // New specialized roles for Northwood High
   acdean1: {
     user: { username: 'acdean1', name: 'Helena Gomes', role: 'AcademicDean', email: 'helena.gomes@northwood.edu', schoolId: 'northwood' },
     password: 'password'
@@ -620,10 +631,10 @@ const logixSystemsData: SchoolData = {
     profile: {
         id: 'logixsystems',
         name: 'Logix Systems School',
-        head: 'Default Admin',
-        address: '123 Tech Park',
+        head: 'Ricardo Jorge',
+        address: '123 Tech Park, Matola',
         phone: '555-0100',
-        email: 'admin@logixsystems.edu',
+        email: 'ricardo.jorge@logix.edu',
         motto: 'Logic and Learning',
         tier: 'Starter',
         logoUrl: 'https://placehold.co/100x100.png',
@@ -636,7 +647,16 @@ const logixSystemsData: SchoolData = {
         gradeCapacity: { "1": 30, "2": 30, "3": 30, "4": 30, "5": 30, "6": 35, "7": 35, "8": 35, "9": 40, "10": 40, "11": 40, "12": 40 },
         kioskConfig: defaultKioskConfig,
         subscription: { status: 'Paid', amount: 100, dueDate: '2025-01-01' },
-    }
+    },
+    students: [
+        { id: 'STU501', name: 'Laura Moreira', email: 'laura.moreira@logix.edu', phone: '870000501', address: 'Av. do Trabalho', sex: 'Female', dateOfBirth: '2010-03-22', grade: '8', class: 'A', parentName: 'Joana Moreira', parentEmail: 'joana.moreira@email.com', status: 'Active', behavioralAssessments: [] }
+    ],
+    teachers: [
+        { id: 'T501', name: 'Jorge Dias', email: 'jorge.dias@logix.edu', phone: '870000502', address: 'Rua das Flores', sex: 'Male', subject: 'Science', experience: '6 years', qualifications: 'B.Sc. Biology', status: 'Active' },
+    ],
+    classes: [
+        { id: 'C501', name: 'Grade 8-A', grade: '8', teacher: 'Jorge Dias', students: 1, room: 'S1' }
+    ]
 };
 
 const plcData: SchoolData = {
@@ -644,10 +664,10 @@ const plcData: SchoolData = {
     profile: {
         id: 'plc',
         name: 'Progressive Learning Center',
-        head: 'Default Admin',
-        address: '456 Innovation Drive',
+        head: 'Beatriz Lima',
+        address: '456 Innovation Drive, Maputo',
         phone: '555-0200',
-        email: 'admin@plc.edu',
+        email: 'beatriz.lima@plc.edu',
         motto: 'Progress Through Knowledge',
         tier: 'Pro',
         logoUrl: 'https://placehold.co/100x100.png',
@@ -660,7 +680,16 @@ const plcData: SchoolData = {
         gradeCapacity: { "8": 30, "9": 30, "10": 30, "11": 35, "12": 35 },
         kioskConfig: defaultKioskConfig,
         subscription: { status: 'Paid', amount: 250, dueDate: '2025-01-01' },
-    }
+    },
+    students: [
+        { id: 'STU601', name: 'Daniela Fernandes', email: 'daniela.fernandes@plc.edu', phone: '850000601', address: 'Av. Acordos de Lusaka', sex: 'Female', dateOfBirth: '2007-11-18', grade: '11', class: 'A', parentName: 'Rui Fernandes', parentEmail: 'rui.fernandes@email.com', status: 'Active', behavioralAssessments: [] }
+    ],
+    teachers: [
+        { id: 'T601', name: 'Sofia Carvalho', email: 'sofia.carvalho@plc.edu', phone: '850000602', address: 'Av. de Moçambique', sex: 'Female', subject: 'English', experience: '12 years', qualifications: 'M.A. English Literature', status: 'Active' },
+    ],
+    classes: [
+        { id: 'C601', name: 'Grade 11-A', grade: '11', teacher: 'Sofia Carvalho', students: 1, room: 'E1' }
+    ]
 };
 
 const trialSchoolData: SchoolData = {
@@ -668,10 +697,10 @@ const trialSchoolData: SchoolData = {
     profile: {
         id: 'trialschool',
         name: 'Trial School',
-        head: 'Default Admin',
-        address: '789 Demo Street',
+        head: 'Sofia Mendes',
+        address: '789 Demo Street, Matola',
         phone: '555-0300',
-        email: 'admin@trialschool.edu',
+        email: 'sofia.mendes@trialschool.edu',
         motto: 'A Place to Start',
         tier: 'Starter',
         logoUrl: 'https://placehold.co/100x100.png',
@@ -684,7 +713,16 @@ const trialSchoolData: SchoolData = {
         gradeCapacity: { "1": 30, "2": 30, "3": 30, "4": 30, "5": 30 },
         kioskConfig: defaultKioskConfig,
         subscription: { status: 'Paid', amount: 100, dueDate: '2025-01-01' },
-    }
+    },
+    students: [
+        { id: 'STU701', name: 'Andre Ramos', email: 'andre.ramos@trialschool.edu', phone: '830000701', address: 'Av. das Indústrias', sex: 'Male', dateOfBirth: '2014-06-30', grade: '4', class: 'A', parentName: 'Paula Ramos', parentEmail: 'paula.ramos@email.com', status: 'Active', behavioralAssessments: [] }
+    ],
+    teachers: [
+        { id: 'T701', name: 'Filipe Correia', email: 'filipe.correia@trialschool.edu', phone: '830000702', address: 'Rua do Rio', sex: 'Male', subject: 'General Studies', experience: '4 years', qualifications: 'B.Ed.', status: 'Active' },
+    ],
+    classes: [
+        { id: 'C701', name: 'Grade 4-A', grade: '4', teacher: 'Filipe Correia', students: 1, room: 'P1' }
+    ]
 };
 
 export const initialSchoolData: Record<string, SchoolData> = {
