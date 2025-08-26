@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
@@ -34,6 +33,7 @@ import { StudentAnalysis } from '@/ai/flows/student-analysis-flow';
 import { useRouter } from 'next/navigation';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import Image from 'next/image';
+import { createAdmissionAction } from '@/app/actions/admission-actions';
 
 
 const applicationSchema = z.object({
@@ -123,30 +123,32 @@ function NewApplicationDialog() {
     return Math.max(0, capacity - currentStudents);
   }, [selectedSchoolId, selectedGradeStr, allSchoolData]);
 
-  function onSubmit(values: ApplicationFormValues) {
+  async function onSubmit(values: ApplicationFormValues) {
+    if (!user) return;
+
+    let admissionData: NewAdmissionData;
+    let targetSchoolId: string;
+
     if (values.applicationType === 'new') {
-      addAdmission({
-        type: 'New',
-        schoolId: values.schoolId!,
-        name: values.name!,
-        dateOfBirth: format(values.dateOfBirth!, 'yyyy-MM-dd'),
-        sex: values.sex!,
-        appliedFor: values.appliedFor!,
-        formerSchool: values.formerSchool!,
-        gradesSummary: values.gradesSummary || 'N/A',
-        idUrl: values.idUrl,
-        reportUrl: values.reportUrl,
-        photoUrl: values.photoUrl
-      });
-      toast({
-        title: 'Application Submitted',
-        description: `The application for ${values.name} has been sent to the school for review.`,
-      });
-    } else { // Transfer
+        admissionData = {
+            type: 'New',
+            schoolId: values.schoolId!,
+            name: values.name!,
+            dateOfBirth: format(values.dateOfBirth!, 'yyyy-MM-dd'),
+            sex: values.sex!,
+            appliedFor: values.appliedFor!,
+            formerSchool: values.formerSchool!,
+            gradesSummary: values.gradesSummary || 'N/A',
+            idUrl: values.idUrl,
+            reportUrl: values.reportUrl,
+            photoUrl: values.photoUrl
+        };
+        targetSchoolId = values.schoolId!;
+    } else {
         const student = allStudents.find(s => s.id === values.transferStudentId);
         if (!student || !values.transferSchoolId) return;
 
-        addAdmission({
+        admissionData = {
             type: 'Transfer',
             schoolId: values.transferSchoolId,
             name: student.name,
@@ -159,15 +161,27 @@ function NewApplicationDialog() {
             studentIdToTransfer: student.id,
             reasonForTransfer: values.reasonForTransfer,
             transferGrade: values.transferGrade,
-        });
-        toast({
-            title: 'Transfer Request Submitted',
-            description: `The request to transfer ${student.name} has been sent for approval.`,
-        });
+        };
+        targetSchoolId = values.transferSchoolId;
     }
 
-    form.reset({ applicationType: 'new', name: '', sex: undefined, schoolId: '', appliedFor: '', formerSchool: '', gradesSummary: '', idUrl: '', photoUrl: '', reportUrl: '', transferGrade: '', transferSchoolId: '', transferStudentId: '', reasonForTransfer: '' });
-    setIsDialogOpen(false);
+    const result = await createAdmissionAction(targetSchoolId, admissionData, user.name, user.email);
+
+    if (result.success && result.admission) {
+        addAdmission(result.admission);
+        toast({
+            title: 'Application Submitted',
+            description: `The application for ${admissionData.name} has been sent for review.`,
+        });
+        form.reset({ applicationType: 'new', name: '', sex: undefined, schoolId: '', appliedFor: '', formerSchool: '', gradesSummary: '', idUrl: '', photoUrl: '', reportUrl: '', transferGrade: '', transferSchoolId: '', transferStudentId: '', reasonForTransfer: '' });
+        setIsDialogOpen(false);
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Submission Failed',
+            description: result.error || 'Could not submit the application. Please try again.',
+        });
+    }
   }
 
   const schoolList = allSchoolData ? Object.values(allSchoolData).map(s => s.profile) : [];

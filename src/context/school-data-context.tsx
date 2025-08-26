@@ -10,6 +10,7 @@ import { updateSchoolProfileAction } from '@/app/actions/update-school-action';
 import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction, addSyllabusAction, addCourseAction, updateCourseAction, deleteCourseAction, addFeeAction, recordPaymentAction, addExpenseAction, addTeamAction, deleteTeamAction, addPlayerToTeamAction, removePlayerFromTeamAction, addCompetitionAction, addCompetitionResultAction, updateAdmissionStatusAction, addStudentFromAdmissionAction, addAssetAction, addKioskMediaAction, removeKioskMediaAction, addBehavioralAssessmentAction, addGradeAction, addLessonAttendanceAction, addTestSubmissionAction } from '@/app/actions/school-actions';
 import { addTermAction, addHolidayAction, addExamBoardAction, deleteExamBoardAction, addFeeDescriptionAction, deleteFeeDescriptionAction, addAudienceAction, deleteAudienceAction } from '@/app/actions/academic-year-actions';
 import { sendMessageAction } from '@/app/actions/messaging-actions';
+import { createAdmissionAction } from '@/app/actions/admission-actions';
 
 
 export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, SyllabusTopic, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, BehavioralAssessment } from '@/lib/mock-data';
@@ -88,7 +89,7 @@ interface SchoolDataContextType {
     removeKioskMedia: (id: string) => Promise<void>;
     updateSchoolProfile: (data: Partial<SchoolProfile>, schoolId?: string) => Promise<boolean>;
     addMessage: (message: NewMessageData) => Promise<void>;
-    addAdmission: (admission: NewAdmissionData) => void;
+    addAdmission: (admission: Admission) => void;
     updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
     updateMessageStatus: (messageId: string, status: Message['status']) => void;
     updateStudentStatus: (schoolId: string, studentId: string, status: Student['status']) => void;
@@ -824,24 +825,16 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const addAdmission = (admission: NewAdmissionData) => {
-    const { schoolId, ...rest } = admission;
-    if (!schoolId || !user) return;
-    const newAdmission: Admission = {
-        id: `ADM${Date.now()}${Math.random()}`,
-        status: 'Pending',
-        date: new Date().toISOString().split('T')[0],
-        parentName: user.name,
-        parentEmail: user.email,
-        grades: rest.gradesSummary || 'N/A',
-        ...rest,
-    };
-     setData(prev => {
-      if (!prev) return null;
-      const newData = {...prev};
-      newData[schoolId].admissions.push(newAdmission);
-      addLog(schoolId, 'Create', `Submitted new admission for ${admission.name}`);
-      return newData;
+  const addAdmission = (admission: Admission) => {
+    const schoolId = admission.schoolId;
+    if (!schoolId) return;
+
+    setData(prev => {
+        if (!prev) return null;
+        const newData = { ...prev };
+        newData[schoolId].admissions.push(admission);
+        addLog(schoolId, 'Create', `Submitted new admission for ${admission.name}`);
+        return newData;
     });
   };
   
@@ -1188,3 +1181,5 @@ export const useSchoolData = () => {
   }
   return context;
 };
+
+    

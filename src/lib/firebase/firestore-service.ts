@@ -1,5 +1,4 @@
 
-
 import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from './config';
 import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student, Message, NewMessageData } from '@/lib/mock-data';
@@ -496,6 +495,30 @@ export async function addCompetitionResultInFirestore(schoolId: string, competit
 }
 
 // --- Admission CRUD ---
+
+export async function addAdmissionToFirestore(schoolId: string, admissionData: NewAdmissionData, parentName: string, parentEmail: string): Promise<Admission> {
+    const newAdmission: Admission = {
+        id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 9)}`,
+        status: 'Pending',
+        date: new Date().toISOString().split('T')[0],
+        parentName: parentName,
+        parentEmail: parentEmail,
+        grades: admissionData.gradesSummary || 'N/A',
+        ...admissionData,
+        // Ensure optional fields are handled
+        name: admissionData.name!,
+        dateOfBirth: admissionData.dateOfBirth!,
+        sex: admissionData.sex!,
+        appliedFor: admissionData.appliedFor!,
+        formerSchool: admissionData.formerSchool!,
+    };
+    
+    const schoolRef = doc(db, 'schools', schoolId);
+    await updateDoc(schoolRef, { admissions: arrayUnion(newAdmission) });
+    return newAdmission;
+}
+
+
 export async function updateAdmissionStatusInFirestore(schoolId: string, admissionId: string, status: Admission['status']): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
