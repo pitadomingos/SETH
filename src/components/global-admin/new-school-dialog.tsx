@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Loader2, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { createSchool } from '@/app/actions/school-actions';
+import { createSchoolAction } from '@/app/actions/school-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
 import { useAuth } from '@/context/auth-context';
@@ -36,8 +36,6 @@ type SchoolFormValues = z.infer<typeof schoolSchema>;
 export function NewSchoolDialog({ groupId }: { groupId?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
-  const { addSchool } = useSchoolData();
-  const { addUser } = useAuth();
 
   const form = useForm<SchoolFormValues>({
     resolver: zodResolver(schoolSchema),
@@ -53,11 +51,9 @@ export function NewSchoolDialog({ groupId }: { groupId?: string }) {
   });
 
   async function onSubmit(values: SchoolFormValues) {
-    const result = await createSchool(values, groupId);
+    const result = await createSchoolAction(values, groupId);
 
     if (result) {
-        addSchool(result.school);
-        addUser(result.adminUser.username, result.adminUser.profile);
         toast({
             title: 'School Created!',
             description: `School "${values.name}" and its admin have been added.`,
@@ -128,7 +124,6 @@ export function NewSchoolDialog({ groupId }: { groupId?: string }) {
 }
 
 export function EditSchoolDialog({ school }: { school: SchoolProfile }) {
-    const { updateSchoolProfile } = useSchoolData();
     const { toast } = useToast();
     const [isOpen, setIsOpen] = useState(false);
     
@@ -140,7 +135,6 @@ export function EditSchoolDialog({ school }: { school: SchoolProfile }) {
     async function onSubmit(values: SchoolFormValues) {
         const result = await updateSchoolProfileAction(school.id, values);
         if (result.success) {
-            updateSchoolProfile(values, school.id);
             toast({ title: 'School Updated!', description: `Details for ${values.name} have been saved.`});
             setIsOpen(false);
         } else {
@@ -197,7 +191,7 @@ export function EditSchoolDialog({ school }: { school: SchoolProfile }) {
     );
 }
 
-export function DeleteSchoolDialog({ schoolId, schoolName, removeSchool }: { schoolId: string, schoolName: string, removeSchool: (schoolId: string) => void }) {
+export function DeleteSchoolDialog({ schoolId, schoolName }: { schoolId: string, schoolName: string, removeSchool?: (schoolId: string) => void }) {
     const { toast } = useToast();
     const isSystemSchool = schoolId === 'northwood';
 
@@ -213,7 +207,6 @@ export function DeleteSchoolDialog({ schoolId, schoolName, removeSchool }: { sch
 
         const result = await deleteSchoolAction(schoolId);
         if (result.success) {
-            removeSchool(schoolId);
             toast({
                 title: 'School Deleted',
                 description: `${schoolName} has been permanently removed from the system.`,

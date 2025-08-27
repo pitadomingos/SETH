@@ -5,12 +5,6 @@ import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabu
 import { useAuth, User } from './auth-context';
 import type { Role } from './auth-context';
 import { getSchoolsFromFirestore, seedInitialData } from '@/lib/firebase/firestore-service';
-import { getGpaFromNumeric } from '@/lib/utils';
-import { updateSchoolProfileAction } from '@/app/actions/update-school-action';
-import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction, addSyllabusAction, addCourseAction, updateCourseAction, deleteCourseAction, addFeeAction, recordPaymentAction, addExpenseAction, addTeamAction, deleteTeamAction, addPlayerToTeamAction, removePlayerFromTeamAction, addCompetitionAction, addCompetitionResultAction, updateAdmissionStatusAction, addStudentFromAdmissionAction, addAssetAction, addKioskMediaAction, removeKioskMediaAction, addBehavioralAssessmentAction, addGradeAction, addLessonAttendanceAction, addTestSubmissionAction } from '@/app/actions/school-actions';
-import { addTermAction, addHolidayAction, addExamBoardAction, deleteExamBoardAction, addFeeDescriptionAction, deleteFeeDescriptionAction, addAudienceAction, deleteAudienceAction } from '@/app/actions/academic-year-actions';
-import { sendMessageAction } from '@/app/actions/messaging-actions';
-import { createAdmissionAction } from '@/app/actions/admission-actions';
 
 export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, SyllabusTopic, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, BehavioralAssessment } from '@/lib/mock-data';
 
@@ -27,7 +21,7 @@ interface SchoolDataContextType {
     admissionsData: Admission[];
     financeData: FinanceRecord[];
     assetsData: any[];
-    exams: Exam[];
+    examsData: Exam[];
     grades: Grade[];
     attendance: Attendance[];
     events: Event[];
@@ -50,24 +44,17 @@ interface SchoolDataContextType {
     feeDescriptions: string[];
     audiences: string[];
     expenseCategories: string[];
+    terms: any[];
+    holidays: any[];
 
     // --- Loading State ---
     isLoading: boolean;
-
-    // --- Action Functions ---
-    addSchool: (newSchoolData: NewSchoolData, groupId?: string) => Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile }} | null>;
-    removeSchool: (schoolId: string) => void;
-    
-    addAdmission: (admissionData: NewAdmissionData) => Promise<boolean>;
-    // All other action calls are now handled by server actions
-    // and state is updated via revalidation, so they are removed from context.
-    updateParentStatus: (parentEmail: string, status: 'Active' | 'Suspended') => void;
 }
 
 const SchoolDataContext = createContext<SchoolDataContextType | undefined>(undefined);
 
 export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
-  const { user, role, schoolId: authSchoolId, addUser } = useAuth();
+  const { user, role, schoolId: authSchoolId } = useAuth();
   const [data, setData] = useState<Record<string, SchoolData> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [awardsAnnounced, setAwardsAnnounced] = useState(false);
@@ -77,7 +64,6 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const fetchSchoolData = async () => {
         setIsLoading(true);
         try {
-            // Check if data exists. If not, seed it.
             const existingData = await getSchoolsFromFirestore();
             if (Object.keys(existingData).length === 0) {
                 await seedInitialData();
@@ -127,82 +113,6 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const schoolGroups = useMemo(() => {
     return data?.['northwood']?.schoolGroups || {};
   }, [data]);
-  
-  const addSchool = useCallback(async (newSchoolData: NewSchoolData, groupId?: string) => {
-    const result = await createSchool(newSchoolData, groupId);
-    if (result) {
-        setData(prev => ({...prev, [result.school.profile.id]: result.school }));
-        addUser(result.adminUser.username, result.adminUser.profile);
-    }
-    return result;
-  }, [addUser]);
-
-  const removeSchool = (schoolIdToRemove: string) => {
-    setData(prev => {
-        if (!prev) return null;
-        const newData = { ...prev };
-        delete newData[schoolIdToRemove];
-        for (const schoolKey in newData) {
-            if (newData[schoolKey].schoolGroups) {
-                for (const groupId in newData[schoolKey].schoolGroups) {
-                    newData[schoolKey].schoolGroups[groupId] = newData[schoolKey].schoolGroups[groupId].filter(id => id !== schoolIdToRemove);
-                }
-            }
-        }
-        return newData;
-    });
-  };
-
-  const announceAwards = async () => {
-    if (!data) return;
-
-    // --- Calculate Winners ---
-    const schoolOfTheYear = Object.values(data).map(school => {
-        const avgGpa = school.grades.length > 0 ? school.grades.reduce((acc, g) => acc + getGpaFromNumeric(parseFloat(g.grade)), 0) / school.grades.length : 0;
-        const collectionRate = school.finance.length > 0 ? school.finance.reduce((acc, f) => acc + f.amountPaid, 0) / school.finance.reduce((acc, f) => acc + f.totalAmount, 0) : 1;
-        return { ...school.profile, score: (avgGpa * 0.6) + (collectionRate * 0.4) };
-    }).sort((a, b) => b.score - a.score)[0];
-
-    const teacherOfTheYear = Object.values(data).flatMap(school => school.teachers.map(teacher => {
-        const teacherCourses = school.courses.filter(c => c.teacherId === teacher.id);
-        const studentIds = new Set<string>();
-        teacherCourses.forEach(course => {
-            const classInfo = school.classes.find(c => c.id === course.classId);
-            if (classInfo) {
-              school.students.filter(s => s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim()).forEach(s => studentIds.add(s.id));
-            }
-        });
-        const teacherGrades = school.grades.filter(g => studentIds.has(g.studentId) && g.subject === teacher.subject).map(g => parseFloat(g.grade));
-        const avgStudentGrade = teacherGrades.length > 0 ? teacherGrades.reduce((sum, g) => sum + g, 0) / teacherGrades.length : 0;
-        return { ...teacher, avgStudentGrade };
-    })).sort((a, b) => b.avgStudentGrade - a.avgStudentGrade)[0];
-
-    const studentOfTheYear = Object.values(data).flatMap(school => school.students.map(student => {
-        const studentGrades = school.grades.filter(g => g.studentId === student.id);
-        const avgGrade = studentGrades.length > 0 ? studentGrades.reduce((acc, g) => acc + parseFloat(g.grade), 0) / studentGrades.length : 0;
-        return { ...student, avgGrade };
-    })).sort((a, b) => b.avgGrade - a.avgGrade)[0];
-
-    const newAwardsRecord = {
-        year: new Date().getFullYear(),
-        schoolOfTheYear: schoolOfTheYear.id,
-        teacherOfTheYear: teacherOfTheYear.id,
-        studentOfTheYear: studentOfTheYear.id,
-    };
-    
-    setAwardsAnnounced(true);
-    await updateSchoolProfileAction('northwood', { awards: [...(data['northwood'].profile.awards || []), newAwardsRecord] });
-  };
-  
-  const updateParentStatus = (parentEmail: string, status: 'Active' | 'Suspended') => {
-    setParentStatusOverrides(prev => ({...prev, [parentEmail]: status}));
-  };
-  
-  const addAdmission = useCallback(async (admissionData: NewAdmissionData) => {
-    if (!user) return false;
-    const result = await createAdmissionAction(admissionData.schoolId, admissionData, user.name, user.email);
-    return result.success;
-  }, [user]);
 
   const value: SchoolDataContextType = {
     isLoading,
@@ -228,7 +138,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         return schoolData?.finance || [];
     }, [schoolData, data, role, user, allStudents]),
     assetsData: schoolData?.assets || [],
-    exams: schoolData?.exams || [],
+    examsData: schoolData?.exams || [],
     grades: useMemo(() => {
         if (!data) return [];
         if (role === 'Parent') {
@@ -287,7 +197,6 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }, [schoolData, data, role]),
     messages: useMemo(() => {
       if (!user || !data) return [];
-      const userIdentifier = user.email;
       if (role === 'GlobalAdmin') {
           return data['northwood']?.messages || [];
       }
@@ -301,16 +210,13 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     parentStatusOverrides,
     deployedTests: schoolData?.deployedTests || [],
     savedTests: schoolData?.savedTests || [],
-    awardsAnnounced: false,
+    awardsAnnounced,
     examBoards: schoolData?.examBoards || [],
     feeDescriptions: schoolData?.feeDescriptions || [],
     audiences: schoolData?.audiences || [],
     expenseCategories: schoolData?.expenseCategories || [],
     terms: schoolData?.terms || [],
     holidays: schoolData?.holidays || [],
-    addSchool, removeSchool,
-    addAdmission,
-    updateParentStatus,
   };
 
   return (

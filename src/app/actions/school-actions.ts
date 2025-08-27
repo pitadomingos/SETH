@@ -5,14 +5,13 @@ import { NewSchoolData, SchoolData, UserProfile, Teacher, Class, Syllabus, Sylla
 import { revalidatePath } from 'next/cache';
 import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore, updateSyllabusTopicInFirestore, deleteSyllabusTopicFromFirestore, addSyllabusToFirestore, addCourseToFirestore, updateCourseInFirestore, deleteCourseFromFirestore, addFeeToFirestore, recordPaymentInFirestore, addExpenseToFirestore, addTeamToFirestore, deleteTeamFromFirestore, addPlayerToTeamInFirestore, removePlayerFromTeamInFirestore, addCompetitionToFirestore, addCompetitionResultInFirestore, updateAdmissionStatusInFirestore, addStudentFromAdmissionInFirestore, addAssetToFirestore, addKioskMediaToFirestore, removeKioskMediaFromFirestore, addBehavioralAssessmentToFirestore, addGradeToFirestore, addLessonAttendanceToFirestore, addTestSubmissionToFirestore } from '@/lib/firebase/firestore-service';
 
-export async function createSchool(data: NewSchoolData, groupId?: string): Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile } } | null> {
+// This is now just a wrapper for the Firestore service function
+export async function createSchoolAction(data: NewSchoolData, groupId?: string): Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile } } | null> {
     try {
-        const { school, adminUser } = await createSchoolInFirestore(data, groupId);
-        
+        const result = await createSchoolInFirestore(data, groupId);
         revalidatePath('/dashboard/global-admin/all-schools');
         revalidatePath('/dashboard/manage-schools');
-        
-        return { school, adminUser };
+        return result;
     } catch (error) {
         console.error("Failed to create school:", error);
         return null;

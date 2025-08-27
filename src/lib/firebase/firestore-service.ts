@@ -1,10 +1,9 @@
 
 'use client';
-import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from './config';
 import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student, Message, NewMessageData } from '@/lib/mock-data';
 import { sendEmail } from '@/lib/email-service';
-import { format } from 'date-fns';
 
 // --- Email Simulation ---
 async function sendWelcomeEmail(adminUser: { username: string, profile: UserProfile }, schoolName: string): Promise<void> {
@@ -64,6 +63,11 @@ export async function seedInitialData(): Promise<void> {
         const dataWithServerTimestamps = {
             ...schoolData,
             activityLogs: schoolData.activityLogs.map(log => ({...log, timestamp: Timestamp.now()})),
+            events: schoolData.events.map(event => ({...event, date: Timestamp.now()})),
+            terms: schoolData.terms.map(term => ({...term, startDate: Timestamp.now(), endDate: Timestamp.now()})),
+            holidays: schoolData.holidays.map(holiday => ({...holiday, date: Timestamp.now()})),
+            competitions: schoolData.competitions.map(comp => ({...comp, date: Timestamp.now()})),
+            deployedTests: schoolData.deployedTests.map(test => ({...test, deadline: Timestamp.now()})),
         };
 
         batch.set(schoolRef, dataWithServerTimestamps);
@@ -107,7 +111,7 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         email: data.email,
         schoolId: schoolId,
       },
-      password: 'password' // Default password for new admins in the prototype
+      password: 'password'
     };
 
     const newSchoolData: SchoolData = {
@@ -146,20 +150,14 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
     
     if (groupId) {
        const groupRef = doc(db, 'schools', 'miniarte');
-       const groupDoc = await getDoc(groupRef);
-       if (groupDoc.exists()) {
-           const groupData = groupDoc.data() as SchoolData;
-           batch.update(groupRef, {
-               [`schoolGroups.${groupId}`]: [...(groupData.schoolGroups[groupId] || []), schoolId]
-           });
-       }
+       batch.update(groupRef, {
+            [`schoolGroups.${groupId}`]: arrayUnion(schoolId)
+       });
     }
 
     await batch.commit();
     await sendWelcomeEmail({ username: adminUsername, profile: adminUser }, data.name);
     
-    console.log(`Successfully created school data and admin user in Firestore: ${schoolId}.`);
-
     return { school: newSchoolData, adminUser: { username: adminUsername, profile: adminUser } };
 }
 
@@ -168,16 +166,17 @@ export async function updateSchoolInFirestore(schoolId: string, data: Partial<Sc
   try {
     const schoolRef = doc(db, 'schools', schoolId);
     
-    const updateData = {};
+    const updateData: Record<string, any> = {};
     for (const key in data) {
-      if (Object.prototype.hasOwnProperty.call(data, key)) {
+      if (Object.prototype.hasOwnProperty.call(data, key) && data[key] !== undefined) {
         updateData[`profile.${key}`] = data[key];
       }
     }
     
+    if (Object.keys(updateData).length === 0) return true;
+
     await updateDoc(schoolRef, updateData);
     
-    console.log(`Successfully updated school profile in Firestore: ${schoolId}`);
     return true;
   } catch (error) {
     console.error("Error updating school profile in Firestore:", error);
@@ -203,6 +202,8 @@ export async function addTeacherToFirestore(schoolId: string, teacherData: Omit<
 export async function updateTeacherInFirestore(schoolId: string, teacherId: string, teacherData: Partial<Teacher>): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
+    if (!schoolSnapshot.exists()) return;
+    
     const schoolData = schoolSnapshot.data() as SchoolData;
     const updatedTeachers = schoolData.teachers.map(t => t.id === teacherId ? { ...t, ...teacherData } : t);
     await updateDoc(schoolRef, { teachers: updatedTeachers });
@@ -211,6 +212,8 @@ export async function updateTeacherInFirestore(schoolId: string, teacherId: stri
 export async function deleteTeacherFromFirestore(schoolId: string, teacherId: string): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
+    if (!schoolSnapshot.exists()) return;
+
     const schoolData = schoolSnapshot.data() as SchoolData;
     const teacherToDelete = schoolData.teachers.find(t => t.id === teacherId);
     if (teacherToDelete) {
@@ -237,6 +240,8 @@ export async function addClassToFirestore(schoolId: string, classData: Omit<Clas
 export async function updateClassInFirestore(schoolId: string, classId: string, classData: Partial<Class>): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
+     if (!schoolSnapshot.exists()) return;
+
     const schoolData = schoolSnapshot.data() as SchoolData;
     const updatedClasses = schoolData.classes.map(c => c.id === classId ? { ...c, ...classData } : c);
     await updateDoc(schoolRef, { classes: updatedClasses });
@@ -245,20 +250,21 @@ export async function updateClassInFirestore(schoolId: string, classId: string, 
 export async function deleteClassFromFirestore(schoolId: string, classId: string): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
+    if (!schoolSnapshot.exists()) return;
+
     const schoolData = schoolSnapshot.data() as SchoolData;
 
     const batch = writeBatch(db);
     
-    // Remove the class
     const classToDelete = schoolData.classes.find(c => c.id === classId);
     if(classToDelete) {
-        const remainingClasses = schoolData.classes.filter(c => c.id !== classId);
-        batch.update(schoolRef, { classes: remainingClasses });
+        batch.update(schoolRef, { classes: arrayRemove(classToDelete) });
     }
 
-    // Remove associated courses
-    const remainingCourses = schoolData.courses.filter(c => c.classId !== classId);
-    batch.update(schoolRef, { courses: remainingCourses });
+    const coursesToDelete = schoolData.courses.filter(c => c.classId === classId);
+    if(coursesToDelete.length > 0) {
+        batch.update(schoolRef, { courses: arrayRemove(...coursesToDelete) });
+    }
     
     await batch.commit();
 }
@@ -280,16 +286,16 @@ export async function addSyllabusToFirestore(schoolId: string, syllabusData: Omi
 export async function updateSyllabusTopicInFirestore(schoolId: string, subject: string, grade: string, topic: SyllabusTopic): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolDoc = await getDoc(schoolRef);
+    if (!schoolDoc.exists()) return;
+
     const schoolData = schoolDoc.data() as SchoolData;
     
     const updatedSyllabi = schoolData.syllabi.map(s => {
         if (s.subject === subject && s.grade === grade) {
             const topicIndex = s.topics.findIndex(t => t.id === topic.id);
             if (topicIndex > -1) {
-                // Update existing topic
                 s.topics[topicIndex] = topic;
             } else {
-                // Add new topic
                 s.topics.push(topic);
             }
         }
@@ -302,6 +308,8 @@ export async function updateSyllabusTopicInFirestore(schoolId: string, subject: 
 export async function deleteSyllabusTopicFromFirestore(schoolId: string, subject: string, grade: string, topicId: string): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolDoc = await getDoc(schoolRef);
+    if (!schoolDoc.exists()) return;
+
     const schoolData = schoolDoc.data() as SchoolData;
 
     const updatedSyllabi = schoolData.syllabi.map(s => {
@@ -330,6 +338,8 @@ export async function addCourseToFirestore(schoolId: string, courseData: Omit<Co
 export async function updateCourseInFirestore(schoolId: string, courseId: string, courseData: Partial<Course>): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
+    if (!schoolSnapshot.exists()) return;
+
     const schoolData = schoolSnapshot.data() as SchoolData;
     const updatedCourses = schoolData.courses.map(c => c.id === courseId ? { ...c, ...courseData } : c);
     await updateDoc(schoolRef, { courses: updatedCourses });
@@ -338,6 +348,8 @@ export async function updateCourseInFirestore(schoolId: string, courseId: string
 export async function deleteCourseFromFirestore(schoolId: string, courseId: string): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
+    if (!schoolSnapshot.exists()) return;
+
     const schoolData = schoolSnapshot.data() as SchoolData;
     const courseToDelete = schoolData.courses.find(c => c.id === courseId);
     if (courseToDelete) {
@@ -415,16 +427,19 @@ export async function addTeamToFirestore(schoolId: string, teamData: Omit<Team, 
 export async function deleteTeamFromFirestore(schoolId: string, teamId: string): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
+    if (!schoolSnapshot.exists()) return;
+
     const schoolData = schoolSnapshot.data() as SchoolData;
 
     const teamToDelete = schoolData.teams.find(t => t.id === teamId);
     if (teamToDelete) {
         const batch = writeBatch(db);
-        // Remove team
         batch.update(schoolRef, { teams: arrayRemove(teamToDelete) });
-        // Remove associated competitions
-        const remainingCompetitions = schoolData.competitions.filter(c => c.ourTeamId !== teamId);
-        batch.update(schoolRef, { competitions: remainingCompetitions });
+        
+        const competitionsToDelete = schoolData.competitions.filter(c => c.ourTeamId === teamId);
+        if (competitionsToDelete.length > 0) {
+            batch.update(schoolRef, { competitions: arrayRemove(...competitionsToDelete) });
+        }
         await batch.commit();
     }
 }
@@ -432,6 +447,8 @@ export async function deleteTeamFromFirestore(schoolId: string, teamId: string):
 export async function addPlayerToTeamInFirestore(schoolId: string, teamId: string, studentId: string): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
+    if (!schoolSnapshot.exists()) return;
+
     const schoolData = schoolSnapshot.data() as SchoolData;
     const updatedTeams = schoolData.teams.map(t => {
         if (t.id === teamId && !t.playerIds.includes(studentId)) {
@@ -445,6 +462,8 @@ export async function addPlayerToTeamInFirestore(schoolId: string, teamId: strin
 export async function removePlayerFromTeamInFirestore(schoolId: string, teamId: string, studentId: string): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
+     if (!schoolSnapshot.exists()) return;
+
     const schoolData = schoolSnapshot.data() as SchoolData;
     const updatedTeams = schoolData.teams.map(t => {
         if (t.id === teamId) {
@@ -471,6 +490,8 @@ export async function addCompetitionToFirestore(schoolId: string, competitionDat
 export async function addCompetitionResultInFirestore(schoolId: string, competitionId: string, result: Competition['result']): Promise<Competition | null> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
+    if (!schoolSnapshot.exists()) return null;
+
     const schoolData = schoolSnapshot.data() as SchoolData;
 
     let updatedCompetition: Competition | undefined;
@@ -495,20 +516,38 @@ export async function addCompetitionResultInFirestore(schoolId: string, competit
 export async function addAdmissionToFirestore(schoolId: string, admissionData: NewAdmissionData, parentName: string, parentEmail: string): Promise<Admission> {
     const schoolRef = doc(db, 'schools', schoolId);
     
-    const newAdmissionPayload = {
+    const newAdmissionPayload: Omit<Admission, 'date'> & {date: Timestamp} = {
       id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 8)}`,
-      status: 'Pending',
+      status: 'Pending' as const,
       date: Timestamp.now(),
       parentName,
       parentEmail,
-      ...admissionData,
+      name: admissionData.name,
+      appliedFor: admissionData.appliedFor,
+      dateOfBirth: admissionData.dateOfBirth,
+      sex: admissionData.sex,
+      formerSchool: admissionData.formerSchool,
+      type: admissionData.type,
+      ...(admissionData.type === 'New' && {
+        gradesSummary: admissionData.gradesSummary || 'N/A',
+        idUrl: admissionData.idUrl,
+        reportUrl: admissionData.reportUrl,
+        photoUrl: admissionData.photoUrl,
+      }),
+      ...(admissionData.type === 'Transfer' && {
+        studentIdToTransfer: admissionData.studentIdToTransfer,
+        fromSchoolId: admissionData.fromSchoolId,
+        reasonForTransfer: admissionData.reasonForTransfer,
+        transferGrade: admissionData.transferGrade,
+        gradesSummary: 'Records are available in the EduDesk network.',
+      })
     };
 
     await updateDoc(schoolRef, {
       admissions: arrayUnion(newAdmissionPayload)
     });
 
-    return { ...newAdmissionPayload, date: newAdmissionPayload.date.toDate() } as Admission;
+    return { ...newAdmissionPayload, date: newAdmissionPayload.date.toDate() };
 }
 
 
@@ -526,8 +565,10 @@ export async function updateAdmissionStatusInFirestore(schoolId: string, admissi
 export async function addStudentFromAdmissionInFirestore(schoolId: string, application: Admission): Promise<Student> {
     const batch = writeBatch(db);
     const targetSchoolRef = doc(db, 'schools', schoolId);
-
-    const [grade, studentClass] = application.appliedFor.replace('Grade ', '').split('-');
+    
+    const gradeParts = application.appliedFor.replace('Grade ', '').split('-');
+    const grade = gradeParts[0] ? gradeParts[0].trim() : '1';
+    const studentClass = gradeParts[1] ? gradeParts[1].trim() : 'A';
 
     const newStudent: Student = {
         id: application.studentIdToTransfer || `STU${Date.now()}`,
@@ -537,8 +578,8 @@ export async function addStudentFromAdmissionInFirestore(schoolId: string, appli
         address: '123 Oak Avenue, Maputo',
         sex: application.sex,
         dateOfBirth: application.dateOfBirth,
-        grade: grade.trim(),
-        class: studentClass ? studentClass.trim() : 'A',
+        grade: grade,
+        class: studentClass,
         parentName: application.parentName,
         parentEmail: application.parentEmail,
         status: 'Active',
@@ -556,7 +597,7 @@ export async function addStudentFromAdmissionInFirestore(schoolId: string, appli
             const fromSchoolData = fromSchoolDoc.data() as SchoolData;
             const updatedStudents = fromSchoolData.students.map(s => {
                 if (s.id === application.studentIdToTransfer) {
-                    return { ...s, status: 'Transferred' };
+                    return { ...s, status: 'Transferred' as const };
                 }
                 return s;
             });
@@ -626,6 +667,7 @@ export async function addKioskMediaToFirestore(schoolId: string, mediaData: Omit
 export async function removeKioskMediaFromFirestore(schoolId: string, mediaId: string): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
+    if (!schoolSnapshot.exists()) return;
     const schoolData = schoolSnapshot.data() as SchoolData;
     const mediaToRemove = schoolData.kioskMedia.find(m => m.id === mediaId);
     if (mediaToRemove) {
@@ -639,6 +681,7 @@ export async function removeKioskMediaFromFirestore(schoolId: string, mediaId: s
 export async function addBehavioralAssessmentToFirestore(schoolId: string, assessmentData: Omit<any, 'id' | 'date'>): Promise<any> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
+    if (!schoolSnapshot.exists()) return;
     const schoolData = schoolSnapshot.data() as SchoolData;
     const newAssessment = {
         id: `BA${Date.now()}`,
@@ -672,6 +715,7 @@ export async function addGradeToFirestore(schoolId: string, gradeData: Omit<any,
 export async function addLessonAttendanceToFirestore(schoolId: string, courseId: string, date: string, studentStatuses: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
+    if (!schoolSnapshot.exists()) return;
     const schoolData = schoolSnapshot.data() as SchoolData;
 
     const attendanceDate = new Date(date);
@@ -696,6 +740,8 @@ export async function addLessonAttendanceToFirestore(schoolId: string, courseId:
 export async function addTestSubmissionToFirestore(schoolId: string, deployedTestId: string, studentId: string, score: number): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
+    if (!schoolSnapshot.exists()) return;
+    
     const schoolData = schoolSnapshot.data() as SchoolData;
 
     const submission = {
