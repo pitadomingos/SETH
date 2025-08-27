@@ -1,4 +1,5 @@
 
+
 'use client';
 import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from './config';
@@ -505,7 +506,7 @@ export async function addAdmissionToFirestore(schoolId: string, admissionData: a
         date: new Date().toISOString().split('T')[0],
         parentName,
         parentEmail,
-        ...admissionData
+        ...admissionData,
     };
     await updateDoc(schoolRef, {
         admissions: arrayUnion(newAdmission)
