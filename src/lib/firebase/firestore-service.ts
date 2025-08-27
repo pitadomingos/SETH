@@ -3,7 +3,7 @@
 'use client';
 import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from './config';
-import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student, Message, NewMessageData } from '@/lib/mock-data';
+import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student, Message, NewMessageData } from '@/lib/mock-data';
 import { sendEmail } from '@/lib/email-service';
 import { format } from 'date-fns';
 
@@ -272,9 +272,9 @@ export async function deleteClassFromFirestore(schoolId: string, classId: string
 }
 
 // --- Syllabus CRUD ---
-export async function addSyllabusToFirestore(schoolId: string, syllabusData: Omit<any, 'id' | 'topics'>): Promise<any> {
+export async function addSyllabusToFirestore(schoolId: string, syllabusData: Omit<Syllabus, 'id' | 'topics'>): Promise<Syllabus> {
     const schoolRef = doc(db, 'schools', schoolId);
-    const newSyllabus = {
+    const newSyllabus: Syllabus = {
         id: `SYL${Date.now()}`,
         topics: [],
         ...syllabusData
@@ -468,7 +468,7 @@ export async function addCompetitionToFirestore(schoolId: string, competitionDat
     const newCompetition: Competition = {
         id: `CMP${Date.now()}`,
         ...competitionData,
-        date: Timestamp.fromDate(competitionData.date),
+        date: Timestamp.fromDate(competitionData.date as Date),
     };
     await updateDoc(schoolRef, {
         competitions: arrayUnion(newCompetition)
@@ -503,6 +503,14 @@ export async function addCompetitionResultInFirestore(schoolId: string, competit
 export async function addAdmissionToFirestore(schoolId: string, admissionData: any, parentName: string, parentEmail: string): Promise<Admission> {
     const schoolRef = doc(db, 'schools', schoolId);
     
+    // Convert date string back to Date object for Timestamp conversion
+    let dobTimestamp: Timestamp;
+    if (typeof admissionData.dateOfBirth === 'string') {
+        dobTimestamp = Timestamp.fromDate(new Date(admissionData.dateOfBirth));
+    } else {
+        dobTimestamp = admissionData.dateOfBirth; // Assume it's already a Timestamp if not a string
+    }
+
     const newAdmission = {
         id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 8)}`,
         status: 'Pending',
@@ -510,13 +518,15 @@ export async function addAdmissionToFirestore(schoolId: string, admissionData: a
         parentName,
         parentEmail,
         ...admissionData,
+        dateOfBirth: dobTimestamp, // Use the converted timestamp
     };
 
     await updateDoc(schoolRef, {
         admissions: arrayUnion(newAdmission)
     });
 
-    return newAdmission as Admission;
+    // Return with JS Date for client-side state
+    return { ...newAdmission, dateOfBirth: dobTimestamp.toDate().toISOString().split('T')[0] } as Admission;
 }
 
 
