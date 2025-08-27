@@ -1,3 +1,4 @@
+
 'use server';
 
 import { NewSchoolData, SchoolData, UserProfile, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student, KioskMedia, BehavioralAssessment, Grade, AttendanceRecord, DeployedTest } from '@/context/school-data-context';
@@ -333,6 +334,7 @@ export async function addGradeAction(schoolId: string, gradeData: Omit<Grade, 'i
     try {
         const newGrade = await addGradeToFirestore(schoolId, gradeData);
         revalidatePath('/dashboard/grading');
+        revalidatePath('/dashboard');
         return { success: true, grade: newGrade };
     } catch (e) {
         console.error("Failed to add grade:", e);
