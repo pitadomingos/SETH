@@ -135,7 +135,7 @@ export interface Admission {
     dateOfBirth: string;
     sex: 'Male' | 'Female';
     formerSchool: string;
-    grades: string;
+    gradesSummary?: string;
     // For new applicants
     idUrl?: string;
     reportUrl?: string;
@@ -367,7 +367,7 @@ export interface NewAdmissionData {
   sex: 'Male' | 'Female';
   appliedFor: string;
   formerSchool: string;
-  gradesSummary: string;
+  gradesSummary?: string;
   // For new applicants
   idUrl?: string;
   reportUrl?: string;
@@ -426,6 +426,10 @@ export const mockUsers: Record<string, UserProfile> = {
   },
   teacher1: {
     user: { username: 'teacher1', name: 'Sérgio Almeida', role: 'Teacher', email: 'sergio.almeida@northwood.edu', schoolId: 'northwood' },
+    password: 'password'
+  },
+  teacher_logix: {
+    user: { username: 'teacher_logix', name: 'Jorge Dias', role: 'Teacher', email: 'jorge.dias@logix.edu', schoolId: 'logixsystems' },
     password: 'password'
   },
   student1: {
