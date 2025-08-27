@@ -3,8 +3,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { mockUsers, UserProfile } from '@/lib/mock-data';
 import { getUsersFromFirestore } from '@/lib/firebase/firestore-service';
+import type { UserProfile } from './school-data-context';
 
 export type Role = 
     | 'GlobalAdmin' 
@@ -45,7 +45,6 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   impersonateUser: (email: string, role: Role) => void;
-  addUser: (username: string, profile: UserProfile) => void;
   setUserProfilePicture: (url: string) => void;
   updateUserProfile: (data: Partial<User>) => void;
 }
@@ -58,7 +57,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [schoolId, setSchoolId] = useState<string | null>(null);
   const [originalUser, setOriginalUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [users, setUsers] = useState<Record<string, UserProfile>>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -85,12 +83,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (username: string, pass: string): Promise<LoginResult> => {
-    // On login, always fetch the freshest user list from the database
-    const firestoreUsers = await getUsersFromFirestore();
-    // Merge firestore users with mock users to ensure all demo accounts are available
-    const userSource = { ...mockUsers, ...firestoreUsers };
-
+    const userSource = await getUsersFromFirestore();
     const userRecord = userSource[username];
+    
     if (userRecord && userRecord.password === pass) {
       const loggedInUser: User = {
           ...userRecord.user,
@@ -124,11 +119,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       sessionStorage.setItem('user', JSON.stringify(updatedUser));
     }
   };
-
-  // This function is now mostly for client-side state updates after the DB has been written to.
-  const addUser = (username: string, profile: UserProfile) => {
-    setUsers(prev => ({...prev, [username]: profile }));
-  }
   
   const impersonateUser = async (email: string, targetRole: Role) => {
     if (!user) return;
@@ -138,12 +128,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         sessionStorage.setItem('originalUser', JSON.stringify(user));
     }
 
-    // Always fetch the freshest user list from the database before impersonating
-    let firestoreUsers = await getUsersFromFirestore();
-    const allUsers = { ...mockUsers, ...firestoreUsers };
-
+    const allUsers = await getUsersFromFirestore();
     const userRecord = Object.values(allUsers).find(u => {
-      // For parents, schoolId is not on the user object, so we match on email and role only.
       if (targetRole === 'Parent') {
         return u.user.email === email && u.user.role === targetRole;
       }
@@ -201,7 +187,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, schoolId, originalUser, login, logout, isLoading, impersonateUser, addUser, setUserProfilePicture, updateUserProfile }}>
+    <AuthContext.Provider value={{ user, role, schoolId, originalUser, login, logout, isLoading, impersonateUser, setUserProfilePicture, updateUserProfile }}>
       {children}
     </AuthContext.Provider>
   );

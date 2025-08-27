@@ -2,8 +2,9 @@
 'use client';
 import { doc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from './config';
-import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student, Message, NewMessageData } from '@/lib/mock-data';
+import type { SchoolData, NewSchoolData, SchoolProfile, UserProfile, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student, Message, NewMessageData, KioskMedia, BehavioralAssessment, Grade, DeployedTest, SavedTest } from '@/context/school-data-context';
 import { sendEmail } from '@/lib/email-service';
+import { initialSchoolData, mockUsers } from '@/lib/initial-seed-data';
 
 // --- Email Simulation ---
 async function sendWelcomeEmail(adminUser: { username: string, profile: UserProfile }, schoolName: string): Promise<void> {
@@ -68,7 +69,7 @@ export async function seedInitialData(): Promise<void> {
             holidays: schoolData.holidays.map(holiday => ({...holiday, date: Timestamp.fromDate(new Date(holiday.date))})),
             competitions: schoolData.competitions.map(comp => ({...comp, date: Timestamp.fromDate(new Date(comp.date))})),
             deployedTests: schoolData.deployedTests.map(test => ({...test, deadline: Timestamp.fromDate(new Date(test.deadline))})),
-            admissions: schoolData.admissions.map(adm => ({...adm, date: Timestamp.fromDate(new Date(adm.date))})),
+            admissions: schoolData.admissions.map(adm => ({...adm, date: Timestamp.now(), dateOfBirth: Timestamp.fromDate(new Date(adm.dateOfBirth)) })),
         };
 
         batch.set(schoolRef, dataWithServerTimestamps);
@@ -129,7 +130,7 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
             kioskMedia: [],
             activityLogs: [{
                 id: `LOG${schoolId}${Date.now()}`,
-                timestamp: serverTimestamp(), // Corrected from Timestamp.now()
+                timestamp: serverTimestamp(),
                 schoolId: schoolId,
                 user: 'System Admin',
                 role: 'GlobalAdmin',
@@ -520,44 +521,21 @@ export async function addCompetitionResultInFirestore(schoolId: string, competit
 
 // --- Admission CRUD ---
 
-export async function addAdmissionToFirestore(schoolId: string, admissionData: NewAdmissionData, parentName: string, parentEmail: string): Promise<Admission> {
+export async function addAdmissionToFirestore(schoolId: string, admissionData: Admission): Promise<Admission> {
     const schoolRef = doc(db, 'schools', schoolId);
     
-    // Ensure dateOfBirth is a Timestamp for Firestore
-    const dobTimestamp = admissionData.dateOfBirth ? Timestamp.fromDate(new Date(admissionData.dateOfBirth)) : Timestamp.now();
-
-    const newAdmissionPayload: Omit<Admission, 'date' | 'dateOfBirth'> & { date: Timestamp; dateOfBirth: Timestamp } = {
-        id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 8)}`,
-        status: 'Pending' as const,
-        date: Timestamp.now(),
-        parentName,
-        parentEmail,
-        name: admissionData.name,
-        appliedFor: admissionData.appliedFor,
-        dateOfBirth: dobTimestamp,
-        sex: admissionData.sex,
-        formerSchool: admissionData.formerSchool,
-        type: admissionData.type,
-        ...(admissionData.type === 'New' && {
-            gradesSummary: admissionData.gradesSummary || 'N/A',
-            idUrl: admissionData.idUrl,
-            reportUrl: admissionData.reportUrl,
-            photoUrl: admissionData.photoUrl,
-        }),
-        ...(admissionData.type === 'Transfer' && {
-            studentIdToTransfer: admissionData.studentIdToTransfer,
-            fromSchoolId: admissionData.fromSchoolId,
-            reasonForTransfer: admissionData.reasonForTransfer,
-            transferGrade: admissionData.transferGrade,
-            gradesSummary: 'Records are available in the EduDesk network.',
-        })
+    // Convert JS Dates back to Timestamps for Firestore
+    const admissionWithTimestamps = {
+        ...admissionData,
+        date: Timestamp.fromDate(new Date(admissionData.date)),
+        dateOfBirth: Timestamp.fromDate(new Date(admissionData.dateOfBirth)),
     };
     
     await updateDoc(schoolRef, {
-      admissions: arrayUnion(newAdmissionPayload)
+      admissions: arrayUnion(admissionWithTimestamps)
     });
 
-    return { ...newAdmissionPayload, date: newAdmissionPayload.date.toDate(), dateOfBirth: newAdmissionPayload.dateOfBirth.toDate().toISOString().split('T')[0] };
+    return admissionData;
 }
 
 
@@ -645,8 +623,6 @@ export async function sendMessageInFirestore(senderSchoolId: string, recipientSc
     }
   
     await batch.commit();
-    // Note: serverTimestamp will be null on client until it's set by the server.
-    // The UI should handle this gracefully or re-fetch.
     return { ...newMessage, timestamp: new Date() } as Message;
 }
 
@@ -664,7 +640,7 @@ export async function addAssetToFirestore(schoolId: string, assetData: Omit<any,
 }
 
 // Kiosk Media
-export async function addKioskMediaToFirestore(schoolId: string, mediaData: Omit<any, 'id' | 'createdAt'>): Promise<any> {
+export async function addKioskMediaToFirestore(schoolId: string, mediaData: Omit<KioskMedia, 'id' | 'createdAt'>): Promise<KioskMedia> {
     const schoolRef = doc(db, 'schools', schoolId);
     const newMedia = {
         id: `MEDIA${Date.now()}`,
@@ -689,29 +665,29 @@ export async function removeKioskMediaFromFirestore(schoolId: string, mediaId: s
 }
 
 // Behavioral Assessment
-export async function addBehavioralAssessmentToFirestore(schoolId: string, assessmentData: Omit<any, 'id' | 'date'>): Promise<any> {
+export async function addBehavioralAssessmentToFirestore(schoolId: string, assessmentData: Omit<BehavioralAssessment, 'id' | 'date'>): Promise<BehavioralAssessment> {
     const schoolRef = doc(db, 'schools', schoolId);
     const schoolSnapshot = await getDoc(schoolRef);
-    if (!schoolSnapshot.exists()) return;
+    if (!schoolSnapshot.exists()) throw new Error("School not found");
     const schoolData = schoolSnapshot.data() as SchoolData;
     const newAssessment = {
         id: `BA${Date.now()}`,
-        date: Timestamp.now(),
+        date: serverTimestamp(),
         ...assessmentData
     };
     const updatedStudents = schoolData.students.map(s => {
         if(s.id === assessmentData.studentId) {
             if(!s.behavioralAssessments) s.behavioralAssessments = [];
-            s.behavioralAssessments.push(newAssessment);
+            s.behavioralAssessments.push(newAssessment as any);
         }
         return s;
     });
     await updateDoc(schoolRef, { students: updatedStudents });
-    return { ...newAssessment, date: newAssessment.date.toDate() };
+    return { ...newAssessment, date: new Date() };
 }
 
 // Grade
-export async function addGradeToFirestore(schoolId: string, gradeData: Omit<any, 'id'|'date'>): Promise<any> {
+export async function addGradeToFirestore(schoolId: string, gradeData: Omit<Grade, 'id'|'date'>): Promise<Grade> {
     const schoolRef = doc(db, 'schools', schoolId);
     const newGrade = {
         id: `GR${Date.now()}`,

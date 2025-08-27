@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -105,13 +106,13 @@ export function LoginForm() {
                             <li className="flex justify-between"><span className="font-semibold">Global Admin:</span> <span>developer / password</span></li>
                             <li className="flex justify-between"><span className="font-semibold">Premium Admin (MiniArte):</span> <span>admin3 / password</span></li>
                             <li className="flex justify-between"><span className="font-semibold">Northwood Admin:</span> <span>admin1 / password</span></li>
-                            <li className="flex justify-between"><span className="font-semibold">Maplewood Admin:</span> <span>admin2 / password</span></li>
+                            <li className="flex justify-between"><span className="font-semibold">Logix Systems Admin:</span> <span>admin_logix / password</span></li>
                             <li className="flex justify-between"><span className="font-semibold">Northwood Teacher:</span> <span>teacher1 / password</span></li>
-                            <li className="flex justify-between"><span className="font-semibold">Maplewood Teacher:</span> <span>teacher2 / password</span></li>
+                            <li className="flex justify-between"><span className="font-semibold">Logix Teacher:</span> <span>teacher_logix / password</span></li>
                             <li className="flex justify-between"><span className="font-semibold">Northwood Student:</span> <span>student1 / password</span></li>
-                            <li className="flex justify-between"><span className="font-semibold">Maplewood Student:</span> <span>student2 / password</span></li>
+                            <li className="flex justify-between"><span className="font-semibold">Logix Student:</span> <span>laura_moreira / password</span></li>
                             <li className="flex justify-between"><span className="font-semibold">Northwood Parent:</span> <span>parent1 / password</span></li>
-                            <li className="flex justify-between"><span className="font-semibold">Maplewood Parent:</span> <span>parent2 / password</span></li>
+                             <li className="flex justify-between"><span className="font-semibold">Logix Parent:</span> <span>joana_moreira / password</span></li>
                         </ul>
                     </AccordionContent>
                 </AccordionItem>

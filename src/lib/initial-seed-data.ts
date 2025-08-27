@@ -1,6 +1,6 @@
 
-'use client';
 import { type Role } from "@/context/auth-context";
+import { Timestamp } from 'firebase/firestore';
 
 // --- CORE DATA STRUCTURES ---
 
@@ -17,376 +17,37 @@ export interface UserProfile {
     password: string;
 }
 
-export interface Subscription {
-    status: 'Paid' | 'Overdue';
-    amount: number;
-    dueDate: string;
-}
-
-export interface SchoolProfile {
-    id: string;
-    name: string;
-    head: string;
-    address: string;
-    phone: string;
-    email: string;
-    motto: string;
-    tier: 'Starter' | 'Pro' | 'Premium';
-    logoUrl: string;
-    certificateTemplateUrl: string;
-    transcriptTemplateUrl: string;
-    gradingSystem: '20-Point' | 'Letter' | 'GPA';
-    currency: 'USD' | 'ZAR' | 'MZN' | 'BWP' | 'NAD' | 'ZMW' | 'MWK' | 'AOA' | 'TZS' | 'ZWL';
-    status: 'Active' | 'Suspended' | 'Inactive';
-    schoolLevel: 'Primary' | 'Secondary' | 'Full';
-    gradeCapacity: Record<string, number>;
-    kioskConfig: {
-      showDashboard: boolean;
-      showLeaderboard: boolean; // This will now be for students
-      showTeacherLeaderboard: boolean;
-      showAllSchools: boolean;
-      showAttendance: boolean;
-      showAcademics: boolean;
-      showAwards: boolean;
-      showPerformers: boolean;
-      showAwardWinner: boolean;
-      showShowcase: boolean;
-    };
-    subscription: Subscription;
-    awards?: Array<{
-        year: number;
-        schoolOfTheYear: string; // schoolId
-        teacherOfTheYear: string; // teacherId
-        studentOfTheYear: string; // studentId
-    }>;
-}
-
-export interface Student {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    address: string;
-    sex: 'Male' | 'Female';
-    dateOfBirth: string;
-    grade: string;
-    class: string;
-    parentName: string;
-    parentEmail: string;
-    status: 'Active' | 'Inactive' | 'Transferred';
-    behavioralAssessments: BehavioralAssessment[];
-    schoolId?: string; // Added for transfers
-    schoolName?: string; // Added for transfers
-}
-
-export interface Teacher {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    address: string;
-    sex: 'Male' | 'Female';
-    subject: string;
-    experience: string;
-    qualifications: string;
-    status: 'Active' | 'Inactive' | 'Transferred';
-}
-
-export interface Class {
-    id: string;
-    name: string;
-    grade: string;
-    teacher: string;
-    students: number;
-    room: string;
-    headOfClassId?: string; // Optional ID of the teacher who is head of this class
-}
-
-export interface Course {
-    id: string;
-    subject: string;
-    teacherId: string;
-    classId: string;
-    schedule: Array<{ day: string, startTime: string, endTime: string, room: string }>;
-}
-
-export interface SyllabusTopic {
-    id: string;
-    week: number;
-    topic: string;
-    subtopics: string[];
-}
-export interface Syllabus {
-    id: string;
-    subject: string;
-    grade: string;
-    topics: SyllabusTopic[];
-}
-
-export interface Admission {
-    id: string;
-    type: 'New' | 'Transfer';
-    name: string;
-    date: string;
-    appliedFor: string;
-    parentName: string;
-    parentEmail: string;
-    status: 'Pending' | 'Approved' | 'Rejected';
-    dateOfBirth: string;
-    sex: 'Male' | 'Female';
-    formerSchool: string;
-    gradesSummary?: string;
-    // For new applicants
-    idUrl?: string;
-    reportUrl?: string;
-    photoUrl?: string;
-    // For transfers
-    studentIdToTransfer?: string;
-    fromSchoolId?: string;
-    reasonForTransfer?: string;
-    transferGrade?: string;
-}
-
-export interface FinanceRecord {
-    id: string;
-    studentId: string;
-    studentName: string;
-    description: string;
-    totalAmount: number;
-    amountPaid: number;
-    dueDate: string;
-    status: 'Paid' | 'Partially Paid' | 'Pending' | 'Overdue';
-}
-
-export interface Exam {
-    id: string;
-    title: string;
-    subject: string;
-    grade: string;
-    board: string;
-    date: Date;
-    time: string;
-    duration: string;
-    room: string;
-    invigilator: string;
-}
-
-export interface Grade {
-    id: string;
-    studentId: string;
-    subject: string;
-    grade: string;
-    date: any; // Allow both Date and Timestamp
-    type: 'Coursework' | 'Test' | 'Exam';
-    description: string;
-    teacherId: string;
-}
-
-export interface Attendance {
-    id: string;
-    studentId: string;
-    date: any; // Allow both Date and Timestamp
-    status: 'Present' | 'Late' | 'Absent' | 'Sick';
-    courseId: string;
-}
-
-export interface Event {
-    id: string;
-    title: string;
-    date: any; // Allow both Date and Timestamp
-    location: string;
-    organizer: string;
-    audience: string;
-    type: 'Academic' | 'Sports' | 'Cultural' | 'Meeting' | 'Holiday';
-    schoolName: string;
-}
-
-export interface Expense {
-    id: string;
-    description: string;
-    category: string;
-    amount: number;
-    date: string;
-    proofUrl: string;
-    type: 'Income' | 'Expense';
-}
-
-export interface Team {
-    id: string;
-    name: string;
-    icon: string;
-    coach: string;
-    playerIds: string[];
-}
-
-export interface Competition {
-    id: string;
-    title: string;
-    ourTeamId: string;
-    opponent: string;
-    date: any; // Allow both Date and Timestamp
-    time: string;
-    location: string;
-    result?: {
-        ourScore: number;
-        opponentScore: number;
-        outcome: 'Win' | 'Loss' | 'Draw';
-    };
-}
-
-export interface BehavioralAssessment {
-    id: string;
-    teacherId: string;
-    studentId: string;
-    date: Date;
-    respect: number;
-    participation: number;
-    socialSkills: number;
-    conduct: number;
-    comment?: string;
-}
-
-export interface KioskMedia {
-  id: string;
-  title: string;
-  description: string;
-  type: 'image' | 'video';
-  url: string;
-  createdAt: Date;
-}
-
-export interface ActivityLog {
-    id: string;
-    timestamp: any; // Allow both Date and Timestamp
-    schoolId: string;
-    user: string;
-    role: Role;
-    action: string;
-    details: string;
-}
-
-export interface Message {
-    id: string;
-    senderUsername: string;
-    senderName: string;
-    senderRole: string;
-    recipientUsername: string;
-    recipientName: string;
-    recipientRole: string;
-    subject: string;
-    body: string;
-    timestamp: Date;
-    status: 'Pending' | 'Resolved';
-    attachmentUrl?: string;
-    attachmentName?: string;
-}
-
-export interface SavedReport {
-    id: string;
-    type: 'School-Wide' | 'Class' | 'Struggling Students' | 'Teacher Performance';
-    title: string;
-    date: Date;
-    generatedBy: string;
-    content: any;
-}
-
-export interface SavedTest {
-    id: string;
-    teacherId: string;
-    subject: string;
-    topic: string;
-    grade: string;
-    questions: Array<{
-        question: string;
-        options: string[];
-        correctAnswer: string;
-    }>;
-    createdAt: Date;
-}
-
-export interface DeployedTest {
-    id: string;
-    testId: string;
-    classId: string;
-    deadline: any; // Allow both Date and Timestamp
-    submissions: Array<{
-        studentId: string;
-        score: number;
-        submittedAt: Date;
-    }>;
-}
-
 export interface SchoolData {
-    profile: SchoolProfile;
-    students: Student[];
-    teachers: Teacher[];
-    classes: Class[];
-    courses: Course[];
-    syllabi: Syllabus[];
-    admissions: Admission[];
-    finance: FinanceRecord[];
+    profile: any;
+    students: any[];
+    teachers: any[];
+    classes: any[];
+    courses: any[];
+    syllabi: any[];
+    admissions: any[];
+    finance: any[];
     assets: any[];
-    exams: Exam[];
-    grades: Grade[];
-    attendance: Attendance[];
-    events: Event[];
+    exams: any[];
+    grades: any[];
+    attendance: any[];
+    events: any[];
     feeDescriptions: string[];
     audiences: string[];
     expenseCategories: string[];
-    expenses: Expense[];
-    teams: Team[];
-    competitions: Competition[];
+    expenses: any[];
+    teams: any[];
+    competitions: any[];
     terms: any[];
     holidays: any[];
-    kioskMedia: KioskMedia[];
-    activityLogs: ActivityLog[];
-    messages: Message[];
-    savedReports: SavedReport[];
+    kioskMedia: any[];
+    activityLogs: any[];
+    messages: any[];
+    savedReports: any[];
     examBoards: string[];
-    deployedTests: DeployedTest[];
+    deployedTests: any[];
     lessonPlans: any[];
-    savedTests: SavedTest[];
+    savedTests: any[];
     schoolGroups: Record<string, string[]>;
-}
-
-export interface NewMessageData {
-    recipientUsername: string;
-    subject: string;
-    body: string;
-    attachmentUrl?: string;
-    attachmentName?: string;
-    senderName?: string;
-    senderRole?: string;
-}
-
-export interface NewAdmissionData {
-  type: 'New' | 'Transfer';
-  schoolId: string;
-  name: string;
-  dateOfBirth: string;
-  sex: 'Male' | 'Female';
-  appliedFor: string;
-  formerSchool: string;
-  gradesSummary?: string;
-  // For new applicants
-  idUrl?: string;
-  reportUrl?: string;
-  photoUrl?: string;
-  // For transfers
-  studentIdToTransfer?: string;
-  fromSchoolId?: string;
-  reasonForTransfer?: string;
-  transferGrade?: string;
-}
-
-export interface NewSchoolData {
-    name: string;
-    head: string;
-    address: string;
-    phone: string;
-    email: string;
-    motto?: string;
-    tier: 'Starter' | 'Pro' | 'Premium';
 }
 
 // --- MOCK USERS ---
@@ -428,7 +89,7 @@ export const mockUsers: Record<string, UserProfile> = {
     user: { username: 'teacher1', name: 'Sérgio Almeida', role: 'Teacher', email: 'sergio.almeida@northwood.edu', schoolId: 'northwood' },
     password: 'password'
   },
-  teacher_logix: {
+   teacher_logix: {
     user: { username: 'teacher_logix', name: 'Jorge Dias', role: 'Teacher', email: 'jorge.dias@logix.edu', schoolId: 'logixsystems' },
     password: 'password'
   },

@@ -1,12 +1,383 @@
 
 'use client';
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
-import { initialSchoolData, SchoolData, Student, Teacher, Class, Course, Syllabus, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, SchoolProfile, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, mockUsers, UserProfile, SyllabusTopic, BehavioralAssessment } from '@/lib/mock-data';
-import { useAuth, User } from './auth-context';
-import type { Role } from './auth-context';
+import { useAuth, User, Role } from './auth-context';
 import { getSchoolsFromFirestore, seedInitialData } from '@/lib/firebase/firestore-service';
 
-export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, SyllabusTopic, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, BehavioralAssessment } from '@/lib/mock-data';
+// --- DATA STRUCTURES ---
+
+export interface UserProfile {
+    user: User;
+    password: string;
+}
+
+export interface Subscription {
+    status: 'Paid' | 'Overdue';
+    amount: number;
+    dueDate: string;
+}
+
+export interface SchoolProfile {
+    id: string;
+    name: string;
+    head: string;
+    address: string;
+    phone: string;
+    email: string;
+    motto: string;
+    tier: 'Starter' | 'Pro' | 'Premium';
+    logoUrl: string;
+    certificateTemplateUrl: string;
+    transcriptTemplateUrl: string;
+    gradingSystem: '20-Point' | 'Letter' | 'GPA';
+    currency: 'USD' | 'ZAR' | 'MZN' | 'BWP' | 'NAD' | 'ZMW' | 'MWK' | 'AOA' | 'TZS' | 'ZWL';
+    status: 'Active' | 'Suspended' | 'Inactive';
+    schoolLevel: 'Primary' | 'Secondary' | 'Full';
+    gradeCapacity: Record<string, number>;
+    kioskConfig: {
+      showDashboard: boolean;
+      showLeaderboard: boolean;
+      showTeacherLeaderboard: boolean;
+      showAllSchools: boolean;
+      showAttendance: boolean;
+      showAcademics: boolean;
+      showAwards: boolean;
+      showPerformers: boolean;
+      showAwardWinner: boolean;
+      showShowcase: boolean;
+    };
+    subscription: Subscription;
+    awards?: Array<{
+        year: number;
+        schoolOfTheYear: string;
+        teacherOfTheYear: string;
+        studentOfTheYear: string;
+    }>;
+}
+
+export interface Student {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    sex: 'Male' | 'Female';
+    dateOfBirth: string;
+    grade: string;
+    class: string;
+    parentName: string;
+    parentEmail: string;
+    status: 'Active' | 'Inactive' | 'Transferred';
+    behavioralAssessments: BehavioralAssessment[];
+    schoolId?: string;
+    schoolName?: string;
+}
+
+export interface Teacher {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    sex: 'Male' | 'Female';
+    subject: string;
+    experience: string;
+    qualifications: string;
+    status: 'Active' | 'Inactive' | 'Transferred';
+}
+
+export interface Class {
+    id: string;
+    name: string;
+    grade: string;
+    teacher: string;
+    students: number;
+    room: string;
+    headOfClassId?: string;
+}
+
+export interface Course {
+    id: string;
+    subject: string;
+    teacherId: string;
+    classId: string;
+    schedule: Array<{ day: string, startTime: string, endTime: string, room: string }>;
+}
+
+export interface SyllabusTopic {
+    id: string;
+    week: number;
+    topic: string;
+    subtopics: string[];
+}
+export interface Syllabus {
+    id: string;
+    subject: string;
+    grade: string;
+    topics: SyllabusTopic[];
+}
+
+export interface Admission {
+    id: string;
+    type: 'New' | 'Transfer';
+    name: string;
+    date: Date;
+    appliedFor: string;
+    parentName: string;
+    parentEmail: string;
+    status: 'Pending' | 'Approved' | 'Rejected';
+    dateOfBirth: string;
+    sex: 'Male' | 'Female';
+    formerSchool: string;
+    gradesSummary?: string;
+    idUrl?: string;
+    reportUrl?: string;
+    photoUrl?: string;
+    studentIdToTransfer?: string;
+    fromSchoolId?: string;
+    reasonForTransfer?: string;
+    transferGrade?: string;
+}
+
+export interface FinanceRecord {
+    id: string;
+    studentId: string;
+    studentName: string;
+    description: string;
+    totalAmount: number;
+    amountPaid: number;
+    dueDate: string;
+    status: 'Paid' | 'Partially Paid' | 'Pending' | 'Overdue';
+}
+
+export interface Exam {
+    id: string;
+    title: string;
+    subject: string;
+    grade: string;
+    board: string;
+    date: Date;
+    time: string;
+    duration: string;
+    room: string;
+    invigilator: string;
+}
+
+export interface Grade {
+    id: string;
+    studentId: string;
+    subject: string;
+    grade: string;
+    date: any;
+    type: 'Coursework' | 'Test' | 'Exam';
+    description: string;
+    teacherId: string;
+}
+
+export interface Attendance {
+    id: string;
+    studentId: string;
+    date: any;
+    status: 'Present' | 'Late' | 'Absent' | 'Sick';
+    courseId: string;
+}
+
+export interface Event {
+    id: string;
+    title: string;
+    date: any;
+    location: string;
+    organizer: string;
+    audience: string;
+    type: 'Academic' | 'Sports' | 'Cultural' | 'Meeting' | 'Holiday';
+    schoolName: string;
+}
+
+export interface Expense {
+    id: string;
+    description: string;
+    category: string;
+    amount: number;
+    date: string;
+    proofUrl: string;
+    type: 'Income' | 'Expense';
+}
+
+export interface Team {
+    id: string;
+    name: string;
+    icon: string;
+    coach: string;
+    playerIds: string[];
+}
+
+export interface Competition {
+    id: string;
+    title: string;
+    ourTeamId: string;
+    opponent: string;
+    date: any;
+    time: string;
+    location: string;
+    result?: {
+        ourScore: number;
+        opponentScore: number;
+        outcome: 'Win' | 'Loss' | 'Draw';
+    };
+}
+
+export interface BehavioralAssessment {
+    id: string;
+    teacherId: string;
+    studentId: string;
+    date: Date;
+    respect: number;
+    participation: number;
+    socialSkills: number;
+    conduct: number;
+    comment?: string;
+}
+
+export interface KioskMedia {
+  id: string;
+  title: string;
+  description: string;
+  type: 'image' | 'video';
+  url: string;
+  createdAt: Date;
+}
+
+export interface ActivityLog {
+    id: string;
+    timestamp: any;
+    schoolId: string;
+    user: string;
+    role: Role;
+    action: string;
+    details: string;
+}
+
+export interface Message {
+    id: string;
+    senderUsername: string;
+    senderName: string;
+    senderRole: string;
+    recipientUsername: string;
+    recipientName: string;
+    recipientRole: string;
+    subject: string;
+    body: string;
+    timestamp: Date;
+    status: 'Pending' | 'Resolved';
+    attachmentUrl?: string;
+    attachmentName?: string;
+}
+
+export interface SavedReport {
+    id: string;
+    type: 'School-Wide' | 'Class' | 'Struggling Students' | 'Teacher Performance';
+    title: string;
+    date: Date;
+    generatedBy: string;
+    content: any;
+}
+
+export interface SavedTest {
+    id: string;
+    teacherId: string;
+    subject: string;
+    topic: string;
+    grade: string;
+    questions: Array<{
+        question: string;
+        options: string[];
+        correctAnswer: string;
+    }>;
+    createdAt: Date;
+}
+
+export interface DeployedTest {
+    id: string;
+    testId: string;
+    classId: string;
+    deadline: any;
+    submissions: Array<{
+        studentId: string;
+        score: number;
+        submittedAt: Date;
+    }>;
+}
+
+export interface SchoolData {
+    profile: SchoolProfile;
+    students: Student[];
+    teachers: Teacher[];
+    classes: Class[];
+    courses: Course[];
+    syllabi: Syllabus[];
+    admissions: Admission[];
+    finance: FinanceRecord[];
+    assets: any[];
+    exams: Exam[];
+    grades: Grade[];
+    attendance: Attendance[];
+    events: Event[];
+    feeDescriptions: string[];
+    audiences: string[];
+    expenseCategories: string[];
+    expenses: Expense[];
+    teams: Team[];
+    competitions: Competition[];
+    terms: any[];
+    holidays: any[];
+    kioskMedia: KioskMedia[];
+    activityLogs: ActivityLog[];
+    messages: Message[];
+    savedReports: SavedReport[];
+    examBoards: string[];
+    deployedTests: DeployedTest[];
+    lessonPlans: any[];
+    savedTests: SavedTest[];
+    schoolGroups: Record<string, string[]>;
+}
+
+export interface NewMessageData {
+    recipientUsername: string;
+    subject: string;
+    body: string;
+    attachmentUrl?: string;
+    attachmentName?: string;
+    senderName?: string;
+    senderRole?: string;
+}
+
+export interface NewAdmissionData {
+  type: 'New' | 'Transfer';
+  schoolId: string;
+  name: string;
+  dateOfBirth: string;
+  sex: 'Male' | 'Female';
+  appliedFor: string;
+  formerSchool: string;
+  gradesSummary?: string;
+  idUrl?: string;
+  reportUrl?: string;
+  photoUrl?: string;
+  studentIdToTransfer?: string;
+  fromSchoolId?: string;
+  reasonForTransfer?: string;
+  transferGrade?: string;
+}
+
+export interface NewSchoolData {
+    name: string;
+    head: string;
+    address: string;
+    phone: string;
+    email: string;
+    motto?: string;
+    tier: 'Starter' | 'Pro' | 'Premium';
+}
 
 interface SchoolDataContextType {
     // --- Data States ---
@@ -76,8 +447,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             }
         } catch (error) {
             console.error("Failed to fetch or seed school data.", error);
-            setData(initialSchoolData); // Fallback to local mock
-            setAwardsAnnounced(initialSchoolData['northwood']?.profile.awards && initialSchoolData['northwood'].profile.awards.length > 0);
+            setData(null); 
         } finally {
             setIsLoading(false);
         }
