@@ -71,8 +71,7 @@ const applicationSchema = z.object({
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 function NewApplicationDialog() {
-  const { allSchoolData, allStudents } = useSchoolData();
-  const { user } = useAuth();
+  const { addAdmission, allSchoolData, allStudents } = useSchoolData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -101,6 +100,7 @@ function NewApplicationDialog() {
   const selectedSchoolId = form.watch('schoolId');
   const selectedGradeStr = form.watch('appliedFor');
   
+  const { user } = useAuth();
   const parentStudents = useMemo(() => {
     if(!user || !allStudents) return [];
     return allStudents.filter(s => s.parentEmail === user.email);
@@ -124,37 +124,39 @@ function NewApplicationDialog() {
   }, [selectedSchoolId, selectedGradeStr, allSchoolData]);
 
   async function onSubmit(values: ApplicationFormValues) {
-    if (!user) return;
-
     let admissionData: NewAdmissionData;
-    let targetSchoolId: string;
 
     if (values.applicationType === 'new') {
+        if (!values.schoolId || !values.name || !values.dateOfBirth || !values.sex || !values.appliedFor || !values.formerSchool) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill all required fields for a new applicant.' });
+            return;
+        }
         admissionData = {
             type: 'New',
-            schoolId: values.schoolId!,
-            name: values.name!,
-            dateOfBirth: format(values.dateOfBirth!, 'yyyy-MM-dd'),
-            sex: values.sex!,
-            appliedFor: values.appliedFor!,
-            formerSchool: values.formerSchool!,
+            schoolId: values.schoolId,
+            name: values.name,
+            dateOfBirth: format(values.dateOfBirth, 'yyyy-MM-dd'),
+            sex: values.sex,
+            appliedFor: values.appliedFor,
+            formerSchool: values.formerSchool,
             gradesSummary: values.gradesSummary || 'N/A',
             idUrl: values.idUrl,
             reportUrl: values.reportUrl,
             photoUrl: values.photoUrl
         };
-        targetSchoolId = values.schoolId!;
-    } else {
+    } else { // Transfer
         const student = allStudents.find(s => s.id === values.transferStudentId);
-        if (!student || !values.transferSchoolId) return;
-
+        if (!student || !values.transferSchoolId || !values.transferGrade || !values.reasonForTransfer) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill all required fields for a transfer.' });
+            return;
+        }
         admissionData = {
             type: 'Transfer',
             schoolId: values.transferSchoolId,
             name: student.name,
             dateOfBirth: student.dateOfBirth,
             sex: student.sex,
-            appliedFor: values.transferGrade!,
+            appliedFor: values.transferGrade,
             formerSchool: student.schoolName!,
             gradesSummary: 'Records are available in the EduDesk network.',
             fromSchoolId: student.schoolId,
@@ -162,12 +164,11 @@ function NewApplicationDialog() {
             reasonForTransfer: values.reasonForTransfer,
             transferGrade: values.transferGrade,
         };
-        targetSchoolId = values.transferSchoolId;
     }
 
-    const result = await createAdmissionAction(targetSchoolId, admissionData, user.name, user.email);
+    const success = await addAdmission(admissionData);
 
-    if (result.success) {
+    if (success) {
         toast({
             title: 'Application Submitted',
             description: `The application for ${admissionData.name} has been sent for review.`,
@@ -178,7 +179,7 @@ function NewApplicationDialog() {
         toast({
             variant: 'destructive',
             title: 'Submission Failed',
-            description: result.error || 'Could not submit the application. Please try again.',
+            description: 'Could not submit the application. Please try again.',
         });
     }
   }

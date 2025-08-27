@@ -63,7 +63,7 @@ export async function seedInitialData(): Promise<void> {
         
         const dataWithServerTimestamps = {
             ...schoolData,
-            activityLogs: schoolData.activityLogs.map(log => ({...log, timestamp: serverTimestamp()})),
+            activityLogs: schoolData.activityLogs.map(log => ({...log, timestamp: Timestamp.now()})),
         };
 
         batch.set(schoolRef, dataWithServerTimestamps);
@@ -455,17 +455,17 @@ export async function removePlayerFromTeamInFirestore(schoolId: string, teamId: 
     await updateDoc(schoolRef, { teams: updatedTeams });
 }
 
-export async function addCompetitionToFirestore(schoolId: string, competitionData: Omit<Competition, 'id'>): Promise<Competition> {
+export async function addCompetitionToFirestore(schoolId: string, competitionData: Omit<Competition, 'id' | 'date'> & { date: Date }): Promise<Competition> {
     const schoolRef = doc(db, 'schools', schoolId);
     const newCompetition = {
         id: `CMP${Date.now()}`,
         ...competitionData,
-        date: Timestamp.fromDate(competitionData.date as Date),
+        date: Timestamp.fromDate(competitionData.date),
     };
     await updateDoc(schoolRef, {
         competitions: arrayUnion(newCompetition)
     });
-    return { ...newCompetition, date: (competitionData.date as Date) };
+    return { ...newCompetition, date: competitionData.date };
 }
 
 export async function addCompetitionResultInFirestore(schoolId: string, competitionId: string, result: Competition['result']): Promise<Competition | null> {
@@ -498,21 +498,17 @@ export async function addAdmissionToFirestore(schoolId: string, admissionData: N
     const newAdmissionPayload = {
       id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 8)}`,
       status: 'Pending',
-      date: format(new Date(), 'yyyy-MM-dd'),
+      date: Timestamp.now(),
       parentName,
       parentEmail,
       ...admissionData,
-      dateOfBirth: admissionData.dateOfBirth,
     };
 
     await updateDoc(schoolRef, {
-      admissions: arrayUnion({
-        ...newAdmissionPayload,
-        dateOfBirth: Timestamp.fromDate(new Date(admissionData.dateOfBirth)),
-      })
+      admissions: arrayUnion(newAdmissionPayload)
     });
 
-    return { ...newAdmissionPayload } as Admission;
+    return { ...newAdmissionPayload, date: newAdmissionPayload.date.toDate() } as Admission;
 }
 
 

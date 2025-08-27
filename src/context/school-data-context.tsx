@@ -10,6 +10,7 @@ import { updateSchoolProfileAction } from '@/app/actions/update-school-action';
 import { addTeacherAction, updateTeacherAction, deleteTeacherAction, addClassAction, updateClassAction, deleteClassAction, updateSyllabusTopicAction, deleteSyllabusTopicAction, addSyllabusAction, addCourseAction, updateCourseAction, deleteCourseAction, addFeeAction, recordPaymentAction, addExpenseAction, addTeamAction, deleteTeamAction, addPlayerToTeamAction, removePlayerFromTeamAction, addCompetitionAction, addCompetitionResultAction, updateAdmissionStatusAction, addStudentFromAdmissionAction, addAssetAction, addKioskMediaAction, removeKioskMediaAction, addBehavioralAssessmentAction, addGradeAction, addLessonAttendanceAction, addTestSubmissionAction } from '@/app/actions/school-actions';
 import { addTermAction, addHolidayAction, addExamBoardAction, deleteExamBoardAction, addFeeDescriptionAction, deleteFeeDescriptionAction, addAudienceAction, deleteAudienceAction } from '@/app/actions/academic-year-actions';
 import { sendMessageAction } from '@/app/actions/messaging-actions';
+import { createAdmissionAction } from '@/app/actions/admission-actions';
 
 export type { SchoolData, SchoolProfile, Student, Teacher, Class, Course, SyllabusTopic, Admission, FinanceRecord, Exam, Grade, Attendance, Event, Expense, Team, Competition, KioskMedia, ActivityLog, Message, SavedReport, DeployedTest, SavedTest, NewMessageData, NewAdmissionData, BehavioralAssessment } from '@/lib/mock-data';
 
@@ -54,10 +55,10 @@ interface SchoolDataContextType {
     isLoading: boolean;
 
     // --- Action Functions ---
-    announceAwards: () => void;
-    addSchool: (schoolData: SchoolData) => void;
+    addSchool: (newSchoolData: NewSchoolData, groupId?: string) => Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile }} | null>;
     removeSchool: (schoolId: string) => void;
     
+    addAdmission: (admissionData: NewAdmissionData) => Promise<boolean>;
     // All other action calls are now handled by server actions
     // and state is updated via revalidation, so they are removed from context.
     updateParentStatus: (parentEmail: string, status: 'Active' | 'Suspended') => void;
@@ -66,7 +67,7 @@ interface SchoolDataContextType {
 const SchoolDataContext = createContext<SchoolDataContextType | undefined>(undefined);
 
 export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
-  const { user, role, schoolId: authSchoolId } = useAuth();
+  const { user, role, schoolId: authSchoolId, addUser } = useAuth();
   const [data, setData] = useState<Record<string, SchoolData> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [awardsAnnounced, setAwardsAnnounced] = useState(false);
@@ -127,15 +128,14 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     return data?.['northwood']?.schoolGroups || {};
   }, [data]);
   
-  const addSchool = (newSchoolData: SchoolData) => {
-    setData(prev => {
-        if (!prev) return { [newSchoolData.profile.id]: newSchoolData };
-        return {
-            ...prev,
-            [newSchoolData.profile.id]: newSchoolData
-        }
-    });
-  };
+  const addSchool = useCallback(async (newSchoolData: NewSchoolData, groupId?: string) => {
+    const result = await createSchool(newSchoolData, groupId);
+    if (result) {
+        setData(prev => ({...prev, [result.school.profile.id]: result.school }));
+        addUser(result.adminUser.username, result.adminUser.profile);
+    }
+    return result;
+  }, [addUser]);
 
   const removeSchool = (schoolIdToRemove: string) => {
     setData(prev => {
@@ -197,6 +197,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const updateParentStatus = (parentEmail: string, status: 'Active' | 'Suspended') => {
     setParentStatusOverrides(prev => ({...prev, [parentEmail]: status}));
   };
+  
+  const addAdmission = useCallback(async (admissionData: NewAdmissionData) => {
+    if (!user) return false;
+    const result = await createAdmissionAction(admissionData.schoolId, admissionData, user.name, user.email);
+    return result.success;
+  }, [user]);
 
   const value: SchoolDataContextType = {
     isLoading,
@@ -295,15 +301,15 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     parentStatusOverrides,
     deployedTests: schoolData?.deployedTests || [],
     savedTests: schoolData?.savedTests || [],
-    awardsAnnounced,
+    awardsAnnounced: false,
     examBoards: schoolData?.examBoards || [],
     feeDescriptions: schoolData?.feeDescriptions || [],
     audiences: schoolData?.audiences || [],
     expenseCategories: schoolData?.expenseCategories || [],
     terms: schoolData?.terms || [],
     holidays: schoolData?.holidays || [],
-    announceAwards,
     addSchool, removeSchool,
+    addAdmission,
     updateParentStatus,
   };
 
