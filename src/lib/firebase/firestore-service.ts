@@ -62,12 +62,13 @@ export async function seedInitialData(): Promise<void> {
         
         const dataWithServerTimestamps = {
             ...schoolData,
-            activityLogs: schoolData.activityLogs.map(log => ({...log, timestamp: Timestamp.now()})),
-            events: schoolData.events.map(event => ({...event, date: Timestamp.now()})),
-            terms: schoolData.terms.map(term => ({...term, startDate: Timestamp.now(), endDate: Timestamp.now()})),
-            holidays: schoolData.holidays.map(holiday => ({...holiday, date: Timestamp.now()})),
-            competitions: schoolData.competitions.map(comp => ({...comp, date: Timestamp.now()})),
-            deployedTests: schoolData.deployedTests.map(test => ({...test, deadline: Timestamp.now()})),
+            activityLogs: schoolData.activityLogs.map(log => ({...log, timestamp: serverTimestamp()})),
+            events: schoolData.events.map(event => ({...event, date: Timestamp.fromDate(new Date(event.date))})),
+            terms: schoolData.terms.map(term => ({...term, startDate: Timestamp.fromDate(new Date(term.startDate)), endDate: Timestamp.fromDate(new Date(term.endDate))})),
+            holidays: schoolData.holidays.map(holiday => ({...holiday, date: Timestamp.fromDate(new Date(holiday.date))})),
+            competitions: schoolData.competitions.map(comp => ({...comp, date: Timestamp.fromDate(new Date(comp.date))})),
+            deployedTests: schoolData.deployedTests.map(test => ({...test, deadline: Timestamp.fromDate(new Date(test.deadline))})),
+            admissions: schoolData.admissions.map(adm => ({...adm, date: Timestamp.fromDate(new Date(adm.date))})),
         };
 
         batch.set(schoolRef, dataWithServerTimestamps);
@@ -83,82 +84,88 @@ export async function seedInitialData(): Promise<void> {
 }
 
 
-export async function createSchoolInFirestore(data: NewSchoolData, groupId?: string): Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile } }> {
-    const schoolId = data.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15);
+export async function createSchoolInFirestore(data: NewSchoolData, groupId?: string): Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile } } | null> {
+    try {
+        const schoolId = data.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15) || `school${Date.now()}`;
 
-    const newSchoolProfile: SchoolProfile = {
-        id: schoolId,
-        ...data,
-        tier: groupId ? 'Premium' : data.tier,
-        logoUrl: 'https://placehold.co/100x100.png',
-        certificateTemplateUrl: 'https://placehold.co/800x600.png',
-        transcriptTemplateUrl: 'https://placehold.co/600x800.png',
-        gradingSystem: '20-Point',
-        currency: 'USD',
-        status: 'Active',
-        schoolLevel: 'Full',
-        gradeCapacity: { "1": 30, "2": 30, "3": 30, "4": 30, "5": 30, "6": 35, "7": 35, "8": 35, "9": 40, "10": 40, "11": 40, "12": 40 },
-        kioskConfig: { showDashboard: true, showLeaderboard: true, showTeacherLeaderboard: true, showAllSchools: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false },
-        subscription: { status: 'Paid', amount: 300, dueDate: '2025-01-01' },
-    };
-    
-    const adminUsername = data.email.split('@')[0];
-    const adminUser: UserProfile = {
-      user: {
-        username: adminUsername,
-        name: data.head,
-        role: 'Admin',
-        email: data.email,
-        schoolId: schoolId,
-      },
-      password: 'password'
-    };
-
-    const newSchoolData: SchoolData = {
-        profile: newSchoolProfile,
-        students: [], teachers: [], classes: [], courses: [], syllabi: [],
-        admissions: [], exams: [],
-        finance: [], assets: [], grades: [], attendance: [],
-        events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'],
-        audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'],
-        expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
-        expenses: [], teams: [], competitions: [], terms: [], holidays: [],
-        kioskMedia: [],
-        activityLogs: [{
-            id: `LOG${schoolId}${Date.now()}`,
-            timestamp: Timestamp.now(),
+        const newSchoolProfile: SchoolProfile = {
+            id: schoolId,
+            ...data,
+            tier: groupId ? 'Premium' : data.tier,
+            logoUrl: 'https://placehold.co/100x100.png',
+            certificateTemplateUrl: 'https://placehold.co/800x600.png',
+            transcriptTemplateUrl: 'https://placehold.co/600x800.png',
+            gradingSystem: '20-Point',
+            currency: 'USD',
+            status: 'Active',
+            schoolLevel: 'Full',
+            gradeCapacity: { "1": 30, "2": 30, "3": 30, "4": 30, "5": 30, "6": 35, "7": 35, "8": 35, "9": 40, "10": 40, "11": 40, "12": 40 },
+            kioskConfig: { showDashboard: true, showLeaderboard: true, showTeacherLeaderboard: true, showAllSchools: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false },
+            subscription: { status: 'Paid', amount: 300, dueDate: '2025-01-01' },
+            awards: [],
+        };
+        
+        const adminUsername = data.email.split('@')[0];
+        const adminUser: UserProfile = {
+          user: {
+            username: adminUsername,
+            name: data.head,
+            role: 'Admin',
+            email: data.email,
             schoolId: schoolId,
-            user: 'System Admin',
-            role: 'GlobalAdmin',
-            action: 'Create',
-            details: `Provisioned new school: ${data.name}.`
-        }],
-        messages: [], savedReports: [],
-        examBoards: ['Internal', 'Cambridge', 'IEB'],
-        deployedTests: [],
-        lessonPlans: [],
-        savedTests: [],
-        schoolGroups: {},
-    };
+          },
+          password: 'password'
+        };
 
-    const schoolDocRef = doc(db, 'schools', schoolId);
-    const userDocRef = doc(db, 'users', adminUsername);
+        const newSchoolData: SchoolData = {
+            profile: newSchoolProfile,
+            students: [], teachers: [], classes: [], courses: [], syllabi: [],
+            admissions: [], exams: [],
+            finance: [], assets: [], grades: [], attendance: [],
+            events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'],
+            audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'],
+            expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
+            expenses: [], teams: [], competitions: [], terms: [], holidays: [],
+            kioskMedia: [],
+            activityLogs: [{
+                id: `LOG${schoolId}${Date.now()}`,
+                timestamp: serverTimestamp(), // Corrected from Timestamp.now()
+                schoolId: schoolId,
+                user: 'System Admin',
+                role: 'GlobalAdmin',
+                action: 'Create',
+                details: `Provisioned new school: ${data.name}.`
+            }],
+            messages: [], savedReports: [],
+            examBoards: ['Internal', 'Cambridge', 'IEB'],
+            deployedTests: [],
+            lessonPlans: [],
+            savedTests: [],
+            schoolGroups: {},
+        };
 
-    const batch = writeBatch(db);
-    batch.set(schoolDocRef, newSchoolData);
-    batch.set(userDocRef, adminUser);
-    
-    if (groupId) {
-       const groupRef = doc(db, 'schools', 'miniarte');
-       batch.update(groupRef, {
-            [`schoolGroups.${groupId}`]: arrayUnion(schoolId)
-       });
+        const schoolDocRef = doc(db, 'schools', schoolId);
+        const userDocRef = doc(db, 'users', adminUsername);
+
+        const batch = writeBatch(db);
+        batch.set(schoolDocRef, newSchoolData);
+        batch.set(userDocRef, adminUser);
+        
+        if (groupId) {
+            const groupRef = doc(db, 'schools', 'miniarte');
+            batch.update(groupRef, {
+                [`schoolGroups.${groupId}`]: arrayUnion(schoolId)
+            });
+        }
+
+        await batch.commit();
+        await sendWelcomeEmail({ username: adminUsername, profile: adminUser }, data.name);
+        
+        return { school: newSchoolData, adminUser: { username: adminUsername, profile: adminUser } };
+    } catch(e) {
+        console.error("Error creating school in Firestore:", e);
+        return null;
     }
-
-    await batch.commit();
-    await sendWelcomeEmail({ username: adminUsername, profile: adminUser }, data.name);
-    
-    return { school: newSchoolData, adminUser: { username: adminUsername, profile: adminUser } };
 }
 
 
@@ -516,38 +523,41 @@ export async function addCompetitionResultInFirestore(schoolId: string, competit
 export async function addAdmissionToFirestore(schoolId: string, admissionData: NewAdmissionData, parentName: string, parentEmail: string): Promise<Admission> {
     const schoolRef = doc(db, 'schools', schoolId);
     
-    const newAdmissionPayload: Omit<Admission, 'date'> & {date: Timestamp} = {
-      id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 8)}`,
-      status: 'Pending' as const,
-      date: Timestamp.now(),
-      parentName,
-      parentEmail,
-      name: admissionData.name,
-      appliedFor: admissionData.appliedFor,
-      dateOfBirth: admissionData.dateOfBirth,
-      sex: admissionData.sex,
-      formerSchool: admissionData.formerSchool,
-      type: admissionData.type,
-      ...(admissionData.type === 'New' && {
-        gradesSummary: admissionData.gradesSummary || 'N/A',
-        idUrl: admissionData.idUrl,
-        reportUrl: admissionData.reportUrl,
-        photoUrl: admissionData.photoUrl,
-      }),
-      ...(admissionData.type === 'Transfer' && {
-        studentIdToTransfer: admissionData.studentIdToTransfer,
-        fromSchoolId: admissionData.fromSchoolId,
-        reasonForTransfer: admissionData.reasonForTransfer,
-        transferGrade: admissionData.transferGrade,
-        gradesSummary: 'Records are available in the EduDesk network.',
-      })
-    };
+    // Ensure dateOfBirth is a Timestamp for Firestore
+    const dobTimestamp = admissionData.dateOfBirth ? Timestamp.fromDate(new Date(admissionData.dateOfBirth)) : Timestamp.now();
 
+    const newAdmissionPayload: Omit<Admission, 'date' | 'dateOfBirth'> & { date: Timestamp; dateOfBirth: Timestamp } = {
+        id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 8)}`,
+        status: 'Pending' as const,
+        date: Timestamp.now(),
+        parentName,
+        parentEmail,
+        name: admissionData.name,
+        appliedFor: admissionData.appliedFor,
+        dateOfBirth: dobTimestamp,
+        sex: admissionData.sex,
+        formerSchool: admissionData.formerSchool,
+        type: admissionData.type,
+        ...(admissionData.type === 'New' && {
+            gradesSummary: admissionData.gradesSummary || 'N/A',
+            idUrl: admissionData.idUrl,
+            reportUrl: admissionData.reportUrl,
+            photoUrl: admissionData.photoUrl,
+        }),
+        ...(admissionData.type === 'Transfer' && {
+            studentIdToTransfer: admissionData.studentIdToTransfer,
+            fromSchoolId: admissionData.fromSchoolId,
+            reasonForTransfer: admissionData.reasonForTransfer,
+            transferGrade: admissionData.transferGrade,
+            gradesSummary: 'Records are available in the EduDesk network.',
+        })
+    };
+    
     await updateDoc(schoolRef, {
       admissions: arrayUnion(newAdmissionPayload)
     });
 
-    return { ...newAdmissionPayload, date: newAdmissionPayload.date.toDate() };
+    return { ...newAdmissionPayload, date: newAdmissionPayload.date.toDate(), dateOfBirth: newAdmissionPayload.dateOfBirth.toDate().toISOString().split('T')[0] };
 }
 
 
@@ -617,9 +627,8 @@ export async function sendMessageInFirestore(senderSchoolId: string, recipientSc
   
     const newMessage = {
       id: `MSG${Date.now()}`,
-      // @ts-ignore
       ...messageData,
-      timestamp: Timestamp.now(),
+      timestamp: serverTimestamp(),
       status: 'Pending',
     };
   
@@ -636,7 +645,9 @@ export async function sendMessageInFirestore(senderSchoolId: string, recipientSc
     }
   
     await batch.commit();
-    return { ...newMessage, timestamp: newMessage.timestamp.toDate() } as Message;
+    // Note: serverTimestamp will be null on client until it's set by the server.
+    // The UI should handle this gracefully or re-fetch.
+    return { ...newMessage, timestamp: new Date() } as Message;
 }
 
 // --- Asset CRUD ---
@@ -657,11 +668,11 @@ export async function addKioskMediaToFirestore(schoolId: string, mediaData: Omit
     const schoolRef = doc(db, 'schools', schoolId);
     const newMedia = {
         id: `MEDIA${Date.now()}`,
-        createdAt: Timestamp.now(),
+        createdAt: serverTimestamp(),
         ...mediaData
     };
     await updateDoc(schoolRef, { kioskMedia: arrayUnion(newMedia) });
-    return { ...newMedia, createdAt: newMedia.createdAt.toDate() };
+    return { ...newMedia, createdAt: new Date() };
 }
 
 export async function removeKioskMediaFromFirestore(schoolId: string, mediaId: string): Promise<void> {
@@ -704,11 +715,11 @@ export async function addGradeToFirestore(schoolId: string, gradeData: Omit<any,
     const schoolRef = doc(db, 'schools', schoolId);
     const newGrade = {
         id: `GR${Date.now()}`,
-        date: Timestamp.now(),
+        date: serverTimestamp(),
         ...gradeData
     };
     await updateDoc(schoolRef, { grades: arrayUnion(newGrade) });
-    return { ...newGrade, date: newGrade.date.toDate() };
+    return { ...newGrade, date: new Date() };
 }
 
 // Attendance
@@ -747,7 +758,7 @@ export async function addTestSubmissionToFirestore(schoolId: string, deployedTes
     const submission = {
         studentId,
         score,
-        submittedAt: Timestamp.now()
+        submittedAt: serverTimestamp()
     };
     
     const updatedTests = schoolData.deployedTests.map(t => {
