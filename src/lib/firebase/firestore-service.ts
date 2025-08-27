@@ -1,4 +1,5 @@
 
+'use client';
 import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from './config';
 import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student, Message, NewMessageData } from '@/lib/mock-data';
@@ -496,28 +497,21 @@ export async function addCompetitionResultInFirestore(schoolId: string, competit
 
 // --- Admission CRUD ---
 
-export async function addAdmissionToFirestore(schoolId: string, admissionData: NewAdmissionData, parentName: string, parentEmail: string): Promise<Admission> {
+export async function addAdmissionToFirestore(schoolId: string, admissionData: any, parentName: string, parentEmail: string): Promise<Admission> {
+    const schoolRef = doc(db, 'schools', schoolId);
     const newAdmission: Admission = {
-        id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 9)}`,
+        id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 8)}`,
         status: 'Pending',
         date: new Date().toISOString().split('T')[0],
-        parentName: parentName,
-        parentEmail: parentEmail,
-        grades: admissionData.gradesSummary || 'N/A',
-        ...admissionData,
-        // Ensure optional fields are handled
-        name: admissionData.name!,
-        dateOfBirth: admissionData.dateOfBirth!,
-        sex: admissionData.sex!,
-        appliedFor: admissionData.appliedFor!,
-        formerSchool: admissionData.formerSchool!,
+        parentName,
+        parentEmail,
+        ...admissionData
     };
-    
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { admissions: arrayUnion(newAdmission) });
+    await updateDoc(schoolRef, {
+        admissions: arrayUnion(newAdmission)
+    });
     return newAdmission;
 }
-
 
 export async function updateAdmissionStatusInFirestore(schoolId: string, admissionId: string, status: Admission['status']): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);
@@ -531,11 +525,14 @@ export async function updateAdmissionStatusInFirestore(schoolId: string, admissi
 }
 
 export async function addStudentFromAdmissionInFirestore(schoolId: string, application: Admission): Promise<Student> {
-    const schoolRef = doc(db, 'schools', schoolId);
+    const batch = writeBatch(db);
+    const targetSchoolRef = doc(db, 'schools', schoolId);
+
     const [grade, studentClass] = application.appliedFor.replace('Grade ', '').split('-');
 
+    // Create the new student object
     const newStudent: Student = {
-        id: `STU${Date.now()}`,
+        id: application.studentIdToTransfer || `STU${Date.now()}`,
         name: application.name,
         email: `${application.name.toLowerCase().replace(/\s+/g, '.')}@${schoolId}.edu`,
         phone: `555-01${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`,
@@ -550,12 +547,31 @@ export async function addStudentFromAdmissionInFirestore(schoolId: string, appli
         behavioralAssessments: [],
     };
 
-    await updateDoc(schoolRef, {
+    // Add student to the new school
+    batch.update(targetSchoolRef, {
         students: arrayUnion(newStudent)
     });
+    
+    // If it's a transfer, update the student's status in the old school
+    if (application.type === 'Transfer' && application.fromSchoolId && application.studentIdToTransfer) {
+        const fromSchoolRef = doc(db, 'schools', application.fromSchoolId);
+        const fromSchoolDoc = await getDoc(fromSchoolRef);
+        if (fromSchoolDoc.exists()) {
+            const fromSchoolData = fromSchoolDoc.data() as SchoolData;
+            const updatedStudents = fromSchoolData.students.map(s => {
+                if (s.id === application.studentIdToTransfer) {
+                    return { ...s, status: 'Transferred' };
+                }
+                return s;
+            });
+            batch.update(fromSchoolRef, { students: updatedStudents });
+        }
+    }
 
+    await batch.commit();
     return newStudent;
 }
+
 
 // --- Messaging CRUD ---
 export async function sendMessageInFirestore(senderSchoolId: string, recipientSchoolId: string, messageData: NewMessageData): Promise<Message> {

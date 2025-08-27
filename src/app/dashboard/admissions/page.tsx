@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData, Admission } from '@/context/school-data-context';
-import { MoreHorizontal, Check, X, FileText as FileTextIcon, Loader2, User, Users2, BarChart } from 'lucide-react';
+import { MoreHorizontal, Check, X, FileText as FileTextIcon, Loader2, User, Users2, BarChart, ArrowRightLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { calculateAge } from '@/lib/utils';
 import { Pie, PieChart, Cell, Bar, BarChart as RechartsBarChart, CartesianGrid, XAxis, YAxis, LabelList } from 'recharts';
@@ -24,6 +24,7 @@ import {
   ChartLegendContent,
 } from '@/components/ui/chart';
 import { FeatureLock } from '@/components/layout/feature-lock';
+import { Separator } from '@/components/ui/separator';
 
 function ViewApplicationDialog({ application }: { application: Admission }) {
     return (
@@ -49,12 +50,27 @@ function ViewApplicationDialog({ application }: { application: Admission }) {
                         <p className="font-semibold">Status:</p><p><Badge variant={application.status === 'Approved' ? 'secondary' : application.status === 'Rejected' ? 'destructive' : 'outline'}>{application.status}</Badge></p>
                         <p className="font-semibold">Parent Name:</p><p>{application.parentName}</p>
                         <p className="font-semibold col-span-2">Parent Email:</p><p className="col-span-2 break-all">{application.parentEmail}</p>
-                        <p className="font-semibold col-span-2">Previous School:</p><p className="col-span-2">{application.formerSchool}</p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="font-semibold">Academic Summary:</p>
-                      <p className="text-muted-foreground whitespace-pre-wrap p-3 bg-muted rounded-md">{application.grades}</p>
-                    </div>
+
+                    <Separator />
+                    
+                    {application.type === 'Transfer' ? (
+                         <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                            <p className="font-semibold">Transfer From:</p><p>{application.formerSchool}</p>
+                            <p className="font-semibold col-span-2">Reason for Transfer:</p>
+                            <p className="col-span-2 text-muted-foreground whitespace-pre-wrap">{application.reasonForTransfer}</p>
+                         </div>
+                    ) : (
+                        <div className="space-y-2">
+                           <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                             <p className="font-semibold">Previous School:</p><p>{application.formerSchool}</p>
+                           </div>
+                           <div className="space-y-1">
+                                <p className="font-semibold">Academic Summary:</p>
+                                <p className="text-muted-foreground whitespace-pre-wrap p-3 bg-muted rounded-md">{application.grades}</p>
+                           </div>
+                        </div>
+                    )}
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>
@@ -209,11 +225,12 @@ export default function AdmissionsPage() {
         <CardHeader><CardTitle>Recent Applications</CardTitle><CardDescription>A list of the latest admission applications.</CardDescription></CardHeader>
         <CardContent>
           <Table>
-            <TableHeader><TableRow><TableHead>Applicant Name</TableHead><TableHead>Parent</TableHead><TableHead>Applied For</TableHead><TableHead>Date</TableHead><TableHead>Status</TableHead><TableHead><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Applicant Name</TableHead><TableHead>Type</TableHead><TableHead>Parent</TableHead><TableHead>Applied For</TableHead><TableHead>Date</TableHead><TableHead>Status</TableHead><TableHead><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
             <TableBody>
               {admissionsData.map((application) => (
                 <TableRow key={application.id}>
                   <TableCell className="font-medium">{application.name}</TableCell>
+                  <TableCell><Badge variant="outline" className="flex items-center gap-1 w-fit">{application.type === 'Transfer' && <ArrowRightLeft className="h-3 w-3" />}{application.type}</Badge></TableCell>
                   <TableCell>{application.parentName} <span className="text-muted-foreground">({application.parentEmail})</span></TableCell>
                   <TableCell>{application.appliedFor}</TableCell>
                   <TableCell>{application.date}</TableCell>
