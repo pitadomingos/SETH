@@ -1,5 +1,4 @@
 
-
 'use client';
 import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from './config';
@@ -142,7 +141,7 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         ...newSchoolData,
         activityLogs: newSchoolData.activityLogs.map(log => ({
             ...log,
-            timestamp: Timestamp.fromDate(log.timestamp) 
+            timestamp: Timestamp.fromDate(new Date(log.timestamp)) 
         }))
     };
     
@@ -156,11 +155,12 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
     if (groupId) {
        const groupRef = doc(db, 'schools', 'miniarte');
        const groupDoc = await getDoc(groupRef);
-       const groupData = groupDoc.data() as SchoolData;
-
-       batch.update(groupRef, {
-           [`schoolGroups.${groupId}`]: [...(groupData.schoolGroups[groupId] || []), schoolId]
-       });
+       if (groupDoc.exists()) {
+           const groupData = groupDoc.data() as SchoolData;
+           batch.update(groupRef, {
+               [`schoolGroups.${groupId}`]: [...(groupData.schoolGroups[groupId] || []), schoolId]
+           });
+       }
     }
 
     await batch.commit();
@@ -465,7 +465,7 @@ export async function removePlayerFromTeamInFirestore(schoolId: string, teamId: 
 
 export async function addCompetitionToFirestore(schoolId: string, competitionData: Omit<Competition, 'id'>): Promise<Competition> {
     const schoolRef = doc(db, 'schools', schoolId);
-    const newCompetition: Competition = {
+    const newCompetition = {
         id: `CMP${Date.now()}`,
         ...competitionData,
         date: Timestamp.fromDate(competitionData.date as Date),
@@ -473,7 +473,7 @@ export async function addCompetitionToFirestore(schoolId: string, competitionDat
     await updateDoc(schoolRef, {
         competitions: arrayUnion(newCompetition)
     });
-    return { ...newCompetition, date: competitionData.date }; // return with JS Date
+    return { ...competitionData, date: (competitionData.date as Date) };
 }
 
 export async function addCompetitionResultInFirestore(schoolId: string, competitionId: string, result: Competition['result']): Promise<Competition | null> {
@@ -493,40 +493,31 @@ export async function addCompetitionResultInFirestore(schoolId: string, competit
 
     if (updatedCompetition) {
         await updateDoc(schoolRef, { competitions: updatedCompetitions });
-        return { ...updatedCompetition, date: (updatedCompetition.date as any).toDate() }; // Convert back to JS Date
+        return { ...updatedCompetition, date: (updatedCompetition.date as any).toDate() };
     }
     return null;
 }
 
 // --- Admission CRUD ---
 
-export async function addAdmissionToFirestore(schoolId: string, admissionData: any, parentName: string, parentEmail: string): Promise<Admission> {
+export async function addAdmissionToFirestore(schoolId: string, admissionData: NewAdmissionData, parentName: string, parentEmail: string): Promise<Admission> {
     const schoolRef = doc(db, 'schools', schoolId);
     
-    // Convert date string back to Date object for Timestamp conversion
-    let dobTimestamp: Timestamp;
-    if (typeof admissionData.dateOfBirth === 'string') {
-        dobTimestamp = Timestamp.fromDate(new Date(admissionData.dateOfBirth));
-    } else {
-        dobTimestamp = admissionData.dateOfBirth; // Assume it's already a Timestamp if not a string
-    }
-
-    const newAdmission = {
-        id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 8)}`,
-        status: 'Pending',
-        date: format(new Date(), 'yyyy-MM-dd'),
-        parentName,
-        parentEmail,
-        ...admissionData,
-        dateOfBirth: dobTimestamp, // Use the converted timestamp
+    const newAdmissionPayload = {
+      id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 8)}`,
+      status: 'Pending',
+      date: format(new Date(), 'yyyy-MM-dd'),
+      parentName,
+      parentEmail,
+      ...admissionData,
+      dateOfBirth: Timestamp.fromDate(new Date(admissionData.dateOfBirth)), // Ensure date is a Timestamp
     };
 
     await updateDoc(schoolRef, {
-        admissions: arrayUnion(newAdmission)
+      admissions: arrayUnion(newAdmissionPayload)
     });
 
-    // Return with JS Date for client-side state
-    return { ...newAdmission, dateOfBirth: dobTimestamp.toDate().toISOString().split('T')[0] } as Admission;
+    return { ...newAdmissionPayload, dateOfBirth: admissionData.dateOfBirth } as Admission;
 }
 
 
@@ -547,7 +538,6 @@ export async function addStudentFromAdmissionInFirestore(schoolId: string, appli
 
     const [grade, studentClass] = application.appliedFor.replace('Grade ', '').split('-');
 
-    // Create the new student object
     const newStudent: Student = {
         id: application.studentIdToTransfer || `STU${Date.now()}`,
         name: application.name,
@@ -564,12 +554,10 @@ export async function addStudentFromAdmissionInFirestore(schoolId: string, appli
         behavioralAssessments: [],
     };
 
-    // Add student to the new school
     batch.update(targetSchoolRef, {
         students: arrayUnion(newStudent)
     });
     
-    // If it's a transfer, update the student's status in the old school
     if (application.type === 'Transfer' && application.fromSchoolId && application.studentIdToTransfer) {
         const fromSchoolRef = doc(db, 'schools', application.fromSchoolId);
         const fromSchoolDoc = await getDoc(fromSchoolRef);
@@ -595,22 +583,20 @@ export async function sendMessageInFirestore(senderSchoolId: string, recipientSc
     const senderSchoolRef = doc(db, 'schools', senderSchoolId);
     const recipientSchoolRef = doc(db, 'schools', recipientSchoolId);
   
-    const newMessage: Message = {
+    const newMessage = {
       id: `MSG${Date.now()}`,
       // @ts-ignore
       ...messageData,
-      timestamp: new Date(),
+      timestamp: Timestamp.now(),
       status: 'Pending',
     };
   
     const batch = writeBatch(db);
   
-    // Add to sender's message list
     batch.update(senderSchoolRef, {
       messages: arrayUnion(newMessage)
     });
   
-    // Add to recipient's message list if they are in a different school
     if (senderSchoolId !== recipientSchoolId) {
       batch.update(recipientSchoolRef, {
         messages: arrayUnion(newMessage)
@@ -618,7 +604,7 @@ export async function sendMessageInFirestore(senderSchoolId: string, recipientSc
     }
   
     await batch.commit();
-    return newMessage;
+    return { ...newMessage, timestamp: newMessage.timestamp.toDate() } as Message;
 }
 
 // --- Asset CRUD ---
@@ -706,9 +692,8 @@ export async function addLessonAttendanceToFirestore(schoolId: string, courseId:
         courseId,
     }));
 
-    // Remove any existing records for this specific lesson (date + course)
     const filteredAttendance = schoolData.attendance.filter(a => {
-        const recordDateStr = (a.date as any).toDate().toISOString().split('T')[0];
+        const recordDateStr = a.date instanceof Timestamp ? a.date.toDate().toISOString().split('T')[0] : new Date(a.date).toISOString().split('T')[0];
         return !(recordDateStr === date && a.courseId === courseId);
     });
 
