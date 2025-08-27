@@ -503,43 +503,20 @@ export async function addCompetitionResultInFirestore(schoolId: string, competit
 export async function addAdmissionToFirestore(schoolId: string, admissionData: any, parentName: string, parentEmail: string): Promise<Admission> {
     const schoolRef = doc(db, 'schools', schoolId);
     
-    let newAdmission: Admission;
-
-    if (admissionData.type === 'Transfer') {
-        newAdmission = {
-            id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 8)}`,
-            status: 'Pending',
-            date: new Date().toISOString().split('T')[0],
-            parentName,
-            parentEmail,
-            ...admissionData,
-        };
-    } else {
-        newAdmission = {
-            id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 8)}`,
-            status: 'Pending',
-            date: new Date().toISOString().split('T')[0],
-            parentName,
-            parentEmail,
-            type: 'New',
-            schoolId: admissionData.schoolId!,
-            name: admissionData.name!,
-            dateOfBirth: admissionData.dateOfBirth!,
-            sex: admissionData.sex!,
-            appliedFor: admissionData.appliedFor!,
-            formerSchool: admissionData.formerSchool!,
-            gradesSummary: admissionData.gradesSummary,
-            idUrl: admissionData.idUrl,
-            reportUrl: admissionData.reportUrl,
-            photoUrl: admissionData.photoUrl
-        };
-    }
+    const newAdmission = {
+        id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 8)}`,
+        status: 'Pending',
+        date: format(new Date(), 'yyyy-MM-dd'),
+        parentName,
+        parentEmail,
+        ...admissionData,
+    };
 
     await updateDoc(schoolRef, {
         admissions: arrayUnion(newAdmission)
     });
 
-    return newAdmission;
+    return newAdmission as Admission;
 }
 
 
