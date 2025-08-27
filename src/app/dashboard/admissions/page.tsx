@@ -230,7 +230,7 @@ export default function AdmissionsPage() {
               {admissionsData.map((application) => (
                 <TableRow key={application.id}>
                   <TableCell className="font-medium">{application.name}</TableCell>
-                  <TableCell><Badge variant="outline" className="flex items-center gap-1 w-fit">{application.type === 'Transfer' && <ArrowRightLeft className="h-3 w-3" />}{application.type}</Badge></TableCell>
+                  <TableCell><Badge variant="outline" className="flex items-center gap-1 w-fit">{application.type === 'Transfer' ? <ArrowRightLeft className="h-3 w-3" /> : null}{application.type}</Badge></TableCell>
                   <TableCell>{application.parentName} <span className="text-muted-foreground">({application.parentEmail})</span></TableCell>
                   <TableCell>{application.appliedFor}</TableCell>
                   <TableCell>{application.date}</TableCell>

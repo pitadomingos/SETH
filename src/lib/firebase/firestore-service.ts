@@ -500,17 +500,35 @@ export async function addCompetitionResultInFirestore(schoolId: string, competit
 
 export async function addAdmissionToFirestore(schoolId: string, admissionData: any, parentName: string, parentEmail: string): Promise<Admission> {
     const schoolRef = doc(db, 'schools', schoolId);
-    const newAdmission: Admission = {
-        id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 8)}`,
-        status: 'Pending',
-        date: new Date().toISOString().split('T')[0],
-        parentName,
-        parentEmail,
-        ...admissionData,
-    };
+    
+    let newAdmission: Admission;
+
+    if (admissionData.type === 'Transfer') {
+        newAdmission = {
+            id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 8)}`,
+            status: 'Pending',
+            date: new Date().toISOString().split('T')[0],
+            parentName,
+            parentEmail,
+            ...admissionData,
+            dateOfBirth: admissionData.dateOfBirth, // It's already a string
+        };
+    } else {
+        newAdmission = {
+            id: `ADM${Date.now()}${Math.random().toString(36).substring(2, 8)}`,
+            status: 'Pending',
+            date: new Date().toISOString().split('T')[0],
+            parentName,
+            parentEmail,
+            ...admissionData,
+            dateOfBirth: admissionData.dateOfBirth, // It's already a string
+        };
+    }
+
     await updateDoc(schoolRef, {
         admissions: arrayUnion(newAdmission)
     });
+
     return newAdmission;
 }
 
