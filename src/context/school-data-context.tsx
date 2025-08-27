@@ -80,6 +80,8 @@ interface SchoolDataContextType {
     removePlayerFromTeam: (teamId: string, studentId: string) => Promise<void>;
     addCompetition: (competition: Omit<Competition, 'id'>) => Promise<void>;
     addCompetitionResult: (competitionId: string, result: Competition['result']) => Promise<void>;
+    updateApplicationStatus: (id: string, status: Admission['status']) => Promise<void>;
+    addStudentFromAdmission: (application: Admission) => Promise<void>;
     addTeacher: (teacher: Omit<Teacher, 'id' | 'status'>) => Promise<void>;
     updateTeacher: (id: string, data: Partial<Teacher>) => Promise<void>;
     deleteTeacher: (id: string) => Promise<void>;
@@ -693,6 +695,45 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       });
     }
   };
+
+  const updateApplicationStatus = async (admissionId: string, status: Admission['status']) => {
+    if(!currentSchoolId) return;
+    const result = await updateAdmissionStatusAction(currentSchoolId, admissionId, status);
+    if (result.success) {
+        setData(prev => {
+            if(!prev) return null;
+            const newData = {...prev};
+            const school = newData[currentSchoolId];
+            school.admissions = school.admissions.map(a => a.id === admissionId ? { ...a, status } : a);
+            addLog(currentSchoolId, 'Update', `Admission ${admissionId} status changed to ${status}`);
+            return newData;
+        });
+    }
+  };
+
+  const addStudentFromAdmission = async (application: Admission) => {
+      if(!currentSchoolId) return;
+      const result = await addStudentFromAdmissionAction(currentSchoolId, application);
+      if (result.success && result.newStudent) {
+          setData(prev => {
+              if(!prev) return null;
+              const newData = {...prev};
+              newData[currentSchoolId].students.push(result.newStudent!);
+              
+              if (application.type === 'Transfer' && application.fromSchoolId) {
+                  const fromSchool = newData[application.fromSchoolId];
+                  if(fromSchool) {
+                      fromSchool.students = fromSchool.students.map(s => 
+                          s.id === application.studentIdToTransfer ? { ...s, status: 'Transferred' } : s
+                      );
+                  }
+              }
+              
+              addLog(currentSchoolId, 'Create', `Enrolled new student: ${result.newStudent.name}`);
+              return newData;
+          });
+      }
+  };
   
   const addBehavioralAssessment = async (assessment: Omit<any, 'id'|'date'>) => {
     if(!currentSchoolId) return;
@@ -1113,6 +1154,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     addAsset, addLessonAttendance,
     addClass, updateClass, deleteClass, addEvent, addGrade, addTestSubmission, recordPayment, addFee, addExpense,
     addTeam, deleteTeam, addPlayerToTeam, removePlayerFromTeam, addCompetition, addCompetitionResult,
+    updateApplicationStatus, addStudentFromAdmission,
     addTeacher, updateTeacher, deleteTeacher, addKioskMedia, removeKioskMedia, updateSchoolProfile, addMessage,
     updateSchoolStatus, updateMessageStatus, updateStudentStatus, updateTeacherStatus, updateParentStatus,
     addTerm, addHoliday,
@@ -1136,5 +1178,3 @@ export const useSchoolData = () => {
   }
   return context;
 };
-
-    
