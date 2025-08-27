@@ -122,7 +122,7 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         kioskMedia: [],
         activityLogs: [{
             id: `LOG${schoolId}${Date.now()}`,
-            timestamp: new Date(),
+            timestamp: Timestamp.now(),
             schoolId: schoolId,
             user: 'System Admin',
             role: 'GlobalAdmin',
@@ -137,19 +137,11 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         schoolGroups: {},
     };
 
-    const dataForFirestore = {
-        ...newSchoolData,
-        activityLogs: newSchoolData.activityLogs.map(log => ({
-            ...log,
-            timestamp: Timestamp.fromDate(new Date(log.timestamp)) 
-        }))
-    };
-    
     const schoolDocRef = doc(db, 'schools', schoolId);
     const userDocRef = doc(db, 'users', adminUsername);
 
     const batch = writeBatch(db);
-    batch.set(schoolDocRef, dataForFirestore);
+    batch.set(schoolDocRef, newSchoolData);
     batch.set(userDocRef, adminUser);
     
     if (groupId) {
@@ -473,7 +465,7 @@ export async function addCompetitionToFirestore(schoolId: string, competitionDat
     await updateDoc(schoolRef, {
         competitions: arrayUnion(newCompetition)
     });
-    return { ...competitionData, date: (competitionData.date as Date) };
+    return { ...newCompetition, date: (competitionData.date as Date) };
 }
 
 export async function addCompetitionResultInFirestore(schoolId: string, competitionId: string, result: Competition['result']): Promise<Competition | null> {
@@ -510,14 +502,17 @@ export async function addAdmissionToFirestore(schoolId: string, admissionData: N
       parentName,
       parentEmail,
       ...admissionData,
-      dateOfBirth: Timestamp.fromDate(new Date(admissionData.dateOfBirth)), // Ensure date is a Timestamp
+      dateOfBirth: admissionData.dateOfBirth,
     };
 
     await updateDoc(schoolRef, {
-      admissions: arrayUnion(newAdmissionPayload)
+      admissions: arrayUnion({
+        ...newAdmissionPayload,
+        dateOfBirth: Timestamp.fromDate(new Date(admissionData.dateOfBirth)),
+      })
     });
 
-    return { ...newAdmissionPayload, dateOfBirth: admissionData.dateOfBirth } as Admission;
+    return { ...newAdmissionPayload } as Admission;
 }
 
 
