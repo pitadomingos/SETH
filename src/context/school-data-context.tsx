@@ -63,8 +63,6 @@ interface SchoolDataContextType {
     addSyllabus: (syllabus: Omit<Syllabus, 'id' | 'topics'>) => Promise<void>;
     updateSyllabusTopic: (subject: string, grade: string, topic: any) => Promise<void>;
     deleteSyllabusTopic: (subject: string, grade: string, topicId: string) => Promise<void>;
-    updateApplicationStatus: (id: string, status: Admission['status']) => Promise<void>;
-    addStudentFromAdmission: (application: Admission) => Promise<void>;
     addAsset: (asset: Omit<any, 'id'>) => Promise<{success: boolean, error?: string}>;
     addLessonAttendance: (courseId: string, date: string, studentStatuses: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>) => Promise<void>;
     addClass: (classData: Omit<Class, 'id'>) => Promise<void>;
@@ -89,7 +87,6 @@ interface SchoolDataContextType {
     removeKioskMedia: (id: string) => Promise<void>;
     updateSchoolProfile: (data: Partial<SchoolProfile>, schoolId?: string) => Promise<boolean>;
     addMessage: (message: NewMessageData) => Promise<void>;
-    addAdmission: (admission: Admission) => void;
     updateSchoolStatus: (schoolId: string, status: SchoolProfile['status']) => void;
     updateMessageStatus: (messageId: string, status: Message['status']) => void;
     updateStudentStatus: (schoolId: string, studentId: string, status: Student['status']) => void;
@@ -458,35 +455,6 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
       }
   };
 
-  const updateApplicationStatus = async (id: string, status: Admission['status']) => {
-      if (!currentSchoolId) return;
-      const result = await updateAdmissionStatusAction(currentSchoolId, id, status);
-      if (result.success) {
-        setData(prev => {
-          if (!prev) return null;
-          const newData = { ...prev };
-          const school = newData[currentSchoolId];
-          school.admissions = school.admissions.map(a => a.id === id ? { ...a, status } : a);
-          addLog(currentSchoolId, 'Update', `Updated application ${id} status to ${status}`);
-          return newData;
-        });
-      }
-  };
-
-  const addStudentFromAdmission = async (application: Admission) => {
-      if (!currentSchoolId) return;
-      const result = await addStudentFromAdmissionAction(currentSchoolId, application);
-      if (result.success && result.newStudent) {
-        setData(prev => {
-            if (!prev) return null;
-            const newData = { ...prev };
-            newData[currentSchoolId].students.push(result.newStudent!);
-            addLog(currentSchoolId, 'Create', `Enrolled new student ${result.newStudent.name} from admission.`);
-            return newData;
-        });
-      }
-  };
-  
   const addAsset = async (asset: Omit<any, 'id'>) => {
       const targetSchoolId = role === 'GlobalAdmin' ? 'northwood' : currentSchoolId;
       if (!targetSchoolId) return { success: false, error: 'School ID not found.'};
@@ -825,19 +793,6 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const addAdmission = (admission: Admission) => {
-    const schoolId = admission.schoolId;
-    if (!schoolId) return;
-
-    setData(prev => {
-        if (!prev) return null;
-        const newData = { ...prev };
-        newData[schoolId].admissions.push(admission);
-        addLog(schoolId, 'Create', `Submitted new admission for ${admission.name}`);
-        return newData;
-    });
-  };
-  
   const updateSchoolStatus = (targetSchoolId: string, status: SchoolProfile['status']) => {
     setData(prev => {
       if (!prev) return null;
@@ -1155,10 +1110,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     holidays: schoolData?.holidays || [],
     announceAwards,
     addSchool, removeSchool, addCourse, addSyllabus, updateSyllabusTopic, deleteSyllabusTopic,
-    updateApplicationStatus, addStudentFromAdmission, addAsset, addLessonAttendance,
+    addAsset, addLessonAttendance,
     addClass, updateClass, deleteClass, addEvent, addGrade, addTestSubmission, recordPayment, addFee, addExpense,
     addTeam, deleteTeam, addPlayerToTeam, removePlayerFromTeam, addCompetition, addCompetitionResult,
-    addTeacher, updateTeacher, deleteTeacher, addKioskMedia, removeKioskMedia, updateSchoolProfile, addMessage, addAdmission,
+    addTeacher, updateTeacher, deleteTeacher, addKioskMedia, removeKioskMedia, updateSchoolProfile, addMessage,
     updateSchoolStatus, updateMessageStatus, updateStudentStatus, updateTeacherStatus, updateParentStatus,
     addTerm, addHoliday,
     addSavedReport,

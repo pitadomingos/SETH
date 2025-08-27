@@ -2,7 +2,7 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { useSchoolData, NewAdmissionData, Competition, Team, Student, Grade } from '@/context/school-data-context';
+import { useSchoolData, NewAdmissionData, Competition, Team, Student, Grade, Admission } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb, MessageSquare, Upload, LineChart } from 'lucide-react';
@@ -71,7 +71,7 @@ const applicationSchema = z.object({
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 function NewApplicationDialog() {
-  const { addAdmission, allSchoolData, allStudents } = useSchoolData();
+  const { allSchoolData, allStudents } = useSchoolData();
   const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -167,8 +167,7 @@ function NewApplicationDialog() {
 
     const result = await createAdmissionAction(targetSchoolId, admissionData, user.name, user.email);
 
-    if (result.success && result.admission) {
-        addAdmission(result.admission);
+    if (result.success) {
         toast({
             title: 'Application Submitted',
             description: `The application for ${admissionData.name} has been sent for review.`,
