@@ -1,4 +1,3 @@
-
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Loader2, Save, Tv, Building, User, Mail, Phone, MapPin, Edit, Star, ShieldCheck, Gem, CreditCard, Upload } from 'lucide-react';
@@ -282,11 +281,11 @@ function AdministrationTab() {
               <CardContent className="space-y-6">
                   <div>
                       <div className="flex items-center justify-between"><h4 className="font-semibold">Academic Terms</h4><Dialog open={isTermDialogOpen} onOpenChange={setIsTermDialogOpen}><DialogTrigger asChild><Button variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4" /> Add Term</Button></DialogTrigger><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Add New Term</DialogTitle><DialogDescription>Define a new academic term.</DialogDescription></DialogHeader><Form {...termForm}><form onSubmit={termForm.handleSubmit(onTermSubmit)} className="space-y-4 py-4"><FormField control={termForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Term Name</FormLabel><FormControl><Input placeholder="e.g., Term 1" {...field} /></FormControl><FormMessage /></FormItem> )}/><FormField control={termForm.control} name="startDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Start Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/><FormField control={termForm.control} name="endDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>End Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/><DialogFooter><DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose><Button type="submit">Save Term</Button></DialogFooter></form></Form></DialogContent></Dialog></div>
-                       <ul className="mt-3 space-y-2">{terms.map(term => ( <li key={term.id} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"><span>{term.name}</span> <span className="text-muted-foreground">{format(term.startDate, 'MMM d')} - {format(term.endDate, 'MMM d, yyyy')}</span></li> ))}</ul>
+                       <ul className="mt-3 space-y-2">{terms.map(term => ( <li key={term.id} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"><span>{term.name}</span> <span className="text-muted-foreground">{format(term.startDate.toDate(), 'MMM d')} - {format(term.endDate.toDate(), 'MMM d, yyyy')}</span></li> ))}</ul>
                   </div>
                   <div>
                       <div className="flex items-center justify-between"><h4 className="font-semibold">Holidays</h4><Dialog open={isHolidayDialogOpen} onOpenChange={setIsHolidayDialogOpen}><DialogTrigger asChild><Button variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4" /> Add Holiday</Button></DialogTrigger><DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Add New Holiday</DialogTitle><DialogDescription>Schedule an official school holiday.</DialogDescription></DialogHeader><Form {...holidayForm}><form onSubmit={holidayForm.handleSubmit(onHolidaySubmit)} className="space-y-4 py-4"><FormField control={holidayForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Holiday Name</FormLabel><FormControl><Input placeholder="e.g., Winter Break" {...field} /></FormControl><FormMessage /></FormItem> )}/><FormField control={holidayForm.control} name="date" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem> )}/><DialogFooter><DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose><Button type="submit">Save Holiday</Button></DialogFooter></form></Form></DialogContent></Dialog></div>
-                      <ul className="mt-3 space-y-2">{holidays.map(holiday => ( <li key={holiday.id} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"><span>{holiday.name}</span><span className="text-muted-foreground">{format(holiday.date, 'PPP')}</span></li> ))}</ul>
+                      <ul className="mt-3 space-y-2">{holidays.map(holiday => ( <li key={holiday.id} className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"><span>{holiday.name}</span><span className="text-muted-foreground">{format(holiday.date.toDate(), 'PPP')}</span></li> ))}</ul>
                   </div>
               </CardContent>
           </Card>
@@ -327,7 +326,7 @@ function UpgradePlanDialog() {
   };
 
   const handleConfirmUpgrade = () => {
-    if (!selectedTier) return;
+    if (!selectedTier || !schoolProfile) return;
     
     updateSchoolProfile({ tier: selectedTier });
     
@@ -370,7 +369,7 @@ function UpgradePlanDialog() {
         {view === 'selection' ? (
             <>
                 <DialogHeader>
-                  <DialogTitle>Upgrade Your EduManage Plan</DialogTitle>
+                  <DialogTitle>Upgrade Your EduDesk Plan</DialogTitle>
                   <DialogDescription>
                     Unlock more features and enhance your school's management capabilities.
                   </DialogDescription>
@@ -500,7 +499,8 @@ function EditProfileDialog() {
 
 
   function onSubmit(values: ProfileFormValues) {
-    updateSchoolProfile(values);
+    if (!schoolProfile) return;
+    updateSchoolProfile(values, schoolProfile.id);
     toast({
       title: 'Profile Updated',
       description: 'The school profile has been successfully updated.',

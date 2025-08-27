@@ -154,10 +154,12 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
     batch.set(userDocRef, adminUser);
     
     if (groupId) {
-       console.log(`School ${schoolId} associated with group ${groupId}.`);
        const groupRef = doc(db, 'schools', 'miniarte');
+       const groupDoc = await getDoc(groupRef);
+       const groupData = groupDoc.data() as SchoolData;
+
        batch.update(groupRef, {
-           [`schoolGroups.${groupId}`]: [...(initialSchoolData.miniarte.schoolGroups[groupId] || []), schoolId]
+           [`schoolGroups.${groupId}`]: [...(groupData.schoolGroups[groupId] || []), schoolId]
        });
     }
 
@@ -511,7 +513,6 @@ export async function addAdmissionToFirestore(schoolId: string, admissionData: a
             parentName,
             parentEmail,
             ...admissionData,
-            dateOfBirth: admissionData.dateOfBirth, // It's already a string
         };
     } else {
         newAdmission = {
@@ -521,7 +522,6 @@ export async function addAdmissionToFirestore(schoolId: string, admissionData: a
             parentName,
             parentEmail,
             ...admissionData,
-            dateOfBirth: admissionData.dateOfBirth, // It's already a string
         };
     }
 
@@ -531,6 +531,7 @@ export async function addAdmissionToFirestore(schoolId: string, admissionData: a
 
     return newAdmission;
 }
+
 
 export async function updateAdmissionStatusInFirestore(schoolId: string, admissionId: string, status: Admission['status']): Promise<void> {
     const schoolRef = doc(db, 'schools', schoolId);

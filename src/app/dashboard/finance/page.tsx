@@ -1,4 +1,3 @@
-
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -165,8 +164,10 @@ function BalanceSheetDialog({ financeData, expensesData, schoolProfile }) {
                 <TableRow><TableCell className="font-medium text-green-600">Total Revenue (Fees)</TableCell><TableCell className="text-right text-green-600">{formatCurrency(totalRevenue, schoolProfile?.currency)}</TableCell></TableRow>
                 <TableRow><TableCell className="font-medium text-green-600">Other Income</TableCell><TableCell className="text-right text-green-600">{formatCurrency(totalOtherIncome, schoolProfile?.currency)}</TableCell></TableRow>
                 <TableRow><TableCell className="font-medium text-red-600">Total Expenses</TableCell><TableCell className="text-right text-red-600">{formatCurrency(totalExpenses, schoolProfile?.currency)}</TableCell></TableRow>
-                <TableRow className="bg-muted"><TableCell className="font-bold">Net Balance</TableCell><TableCell className={`text-right font-bold ${netBalance >= 0 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(netBalance, schoolProfile?.currency)}</TableCell></TableRow>
                 </TableBody>
+                <TableFooter>
+                    <TableRow className="bg-muted"><TableCell className="font-bold">Net Balance</TableCell><TableCell className={`text-right font-bold ${netBalance >= 0 ? 'text-green-700' : 'text-red-700'}`}>{formatCurrency(netBalance, schoolProfile?.currency)}</TableCell></TableRow>
+                </TableFooter>
             </Table>
         </div>
         <DialogFooter className="print-hidden"><Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Print</Button></DialogFooter>
@@ -318,7 +319,7 @@ function PrintStatementDialog({ student, fees, schoolProfile, user }) {
               </div>
               <div className="text-right">
                   <h4 className="font-semibold">Fee Statement</h4>
-                  <p className="text-xs text-muted-foreground">Date: {format(new Date(), 'PPP')}</p>
+                  <p className="text-sm text-muted-foreground">Date: {format(new Date(), 'PPP')}</p>
               </div>
           </div>
           <Separator />
