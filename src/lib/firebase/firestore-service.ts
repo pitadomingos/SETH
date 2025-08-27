@@ -5,6 +5,7 @@ import { doc, setDoc, updateDoc, collection, getDocs, writeBatch, serverTimestam
 import { db } from './config';
 import { type SchoolData, type NewSchoolData, type SchoolProfile, type UserProfile, initialSchoolData, mockUsers, Teacher, Class, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student, Message, NewMessageData } from '@/lib/mock-data';
 import { sendEmail } from '@/lib/email-service';
+import { format } from 'date-fns';
 
 // --- Email Simulation ---
 async function sendWelcomeEmail(adminUser: { username: string, profile: UserProfile }, schoolName: string): Promise<void> {
@@ -20,7 +21,6 @@ async function sendWelcomeEmail(adminUser: { username: string, profile: UserProf
         </ul>
         <p>We recommend that you change your password upon your first login.</p>
         <br/>
-        <p>Best regards,</p>
         <p>The EduDesk Team</p>
     `;
 
@@ -521,7 +521,17 @@ export async function addAdmissionToFirestore(schoolId: string, admissionData: a
             date: new Date().toISOString().split('T')[0],
             parentName,
             parentEmail,
-            ...admissionData,
+            type: 'New',
+            schoolId: admissionData.schoolId!,
+            name: admissionData.name!,
+            dateOfBirth: admissionData.dateOfBirth!,
+            sex: admissionData.sex!,
+            appliedFor: admissionData.appliedFor!,
+            formerSchool: admissionData.formerSchool!,
+            gradesSummary: admissionData.gradesSummary,
+            idUrl: admissionData.idUrl,
+            reportUrl: admissionData.reportUrl,
+            photoUrl: admissionData.photoUrl
         };
     }
 
