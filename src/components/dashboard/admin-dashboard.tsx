@@ -1,7 +1,7 @@
 
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
-import { Users, School, CalendarDays, TrendingUp, DollarSign, Hourglass, TrendingDown, BarChart2, AlertTriangle, Mail } from "lucide-react";
+import { Users, School, CalendarDays, TrendingUp, DollarSign, Hourglass, TrendingDown, BarChart2, AlertTriangle, Mail, Radio } from "lucide-react";
 import { Bar, BarChart as RechartsBarChart, Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis, LabelList, Legend, Dot } from 'recharts';
 import {
   ChartContainer,
@@ -20,10 +20,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { formatGradeDisplay } from "@/lib/utils";
+import { useWebSocket } from '@/components/layout/app-providers';
+import type { WebSocketMessage } from '@/lib/websocketClient';
 
 
 const messageSchema = z.object({
@@ -335,6 +337,48 @@ function GradePerformanceChart() {
     );
 }
 
+function LiveAlertsCard() {
+    const { wsClient } = useWebSocket();
+    const [alerts, setAlerts] = useState<WebSocketMessage[]>([]);
+
+    useEffect(() => {
+        if (!wsClient) return;
+
+        const unsubscribe = wsClient.subscribe((msg) => {
+            const newAlert = { ...msg, receivedAt: new Date() };
+            setAlerts(prev => [newAlert, ...prev].slice(0, 5));
+        });
+
+        return () => unsubscribe();
+    }, [wsClient]);
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                    <Radio className="h-6 w-6 text-primary animate-pulse" /> Live School Alerts
+                </CardTitle>
+                <CardDescription>Real-time notifications and announcements.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {alerts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">No new alerts.</p>
+                ) : (
+                    <ul className="space-y-3">
+                        {alerts.map((alert, index) => (
+                            <li key={index} className="text-sm">
+                                <p className="font-semibold">{alert.payload.title || alert.type}</p>
+                                <p className="text-muted-foreground">{alert.payload.message}</p>
+                                <p className="text-xs text-muted-foreground/70 mt-1">{formatDistanceToNow(alert.receivedAt as Date, { addSuffix: true })}</p>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 
 export default function AdminDashboard() {
   const { studentsData, teachersData, classesData, financeData, events, schoolProfile, expensesData } = useSchoolData();
@@ -493,6 +537,10 @@ export default function AdminDashboard() {
             <p className="text-xs text-muted-foreground pt-1">{formatCurrency(monthlyTotalExpenses, schoolProfile?.currency)} this month</p>
           </CardContent>
         </Card>
+      </div>
+      
+      <div className="grid gap-6 lg:grid-cols-2">
+        <LiveAlertsCard />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

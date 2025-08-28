@@ -5,7 +5,7 @@ import { useAuth } from '@/context/auth-context';
 import { useSchoolData, NewAdmissionData, Competition, Team, Student, Grade, Admission } from '@/context/school-data-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb, MessageSquare, Upload, LineChart } from 'lucide-react';
+import { Loader2, Sparkles, User, GraduationCap, DollarSign, BarChart2, UserPlus, Calendar as CalendarIcon, Trophy, BrainCircuit, Check, TrendingUp, Lightbulb, MessageSquare, Upload, LineChart, Radio } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn, formatCurrency } from '@/lib/utils';
 import {
@@ -25,7 +25,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Textarea } from '../ui/textarea';
 import { analyzeStudentPerformanceAction } from '@/app/actions/ai-actions';
@@ -34,6 +34,8 @@ import { useRouter } from 'next/navigation';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import Image from 'next/image';
 import { createAdmissionAction } from '@/app/actions/admission-actions';
+import { useWebSocket } from '@/components/layout/app-providers';
+import type { WebSocketMessage } from '@/lib/websocketClient';
 
 
 const applicationSchema = z.object({
@@ -71,7 +73,7 @@ const applicationSchema = z.object({
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 function NewApplicationDialog() {
-  const { allSchoolData, studentsData: allStudents, addAdmission } = useSchoolData();
+  const { allSchoolData, studentsData: allStudents } = useSchoolData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -518,6 +520,49 @@ const getStatusInfo = (fee) => {
     return { text: 'Pending', variant: 'outline' as const };
 };
 
+function LiveAlertsCard() {
+    const { wsClient } = useWebSocket();
+    const [alerts, setAlerts] = useState<WebSocketMessage[]>([]);
+
+    useEffect(() => {
+        if (!wsClient) return;
+
+        const unsubscribe = wsClient.subscribe((msg) => {
+            const newAlert = { ...msg, receivedAt: new Date() };
+            setAlerts(prev => [newAlert, ...prev].slice(0, 3));
+        });
+
+        return () => unsubscribe();
+    }, [wsClient]);
+
+    return (
+        <Card className="lg:col-span-1">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                    <Radio className="h-6 w-6 text-primary animate-pulse" /> Live Alerts
+                </CardTitle>
+                <CardDescription>Real-time notifications for parents.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {alerts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">No new alerts.</p>
+                ) : (
+                    <ul className="space-y-3">
+                        {alerts.map((alert, index) => (
+                            <li key={index} className="text-sm">
+                                <p className="font-semibold">{alert.payload.title || alert.type}</p>
+                                <p className="text-muted-foreground">{alert.payload.message}</p>
+                                <p className="text-xs text-muted-foreground/70 mt-1">{formatDistanceToNow(alert.receivedAt as Date, { addSuffix: true })}</p>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+
 export default function ParentDashboard() {
   const { user } = useAuth();
   const { allSchoolData, studentsData, grades, attendance, financeData, isLoading: schoolDataLoading } = useSchoolData();
@@ -629,6 +674,7 @@ export default function ParentDashboard() {
               : <AITierLockMessage schoolName={selectedChildSchool.profile.name} schoolAdminEmail={selectedChildSchool.profile.email} />
             }
              <div className="space-y-6">
+                <LiveAlertsCard />
                 <Card>
                     <CardHeader className="pb-4">
                         <CardTitle className="text-base flex items-center gap-2"><DollarSign /> Fee Status</CardTitle>

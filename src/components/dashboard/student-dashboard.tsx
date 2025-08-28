@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { FileText as FileTextIcon, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse, Sparkles, BookOpen, User, Check, Lightbulb, TrendingUp, BrainCircuit } from "lucide-react";
+import { FileText as FileTextIcon, Trophy, CheckCircle, Download, XCircle, AlertTriangle, Loader2, ListChecks, HeartPulse, Sparkles, BookOpen, User, Check, Lightbulb, TrendingUp, BrainCircuit, Radio } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData, Grade, Student } from "@/context/school-data-context";
 import { useToast } from '@/hooks/use-toast';
@@ -18,7 +18,7 @@ import {
   ChartLegendContent,
   ChartConfig
 } from '@/components/ui/chart';
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { formatGradeDisplay } from '@/lib/utils';
@@ -26,6 +26,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { EndOfTermReportDialog } from '@/components/dashboard/end-of-term-report';
 import { analyzeStudentPerformanceAction } from '@/app/actions/ai-actions';
 import { StudentAnalysis } from '@/ai/flows/student-analysis-flow';
+import { FeatureLock } from '../layout/feature-lock';
+import { useWebSocket } from '@/components/layout/app-providers';
+import type { WebSocketMessage } from '@/lib/websocketClient';
 
 const calculateAverageNumericGrade = (studentId: string, grades: Grade[], subject?: string) => {
     if (!studentId || !grades) return 0;
@@ -323,6 +326,48 @@ function AssignedTests({ student, studentClass }) {
     );
 }
 
+function LiveAlertsCard() {
+    const { wsClient } = useWebSocket();
+    const [alerts, setAlerts] = useState<WebSocketMessage[]>([]);
+
+    useEffect(() => {
+        if (!wsClient) return;
+
+        const unsubscribe = wsClient.subscribe((msg) => {
+            const newAlert = { ...msg, receivedAt: new Date() };
+            setAlerts(prev => [newAlert, ...prev].slice(0, 3));
+        });
+
+        return () => unsubscribe();
+    }, [wsClient]);
+    
+    if (alerts.length === 0) {
+        return null; // Don't render the card if there are no alerts
+    }
+
+    return (
+        <Card className="lg:col-span-2">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                    <Radio className="h-6 w-6 text-primary animate-pulse" /> Live School Alerts
+                </CardTitle>
+                <CardDescription>Real-time notifications and announcements.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ul className="space-y-3">
+                    {alerts.map((alert, index) => (
+                        <li key={index} className="text-sm">
+                            <p className="font-semibold">{alert.payload.title || alert.type}</p>
+                            <p className="text-muted-foreground">{alert.payload.message}</p>
+                            <p className="text-xs text-muted-foreground/70 mt-1">{formatDistanceToNow(alert.receivedAt as Date, { addSuffix: true })}</p>
+                        </li>
+                    ))}
+                </ul>
+            </CardContent>
+        </Card>
+    );
+}
+
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -416,9 +461,17 @@ export default function StudentDashboard() {
        />
       
        <div className="grid gap-6 lg:grid-cols-3">
-          {schoolProfile?.tier !== 'Starter' && <StudentAIAdvisor student={student} grades={studentGrades} attendanceSummary={studentAttendanceSummary} />}
+          {schoolProfile?.tier !== 'Starter' 
+              ? <StudentAIAdvisor student={student} grades={studentGrades} attendanceSummary={studentAttendanceSummary} />
+              : <div className="lg:col-span-2"><FeatureLock featureName="AI Academic Advisor" /></div>
+          }
           <RankCard studentId={studentId} />
        </div>
+
+       <div className="grid gap-6 lg:grid-cols-2">
+            <LiveAlertsCard />
+       </div>
+       
        <div className="grid gap-6 lg:grid-cols-2">
           <AssignedTests student={student} studentClass={studentClass} />
           <AttendanceBreakdownChart studentId={studentId} />
