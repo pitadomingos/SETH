@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, MoreHorizontal, Search, HeartHandshake, Users, CheckCircle, XCircle, ChevronLeft, ChevronRight, LogIn } from 'lucide-react';
-import { useSchoolData } from '@/context/school-data-context';
+import { useSchoolData, Student } from '@/context/school-data-context';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -19,7 +19,7 @@ const PAGE_SIZE = 10;
 
 export default function GlobalParentsPage() {
   const { role, isLoading: authLoading, impersonateUser } = useAuth();
-  const { allSchoolData, isLoading: schoolLoading, parentStatusOverrides, updateParentStatus } = useSchoolData();
+  const { studentsData, isLoading: schoolLoading, parentStatusOverrides, updateParentStatus } = useSchoolData();
   const router = useRouter();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,34 +29,24 @@ export default function GlobalParentsPage() {
   const isLoading = authLoading || schoolLoading;
 
   const allParents = useMemo(() => {
-    if (!allSchoolData) return [];
+    if (!studentsData) return [];
 
     const parentMap = new Map();
-    const childrenMap = new Map(); // Use a separate map to track unique children per parent
-
-    Object.values(allSchoolData).forEach(school => {
-      school.students.forEach(student => {
-        if (student.parentEmail) {
-          if (!parentMap.has(student.parentEmail)) {
- parentMap.set(student.parentEmail, {
- name: student.parentName,
-              email: student.parentEmail,
-              children: [],
-              schools: new Set(),
+    
+    studentsData.forEach(student => {
+      if (student.parentEmail) {
+        if (!parentMap.has(student.parentEmail)) {
+           parentMap.set(student.parentEmail, {
+                name: student.parentName,
+                email: student.parentEmail,
+                children: [],
+                schools: new Set(),
             });
-          }
-
-          const parent = parentMap.get(student.parentEmail);
-
-          // Use a unique identifier for the child (e.g., schoolId + studentId or just student name + grade + school name)
-          const childIdentifier = `${student.name}-${student.grade}-${school.profile.id}`; 
-          if (!childrenMap.has(`${parent.email}-${childIdentifier}`)) {
-            parent.children.push({ name: student.name, grade: student.grade, school: school.profile.name });
-            childrenMap.set(`${parent.email}-${childIdentifier}`, true);
-          }
-          parent.schools.add(school.profile.name);
         }
-      });
+        const parent = parentMap.get(student.parentEmail);
+        parent.children.push({ name: student.name, grade: student.grade, school: student.schoolName });
+        parent.schools.add(student.schoolName);
+      }
     });
 
     return Array.from(parentMap.values()).map(p => ({
@@ -65,7 +55,7 @@ export default function GlobalParentsPage() {
       status: parentStatusOverrides[p.email] || 'Active',
       childrenGrades: [...new Set(p.children.map(c => c.grade))]
     }));
-  }, [allSchoolData, parentStatusOverrides]);
+  }, [studentsData, parentStatusOverrides]);
 
   const availableGrades = useMemo(() => {
     if (!allParents) return [];
@@ -113,7 +103,7 @@ export default function GlobalParentsPage() {
     setCurrentPage(1);
   }, [searchTerm, selectedGrade]);
 
-  if (isLoading || role !== 'GlobalAdmin' || !allSchoolData) {
+  if (isLoading || role !== 'GlobalAdmin') {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
   

@@ -19,7 +19,7 @@ const PAGE_SIZE = 10;
 
 export default function GlobalTeachersPage() {
   const { role, isLoading: authLoading, impersonateUser } = useAuth();
-  const { allSchoolData, isLoading: schoolLoading, updateTeacherStatus } = useSchoolData();
+  const { allSchoolData, isLoading: schoolLoading, teachersData: allTeachers } = useSchoolData();
   const router = useRouter();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,17 +27,6 @@ export default function GlobalTeachersPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const isLoading = authLoading || schoolLoading;
-
-  const allTeachers = useMemo(() => {
-    if (!allSchoolData) return [];
-    return Object.values(allSchoolData).flatMap(school => 
-      school.teachers.map(teacher => ({
-        ...teacher,
-        schoolName: school.profile.name,
-        schoolId: school.profile.id,
-      }))
-    );
-  }, [allSchoolData]);
 
   const availableSubjects = useMemo(() => {
     const subjects = new Set(allTeachers.map(teacher => teacher.subject));
@@ -47,7 +36,7 @@ export default function GlobalTeachersPage() {
   const filteredTeachers = useMemo(() => {
     return allTeachers.filter(teacher => {
         const matchesSearch = teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            teacher.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            teacher.schoolName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             teacher.subject.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesSubject = selectedSubject === 'all' || teacher.subject === selectedSubject;
         return matchesSearch && matchesSubject;
@@ -89,7 +78,9 @@ export default function GlobalTeachersPage() {
   }
   
   const handleStatusChange = (schoolId: string, teacherId: string, status: Teacher['status']) => {
-    updateTeacherStatus(schoolId, teacherId, status);
+    // This requires a context function to update Firestore
+    // updateTeacherStatus(schoolId, teacherId, status);
+    toast({ title: "Status Change (Not Implemented)", description: "This action is a placeholder." });
   };
   
   const handleImpersonate = (email: string) => {
@@ -195,9 +186,9 @@ export default function GlobalTeachersPage() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuLabel>Change Status</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleStatusChange(teacher.schoolId, teacher.id, 'Active')}>Active</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatusChange(teacher.schoolId, teacher.id, 'Inactive')}>Inactive</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatusChange(teacher.schoolId, teacher.id, 'Transferred')}>Transferred</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleStatusChange(teacher.schoolId!, teacher.id, 'Active')}>Active</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleStatusChange(teacher.schoolId!, teacher.id, 'Inactive')}>Inactive</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleStatusChange(teacher.schoolId!, teacher.id, 'Transferred')}>Transferred</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

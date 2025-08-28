@@ -20,7 +20,7 @@ const PAGE_SIZE = 10;
 
 export default function GlobalStudentsPage() {
   const { role, isLoading: authLoading, impersonateUser } = useAuth();
-  const { allSchoolData, isLoading: schoolLoading, updateStudentStatus } = useSchoolData();
+  const { allSchoolData, isLoading: schoolLoading, studentsData: allStudents } = useSchoolData(); // Use studentsData from context
   const router = useRouter();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,17 +28,6 @@ export default function GlobalStudentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const isLoading = authLoading || schoolLoading;
-
-  const allStudents = useMemo(() => {
-    if (!allSchoolData) return [];
-    return Object.values(allSchoolData).flatMap(school => 
-      school.students.map(student => ({
-        ...student,
-        schoolName: school.profile.name,
-        schoolId: school.profile.id,
-      }))
-    );
-  }, [allSchoolData]);
 
   const availableGrades = useMemo(() => {
     const grades = new Set(allStudents.map(student => student.grade));
@@ -48,7 +37,7 @@ export default function GlobalStudentsPage() {
   const filteredStudents = useMemo(() => {
     return allStudents.filter(student => {
         const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            student.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            student.schoolName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             student.parentName.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesGrade = selectedGrade === 'all' || student.grade === selectedGrade;
         return matchesSearch && matchesGrade;
@@ -66,7 +55,7 @@ export default function GlobalStudentsPage() {
   const summaryStats = useMemo(() => {
     if (!allSchoolData) return { overallAvgGpa: 0, activeStudents: 0, transferredStudents: 0 };
     
-    const allGrades = Object.values(allSchoolData).flatMap(school => school.grades);
+    const allGrades = Object.values(allSchoolData).flatMap(school => school.grades ?? []);
     let overallAvgGpa = 0;
     if(allGrades.length > 0) {
         const totalGpaPoints = allGrades.reduce((acc, g) => acc + getGpaFromNumeric(parseFloat(g.grade)), 0);
@@ -98,7 +87,10 @@ export default function GlobalStudentsPage() {
   }
 
   const handleStatusChange = (schoolId: string, studentId: string, status: Student['status']) => {
-    updateStudentStatus(schoolId, studentId, status);
+    // This function needs to be implemented in the context and called here.
+    // For now, it will be a placeholder.
+    console.log(`Update status for student ${studentId} in school ${schoolId} to ${status}`);
+    toast({ title: "Status Change (Not Implemented)", description: "This action is a placeholder." });
   };
   
   const handleImpersonate = (email: string) => {
@@ -204,9 +196,9 @@ export default function GlobalStudentsPage() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuLabel>Change Status</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleStatusChange(student.schoolId, student.id, 'Active')}>Active</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatusChange(student.schoolId, student.id, 'Inactive')}>Inactive</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatusChange(student.schoolId, student.id, 'Transferred')}>Transferred</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleStatusChange(student.schoolId!, student.id, 'Active')}>Active</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleStatusChange(student.schoolId!, student.id, 'Inactive')}>Inactive</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleStatusChange(student.schoolId!, student.id, 'Transferred')}>Transferred</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

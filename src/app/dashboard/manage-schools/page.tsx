@@ -1,3 +1,4 @@
+
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -12,7 +13,7 @@ import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { NewSchoolDialog, EditSchoolDialog, DeleteSchoolDialog } from '@/components/global-admin/new-school-dialog';
-import { mockUsers } from '@/lib/mock-data';
+import { getUsersFromFirestore } from '@/lib/firebase/firestore-service';
 
 export default function ManageSchoolsPage() {
   const { role, user, isLoading: authLoading, impersonateUser } = useAuth();
@@ -21,6 +22,15 @@ export default function ManageSchoolsPage() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const isLoading = authLoading || schoolLoading;
+  const [allUsers, setAllUsers] = useState({});
+
+  useEffect(() => {
+    async function fetchUsers() {
+      const users = await getUsersFromFirestore();
+      setAllUsers(users);
+    }
+    fetchUsers();
+  }, []);
 
   const userGroupId = useMemo(() => {
     if (!user || !user.schoolId || !schoolGroups) return null;
@@ -99,7 +109,7 @@ export default function ManageSchoolsPage() {
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filteredSchools.map(school => {
-            const schoolUsers = Object.values(mockUsers).filter(u => u.user.schoolId === school.profile.id && u.user.role !== 'Student' && u.user.role !== 'Parent');
+            const schoolUsers = Object.values(allUsers).filter((u:any) => u.user.schoolId === school.profile.id && u.user.role !== 'Student' && u.user.role !== 'Parent');
             return (
             <Card key={school.profile.id}>
                 <CardHeader>
@@ -160,7 +170,7 @@ export default function ManageSchoolsPage() {
                                         <span>Impersonate User</span>
                                     </DropdownMenuSubTrigger>
                                     <DropdownMenuSubContent>
-                                        {schoolUsers.map(u => (
+                                        {schoolUsers.map((u: any) => (
                                              <DropdownMenuItem key={u.user.email} onClick={() => handleImpersonate(u.user.email, u.user.role)}>
                                                 {u.user.name} ({u.user.role})
                                             </DropdownMenuItem>
