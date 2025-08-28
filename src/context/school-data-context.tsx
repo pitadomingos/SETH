@@ -477,66 +477,75 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if (role === 'GlobalAdmin') return null;
     return authSchoolId;
   }, [authSchoolId, role]);
-
+  
+  // The single source of truth for the CURRENT school's data.
+  // It's null if the user is a GlobalAdmin or if data hasn't loaded.
   const schoolData = useMemo(() => {
     if (!data || !currentSchoolId) return null;
     return data[currentSchoolId];
   }, [currentSchoolId, data]);
 
+  // --- Sliced Data Selectors ---
+  // These memos correctly slice the data based on the user's role and school affiliation.
+
   const studentsData = useMemo(() => {
-    if (!data || !role || !user) return [];
-    if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.students?.map(s => ({ ...s, schoolName: d.profile.name, schoolId: d.profile.id })) || []);
-    if (role === 'Parent') return Object.values(data).flatMap(d => d.students?.map(s => ({ ...s, schoolName: d.profile.name, schoolId: d.profile.id })) || []).filter(s => s.parentEmail === user.email);
-    const currentSchool = data[currentSchoolId || ''];
-    return currentSchool?.students ?? [];
-  }, [data, role, user, currentSchoolId]);
+    if (!data || !role) return [];
+    if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.students?.map(s => ({ ...s, schoolName: d.profile.name, schoolId: d.profile.id })) ?? []);
+    if (role === 'Parent' && user?.email) return Object.values(data).flatMap(d => d.students?.map(s => ({ ...s, schoolName: d.profile.name, schoolId: d.profile.id })) ?? []).filter(s => s.parentEmail === user.email);
+    return schoolData?.students ?? [];
+  }, [data, role, user, schoolData]);
   
   const teachersData = useMemo(() => {
     if (!data || !role) return [];
-    if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.teachers || []);
-    const currentSchool = data[currentSchoolId || ''];
-    return currentSchool?.teachers ?? [];
-  }, [data, role, currentSchoolId]);
+    if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.teachers ?? []);
+    return schoolData?.teachers ?? [];
+  }, [data, role, schoolData]);
 
   const classesData = useMemo(() => {
     if (!data || !role) return [];
-    if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.classes || []);
-    const currentSchool = data[currentSchoolId || ''];
-    return currentSchool?.classes ?? [];
-  }, [data, role, currentSchoolId]);
+    if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.classes ?? []);
+    return schoolData?.classes ?? [];
+  }, [data, role, schoolData]);
 
   const financeData = useMemo(() => {
-    if (!data || !role || !user) return [];
-    if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.finance || []);
-    if (role === 'Parent') {
-        const parentStudentIds = studentsData.map(s => s.id);
-        return Object.values(data).flatMap(d => d.finance?.filter(f => parentStudentIds.includes(f.studentId)) || []);
+    if (!data || !role) return [];
+    if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.finance ?? []);
+    if (role === 'Parent' && user?.email) {
+        const parentStudentIds = Object.values(data).flatMap(d => d.students?.filter(s => s.parentEmail === user.email).map(s => s.id) ?? []);
+        return Object.values(data).flatMap(d => d.finance?.filter(f => parentStudentIds.includes(f.studentId)) ?? []);
     }
-    const currentSchool = data[currentSchoolId || ''];
-    return currentSchool?.finance ?? [];
-  }, [data, role, user, currentSchoolId, studentsData]);
+    return schoolData?.finance ?? [];
+  }, [data, role, user, schoolData]);
   
   const grades = useMemo(() => {
-    if (!data || !role || !user) return [];
-    if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.grades || []);
-    if (role === 'Parent') {
-        const parentStudentIds = studentsData.map(s => s.id);
-        return Object.values(data).flatMap(d => d.grades?.filter(g => parentStudentIds.includes(g.studentId)) || []);
+    if (!data || !role) return [];
+    if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.grades ?? []);
+    if (role === 'Parent' && user?.email) {
+        const parentStudentIds = Object.values(data).flatMap(d => d.students?.filter(s => s.parentEmail === user.email).map(s => s.id) ?? []);
+        return Object.values(data).flatMap(d => d.grades?.filter(g => parentStudentIds.includes(g.studentId)) ?? []);
     }
-    const currentSchool = data[currentSchoolId || ''];
-    return currentSchool?.grades ?? [];
-  }, [data, role, user, currentSchoolId, studentsData]);
+    return schoolData?.grades ?? [];
+  }, [data, role, user, schoolData]);
   
   const attendance = useMemo(() => {
-    if (!data || !role || !user) return [];
-    if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.attendance || []);
-    if (role === 'Parent') {
-      const parentStudentIds = studentsData.map(s => s.id);
-      return Object.values(data).flatMap(d => d.attendance?.filter(a => parentStudentIds.includes(a.studentId)) || []);
+    if (!data || !role) return [];
+    if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.attendance ?? []);
+    if (role === 'Parent' && user?.email) {
+      const parentStudentIds = Object.values(data).flatMap(d => d.students?.filter(s => s.parentEmail === user.email).map(s => s.id) ?? []);
+      return Object.values(data).flatMap(d => d.attendance?.filter(a => parentStudentIds.includes(a.studentId)) ?? []);
     }
-    const currentSchool = data[currentSchoolId || ''];
-    return currentSchool?.attendance ?? [];
-  }, [data, role, user, currentSchoolId, studentsData]);
+    return schoolData?.attendance ?? [];
+  }, [data, role, user, schoolData]);
+  
+  const events = useMemo(() => {
+    if (!data || !role) return [];
+    if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.events ?? []);
+    // Parents and Students see events from all schools for now
+    if (role === 'Parent' || role === 'Student') return Object.values(data).flatMap(d => d.events?.map(e => ({...e, schoolName: d.profile.name})) ?? []);
+    return schoolData?.events ?? [];
+  }, [schoolData, data, role]);
+
+  // --- Aggregated/Derived Data ---
 
   const schoolGroups = useMemo(() => {
     if (!data) return {};
@@ -546,8 +555,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   
   const awardsAnnounced = useMemo(() => {
     if (!data) return false;
-    const schoolWithAwards = Object.values(data).find(d => d.profile?.awards && d.profile.awards.length > 0);
-    return !!schoolWithAwards;
+    // Check if any school has an awards array with at least one entry.
+    return Object.values(data).some(d => d.profile?.awards && d.profile.awards.length > 0);
   }, [data]);
   
   const parentStatusOverrides = {}; // This is a placeholder as the logic for this is not fully implemented
@@ -565,73 +574,34 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     financeData,
     grades,
     attendance,
-    coursesData: schoolData?.courses ?? [],
-    syllabi: schoolData?.syllabi ?? [],
-    admissionsData: schoolData?.admissions ?? [],
-    assetsData: schoolData?.assets ?? [],
-    examsData: schoolData?.exams ?? [],
-    events: useMemo(() => {
-        if (!data) return [];
-        if (role === 'Parent' || role === 'Student') {
-            return Object.values(data).flatMap(d => d.events?.map(e => ({...e, schoolName: d.profile.name})) || []);
-        }
-        if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.events);
-        return schoolData?.events ?? [];
-    }, [schoolData, data, role]),
-    expensesData: useMemo(() => {
-        if(!data) return [];
-        if(role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.expenses);
-        return schoolData?.expenses ?? [];
-    }, [schoolData, data, role]),
-    teamsData: useMemo(() => {
-        if (!data || !user || !role) return [];
-        if (role === 'Parent') {
-            const parentStudentIds = studentsData.map(s => s.id);
-            return Object.values(data).flatMap(d => d.teams?.filter(t => t.playerIds.some(pId => parentStudentIds.includes(pId))) || []);
-        }
-        if(role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.teams);
-        return schoolData?.teams ?? [];
-    }, [schoolData, data, role, user, studentsData]),
-    competitionsData: useMemo(() => {
-        if (!data || !user || !role) return [];
-        if (role === 'Parent') {
-             const parentStudentIds = studentsData.map(s => s.id);
-             const parentTeamIds = Object.values(data).flatMap(d => d.teams?.filter(t => t.playerIds.some(pId => parentStudentIds.includes(pId))) || []).map(t => t.id);
-            return Object.values(data).flatMap(d => d.competitions?.filter(c => parentTeamIds.includes(c.ourTeamId)) || []);
-        }
-        if(role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.competitions);
-        return schoolData?.competitions ?? [];
-    }, [schoolData, data, role, user, studentsData]),
-    kioskMedia: schoolData?.kioskMedia ?? [],
-    activityLogs: useMemo(() => {
-        if (!data) return [];
-        if (role === 'GlobalAdmin') {
-            return Object.values(data).flatMap(d => d.activityLogs);
-        }
-        return schoolData?.activityLogs ?? [];
-    }, [schoolData, data, role]),
-    messages: useMemo(() => {
-      if (!user || !data || !role) return [];
-      if (role === 'GlobalAdmin') {
-        return Object.values(data).flatMap(d => d.messages || []);
-      }
-      return schoolData?.messages ?? [];
-    }, [schoolData, data, user, role]),
-    savedReports: schoolData?.savedReports ?? [],
-    deployedTests: schoolData?.deployedTests ?? [],
-    savedTests: schoolData?.savedTests ?? [],
-    // --- Dropdown Data ---
+    events,
+    coursesData: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.courses ?? []) : schoolData?.courses ?? [],
+    syllabi: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.syllabi ?? []) : schoolData?.syllabi ?? [],
+    admissionsData: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.admissions ?? []) : schoolData?.admissions ?? [],
+    assetsData: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.assets ?? []) : schoolData?.assets ?? [],
+    examsData: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.exams ?? []) : schoolData?.exams ?? [],
+    expensesData: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.expenses ?? []) : schoolData?.expenses ?? [],
+    teamsData: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.teams ?? []) : schoolData?.teams ?? [],
+    competitionsData: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.competitions ?? []) : schoolData?.competitions ?? [],
+    kioskMedia: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.kioskMedia ?? []) : schoolData?.kioskMedia ?? [],
+    activityLogs: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.activityLogs ?? []) : schoolData?.activityLogs ?? [],
+    messages: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.messages ?? []) : schoolData?.messages ?? [],
+    savedReports: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.savedReports ?? []) : schoolData?.savedReports ?? [],
+    deployedTests: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.deployedTests ?? []) : schoolData?.deployedTests ?? [],
+    savedTests: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.savedTests ?? []) : schoolData?.savedTests ?? [],
+    terms: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.terms ?? []) : schoolData?.terms ?? [],
+    holidays: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.holidays ?? []) : schoolData?.holidays ?? [],
+    lessonPlans: role === 'GlobalAdmin' ? Object.values(data!).flatMap(d => d.lessonPlans ?? []) : schoolData?.lessonPlans ?? [],
+    
+    // Dropdown Data - these are usually specific to a school context
     subjects: useMemo(() => {
-        if (!schoolData) return [];
-        return [...new Set(schoolData.courses.map(c => c.subject))]
+        const source = schoolData?.courses ?? [];
+        return [...new Set(source.map(c => c.subject))]
     }, [schoolData]),
-    examBoards: schoolData?.profile.examBoards ?? [],
-    feeDescriptions: schoolData?.profile.feeDescriptions ?? [],
-    audiences: schoolData?.profile.audiences ?? [],
-    expenseCategories: schoolData?.profile.expenseCategories ?? [],
-    terms: schoolData?.terms ?? [],
-    holidays: schoolData?.holidays ?? [],
-    lessonPlans: schoolData?.lessonPlans ?? [],
+    examBoards: schoolData?.profile?.examBoards ?? (schoolData?.examBoards as any) ?? [],
+    feeDescriptions: schoolData?.profile?.feeDescriptions ?? (schoolData?.feeDescriptions as any) ?? [],
+    audiences: schoolData?.profile?.audiences ?? (schoolData?.audiences as any) ?? [],
+    expenseCategories: schoolData?.profile?.expenseCategories ?? (schoolData?.expenseCategories as any) ?? [],
   };
 
   return (
@@ -648,4 +618,6 @@ export const useSchoolData = () => {
   }
   return context;
 };
+    
+
     
