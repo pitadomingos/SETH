@@ -536,3 +536,5 @@ export async function sendMessageInFirestore(senderSchoolId: string, recipientSc
     const docRef = await addDoc(collectionRef, newMessage);
     return { id: docRef.id, ...newMessage, timestamp: new Date() } as Message;
 }
+
+    
