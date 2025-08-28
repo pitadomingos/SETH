@@ -176,7 +176,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   // ---------- Utilities ----------
   const aggregate = <T,>(selector: (d: SchoolData) => T[] | undefined): T[] =>
-    Object.values(data ?? {}).flatMap((d) => selector(d) ?? []);
+    Object.values(data || {}).flatMap((d) => selector(d) ?? []);
   
   const uniq = <T,>(arr: T[]): T[] => [...new Set(arr)];
 
@@ -324,28 +324,28 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const examBoards = useMemo(() => {
     if (role === 'GlobalAdmin') {
-      return uniq(Object.values(data ?? {}).flatMap((d) => d.profile?.examBoards ?? d.examBoards ?? []));
+      return uniq(Object.values(data || {}).flatMap((d) => d.profile?.examBoards ?? d.examBoards ?? []));
     }
     return (schoolData?.profile.examBoards ?? schoolData?.examBoards) ?? [];
   }, [role, data, schoolData]);
 
   const feeDescriptions = useMemo(() => {
     if (role === 'GlobalAdmin') {
-      return uniq(Object.values(data ?? {}).flatMap((d) => d.profile?.feeDescriptions ?? d.feeDescriptions ?? []));
+      return uniq(Object.values(data || {}).flatMap((d) => d.profile?.feeDescriptions ?? d.feeDescriptions ?? []));
     }
     return (schoolData?.profile.feeDescriptions ?? schoolData?.feeDescriptions) ?? [];
   }, [role, data, schoolData]);
 
   const audiences = useMemo(() => {
     if (role === 'GlobalAdmin') {
-      return uniq(Object.values(data ?? {}).flatMap((d) => d.profile?.audiences ?? d.audiences ?? []));
+      return uniq(Object.values(data || {}).flatMap((d) => d.profile?.audiences ?? d.audiences ?? []));
     }
     return (schoolData?.profile.audiences ?? schoolData?.audiences) ?? [];
   }, [role, data, schoolData]);
 
   const expenseCategories = useMemo(() => {
     if (role === 'GlobalAdmin') {
-      return uniq(Object.values(data ?? {}).flatMap((d) => d.profile?.expenseCategories ?? d.expenseCategories ?? []));
+      return uniq(Object.values(data || {}).flatMap((d) => d.profile?.expenseCategories ?? d.expenseCategories ?? []));
     }
     return (schoolData?.profile.expenseCategories ?? schoolData?.expenseCategories) ?? [];
   }, [role, data, schoolData]);
