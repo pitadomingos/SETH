@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Users, School, CalendarDays, TrendingUp, DollarSign, Hourglass, TrendingDown, BarChart2, AlertTriangle, Mail } from "lucide-react";
@@ -22,7 +23,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useState, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { mockUsers } from "@/lib/mock-data";
 import { formatGradeDisplay } from "@/lib/utils";
 
 
@@ -43,7 +43,7 @@ function ContactDeveloperDialog() {
   });
 
   function onSubmit(values: MessageFormValues) {
-    const developerEmail = mockUsers.developer.user.email;
+    const developerEmail = 'dev@edudmanage.com';
     const messageData: NewMessageData = {
       recipientUsername: developerEmail,
       subject: values.subject,
