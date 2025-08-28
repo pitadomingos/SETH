@@ -40,7 +40,7 @@ export default function AllSchoolsPage() {
   const filteredSchools = useMemo(() => {
     if (!allSchoolData) return [];
     return Object.values(allSchoolData).filter(school =>
-      school && school.profile && school.profile.name.toLowerCase().includes(searchTerm.toLowerCase())
+      school && school.profile && school.profile.name && school.profile.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [allSchoolData, searchTerm]);
 
