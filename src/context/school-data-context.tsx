@@ -387,23 +387,36 @@ export interface NewSchoolData {
 }
 
 interface SchoolDataContextType extends Partial<SchoolData> {
+    /** All school data from Firestore, keyed by school ID. Only populated for GlobalAdmin or for initial data slicing. */
     allSchoolData: Record<string, SchoolData> | null;
+    /** A flattened array of all students from all schools, with schoolName and schoolId appended. */
     allStudents: Student[];
+    /** A record of parent accounts that have been manually suspended by a Global Admin. */
     parentStatusOverrides: Record<string, 'Active' | 'Suspended'>;
+    /** A boolean flag indicating if the system-wide annual awards have been announced. */
     awardsAnnounced: boolean;
+    /** A flag indicating if the initial data fetch from Firestore is complete. */
     isLoading: boolean;
+    /** The profile of the currently logged-in user's school. Null for GlobalAdmin. */
     schoolProfile: SchoolProfile | null;
+    /** An array of students relevant to the current user's role (e.g., a single school's students for an Admin, or a parent's children). */
     studentsData: Student[];
+    /** An array of teachers relevant to the current user's role. */
     teachersData: Teacher[];
+    /** An array of classes relevant to the current user's role. */
     classesData: Class[];
     coursesData: Course[];
     syllabi: Syllabus[];
     admissionsData: Admission[];
+    /** An array of financial records relevant to the current user's role. */
     financeData: FinanceRecord[];
     assetsData: any[];
     examsData: Exam[];
+    /** An array of grades relevant to the current user's role. */
     grades: Grade[];
+    /** An array of attendance records relevant to the current user's role. */
     attendance: Attendance[];
+    /** An array of events relevant to the current user's role. */
     events: Event[];
     expensesData: Expense[];
     teamsData: Team[];
@@ -421,6 +434,7 @@ interface SchoolDataContextType extends Partial<SchoolData> {
     expenseCategories: string[];
     terms: any[];
     holidays: any[];
+    /** A record of school groups for Premium Admins. */
     schoolGroups: Record<string, string[]>;
 }
 
@@ -466,24 +480,28 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const allStudents = useMemo(() => {
     if (!data) return [];
-    return Object.values(data).flatMap(d => d.students.map(s => ({...s, schoolName: d.profile.name, schoolId: d.profile.id })));
+    return Object.values(data).flatMap(d => d.students?.map(s => ({...s, schoolName: d.profile.name, schoolId: d.profile.id })) || []);
   }, [data]);
 
   const studentsData = useMemo(() => {
-    if (!user || !role || !allStudents.length) return [];
+    if (!user || !role) return [];
     if (role === 'Parent') {
         return allStudents.filter(student => student.parentEmail === user.email);
     }
     if (!schoolData) return [];
-    return schoolData.students;
+    return schoolData.students ?? [];
   }, [role, user, schoolData, allStudents]);
 
   const schoolGroups = useMemo(() => {
-    return data?.['northwood']?.schoolGroups || {};
+    if (!data) return {};
+    const schoolWithGroups = Object.values(data).find(d => d.profile?.schoolGroups && Object.keys(d.profile.schoolGroups).length > 0);
+    return schoolWithGroups?.profile.schoolGroups || {};
   }, [data]);
   
   const awardsAnnounced = useMemo(() => {
-      return !!data?.['northwood']?.profile.awards && data['northwood'].profile.awards.length > 0;
+    if (!data) return false;
+    const schoolWithAwards = Object.values(data).find(d => d.profile?.awards && d.profile.awards.length > 0);
+    return !!schoolWithAwards;
   }, [data]);
   
   const parentStatusOverrides = {}; // This is a placeholder as the logic for this is not fully implemented
@@ -500,28 +518,28 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     syllabi: schoolData?.syllabi ?? [],
     admissionsData: schoolData?.admissions ?? [],
     financeData: useMemo(() => {
-        if (!data || !user) return [];
+        if (!data || !user || !role) return [];
         if (role === 'Parent') {
             const parentStudentIds = allStudents.filter(s => s.parentEmail === user.email).map(s => s.id);
-            return Object.values(data).flatMap(d => d.finance.filter(f => parentStudentIds.includes(f.studentId)));
+            return Object.values(data).flatMap(d => d.finance?.filter(f => parentStudentIds.includes(f.studentId)) || []);
         }
         return schoolData?.finance ?? [];
     }, [schoolData, data, role, user, allStudents]),
     assetsData: schoolData?.assets ?? [],
     examsData: schoolData?.exams ?? [],
     grades: useMemo(() => {
-        if (!data) return [];
+        if (!data || !user || !role) return [];
         if (role === 'Parent') {
           const parentStudentIds = allStudents.filter(s => s.parentEmail === user.email).map(s => s.id);
-          return Object.values(data).flatMap(d => d.grades.filter(g => parentStudentIds.includes(g.studentId)));
+          return Object.values(data).flatMap(d => d.grades?.filter(g => parentStudentIds.includes(g.studentId)) || []);
         }
         return schoolData?.grades ?? [];
     }, [schoolData, data, role, user, allStudents]),
     attendance: useMemo(() => {
-        if (!data || !user) return [];
+        if (!data || !user || !role) return [];
         if (role === 'Parent') {
             const parentStudentIds = allStudents.filter(s => s.parentEmail === user.email).map(s => s.id);
-            return Object.values(data).flatMap(d => d.attendance.filter(a => parentStudentIds.includes(a.studentId)));
+            return Object.values(data).flatMap(d => d.attendance?.filter(a => parentStudentIds.includes(a.studentId)) || []);
         }
         if(role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.attendance);
         return schoolData?.attendance ?? [];
@@ -529,7 +547,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     events: useMemo(() => {
         if (!data) return [];
         if (role === 'Parent' || role === 'Student') {
-            return Object.values(data).flatMap(d => d.events.map(e => ({...e, schoolName: d.profile.name})));
+            return Object.values(data).flatMap(d => d.events?.map(e => ({...e, schoolName: d.profile.name})) || []);
         }
         if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.events);
         return schoolData?.events ?? [];
@@ -540,19 +558,20 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         return schoolData?.expenses ?? [];
     }, [schoolData, data, role]),
     teamsData: useMemo(() => {
-        if (!data || !user) return [];
+        if (!data || !user || !role) return [];
         if (role === 'Parent') {
             const parentStudentIds = allStudents.filter(s => s.parentEmail === user.email).map(s => s.id);
-            return Object.values(data).flatMap(d => d.teams.filter(t => t.playerIds.some(pId => parentStudentIds.includes(pId))));
+            return Object.values(data).flatMap(d => d.teams?.filter(t => t.playerIds.some(pId => parentStudentIds.includes(pId))) || []);
         }
         if(role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.teams);
         return schoolData?.teams ?? [];
     }, [schoolData, data, role, user, allStudents]),
     competitionsData: useMemo(() => {
-        if (!data || !user) return [];
+        if (!data || !user || !role) return [];
         if (role === 'Parent') {
-             const parentTeamIds = Object.values(data).flatMap(d => d.teams.filter(t => t.playerIds.some(pId => allStudents.filter(s => s.parentEmail === user.email).map(s => s.id).includes(pId)))).map(t => t.id);
-            return Object.values(data).flatMap(d => d.competitions.filter(c => parentTeamIds.includes(c.ourTeamId)));
+             const parentStudentIds = allStudents.filter(s => s.parentEmail === user.email).map(s => s.id);
+             const parentTeamIds = Object.values(data).flatMap(d => d.teams?.filter(t => t.playerIds.some(pId => parentStudentIds.includes(pId))) || []).map(t => t.id);
+            return Object.values(data).flatMap(d => d.competitions?.filter(c => parentTeamIds.includes(c.ourTeamId)) || []);
         }
         if(role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.competitions);
         return schoolData?.competitions ?? [];
@@ -566,9 +585,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         return schoolData?.activityLogs ?? [];
     }, [schoolData, data, role]),
     messages: useMemo(() => {
-      if (!user || !data) return [];
+      if (!user || !data || !role) return [];
       if (role === 'GlobalAdmin') {
-          return data['northwood']?.messages ?? [];
+          const globalAdminSchool = Object.values(data).find(d => d.profile?.email === 'dev@edudmanage.com');
+          return globalAdminSchool?.messages ?? [];
       }
       return schoolData?.messages ?? [];
     }, [schoolData, data, user, role]),
@@ -583,10 +603,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         if (!schoolData) return [];
         return [...new Set(schoolData.courses.map(c => c.subject))]
     }, [schoolData]),
-    examBoards: schoolData?.examBoards ?? [],
-    feeDescriptions: schoolData?.feeDescriptions ?? [],
-    audiences: schoolData?.audiences ?? [],
-    expenseCategories: schoolData?.expenseCategories ?? [],
+    examBoards: schoolData?.profile.examBoards ?? [],
+    feeDescriptions: schoolData?.profile.feeDescriptions ?? [],
+    audiences: schoolData?.profile.audiences ?? [],
+    expenseCategories: schoolData?.profile.expenseCategories ?? [],
     terms: schoolData?.terms ?? [],
     holidays: schoolData?.holidays ?? [],
     lessonPlans: schoolData?.lessonPlans ?? [],
@@ -606,3 +626,5 @@ export const useSchoolData = () => {
   }
   return context;
 };
+
+    
