@@ -7,13 +7,12 @@ import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestor
 
 export async function createSchoolAction(data: NewSchoolData, groupId?: string): Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile } } | null> {
     try {
-        const { school, adminProfile, adminUsername } = await createSchoolInFirestore(data, groupId);
+        const result = await createSchoolInFirestore(data, groupId);
 
-        if (school && adminProfile) {
-            await createUserInFirestore(adminUsername, adminProfile);
+        if (result) {
             revalidatePath('/dashboard/global-admin/all-schools');
             revalidatePath('/dashboard/manage-schools');
-            return { school, adminUser: { username: adminUsername, profile: adminProfile } };
+            return { school: result.school, adminUser: { username: result.adminUsername, profile: result.adminProfile } };
         }
         return null;
     } catch (error) {

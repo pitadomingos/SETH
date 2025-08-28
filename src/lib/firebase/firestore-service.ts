@@ -455,6 +455,7 @@ const initialSchoolData: Record<string, SchoolData> = {
     'trialschool': trialSchoolData,
 };
 
+
 export async function getSchoolsFromFirestore(): Promise<Record<string, SchoolData>> {
     const schoolsCollection = collection(db, 'schools');
     const schoolSnapshot = await getDocs(schoolsCollection);
@@ -569,9 +570,11 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
     };
 
     const schoolDocRef = doc(db, 'schools', schoolId);
+    const userDocRef = doc(db, 'users', adminUsername);
     
     const batch = writeBatch(db);
     batch.set(schoolDocRef, newSchoolData);
+    batch.set(userDocRef, adminProfile);
     
     if (groupId) {
         const groupRef = doc(db, 'schools', 'miniarte'); // Hardcoded 'miniarte' as the group holder
@@ -1074,7 +1077,7 @@ export async function addKioskMediaToFirestore(schoolId: string, mediaData: Omit
         ...mediaData
     };
     await updateDoc(schoolRef, { kioskMedia: arrayUnion(newMedia) });
-    return { ...newMedia, createdAt: new Date() };
+    return { ...newMedia, createdAt: newMedia.createdAt.toDate() };
 }
 
 export async function removeKioskMediaFromFirestore(schoolId: string, mediaId: string): Promise<void> {
@@ -1109,7 +1112,7 @@ export async function addBehavioralAssessmentToFirestore(schoolId: string, asses
         return s;
     });
     await updateDoc(schoolRef, { students: updatedStudents });
-    return { ...newAssessment, date: new Date() };
+    return { ...newAssessment, date: newAssessment.date.toDate() };
 }
 
 // Grade
@@ -1121,7 +1124,7 @@ export async function addGradeToFirestore(schoolId: string, gradeData: Omit<Grad
         ...gradeData
     };
     await updateDoc(schoolRef, { grades: arrayUnion(newGrade) });
-    return { ...newGrade, date: new Date() };
+    return { ...newGrade, date: newGrade.date.toDate() };
 }
 
 // Attendance
