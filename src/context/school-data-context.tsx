@@ -151,6 +151,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         }
         const schoolData = await getSchoolsFromFirestore();
         if (!cancelled) setData(schoolData);
+        console.log("Fetched allSchoolData:", schoolData);
       } catch (error) {
         console.error('[SchoolData] Failed to fetch or seed school data.', error);
         if (!cancelled) setData(null);
@@ -202,109 +203,171 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [data]);
 
   // ---------- Role-aware data slices ----------
+
   const studentsData = useMemo(() => {
-    if (!data || !role) return [];
+ if (!data || !role) return [];
     if (role === 'GlobalAdmin') {
-      return getAggregatedSchoolData((d) =>
-        d.students?.map((s) => ({ ...s, schoolName: d.profile.name, schoolId: d.profile.id }))
-      );
+ return getAggregatedSchoolData((d) =>
+ d.students?.map((s) => ({ ...s, schoolName: d.profile.name, schoolId: d.profile.id }))
+ );
     }
-    if (role === 'Parent' && user) {
-      return getAggregatedSchoolData((d) =>
-        (d.students ?? [])
-          .filter((s) => s.parentEmail === user.email)
-          .map((s) => ({ ...s, schoolName: d.profile.name, schoolId: d.profile.id }))
-      );
+ if (role === 'Parent' && user) {
+ return getAggregatedSchoolData((d) =>
+ (d.students ?? [])
+ .filter((s) => s.parentEmail === user.email)
+ .map((s) => ({ ...s, schoolName: d.profile.name, schoolId: d.profile.id }))
+ );
     }
-    return schoolData?.students ?? [];
+ return schoolData?.students ?? [];
   }, [data, role, user, schoolData]);
 
   const teachersData = useMemo(() => {
     if (!role) return [];
-    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.teachers) : schoolData?.teachers ?? [];
+    if (role === 'GlobalAdmin') return getAggregatedSchoolData((d) => d.teachers);
+ return schoolData?.teachers ?? [];
   }, [role, data, schoolData]);
-  
+
   const classesData = useMemo(() => {
     if (!role) return [];
-    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.classes) : schoolData?.classes ?? [];
+    if (role === 'GlobalAdmin') return getAggregatedSchoolData((d) => d.classes);
+ return schoolData?.classes ?? [];
   }, [role, data, schoolData]);
 
   const financeData = useMemo(() => {
     if (!data || !role) return [];
     if (role === 'GlobalAdmin') return getAggregatedSchoolData((d) => d.finance);
     if (role === 'Parent') {
-      const parentStudentIds = studentsData.map((s) => s.id);
-      return getAggregatedSchoolData((d) => d.finance?.filter((f) => parentStudentIds.includes(f.studentId)));
+ const parentStudentIds = studentsData.map((s) => s.id);
+ return getAggregatedSchoolData((d) => d.finance?.filter((f) => parentStudentIds.includes(f.studentId)));
     }
-    return schoolData?.finance ?? [];
+ return schoolData?.finance ?? [];
   }, [data, role, schoolData, studentsData]);
 
   const grades = useMemo(() => {
     if (!data || !role) return [];
     if (role === 'GlobalAdmin') return getAggregatedSchoolData((d) => d.grades);
     if (role === 'Parent') {
-      const parentStudentIds = studentsData.map((s) => s.id);
-      return getAggregatedSchoolData((d) => d.grades?.filter((g) => parentStudentIds.includes(g.studentId)));
+ const parentStudentIds = studentsData.map((s) => s.id);
+ return getAggregatedSchoolData((d) => d.grades?.filter((g) => parentStudentIds.includes(g.studentId)));
     }
-    return schoolData?.grades ?? [];
+ return schoolData?.grades ?? [];
   }, [data, role, schoolData, studentsData]);
 
   const attendance = useMemo(() => {
     if (!data || !role) return [];
     if (role === 'GlobalAdmin') return getAggregatedSchoolData((d) => d.attendance);
     if (role === 'Parent') {
-      const parentStudentIds = studentsData.map((s) => s.id);
-      return getAggregatedSchoolData((d) => d.attendance?.filter((a) => parentStudentIds.includes(a.studentId)));
+ const parentStudentIds = studentsData.map((s) => s.id);
+ return getAggregatedSchoolData((d) => d.attendance?.filter((a) => parentStudentIds.includes(a.studentId)));
     }
-    return schoolData?.attendance ?? [];
+ return schoolData?.attendance ?? [];
   }, [data, role, schoolData, studentsData]);
 
   const events = useMemo(() => {
     if (!data || !role) return [];
     if (role === 'GlobalAdmin') {
-      return getAggregatedSchoolData((d) => d.events?.map((e) => ({ ...e, schoolName: d.profile.name })));
+ return getAggregatedSchoolData((d) => d.events?.map((e) => ({ ...e, schoolName: d.profile.name })));
     }
-    if (role === 'Parent' || role === 'Student') {
-      return getAggregatedSchoolData((d) => d.events?.map((e) => ({ ...e, schoolName: d.profile.name })));
+ if (role === 'Parent' || role === 'Student') {
+ return getAggregatedSchoolData((d) => d.events?.map((e) => ({ ...e, schoolName: d.profile.name })));
     }
-    return schoolData?.events ?? [];
+ return schoolData?.events ?? [];
   }, [data, role, schoolData]);
-  
+
   const teamsData = useMemo(() => {
     if (!data || !role) return [];
     if (role === 'GlobalAdmin') return getAggregatedSchoolData((d) => d.teams);
     if (role === 'Parent') {
-      const parentStudentIds = studentsData.map((s) => s.id);
-      return getAggregatedSchoolData((d) => d.teams?.filter((t) => t.playerIds.some((pId) => parentStudentIds.includes(pId))));
+ const parentStudentIds = studentsData.map((s) => s.id);
+ return getAggregatedSchoolData((d) => d.teams?.filter((t) => t.playerIds.some((pId) => parentStudentIds.includes(pId))));
     }
-    return schoolData?.teams ?? [];
+ return schoolData?.teams ?? [];
   }, [data, role, schoolData, studentsData]);
-  
+
   const competitionsData = useMemo(() => {
     if (!data || !role) return [];
     if (role === 'GlobalAdmin') return getAggregatedSchoolData((d) => d.competitions);
     if (role === 'Parent') {
-      const parentTeamIds = teamsData.map((t) => t.id);
-      return getAggregatedSchoolData((d) => d.competitions?.filter((c) => parentTeamIds.includes(c.ourTeamId)));
+ const parentTeamIds = teamsData.map((t) => t.id);
+ return getAggregatedSchoolData((d) => d.competitions?.filter((c) => parentTeamIds.includes(c.ourTeamId)));
     }
-    return schoolData?.competitions ?? [];
+ return schoolData?.competitions ?? [];
   }, [data, role, schoolData, teamsData]);
 
-  const coursesData = useMemo(() => (role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.courses) : schoolData?.courses ?? []), [role, data, schoolData]);
-  const syllabi = useMemo(() => (role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.syllabi) : schoolData?.syllabi ?? []), [role, data, schoolData]);
-  const admissionsData = useMemo(() => (role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.admissions) : schoolData?.admissions ?? []), [role, data, schoolData]);
-  const assetsData = useMemo(() => (role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.assets) : schoolData?.assets ?? []), [role, data, schoolData]);
-  const examsData = useMemo(() => (role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.exams) : schoolData?.exams ?? []), [role, data, schoolData]);
-  const expensesData = useMemo(() => (role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.expenses) : schoolData?.expenses ?? []), [role, data, schoolData]);
-  const kioskMedia = useMemo(() => (role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.kioskMedia) : schoolData?.kioskMedia ?? []), [role, data, schoolData]);
-  const activityLogs = useMemo(() => (role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.activityLogs) : schoolData?.activityLogs ?? []), [role, data, schoolData]);
-  const messages = useMemo(() => (role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.messages) : schoolData?.messages ?? []), [role, data, schoolData]);
-  const savedReports = useMemo(() => (role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.savedReports) : schoolData?.savedReports ?? []), [role, data, schoolData]);
-  const deployedTests = useMemo(() => (role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.deployedTests) : schoolData?.deployedTests ?? []), [role, data, schoolData]);
-  const savedTests = useMemo(() => (role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.savedTests) : schoolData?.savedTests ?? []), [role, data, schoolData]);
-  const terms = useMemo(() => (role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.terms) : schoolData?.terms ?? []), [role, data, schoolData]);
-  const holidays = useMemo(() => (role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.holidays) : schoolData?.holidays ?? []), [role, data, schoolData]);
-  const lessonPlans = useMemo(() => (role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.lessonPlans) : schoolData?.lessonPlans ?? []), [role, data, schoolData]);
+  const coursesData = useMemo(() => {
+    if (!role) return [];
+    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.courses) : schoolData?.courses ?? [];
+  }, [role, data, schoolData]);
+
+  const syllabi = useMemo(() => {
+    if (!role) return [];
+    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.syllabi) : schoolData?.syllabi ?? [];
+  }, [role, data, schoolData]);
+
+  const admissionsData = useMemo(() => {
+    if (!role) return [];
+    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.admissions) : schoolData?.admissions ?? [];
+  }, [role, data, schoolData]);
+
+  const assetsData = useMemo(() => {
+    if (!role) return [];
+    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.assets) : schoolData?.assets ?? [];
+  }, [role, data, schoolData]);
+
+  const examsData = useMemo(() => {
+    if (!role) return [];
+    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.exams) : schoolData?.exams ?? [];
+  }, [role, data, schoolData]);
+
+  const expensesData = useMemo(() => {
+    if (!role) return [];
+    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.expenses) : schoolData?.expenses ?? [];
+  }, [role, data, schoolData]);
+
+  const kioskMedia = useMemo(() => {
+    if (!role) return [];
+    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.kioskMedia) : schoolData?.kioskMedia ?? [];
+  }, [role, data, schoolData]);
+
+  const activityLogs = useMemo(() => {
+    if (!role) return [];
+    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.activityLogs) : schoolData?.activityLogs ?? [];
+  }, [role, data, schoolData]);
+
+  const messages = useMemo(() => {
+    if (!role) return [];
+    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.messages) : schoolData?.messages ?? [];
+  }, [role, data, schoolData]);
+
+  const savedReports = useMemo(() => {
+    if (!role) return [];
+    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.savedReports) : schoolData?.savedReports ?? [];
+  }, [role, data, schoolData]);
+
+  const deployedTests = useMemo(() => {
+    if (!role) return [];
+    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.deployedTests) : schoolData?.deployedTests ?? [];
+  }, [role, data, schoolData]);
+
+  const savedTests = useMemo(() => {
+    if (!role) return [];
+    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.savedTests) : schoolData?.savedTests ?? [];
+  }, [role, data, schoolData]);
+
+  const terms = useMemo(() => {
+    if (!role) return [];
+    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.terms) : schoolData?.terms ?? [];
+  }, [role, data, schoolData]);
+
+  const holidays = useMemo(() => {
+    if (!role) return [];
+    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.holidays) : schoolData?.holidays ?? [];
+  }, [role, data, schoolData]);
+
+  const lessonPlans = useMemo(() => {
+    if (!role) return [];
+    return role === 'GlobalAdmin' ? getAggregatedSchoolData((d) => d.lessonPlans) : schoolData?.lessonPlans ?? [];
+  }, [role, data, schoolData]);
 
   // ---------- Dropdown unions (GA) with profile/top-level fallbacks ----------
   const subjects = useMemo(() => uniq(coursesData.map((c) => c.subject)), [coursesData]);

@@ -122,7 +122,7 @@ export async function getSchoolsFromFirestore(): Promise<Record<string, SchoolDa
 
   const schoolDataPromises = schoolsSnapshot.docs.map(async (schoolDoc) => {
     const schoolId = schoolDoc.id;
-    const profile = { id: schoolId, ...schoolDoc.data() } as SchoolProfile;
+    const profile = { id: schoolId, ...schoolDoc.data().profile } as SchoolProfile;
 
     // Parallel fetch for all subcollections
     const [
