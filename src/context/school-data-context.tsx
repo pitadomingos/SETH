@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { useAuth, User, Role } from './auth-context';
 import { getSchoolsFromFirestore, seedInitialData } from '@/lib/firebase/firestore-service';
+import { getDocs, collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 
 // --- DATA STRUCTURES ---
 
