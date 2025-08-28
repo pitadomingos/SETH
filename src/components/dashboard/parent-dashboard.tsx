@@ -71,10 +71,11 @@ const applicationSchema = z.object({
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 function NewApplicationDialog() {
-  const { addAdmission, allSchoolData, allStudents } = useSchoolData();
+  const { allSchoolData, studentsData: allStudents } = useSchoolData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const { user } = useAuth();
 
   const form = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema),
@@ -100,7 +101,6 @@ function NewApplicationDialog() {
   const selectedSchoolId = form.watch('schoolId');
   const selectedGradeStr = form.watch('appliedFor');
   
-  const { user } = useAuth();
   const parentStudents = useMemo(() => {
     if(!user || !allStudents) return [];
     return allStudents.filter(s => s.parentEmail === user.email);
@@ -124,6 +124,7 @@ function NewApplicationDialog() {
   }, [selectedSchoolId, selectedGradeStr, allSchoolData]);
 
   async function onSubmit(values: ApplicationFormValues) {
+    if (!user) return;
     let admissionData: NewAdmissionData;
 
     if (values.applicationType === 'new') {
@@ -158,17 +159,17 @@ function NewApplicationDialog() {
             sex: student.sex,
             appliedFor: values.transferGrade,
             formerSchool: student.schoolName!,
-            gradesSummary: 'Records are available in the EduDesk network.',
-            fromSchoolId: student.schoolId,
             studentIdToTransfer: student.id,
+            fromSchoolId: student.schoolId,
             reasonForTransfer: values.reasonForTransfer,
             transferGrade: values.transferGrade,
+            gradesSummary: 'Records are available in the EduDesk network.',
         };
     }
 
-    const success = await addAdmission(admissionData);
+    const result = await createAdmissionAction(admissionData.schoolId, admissionData, user.name, user.email);
 
-    if (success) {
+    if (result.success) {
         toast({
             title: 'Application Submitted',
             description: `The application for ${admissionData.name} has been sent for review.`,
@@ -179,7 +180,7 @@ function NewApplicationDialog() {
         toast({
             variant: 'destructive',
             title: 'Submission Failed',
-            description: 'Could not submit the application. Please try again.',
+            description: result.error || 'Could not submit the application. Please try again.',
         });
     }
   }
@@ -404,7 +405,7 @@ function AITierLockMessage({ schoolName, schoolAdminEmail }) {
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center text-center p-8">
         <p className="text-muted-foreground mb-4">
-          The AI Academic Advisor is not available for students at {schoolName} because the school is on the Starter plan.
+          The AI Academic Advisor is not available for students at ${schoolName} because the school is on the Starter plan.
         </p>
         <Button onClick={handleContactAdmin}>
           <MessageSquare className="mr-2 h-4 w-4" />
