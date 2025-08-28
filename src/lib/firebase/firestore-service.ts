@@ -17,6 +17,7 @@ import {
   where,
   addDoc,
   deleteDoc,
+  runTransaction,
 } from 'firebase/firestore';
 import { db } from './config';
 import type { SchoolData, NewSchoolData, SchoolProfile, UserProfile, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student, Message, NewMessageData, KioskMedia, BehavioralAssessment, Grade, DeployedTest, SavedTest, Role } from '@/context/school-data-context';
@@ -419,31 +420,36 @@ export async function updateAdmissionStatusInFirestore(schoolId: string, admissi
 }
 
 export async function addStudentFromAdmissionInFirestore(schoolId: string, application: Admission): Promise<Student> {
-    const gradeParts = application.appliedFor.replace('Grade ', '').split('-');
-    const grade = gradeParts[0]?.trim() || '1';
-    const studentClass = gradeParts[1]?.trim() || 'A';
-    
-    const newStudentData: Omit<Student, 'id'> = {
-        name: application.name,
-        email: `${application.name.toLowerCase().replace(/\s+/g, '.')}@${schoolId}.edu`,
-        phone: `555-01${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`,
-        address: '123 Oak Avenue, Maputo',
-        sex: application.sex,
-        dateOfBirth: application.dateOfBirth,
-        grade,
-        class: studentClass,
-        parentName: application.parentName,
-        parentEmail: application.parentEmail,
-        status: 'Active',
-        behavioralAssessments: [],
-    };
-    const newStudent = await addToSubcollection<Student>(schoolId, 'students', newStudentData);
-    
-    if (application.type === 'Transfer' && application.fromSchoolId && application.studentIdToTransfer) {
-        await updateDoc(doc(db, 'schools', application.fromSchoolId, 'students', application.studentIdToTransfer), { status: 'Transferred' });
-    }
-    
-    return newStudent;
+    return await runTransaction(db, async (transaction) => {
+        const gradeParts = application.appliedFor.replace('Grade ', '').split('-');
+        const grade = gradeParts[0]?.trim() || '1';
+        const studentClass = gradeParts[1]?.trim() || 'A';
+
+        const newStudentData: Omit<Student, 'id'> = {
+            name: application.name,
+            email: `${application.name.toLowerCase().replace(/\s+/g, '.')}@${schoolId}.edu`,
+            phone: `555-01${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`,
+            address: '123 Oak Avenue, Maputo',
+            sex: application.sex,
+            dateOfBirth: application.dateOfBirth,
+            grade,
+            class: studentClass,
+            parentName: application.parentName,
+            parentEmail: application.parentEmail,
+            status: 'Active',
+            behavioralAssessments: [],
+        };
+        
+        const newStudentRef = doc(collection(db, 'schools', schoolId, 'students'));
+        transaction.set(newStudentRef, newStudentData);
+
+        if (application.type === 'Transfer' && application.fromSchoolId && application.studentIdToTransfer) {
+            const studentToTransferRef = doc(db, 'schools', application.fromSchoolId, 'students', application.studentIdToTransfer);
+            transaction.update(studentToTransferRef, { status: 'Transferred' });
+        }
+        
+        return { id: newStudentRef.id, ...newStudentData };
+    });
 }
 
 
@@ -478,7 +484,7 @@ export async function addLessonAttendanceToFirestore(schoolId: string, courseId:
     const attendanceDate = new Date(date);
     for (const [studentId, status] of Object.entries(studentStatuses)) {
         const attendanceRef = collection(db, 'schools', schoolId, 'attendance');
-        batch.add(attendanceRef, { studentId, date: Timestamp.fromDate(attendanceDate), status, courseId });
+        batch.set(doc(attendanceRef), { studentId, date: Timestamp.fromDate(attendanceDate), status, courseId });
     }
     await batch.commit();
 }
