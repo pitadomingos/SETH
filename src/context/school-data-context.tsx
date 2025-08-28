@@ -53,6 +53,11 @@ export interface SchoolProfile {
         teacherOfTheYear: string;
         studentOfTheYear: string;
     }>;
+    feeDescriptions: string[];
+    audiences: string[];
+    expenseCategories: string[];
+    examBoards: string[];
+    schoolGroups: Record<string, string[]>;
 }
 
 export interface Student {
@@ -121,7 +126,7 @@ export interface Admission {
     id: string;
     type: 'New' | 'Transfer';
     name: string;
-    date: Date;
+    date: any;
     appliedFor: string;
     parentName: string;
     parentEmail: string;
@@ -156,7 +161,7 @@ export interface Exam {
     subject: string;
     grade: string;
     board: string;
-    date: Date;
+    date: any;
     time: string;
     duration: string;
     room: string;
@@ -379,46 +384,11 @@ export interface NewSchoolData {
     tier: 'Starter' | 'Pro' | 'Premium';
 }
 
-interface SchoolDataContextType {
-    // --- Data States ---
+interface SchoolDataContextType extends SchoolData {
     allSchoolData: Record<string, SchoolData> | null;
     allStudents: Student[];
-    schoolProfile: SchoolProfile | null;
-    studentsData: Student[];
-    teachersData: Teacher[];
-    classesData: Class[];
-    coursesData: Course[];
-    syllabi: Syllabus[];
-    admissionsData: Admission[];
-    financeData: FinanceRecord[];
-    assetsData: any[];
-    examsData: Exam[];
-    grades: Grade[];
-    attendance: Attendance[];
-    events: Event[];
-    expensesData: Expense[];
-    teamsData: Team[];
-    competitionsData: Competition[];
-    kioskMedia: KioskMedia[];
-    activityLogs: ActivityLog[];
-    messages: Message[];
-    savedReports: SavedReport[];
-    schoolGroups: Record<string, string[]>;
     parentStatusOverrides: Record<string, 'Active' | 'Suspended'>;
-    deployedTests: DeployedTest[];
-    savedTests: SavedTest[];
     awardsAnnounced: boolean;
-    
-    // --- Dropdown Data ---
-    subjects: string[];
-    examBoards: string[];
-    feeDescriptions: string[];
-    audiences: string[];
-    expenseCategories: string[];
-    terms: any[];
-    holidays: any[];
-
-    // --- Loading State ---
     isLoading: boolean;
 }
 
@@ -428,23 +398,18 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const { user, role, schoolId: authSchoolId } = useAuth();
   const [data, setData] = useState<Record<string, SchoolData> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [awardsAnnounced, setAwardsAnnounced] = useState(false);
-  const [parentStatusOverrides, setParentStatusOverrides] = useState<Record<string, 'Active' | 'Suspended'>>({});
-
+  
   useEffect(() => {
     const fetchSchoolData = async () => {
         setIsLoading(true);
         try {
-            const existingData = await getSchoolsFromFirestore();
-            if (Object.keys(existingData).length === 0) {
+            const schools = await getDocs(collection(db, 'schools'));
+            if (schools.empty) {
+                console.log("No schools found, seeding initial data...");
                 await seedInitialData();
-                const seededData = await getSchoolsFromFirestore();
-                setData(seededData);
-                setAwardsAnnounced(seededData['northwood']?.profile.awards && seededData['northwood'].profile.awards.length > 0);
-            } else {
-                setData(existingData);
-                setAwardsAnnounced(existingData['northwood']?.profile.awards && existingData['northwood'].profile.awards.length > 0);
             }
+            const schoolData = await getSchoolsFromFirestore();
+            setData(schoolData);
         } catch (error) {
             console.error("Failed to fetch or seed school data.", error);
             setData(null); 
@@ -483,6 +448,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const schoolGroups = useMemo(() => {
     return data?.['northwood']?.schoolGroups || {};
   }, [data]);
+  
+  const awardsAnnounced = useMemo(() => {
+      return !!data?.['northwood']?.profile.awards && data['northwood'].profile.awards.length > 0;
+  }, [data]);
+  
+  const parentStatusOverrides = {}; // This is a placeholder as the logic for this is not fully implemented
 
   const value: SchoolDataContextType = {
     isLoading,
@@ -493,10 +464,6 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     teachersData: schoolData?.teachers || [],
     classesData: schoolData?.classes || [],
     coursesData: schoolData?.courses || [],
-    subjects: useMemo(() => {
-        if (!schoolData) return [];
-        return [...new Set(schoolData.courses.map(c => c.subject))]
-    }, [schoolData]),
     syllabi: schoolData?.syllabi || [],
     admissionsData: schoolData?.admissions || [],
     financeData: useMemo(() => {
@@ -581,12 +548,18 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     deployedTests: schoolData?.deployedTests || [],
     savedTests: schoolData?.savedTests || [],
     awardsAnnounced,
+    // --- Dropdown Data ---
+    subjects: useMemo(() => {
+        if (!schoolData) return [];
+        return [...new Set(schoolData.courses.map(c => c.subject))]
+    }, [schoolData]),
     examBoards: schoolData?.examBoards || [],
     feeDescriptions: schoolData?.feeDescriptions || [],
     audiences: schoolData?.audiences || [],
     expenseCategories: schoolData?.expenseCategories || [],
     terms: schoolData?.terms || [],
     holidays: schoolData?.holidays || [],
+    lessonPlans: schoolData?.lessonPlans || [],
   };
 
   return (

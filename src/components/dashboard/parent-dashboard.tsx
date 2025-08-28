@@ -71,7 +71,7 @@ const applicationSchema = z.object({
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 function NewApplicationDialog() {
-  const { allSchoolData, studentsData: allStudents } = useSchoolData();
+  const { allSchoolData, studentsData: allStudents, addAdmission } = useSchoolData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');

@@ -21,6 +21,7 @@ export async function createSchoolAction(data: NewSchoolData, groupId?: string):
     }
 }
 
+
 export async function addTeacherAction(schoolId: string, teacherData: Omit<Teacher, 'id' | 'status'>) {
     try {
         const newTeacher = await addTeacherToFirestore(schoolId, teacherData);
@@ -87,9 +88,9 @@ export async function deleteClassAction(schoolId: string, classId: string) {
     }
 }
 
-export async function updateSyllabusTopicAction(schoolId: string, subject: string, grade: string, topic: SyllabusTopic): Promise<{ success: boolean, error?: string }> {
+export async function updateSyllabusTopicAction(schoolId: string, syllabusId: string, topic: SyllabusTopic): Promise<{ success: boolean, error?: string }> {
     try {
-        await updateSyllabusTopicInFirestore(schoolId, subject, grade, topic);
+        await updateSyllabusTopicInFirestore(schoolId, syllabusId, topic);
         revalidatePath('/dashboard/academics');
         return { success: true };
     } catch (e) {
@@ -98,9 +99,9 @@ export async function updateSyllabusTopicAction(schoolId: string, subject: strin
     }
 }
 
-export async function deleteSyllabusTopicAction(schoolId: string, subject: string, grade: string, topicId: string): Promise<{ success: boolean, error?: string }> {
+export async function deleteSyllabusTopicAction(schoolId: string, syllabusId: string, topicId: string): Promise<{ success: boolean, error?: string }> {
     try {
-        await deleteSyllabusTopicFromFirestore(schoolId, subject, grade, topicId);
+        await deleteSyllabusTopicFromFirestore(schoolId, syllabusId, topicId);
         revalidatePath('/dashboard/academics');
         return { success: true };
     } catch (e) {
@@ -237,7 +238,7 @@ export async function removePlayerFromTeamAction(schoolId: string, teamId: strin
 
 export async function addCompetitionAction(schoolId: string, competitionData: Omit<Competition, 'id'>): Promise<{ success: boolean, competition?: Competition, error?: string }> {
     try {
-        const newCompetition = await addCompetitionToFirestore(schoolId, competitionData);
+        const newCompetition = await addCompetitionToFirestore(schoolId, competitionData as any);
         revalidatePath('/dashboard/sports');
         return { success: true, competition: newCompetition };
     } catch (e) {

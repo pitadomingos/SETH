@@ -1,35 +1,27 @@
 
 'use client';
-import { doc, updateDoc, collection, getDocs, writeBatch, serverTimestamp, Timestamp, arrayUnion, arrayRemove, getDoc, setDoc } from 'firebase/firestore';
+import {
+  doc,
+  updateDoc,
+  collection,
+  getDocs,
+  writeBatch,
+  serverTimestamp,
+  Timestamp,
+  arrayUnion,
+  arrayRemove,
+  getDoc,
+  setDoc,
+  collectionGroup,
+  query,
+  where,
+  addDoc,
+  deleteDoc,
+} from 'firebase/firestore';
 import { db } from './config';
 import type { SchoolData, NewSchoolData, SchoolProfile, UserProfile, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student, Message, NewMessageData, KioskMedia, BehavioralAssessment, Grade, DeployedTest, SavedTest, Role } from '@/context/school-data-context';
 
-
-// --- Email Simulation ---
-// Note: This is now handled in the server action to avoid circular dependencies.
-
-export async function getSchoolsFromFirestore(): Promise<Record<string, SchoolData>> {
-    const schoolsCollection = collection(db, 'schools');
-    const schoolSnapshot = await getDocs(schoolsCollection);
-    const schoolList = schoolSnapshot.docs.reduce((acc, doc) => {
-        acc[doc.id] = doc.data() as SchoolData;
-        return acc;
-    }, {} as Record<string, SchoolData>);
-    return schoolList;
-}
-
-export async function getUsersFromFirestore(): Promise<Record<string, UserProfile>> {
-    const usersCollection = collection(db, 'users');
-    const userSnapshot = await getDocs(usersCollection);
-    if (userSnapshot.empty) {
-        return {};
-    }
-    const userList = userSnapshot.docs.reduce((acc, doc) => {
-        acc[doc.id] = doc.data() as UserProfile;
-        return acc;
-    }, {} as Record<string, UserProfile>);
-    return userList;
-}
+// --- Data Seeding (RUNS ONLY ONCE) ---
 
 export async function seedInitialData(): Promise<void> {
     const mockUsers: Record<string, UserProfile> = {
@@ -68,27 +60,42 @@ export async function seedInitialData(): Promise<void> {
         sports1: { user: { username: 'sports1', name: 'Vasco Nunes', role: 'SportsDirector', email: 'vasco.nunes@northwood.edu', schoolId: 'northwood' }, password: 'password' },
         itadmin1: { user: { username: 'itadmin1', name: 'Juliana Barros', role: 'ITAdmin', email: 'juliana.barros@northwood.edu', schoolId: 'northwood' }, password: 'password' },
     };
-    
-    const initialSchoolData = { /* The large initialSchoolData object is omitted for brevity but would be included here */ };
-    const batch = writeBatch(db);
-    
-    // Seed schools
-    Object.entries(initialSchoolData).forEach(([schoolId, schoolData]) => {
-        const schoolRef = doc(db, 'schools', schoolId);
-        
-        const dataWithServerTimestamps = {
-            ...schoolData,
-            activityLogs: schoolData.activityLogs.map(log => ({...log, timestamp: serverTimestamp()})),
-            events: schoolData.events.map(event => ({...event, date: Timestamp.fromDate(new Date(event.date))})),
-            terms: schoolData.terms.map(term => ({...term, startDate: Timestamp.fromDate(new Date(term.startDate)), endDate: Timestamp.fromDate(new Date(term.endDate))})),
-            holidays: schoolData.holidays.map(holiday => ({...holiday, date: Timestamp.fromDate(new Date(holiday.date))})),
-            competitions: schoolData.competitions.map(comp => ({...comp, date: Timestamp.fromDate(new Date(comp.date))})),
-            deployedTests: schoolData.deployedTests.map(test => ({...test, deadline: Timestamp.fromDate(new Date(test.deadline))})),
-            admissions: schoolData.admissions.map(adm => ({...adm, date: Timestamp.now()})),
-        };
+    const { initialSchoolData } = await import('@/lib/initial-seed-data');
 
-        batch.set(schoolRef, dataWithServerTimestamps);
-    });
+    const batch = writeBatch(db);
+
+    // Seed schools and their subcollections
+    for (const [schoolId, schoolData] of Object.entries(initialSchoolData)) {
+      const { students, teachers, classes, courses, syllabi, admissions, finance, assets, exams, grades, attendance, events, expenses, teams, competitions, terms, holidays, kioskMedia, activityLogs, messages, savedReports, deployedTests, savedTests, ...rest } = schoolData;
+      
+      const schoolRef = doc(db, 'schools', schoolId);
+      batch.set(schoolRef, rest); // Sets the profile and other top-level fields
+      
+      // Seed subcollections
+      students.forEach(item => batch.set(doc(db, 'schools', schoolId, 'students', item.id), item));
+      teachers.forEach(item => batch.set(doc(db, 'schools', schoolId, 'teachers', item.id), item));
+      classes.forEach(item => batch.set(doc(db, 'schools', schoolId, 'classes', item.id), item));
+      courses.forEach(item => batch.set(doc(db, 'schools', schoolId, 'courses', item.id), item));
+      syllabi.forEach(item => batch.set(doc(db, 'schools', schoolId, 'syllabi', item.id), item));
+      admissions.forEach(item => batch.set(doc(db, 'schools', schoolId, 'admissions', item.id), {...item, date: Timestamp.fromDate(new Date(item.date))}));
+      finance.forEach(item => batch.set(doc(db, 'schools', schoolId, 'finance', item.id), item));
+      assets.forEach(item => batch.set(doc(db, 'schools', schoolId, 'assets', item.id), item));
+      exams.forEach(item => batch.set(doc(db, 'schools', schoolId, 'exams', item.id), {...item, date: Timestamp.fromDate(new Date(item.date))}));
+      grades.forEach(item => batch.set(doc(db, 'schools', schoolId, 'grades', item.id), {...item, date: Timestamp.fromDate(new Date(item.date))}));
+      attendance.forEach(item => batch.set(doc(db, 'schools', schoolId, 'attendance', item.id), {...item, date: Timestamp.fromDate(new Date(item.date))}));
+      events.forEach(item => batch.set(doc(db, 'schools', schoolId, 'events', item.id), {...item, date: Timestamp.fromDate(new Date(item.date))}));
+      expenses.forEach(item => batch.set(doc(db, 'schools', schoolId, 'expenses', item.id), item));
+      teams.forEach(item => batch.set(doc(db, 'schools', schoolId, 'teams', item.id), item));
+      competitions.forEach(item => batch.set(doc(db, 'schools', schoolId, 'competitions', item.id), {...item, date: Timestamp.fromDate(new Date(item.date))}));
+      terms.forEach(item => batch.set(doc(db, 'schools', schoolId, 'terms', item.id), {...item, startDate: Timestamp.fromDate(new Date(item.startDate)), endDate: Timestamp.fromDate(new Date(item.endDate))}));
+      holidays.forEach(item => batch.set(doc(db, 'schools', schoolId, 'holidays', item.id), {...item, date: Timestamp.fromDate(new Date(item.date))}));
+      kioskMedia.forEach(item => batch.set(doc(db, 'schools', schoolId, 'kioskMedia', item.id), {...item, createdAt: Timestamp.fromDate(new Date(item.createdAt))}));
+      activityLogs.forEach(item => batch.set(doc(db, 'schools', schoolId, 'activityLogs', item.id), {...item, timestamp: serverTimestamp()}));
+      messages.forEach(item => batch.set(doc(db, 'schools', schoolId, 'messages', item.id), {...item, timestamp: Timestamp.fromDate(new Date(item.timestamp))}));
+      savedReports.forEach(item => batch.set(doc(db, 'schools', schoolId, 'savedReports', item.id), {...item, date: Timestamp.fromDate(new Date(item.date))}));
+      deployedTests.forEach(item => batch.set(doc(db, 'schools', schoolId, 'deployedTests', item.id), {...item, deadline: Timestamp.fromDate(new Date(item.deadline))}));
+      savedTests.forEach(item => batch.set(doc(db, 'schools', schoolId, 'savedTests', item.id), {...item, createdAt: Timestamp.fromDate(new Date(item.createdAt))}));
+    }
 
     // Seed users
     Object.entries(mockUsers).forEach(([username, userProfile]) => {
@@ -97,11 +104,95 @@ export async function seedInitialData(): Promise<void> {
     });
 
     await batch.commit();
+    console.log("Database seeded successfully.");
 }
 
+async function getSubcollection<T>(schoolId: string, collectionName: string): Promise<T[]> {
+  const snapshot = await getDocs(collection(db, 'schools', schoolId, collectionName));
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
+}
+
+// --- Data Fetching ---
+export async function getSchoolsFromFirestore(): Promise<Record<string, SchoolData>> {
+  const schoolsSnapshot = await getDocs(collection(db, 'schools'));
+  if (schoolsSnapshot.empty) {
+    return {};
+  }
+
+  const schoolDataPromises = schoolsSnapshot.docs.map(async (schoolDoc) => {
+    const schoolId = schoolDoc.id;
+    const profile = { id: schoolId, ...schoolDoc.data() } as SchoolProfile;
+
+    // Parallel fetch for all subcollections
+    const [
+      students, teachers, classes, courses, syllabi, admissions, finance,
+      assets, exams, grades, attendance, events, expenses, teams, competitions,
+      terms, holidays, kioskMedia, activityLogs, messages, savedReports,
+      deployedTests, savedTests
+    ] = await Promise.all([
+      getSubcollection<Student>(schoolId, 'students'),
+      getSubcollection<Teacher>(schoolId, 'teachers'),
+      getSubcollection<Class>(schoolId, 'classes'),
+      getSubcollection<Course>(schoolId, 'courses'),
+      getSubcollection<Syllabus>(schoolId, 'syllabi'),
+      getSubcollection<Admission>(schoolId, 'admissions'),
+      getSubcollection<FinanceRecord>(schoolId, 'finance'),
+      getSubcollection<any>(schoolId, 'assets'),
+      getSubcollection<Exam>(schoolId, 'exams'),
+      getSubcollection<Grade>(schoolId, 'grades'),
+      getSubcollection<Attendance>(schoolId, 'attendance'),
+      getSubcollection<Event>(schoolId, 'events'),
+      getSubcollection<Expense>(schoolId, 'expenses'),
+      getSubcollection<Team>(schoolId, 'teams'),
+      getSubcollection<Competition>(schoolId, 'competitions'),
+      getSubcollection<any>(schoolId, 'terms'),
+      getSubcollection<any>(schoolId, 'holidays'),
+      getSubcollection<KioskMedia>(schoolId, 'kioskMedia'),
+      getSubcollection<ActivityLog>(schoolId, 'activityLogs'),
+      getSubcollection<Message>(schoolId, 'messages'),
+      getSubcollection<SavedReport>(schoolId, 'savedReports'),
+      getSubcollection<DeployedTest>(schoolId, 'deployedTests'),
+      getSubcollection<SavedTest>(schoolId, 'savedTests'),
+    ]);
+
+    return {
+      [schoolId]: {
+        profile, students, teachers, classes, courses, syllabi, admissions, finance,
+        assets, exams, grades, attendance, events, expenses, teams, competitions,
+        terms, holidays, kioskMedia, activityLogs, messages, savedReports, deployedTests,
+        savedTests,
+        feeDescriptions: profile.feeDescriptions || [],
+        audiences: profile.audiences || [],
+        expenseCategories: profile.expenseCategories || [],
+        examBoards: profile.examBoards || [],
+        schoolGroups: profile.schoolGroups || {},
+      }
+    };
+  });
+
+  const allSchoolDataArray = await Promise.all(schoolDataPromises);
+  return Object.assign({}, ...allSchoolDataArray);
+}
+
+export async function getUsersFromFirestore(): Promise<Record<string, UserProfile>> {
+    const usersCollection = collection(db, 'users');
+    const userSnapshot = await getDocs(usersCollection);
+    if (userSnapshot.empty) {
+        return {};
+    }
+    const userList = userSnapshot.docs.reduce((acc, doc) => {
+        acc[doc.id] = doc.data() as UserProfile;
+        return acc;
+    }, {} as Record<string, UserProfile>);
+    return userList;
+}
+
+// --- Data Writing ---
 
 export async function createSchoolInFirestore(data: NewSchoolData, groupId?: string): Promise<{ school: SchoolData, adminProfile: UserProfile, adminUsername: string }> {
+    const batch = writeBatch(db);
     const schoolId = data.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15) || `school${Date.now()}`;
+    const schoolRef = doc(db, 'schools', schoolId);
 
     const newSchoolProfile: SchoolProfile = {
         id: schoolId,
@@ -118,63 +209,45 @@ export async function createSchoolInFirestore(data: NewSchoolData, groupId?: str
         kioskConfig: { showDashboard: true, showLeaderboard: true, showTeacherLeaderboard: true, showAllSchools: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false },
         subscription: { status: 'Paid', amount: 300, dueDate: '2025-01-01' },
         awards: [],
+        feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'],
+        audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'],
+        expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
+        examBoards: ['Internal', 'Cambridge', 'IEB'],
+        schoolGroups: {},
     };
-    
+
     const adminUsername = data.email.split('@')[0].replace(/[^a-z0-9]/gi, '');
     const adminProfile: UserProfile = {
-      user: {
-        username: adminUsername,
-        name: data.head,
-        role: 'Admin',
-        email: data.email,
-        schoolId: schoolId,
-      },
-      password: 'password'
+        user: { username: adminUsername, name: data.head, role: 'Admin', email: data.email, schoolId: schoolId },
+        password: 'password'
     };
 
     const newSchoolData: SchoolData = {
         profile: newSchoolProfile,
         students: [], teachers: [], classes: [], courses: [], syllabi: [],
-        admissions: [], exams: [],
-        finance: [], assets: [], grades: [], attendance: [],
-        events: [], feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'],
-        audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'],
-        expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
-        expenses: [], teams: [], competitions: [], terms: [], holidays: [],
-        kioskMedia: [],
-        activityLogs: [{
-            id: `LOG${schoolId}${Date.now()}`,
-            timestamp: serverTimestamp(),
-            schoolId: schoolId,
-            user: 'System Admin',
-            role: 'GlobalAdmin',
-            action: 'Create',
-            details: `Provisioned new school: ${data.name}.`
-        }],
-        messages: [], savedReports: [],
-        examBoards: ['Internal', 'Cambridge', 'IEB'],
-        deployedTests: [],
-        lessonPlans: [],
-        savedTests: [],
-        schoolGroups: {},
+        admissions: [], exams: [], finance: [], assets: [], grades: [], attendance: [],
+        events: [], expenses: [], teams: [], competitions: [], terms: [], holidays: [],
+        kioskMedia: [], activityLogs: [], messages: [], savedReports: [],
+        deployedTests: [], lessonPlans: [], savedTests: [],
+        feeDescriptions: newSchoolProfile.feeDescriptions,
+        audiences: newSchoolProfile.audiences,
+        expenseCategories: newSchoolProfile.expenseCategories,
+        examBoards: newSchoolProfile.examBoards,
+        schoolGroups: newSchoolProfile.schoolGroups,
     };
 
-    const schoolDocRef = doc(db, 'schools', schoolId);
+    batch.set(schoolRef, { profile: newSchoolProfile });
+
     const userDocRef = doc(db, 'users', adminUsername);
-    
-    const batch = writeBatch(db);
-    batch.set(schoolDocRef, newSchoolData);
     batch.set(userDocRef, adminProfile);
     
     if (groupId) {
-        const groupRef = doc(db, 'schools', 'miniarte'); // Hardcoded 'miniarte' as the group holder
-        batch.update(groupRef, {
-            [`schoolGroups.${groupId}`]: arrayUnion(schoolId)
-        });
+        const groupHolderSchoolId = 'miniarte'; // Hardcoded group holder
+        const groupRef = doc(db, 'schools', groupHolderSchoolId);
+        batch.update(groupRef, { [`profile.schoolGroups.${groupId}`]: arrayUnion(schoolId) });
     }
 
     await batch.commit();
-    
     return { school: newSchoolData, adminProfile, adminUsername };
 }
 
@@ -183,642 +256,277 @@ export async function createUserInFirestore(username: string, profile: UserProfi
     await setDoc(userDocRef, profile);
 }
 
-
 export async function updateSchoolInFirestore(schoolId: string, data: Partial<SchoolProfile>): Promise<boolean> {
-  try {
-    const schoolRef = doc(db, 'schools', schoolId);
-    
-    const updateData: Record<string, any> = {};
-    for (const key in data) {
-      if (Object.prototype.hasOwnProperty.call(data, key) && data[key] !== undefined) {
-        updateData[`profile.${key}`] = data[key];
-      }
+    try {
+        const schoolRef = doc(db, 'schools', schoolId);
+        const updateData: Record<string, any> = {};
+        for (const key in data) {
+            if (Object.prototype.hasOwnProperty.call(data, key) && data[key] !== undefined) {
+                updateData[`profile.${key}`] = data[key];
+            }
+        }
+        if (Object.keys(updateData).length === 0) return true;
+        await updateDoc(schoolRef, updateData);
+        return true;
+    } catch (error) {
+        console.error("Error updating school profile in Firestore:", error);
+        return false;
     }
-    
-    if (Object.keys(updateData).length === 0) return true;
+}
 
-    await updateDoc(schoolRef, updateData);
-    
-    return true;
-  } catch (error) {
-    console.error("Error updating school profile in Firestore:", error);
-    return false;
-  }
+// Generic add/delete functions for subcollections
+async function addToSubcollection<T extends { id: string }>(schoolId: string, collectionName: string, item: Omit<T, 'id'>): Promise<T> {
+  const collectionRef = collection(db, 'schools', schoolId, collectionName);
+  const docRef = await addDoc(collectionRef, item);
+  return { id: docRef.id, ...item } as T;
+}
+
+async function deleteFromSubcollection(schoolId: string, collectionName: string, itemId: string): Promise<void> {
+    await deleteDoc(doc(db, 'schools', schoolId, collectionName, itemId));
 }
 
 // --- Teacher CRUD ---
-
 export async function addTeacherToFirestore(schoolId: string, teacherData: Omit<Teacher, 'id' | 'status'>): Promise<Teacher> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const newTeacher: Teacher = {
-        id: `T${Date.now()}`,
-        status: 'Active',
-        ...teacherData
-    };
-    await updateDoc(schoolRef, {
-        teachers: arrayUnion(newTeacher)
-    });
-    return newTeacher;
+    const newTeacherData = { status: 'Active' as const, ...teacherData };
+    return addToSubcollection<Teacher>(schoolId, 'teachers', newTeacherData);
 }
 
 export async function updateTeacherInFirestore(schoolId: string, teacherId: string, teacherData: Partial<Teacher>): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolSnapshot = await getDoc(schoolRef);
-    if (!schoolSnapshot.exists()) return;
-    
-    const schoolData = schoolSnapshot.data() as SchoolData;
-    const updatedTeachers = schoolData.teachers.map(t => t.id === teacherId ? { ...t, ...teacherData } : t);
-    await updateDoc(schoolRef, { teachers: updatedTeachers });
+    await updateDoc(doc(db, 'schools', schoolId, 'teachers', teacherId), teacherData);
 }
 
 export async function deleteTeacherFromFirestore(schoolId: string, teacherId: string): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolSnapshot = await getDoc(schoolRef);
-    if (!schoolSnapshot.exists()) return;
-
-    const schoolData = schoolSnapshot.data() as SchoolData;
-    const teacherToDelete = schoolData.teachers.find(t => t.id === teacherId);
-    if (teacherToDelete) {
-        await updateDoc(schoolRef, {
-            teachers: arrayRemove(teacherToDelete)
-        });
-    }
+    await deleteFromSubcollection(schoolId, 'teachers', teacherId);
 }
 
 // --- Class CRUD ---
-
 export async function addClassToFirestore(schoolId: string, classData: Omit<Class, 'id'>): Promise<Class> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const newClass: Class = {
-        id: `C${Date.now()}`,
-        ...classData
-    };
-    await updateDoc(schoolRef, {
-        classes: arrayUnion(newClass)
-    });
-    return newClass;
+    return addToSubcollection<Class>(schoolId, 'classes', classData);
 }
 
 export async function updateClassInFirestore(schoolId: string, classId: string, classData: Partial<Class>): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolSnapshot = await getDoc(schoolRef);
-     if (!schoolSnapshot.exists()) return;
-
-    const schoolData = schoolSnapshot.data() as SchoolData;
-    const updatedClasses = schoolData.classes.map(c => c.id === classId ? { ...c, ...classData } : c);
-    await updateDoc(schoolRef, { classes: updatedClasses });
+    await updateDoc(doc(db, 'schools', schoolId, 'classes', classId), classData);
 }
 
 export async function deleteClassFromFirestore(schoolId: string, classId: string): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolSnapshot = await getDoc(schoolRef);
-    if (!schoolSnapshot.exists()) return;
-
-    const schoolData = schoolSnapshot.data() as SchoolData;
-
-    const batch = writeBatch(db);
-    
-    const classToDelete = schoolData.classes.find(c => c.id === classId);
-    if(classToDelete) {
-        batch.update(schoolRef, { classes: arrayRemove(classToDelete) });
-    }
-
-    const coursesToDelete = schoolData.courses.filter(c => c.classId === classId);
-    if(coursesToDelete.length > 0) {
-        batch.update(schoolRef, { courses: arrayRemove(...coursesToDelete) });
-    }
-    
-    await batch.commit();
-}
-
-// --- Syllabus CRUD ---
-export async function addSyllabusToFirestore(schoolId: string, syllabusData: Omit<Syllabus, 'id' | 'topics'>): Promise<Syllabus> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const newSyllabus: Syllabus = {
-        id: `SYL${Date.now()}`,
-        topics: [],
-        ...syllabusData
-    };
-    await updateDoc(schoolRef, {
-        syllabi: arrayUnion(newSyllabus)
-    });
-    return newSyllabus;
-}
-
-export async function updateSyllabusTopicInFirestore(schoolId: string, subject: string, grade: string, topic: SyllabusTopic): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolDoc = await getDoc(schoolRef);
-    if (!schoolDoc.exists()) return;
-
-    const schoolData = schoolDoc.data() as SchoolData;
-    
-    const updatedSyllabi = schoolData.syllabi.map(s => {
-        if (s.subject === subject && s.grade === grade) {
-            const topicIndex = s.topics.findIndex(t => t.id === topic.id);
-            if (topicIndex > -1) {
-                s.topics[topicIndex] = topic;
-            } else {
-                s.topics.push(topic);
-            }
-        }
-        return s;
-    });
-
-    await updateDoc(schoolRef, { syllabi: updatedSyllabi });
-}
-
-export async function deleteSyllabusTopicFromFirestore(schoolId: string, subject: string, grade: string, topicId: string): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolDoc = await getDoc(schoolRef);
-    if (!schoolDoc.exists()) return;
-
-    const schoolData = schoolDoc.data() as SchoolData;
-
-    const updatedSyllabi = schoolData.syllabi.map(s => {
-        if (s.subject === subject && s.grade === grade) {
-            s.topics = s.topics.filter(t => t.id !== topicId);
-        }
-        return s;
-    });
-
-    await updateDoc(schoolRef, { syllabi: updatedSyllabi });
+    await deleteFromSubcollection(schoolId, 'classes', classId);
 }
 
 // --- Course CRUD ---
 export async function addCourseToFirestore(schoolId: string, courseData: Omit<Course, 'id'>): Promise<Course> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const newCourse: Course = {
-        id: `CRS${Date.now()}`,
-        ...courseData
-    };
-    await updateDoc(schoolRef, {
-        courses: arrayUnion(newCourse)
-    });
-    return newCourse;
+    return addToSubcollection<Course>(schoolId, 'courses', courseData);
 }
 
 export async function updateCourseInFirestore(schoolId: string, courseId: string, courseData: Partial<Course>): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolSnapshot = await getDoc(schoolRef);
-    if (!schoolSnapshot.exists()) return;
-
-    const schoolData = schoolSnapshot.data() as SchoolData;
-    const updatedCourses = schoolData.courses.map(c => c.id === courseId ? { ...c, ...courseData } : c);
-    await updateDoc(schoolRef, { courses: updatedCourses });
+    await updateDoc(doc(db, 'schools', schoolId, 'courses', courseId), courseData);
 }
 
 export async function deleteCourseFromFirestore(schoolId: string, courseId: string): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolSnapshot = await getDoc(schoolRef);
-    if (!schoolSnapshot.exists()) return;
+    await deleteFromSubcollection(schoolId, 'courses', courseId);
+}
 
-    const schoolData = schoolSnapshot.data() as SchoolData;
-    const courseToDelete = schoolData.courses.find(c => c.id === courseId);
-    if (courseToDelete) {
-        await updateDoc(schoolRef, {
-            courses: arrayRemove(courseToDelete)
-        });
+// --- Syllabus CRUD ---
+export async function addSyllabusToFirestore(schoolId: string, syllabusData: Omit<Syllabus, 'id' | 'topics'>): Promise<Syllabus> {
+    const newSyllabusData = { topics: [], ...syllabusData };
+    return addToSubcollection<Syllabus>(schoolId, 'syllabi', newSyllabusData);
+}
+
+export async function updateSyllabusTopicInFirestore(schoolId: string, syllabusId: string, topic: SyllabusTopic): Promise<void> {
+    const syllabusRef = doc(db, 'schools', schoolId, 'syllabi', syllabusId);
+    const syllabusSnapshot = await getDoc(syllabusRef);
+    if (!syllabusSnapshot.exists()) return;
+    const syllabusData = syllabusSnapshot.data() as Syllabus;
+    const topicIndex = syllabusData.topics.findIndex(t => t.id === topic.id);
+    if (topicIndex > -1) {
+        syllabusData.topics[topicIndex] = topic;
+    } else {
+        syllabusData.topics.push(topic);
     }
+    await updateDoc(syllabusRef, { topics: syllabusData.topics });
+}
+
+export async function deleteSyllabusTopicFromFirestore(schoolId: string, syllabusId: string, topicId: string): Promise<void> {
+    const syllabusRef = doc(db, 'schools', schoolId, 'syllabi', syllabusId);
+    const syllabusSnapshot = await getDoc(syllabusRef);
+    if (!syllabusSnapshot.exists()) return;
+    const syllabusData = syllabusSnapshot.data() as Syllabus;
+    const updatedTopics = syllabusData.topics.filter(t => t.id !== topicId);
+    await updateDoc(syllabusRef, { topics: updatedTopics });
 }
 
 // --- Finance CRUD ---
-
 export async function addFeeToFirestore(schoolId: string, feeData: Omit<FinanceRecord, 'id' | 'studentName' | 'status' | 'amountPaid'>, studentName: string): Promise<FinanceRecord> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const newFee: FinanceRecord = {
-        id: `FIN${Date.now()}`,
-        studentName: studentName,
-        status: 'Pending',
-        amountPaid: 0,
-        ...feeData
-    };
-    await updateDoc(schoolRef, {
-        finance: arrayUnion(newFee)
-    });
-    return newFee;
+    const newFeeData = { studentName, status: 'Pending' as const, amountPaid: 0, ...feeData };
+    return addToSubcollection<FinanceRecord>(schoolId, 'finance', newFeeData);
 }
 
 export async function recordPaymentInFirestore(schoolId: string, feeId: string, amount: number): Promise<FinanceRecord | null> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolDoc = await getDoc(schoolRef);
-    if (!schoolDoc.exists()) return null;
-
-    const schoolData = schoolDoc.data() as SchoolData;
-    let updatedFee: FinanceRecord | undefined;
-
-    const updatedFinance = schoolData.finance.map(f => {
-        if (f.id === feeId) {
-            const newAmountPaid = f.amountPaid + amount;
-            const status = newAmountPaid >= f.totalAmount ? 'Paid' : 'Partially Paid';
-            updatedFee = { ...f, amountPaid: newAmountPaid, status };
-            return updatedFee;
-        }
-        return f;
-    });
-
-    await updateDoc(schoolRef, { finance: updatedFinance });
-    return updatedFee || null;
+    const feeRef = doc(db, 'schools', schoolId, 'finance', feeId);
+    const feeSnapshot = await getDoc(feeRef);
+    if (!feeSnapshot.exists()) return null;
+    const feeData = feeSnapshot.data() as FinanceRecord;
+    const newAmountPaid = feeData.amountPaid + amount;
+    const status = newAmountPaid >= feeData.totalAmount ? 'Paid' : 'Partially Paid';
+    await updateDoc(feeRef, { amountPaid: newAmountPaid, status });
+    return { ...feeData, id: feeId, amountPaid: newAmountPaid, status };
 }
 
 export async function addExpenseToFirestore(schoolId: string, expenseData: Omit<Expense, 'id'>): Promise<Expense> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const newExpense: Expense = {
-        id: `EXP${Date.now()}`,
-        ...expenseData
-    };
-    await updateDoc(schoolRef, {
-        expenses: arrayUnion(newExpense)
-    });
-    return newExpense;
+    return addToSubcollection<Expense>(schoolId, 'expenses', expenseData);
 }
 
 // --- Sports CRUD ---
 export async function addTeamToFirestore(schoolId: string, teamData: Omit<Team, 'id' | 'playerIds'>): Promise<Team> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const newTeam: Team = {
-        id: `TM${Date.now()}`,
-        playerIds: [],
-        ...teamData
-    };
-    await updateDoc(schoolRef, {
-        teams: arrayUnion(newTeam)
-    });
-    return newTeam;
+    const newTeamData = { playerIds: [], ...teamData };
+    return addToSubcollection<Team>(schoolId, 'teams', newTeamData);
 }
 
 export async function deleteTeamFromFirestore(schoolId: string, teamId: string): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolSnapshot = await getDoc(schoolRef);
-    if (!schoolSnapshot.exists()) return;
-
-    const schoolData = schoolSnapshot.data() as SchoolData;
-
-    const teamToDelete = schoolData.teams.find(t => t.id === teamId);
-    if (teamToDelete) {
-        const batch = writeBatch(db);
-        batch.update(schoolRef, { teams: arrayRemove(teamToDelete) });
-        
-        const competitionsToDelete = schoolData.competitions.filter(c => c.ourTeamId === teamId);
-        if (competitionsToDelete.length > 0) {
-            batch.update(schoolRef, { competitions: arrayRemove(...competitionsToDelete) });
-        }
-        await batch.commit();
-    }
+    await deleteFromSubcollection(schoolId, 'teams', teamId);
 }
 
 export async function addPlayerToTeamInFirestore(schoolId: string, teamId: string, studentId: string): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolSnapshot = await getDoc(schoolRef);
-    if (!schoolSnapshot.exists()) return;
-
-    const schoolData = schoolSnapshot.data() as SchoolData;
-    const updatedTeams = schoolData.teams.map(t => {
-        if (t.id === teamId && !t.playerIds.includes(studentId)) {
-            return { ...t, playerIds: [...t.playerIds, studentId] };
-        }
-        return t;
-    });
-    await updateDoc(schoolRef, { teams: updatedTeams });
+    await updateDoc(doc(db, 'schools', schoolId, 'teams', teamId), { playerIds: arrayUnion(studentId) });
 }
 
 export async function removePlayerFromTeamInFirestore(schoolId: string, teamId: string, studentId: string): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolSnapshot = await getDoc(schoolRef);
-     if (!schoolSnapshot.exists()) return;
-
-    const schoolData = schoolSnapshot.data() as SchoolData;
-    const updatedTeams = schoolData.teams.map(t => {
-        if (t.id === teamId) {
-            return { ...t, playerIds: t.playerIds.filter(id => id !== studentId) };
-        }
-        return t;
-    });
-    await updateDoc(schoolRef, { teams: updatedTeams });
+    await updateDoc(doc(db, 'schools', schoolId, 'teams', teamId), { playerIds: arrayRemove(studentId) });
 }
 
 export async function addCompetitionToFirestore(schoolId: string, competitionData: Omit<Competition, 'id' | 'date'> & { date: Date }): Promise<Competition> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const newCompetition = {
-        id: `CMP${Date.now()}`,
-        ...competitionData,
-        date: Timestamp.fromDate(competitionData.date),
-    };
-    await updateDoc(schoolRef, {
-        competitions: arrayUnion(newCompetition)
-    });
-    return { ...newCompetition, date: competitionData.date };
+    const newCompetitionData = { ...competitionData, date: Timestamp.fromDate(competitionData.date) };
+    const addedDoc = await addDoc(collection(db, 'schools', schoolId, 'competitions'), newCompetitionData);
+    return { id: addedDoc.id, ...competitionData };
 }
 
 export async function addCompetitionResultInFirestore(schoolId: string, competitionId: string, result: Competition['result']): Promise<Competition | null> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolSnapshot = await getDoc(schoolRef);
-    if (!schoolSnapshot.exists()) return null;
-
-    const schoolData = schoolSnapshot.data() as SchoolData;
-
-    let updatedCompetition: Competition | undefined;
-    const updatedCompetitions = schoolData.competitions.map(c => {
-        if (c.id === competitionId) {
-            const outcome = result.ourScore > result.opponentScore ? 'Win' : result.ourScore < result.opponentScore ? 'Loss' : 'Draw';
-            updatedCompetition = { ...c, result: { ...result, outcome } };
-            return updatedCompetition;
-        }
-        return c;
-    });
-
-    if (updatedCompetition) {
-        await updateDoc(schoolRef, { competitions: updatedCompetitions });
-        return { ...updatedCompetition, date: (updatedCompetition.date as any).toDate() };
-    }
-    return null;
+    const competitionRef = doc(db, 'schools', schoolId, 'competitions', competitionId);
+    const outcome = result.ourScore > result.opponentScore ? 'Win' : result.ourScore < result.opponentScore ? 'Loss' : 'Draw';
+    const finalResult = { ...result, outcome };
+    await updateDoc(competitionRef, { result: finalResult });
+    const updatedDoc = await getDoc(competitionRef);
+    return updatedDoc.exists() ? { id: updatedDoc.id, ...updatedDoc.data() } as Competition : null;
 }
 
 // --- Admission CRUD ---
-
 export async function addAdmissionToFirestore(schoolId: string, admissionData: NewAdmissionData, parentName: string, parentEmail: string): Promise<Admission> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    
-    const newAdmission: Admission = {
-        id: `ADM${Date.now()}`,
-        status: 'Pending',
-        parentName: parentName,
-        parentEmail: parentEmail,
-        ...admissionData,
-        date: new Date(),
-        dateOfBirth: admissionData.dateOfBirth
-    };
-    
-    const serializableAdmission = { ...newAdmission, date: Timestamp.fromDate(newAdmission.date) };
-    
-    await updateDoc(schoolRef, {
-      admissions: arrayUnion(serializableAdmission)
-    });
-
-    return newAdmission;
+    const newAdmissionData = { status: 'Pending' as const, parentName, parentEmail, date: Timestamp.now(), ...admissionData };
+    return addToSubcollection<Admission>(schoolId, 'admissions', newAdmissionData as any);
 }
 
-
 export async function updateAdmissionStatusInFirestore(schoolId: string, admissionId: string, status: Admission['status']): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolSnapshot = await getDoc(schoolRef);
-    if (!schoolSnapshot.exists()) return;
-
-    const schoolData = schoolSnapshot.data() as SchoolData;
-    const updatedAdmissions = schoolData.admissions.map(a => a.id === admissionId ? { ...a, status } : a);
-
-    await updateDoc(schoolRef, { admissions: updatedAdmissions });
+    await updateDoc(doc(db, 'schools', schoolId, 'admissions', admissionId), { status });
 }
 
 export async function addStudentFromAdmissionInFirestore(schoolId: string, application: Admission): Promise<Student> {
-    const batch = writeBatch(db);
-    const targetSchoolRef = doc(db, 'schools', schoolId);
-    
     const gradeParts = application.appliedFor.replace('Grade ', '').split('-');
-    const grade = gradeParts[0] ? gradeParts[0].trim() : '1';
-    const studentClass = gradeParts[1] ? gradeParts[1].trim() : 'A';
-
-    const newStudent: Student = {
-        id: application.studentIdToTransfer || `STU${Date.now()}`,
+    const grade = gradeParts[0]?.trim() || '1';
+    const studentClass = gradeParts[1]?.trim() || 'A';
+    
+    const newStudentData: Omit<Student, 'id'> = {
         name: application.name,
         email: `${application.name.toLowerCase().replace(/\s+/g, '.')}@${schoolId}.edu`,
         phone: `555-01${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`,
         address: '123 Oak Avenue, Maputo',
         sex: application.sex,
         dateOfBirth: application.dateOfBirth,
-        grade: grade,
+        grade,
         class: studentClass,
         parentName: application.parentName,
         parentEmail: application.parentEmail,
         status: 'Active',
         behavioralAssessments: [],
     };
-
-    batch.update(targetSchoolRef, {
-        students: arrayUnion(newStudent)
-    });
+    const newStudent = await addToSubcollection<Student>(schoolId, 'students', newStudentData);
     
     if (application.type === 'Transfer' && application.fromSchoolId && application.studentIdToTransfer) {
-        const fromSchoolRef = doc(db, 'schools', application.fromSchoolId);
-        const fromSchoolDoc = await getDoc(fromSchoolRef);
-        if (fromSchoolDoc.exists()) {
-            const fromSchoolData = fromSchoolDoc.data() as SchoolData;
-            const updatedStudents = fromSchoolData.students.map(s => {
-                if (s.id === application.studentIdToTransfer) {
-                    return { ...s, status: 'Transferred' as const };
-                }
-                return s;
-            });
-            batch.update(fromSchoolRef, { students: updatedStudents });
-        }
+        await updateDoc(doc(db, 'schools', application.fromSchoolId, 'students', application.studentIdToTransfer), { status: 'Transferred' });
     }
-
-    await batch.commit();
+    
     return newStudent;
 }
 
 
-// --- Messaging CRUD ---
-export async function sendMessageInFirestore(senderSchoolId: string, recipientSchoolId: string, messageData: NewMessageData): Promise<Message> {
-    const senderSchoolRef = doc(db, 'schools', senderSchoolId);
-    const recipientSchoolRef = doc(db, 'schools', recipientSchoolId);
-  
-    const newMessage = {
-      id: `MSG${Date.now()}`,
-      ...messageData,
-      timestamp: Timestamp.now(),
-      status: 'Pending',
-    };
-  
-    const batch = writeBatch(db);
-  
-    batch.update(senderSchoolRef, {
-      messages: arrayUnion(newMessage)
-    });
-  
-    if (senderSchoolId !== recipientSchoolId) {
-      batch.update(recipientSchoolRef, {
-        messages: arrayUnion(newMessage)
-      });
-    }
-  
-    await batch.commit();
-    return { ...newMessage, timestamp: new Date() } as Message;
-}
-
-// --- Asset CRUD ---
+// --- Other CRUD operations ---
 export async function addAssetToFirestore(schoolId: string, assetData: Omit<any, 'id'>): Promise<any> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const newAsset = {
-        id: `ASSET${Date.now()}`,
-        ...assetData
-    };
-    await updateDoc(schoolRef, {
-        assets: arrayUnion(newAsset)
-    });
-    return newAsset;
+    return addToSubcollection<any>(schoolId, 'assets', assetData);
 }
 
-// Kiosk Media
 export async function addKioskMediaToFirestore(schoolId: string, mediaData: Omit<KioskMedia, 'id' | 'createdAt'>): Promise<KioskMedia> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const newMedia = {
-        id: `MEDIA${Date.now()}`,
-        createdAt: Timestamp.now(),
-        ...mediaData
-    };
-    await updateDoc(schoolRef, { kioskMedia: arrayUnion(newMedia) });
-    return { ...newMedia, createdAt: newMedia.createdAt.toDate() };
+    const newMediaData = { ...mediaData, createdAt: Timestamp.now() };
+    return addToSubcollection<KioskMedia>(schoolId, 'kioskMedia', newMediaData as any);
 }
 
 export async function removeKioskMediaFromFirestore(schoolId: string, mediaId: string): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolSnapshot = await getDoc(schoolRef);
-    if (!schoolSnapshot.exists()) return;
-    const schoolData = schoolSnapshot.data() as SchoolData;
-    const mediaToRemove = schoolData.kioskMedia.find(m => m.id === mediaId);
-    if (mediaToRemove) {
-        await updateDoc(schoolRef, {
-            kioskMedia: arrayRemove(mediaToRemove)
-        });
-    }
+    await deleteFromSubcollection(schoolId, 'kioskMedia', mediaId);
 }
 
-// Behavioral Assessment
 export async function addBehavioralAssessmentToFirestore(schoolId: string, assessmentData: Omit<BehavioralAssessment, 'id' | 'date'>): Promise<BehavioralAssessment> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolSnapshot = await getDoc(schoolRef);
-    if (!schoolSnapshot.exists()) throw new Error("School not found");
-    const schoolData = schoolSnapshot.data() as SchoolData;
-    const newAssessment = {
-        id: `BA${Date.now()}`,
-        date: Timestamp.now(),
-        ...assessmentData
-    };
-    const updatedStudents = schoolData.students.map(s => {
-        if(s.id === assessmentData.studentId) {
-            if(!s.behavioralAssessments) s.behavioralAssessments = [];
-            s.behavioralAssessments.push(newAssessment as any);
-        }
-        return s;
-    });
-    await updateDoc(schoolRef, { students: updatedStudents });
-    return { ...newAssessment, date: newAssessment.date.toDate() };
+    const newAssessmentData = { ...assessmentData, date: Timestamp.now() };
+    const studentRef = doc(db, 'schools', schoolId, 'students', assessmentData.studentId);
+    await updateDoc(studentRef, { behavioralAssessments: arrayUnion(newAssessmentData) });
+    return { id: `BA${Date.now()}`, ...newAssessmentData, date: new Date() };
 }
 
-// Grade
 export async function addGradeToFirestore(schoolId: string, gradeData: Omit<Grade, 'id'|'date'>): Promise<Grade> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const newGrade = {
-        id: `GR${Date.now()}`,
-        date: Timestamp.now(),
-        ...gradeData
-    };
-    await updateDoc(schoolRef, { grades: arrayUnion(newGrade) });
-    return { ...newGrade, date: newGrade.date.toDate() };
+    const newGradeData = { ...gradeData, date: Timestamp.now() };
+    return addToSubcollection<Grade>(schoolId, 'grades', newGradeData as any);
 }
 
-// Attendance
 export async function addLessonAttendanceToFirestore(schoolId: string, courseId: string, date: string, studentStatuses: Record<string, 'Present' | 'Late' | 'Absent' | 'Sick'>): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolSnapshot = await getDoc(schoolRef);
-    if (!schoolSnapshot.exists()) return;
-    const schoolData = schoolSnapshot.data() as SchoolData;
-
+    const batch = writeBatch(db);
     const attendanceDate = new Date(date);
-    const newRecords = Object.entries(studentStatuses).map(([studentId, status]) => ({
-        id: `ATT${Date.now()}${studentId}`,
-        studentId,
-        date: Timestamp.fromDate(attendanceDate),
-        status,
-        courseId,
-    }));
-
-    const filteredAttendance = schoolData.attendance.filter(a => {
-        const recordDateStr = a.date instanceof Timestamp ? a.date.toDate().toISOString().split('T')[0] : new Date(a.date).toISOString().split('T')[0];
-        return !(recordDateStr === date && a.courseId === courseId);
-    });
-
-    const updatedAttendance = [...filteredAttendance, ...newRecords];
-    await updateDoc(schoolRef, { attendance: updatedAttendance });
+    for (const [studentId, status] of Object.entries(studentStatuses)) {
+        const attendanceRef = collection(db, 'schools', schoolId, 'attendance');
+        batch.add(attendanceRef, { studentId, date: Timestamp.fromDate(attendanceDate), status, courseId });
+    }
+    await batch.commit();
 }
 
-// Test Submission
 export async function addTestSubmissionToFirestore(schoolId: string, deployedTestId: string, studentId: string, score: number): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const schoolSnapshot = await getDoc(schoolRef);
-    if (!schoolSnapshot.exists()) return;
-    
-    const schoolData = schoolSnapshot.data() as SchoolData;
-
-    const submission = {
-        studentId,
-        score,
-        submittedAt: Timestamp.now()
-    };
-    
-    const updatedTests = schoolData.deployedTests.map(t => {
-        if(t.id === deployedTestId) {
-            return {...t, submissions: [...t.submissions, submission]};
-        }
-        return t;
+    const submission = { studentId, score, submittedAt: Timestamp.now() };
+    await updateDoc(doc(db, 'schools', schoolId, 'deployedTests', deployedTestId), {
+        submissions: arrayUnion(submission)
     });
-    
-    await updateDoc(schoolRef, { deployedTests: updatedTests });
 }
 
-
-// --- Academic Year Settings ---
-
+// Academic Year Settings
 export async function addTermToFirestore(schoolId: string, termData: any): Promise<any> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const newTerm = {
-        id: `TERM${Date.now()}`,
-        ...termData,
-        startDate: Timestamp.fromDate(termData.startDate),
-        endDate: Timestamp.fromDate(termData.endDate),
-    };
-    await updateDoc(schoolRef, { terms: arrayUnion(newTerm) });
-    return { ...newTerm, startDate: newTerm.startDate.toDate(), endDate: newTerm.endDate.toDate() };
+    return addToSubcollection<any>(schoolId, 'terms', { ...termData, startDate: Timestamp.fromDate(termData.startDate), endDate: Timestamp.fromDate(termData.endDate) });
 }
 
 export async function addHolidayToFirestore(schoolId: string, holidayData: any): Promise<any> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    const newHoliday = {
-        id: `HOL${Date.now()}`,
-        ...holidayData,
-        date: Timestamp.fromDate(holidayData.date)
-    };
-    await updateDoc(schoolRef, { holidays: arrayUnion(newHoliday) });
-    return { ...newHoliday, date: newHoliday.date.toDate() };
+    return addToSubcollection<any>(schoolId, 'holidays', { ...holidayData, date: Timestamp.fromDate(holidayData.date) });
 }
 
-// Dropdown List Management
 export async function addExamBoardToFirestore(schoolId: string, boardName: string): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { examBoards: arrayUnion(boardName) });
+    await updateDoc(doc(db, 'schools', schoolId), { 'profile.examBoards': arrayUnion(boardName) });
 }
 
 export async function deleteExamBoardFromFirestore(schoolId: string, boardName: string): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { examBoards: arrayRemove(boardName) });
+    await updateDoc(doc(db, 'schools', schoolId), { 'profile.examBoards': arrayRemove(boardName) });
 }
 
 export async function addFeeDescriptionToFirestore(schoolId: string, desc: string): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { feeDescriptions: arrayUnion(desc) });
+    await updateDoc(doc(db, 'schools', schoolId), { 'profile.feeDescriptions': arrayUnion(desc) });
 }
 
 export async function deleteFeeDescriptionFromFirestore(schoolId: string, desc: string): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { feeDescriptions: arrayRemove(desc) });
+    await updateDoc(doc(db, 'schools', schoolId), { 'profile.feeDescriptions': arrayRemove(desc) });
 }
 
 export async function addAudienceToFirestore(schoolId: string, aud: string): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { audiences: arrayUnion(aud) });
+    await updateDoc(doc(db, 'schools', schoolId), { 'profile.audiences': arrayUnion(aud) });
 }
 
 export async function deleteAudienceFromFirestore(schoolId: string, aud: string): Promise<void> {
-    const schoolRef = doc(db, 'schools', schoolId);
-    await updateDoc(schoolRef, { audiences: arrayRemove(aud) });
+    await updateDoc(doc(db, 'schools', schoolId), { 'profile.audiences': arrayRemove(aud) });
+}
+
+// Messaging
+export async function sendMessageInFirestore(senderSchoolId: string, recipientSchoolId: string, messageData: NewMessageData): Promise<Message> {
+    const collectionRef = collection(db, 'schools', recipientSchoolId, 'messages');
+    const newMessage = { ...messageData, timestamp: Timestamp.now(), status: 'Pending' };
+    const docRef = await addDoc(collectionRef, newMessage);
+    return { id: docRef.id, ...newMessage, timestamp: new Date() } as Message;
 }

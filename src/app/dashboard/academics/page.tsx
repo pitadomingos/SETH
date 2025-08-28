@@ -188,7 +188,7 @@ function TopicDialog({ syllabus, topic, children }: { syllabus: Syllabus, topic?
       subtopics: values.subtopics.split('\\n').filter(s => s.trim() !== ''),
       id: topic?.id || `T${Date.now()}`
     };
-    await updateSyllabusTopic(syllabus.subject, syllabus.grade, topicData);
+    await updateSyllabusTopic(syllabus.id, topicData);
     form.reset();
     setIsOpen(false);
   };
@@ -228,7 +228,7 @@ function DeleteTopicDialog({ syllabus, topic, children }: { syllabus: Syllabus, 
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => deleteSyllabusTopic(syllabus.subject, syllabus.grade, topic.id)}>Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={() => deleteSyllabusTopic(syllabus.id, topic.id)}>Delete</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
