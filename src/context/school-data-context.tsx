@@ -386,12 +386,42 @@ export interface NewSchoolData {
     tier: 'Starter' | 'Pro' | 'Premium';
 }
 
-interface SchoolDataContextType extends SchoolData {
+interface SchoolDataContextType extends Partial<SchoolData> {
     allSchoolData: Record<string, SchoolData> | null;
     allStudents: Student[];
     parentStatusOverrides: Record<string, 'Active' | 'Suspended'>;
     awardsAnnounced: boolean;
     isLoading: boolean;
+    schoolProfile: SchoolProfile | null;
+    studentsData: Student[];
+    teachersData: Teacher[];
+    classesData: Class[];
+    coursesData: Course[];
+    syllabi: Syllabus[];
+    admissionsData: Admission[];
+    financeData: FinanceRecord[];
+    assetsData: any[];
+    examsData: Exam[];
+    grades: Grade[];
+    attendance: Attendance[];
+    events: Event[];
+    expensesData: Expense[];
+    teamsData: Team[];
+    competitionsData: Competition[];
+    kioskMedia: KioskMedia[];
+    activityLogs: ActivityLog[];
+    messages: Message[];
+    savedReports: SavedReport[];
+    deployedTests: DeployedTest[];
+    savedTests: SavedTest[];
+    subjects: string[];
+    examBoards: string[];
+    feeDescriptions: string[];
+    audiences: string[];
+    expenseCategories: string[];
+    terms: any[];
+    holidays: any[];
+    schoolGroups: Record<string, string[]>;
 }
 
 const SchoolDataContext = createContext<SchoolDataContextType | undefined>(undefined);
@@ -405,8 +435,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     const fetchSchoolData = async () => {
         setIsLoading(true);
         try {
-            const schools = await getDocs(collection(db, 'schools'));
-            if (schools.empty) {
+            const schoolsCollection = collection(db, 'schools');
+            const schoolsSnapshot = await getDocs(schoolsCollection);
+            if (schoolsSnapshot.empty) {
                 console.log("No schools found, seeding initial data...");
                 await seedInitialData();
             }
@@ -461,30 +492,30 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     isLoading,
     allSchoolData: data,
     allStudents,
-    schoolProfile: schoolData?.profile || null,
+    schoolProfile: schoolData?.profile ?? null,
     studentsData,
-    teachersData: schoolData?.teachers || [],
-    classesData: schoolData?.classes || [],
-    coursesData: schoolData?.courses || [],
-    syllabi: schoolData?.syllabi || [],
-    admissionsData: schoolData?.admissions || [],
+    teachersData: schoolData?.teachers ?? [],
+    classesData: schoolData?.classes ?? [],
+    coursesData: schoolData?.courses ?? [],
+    syllabi: schoolData?.syllabi ?? [],
+    admissionsData: schoolData?.admissions ?? [],
     financeData: useMemo(() => {
         if (!data || !user) return [];
         if (role === 'Parent') {
             const parentStudentIds = allStudents.filter(s => s.parentEmail === user.email).map(s => s.id);
             return Object.values(data).flatMap(d => d.finance.filter(f => parentStudentIds.includes(f.studentId)));
         }
-        return schoolData?.finance || [];
+        return schoolData?.finance ?? [];
     }, [schoolData, data, role, user, allStudents]),
-    assetsData: schoolData?.assets || [],
-    examsData: schoolData?.exams || [],
+    assetsData: schoolData?.assets ?? [],
+    examsData: schoolData?.exams ?? [],
     grades: useMemo(() => {
         if (!data) return [];
         if (role === 'Parent') {
           const parentStudentIds = allStudents.filter(s => s.parentEmail === user.email).map(s => s.id);
           return Object.values(data).flatMap(d => d.grades.filter(g => parentStudentIds.includes(g.studentId)));
         }
-        return schoolData?.grades || [];
+        return schoolData?.grades ?? [];
     }, [schoolData, data, role, user, allStudents]),
     attendance: useMemo(() => {
         if (!data || !user) return [];
@@ -493,7 +524,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             return Object.values(data).flatMap(d => d.attendance.filter(a => parentStudentIds.includes(a.studentId)));
         }
         if(role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.attendance);
-        return schoolData?.attendance || [];
+        return schoolData?.attendance ?? [];
     }, [schoolData, data, role, user, allStudents]),
     events: useMemo(() => {
         if (!data) return [];
@@ -501,12 +532,12 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             return Object.values(data).flatMap(d => d.events.map(e => ({...e, schoolName: d.profile.name})));
         }
         if (role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.events);
-        return schoolData?.events || [];
+        return schoolData?.events ?? [];
     }, [schoolData, data, role]),
     expensesData: useMemo(() => {
         if(!data) return [];
         if(role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.expenses);
-        return schoolData?.expenses || [];
+        return schoolData?.expenses ?? [];
     }, [schoolData, data, role]),
     teamsData: useMemo(() => {
         if (!data || !user) return [];
@@ -515,7 +546,7 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             return Object.values(data).flatMap(d => d.teams.filter(t => t.playerIds.some(pId => parentStudentIds.includes(pId))));
         }
         if(role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.teams);
-        return schoolData?.teams || [];
+        return schoolData?.teams ?? [];
     }, [schoolData, data, role, user, allStudents]),
     competitionsData: useMemo(() => {
         if (!data || !user) return [];
@@ -524,44 +555,41 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
             return Object.values(data).flatMap(d => d.competitions.filter(c => parentTeamIds.includes(c.ourTeamId)));
         }
         if(role === 'GlobalAdmin') return Object.values(data).flatMap(d => d.competitions);
-        return schoolData?.competitions || [];
+        return schoolData?.competitions ?? [];
     }, [schoolData, data, role, user, allStudents]),
-    kioskMedia: schoolData?.kioskMedia || [],
+    kioskMedia: schoolData?.kioskMedia ?? [],
     activityLogs: useMemo(() => {
         if (!data) return [];
         if (role === 'GlobalAdmin') {
             return Object.values(data).flatMap(d => d.activityLogs);
         }
-        return schoolData?.activityLogs || [];
+        return schoolData?.activityLogs ?? [];
     }, [schoolData, data, role]),
     messages: useMemo(() => {
       if (!user || !data) return [];
       if (role === 'GlobalAdmin') {
-          return data['northwood']?.messages || [];
+          return data['northwood']?.messages ?? [];
       }
-      if (schoolData) {
-        return schoolData.messages;
-      }
-      return [];
+      return schoolData?.messages ?? [];
     }, [schoolData, data, user, role]),
-    savedReports: schoolData?.savedReports || [],
+    savedReports: schoolData?.savedReports ?? [],
     schoolGroups,
     parentStatusOverrides,
-    deployedTests: schoolData?.deployedTests || [],
-    savedTests: schoolData?.savedTests || [],
+    deployedTests: schoolData?.deployedTests ?? [],
+    savedTests: schoolData?.savedTests ?? [],
     awardsAnnounced,
     // --- Dropdown Data ---
     subjects: useMemo(() => {
         if (!schoolData) return [];
         return [...new Set(schoolData.courses.map(c => c.subject))]
     }, [schoolData]),
-    examBoards: schoolData?.examBoards || [],
-    feeDescriptions: schoolData?.feeDescriptions || [],
-    audiences: schoolData?.audiences || [],
-    expenseCategories: schoolData?.expenseCategories || [],
-    terms: schoolData?.terms || [],
-    holidays: schoolData?.holidays || [],
-    lessonPlans: schoolData?.lessonPlans || [],
+    examBoards: schoolData?.examBoards ?? [],
+    feeDescriptions: schoolData?.feeDescriptions ?? [],
+    audiences: schoolData?.audiences ?? [],
+    expenseCategories: schoolData?.expenseCategories ?? [],
+    terms: schoolData?.terms ?? [],
+    holidays: schoolData?.holidays ?? [],
+    lessonPlans: schoolData?.lessonPlans ?? [],
   };
 
   return (
