@@ -1,8 +1,9 @@
+
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { PenSquare, BookMarked, Bell, BrainCircuit, Loader2, X, Mail, CalendarCheck, FileCheck, FlaskConical, TrendingUp } from "lucide-react";
+import { PenSquare, BookMarked, Bell, BrainCircuit, Loader2, X, Mail, CalendarCheck, FileCheck, FlaskConical, TrendingUp, Radio } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useSchoolData, NewMessageData } from "@/context/school-data-context";
 import { Line, LineChart as RechartsLineChart, CartesianGrid, XAxis, YAxis } from 'recharts';
@@ -12,8 +13,8 @@ import {
   ChartTooltipContent,
   ChartConfig
 } from '@/components/ui/chart';
-import { addDays, format } from 'date-fns';
-import { useMemo, useState } from "react";
+import { addDays, format, formatDistanceToNow } from 'date-fns';
+import { useMemo, useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
 import * as z from 'zod';
@@ -24,6 +25,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { formatGradeDisplay } from "@/lib/utils";
+import { useWebSocket } from '@/components/layout/app-providers';
+import type { WebSocketMessage } from '@/lib/websocketClient';
 
 const messageSchema = z.object({
   subject: z.string().min(3, "Subject is required."),
@@ -229,6 +232,49 @@ function AIClassPerformanceAnalyzer() {
   );
 }
 
+function LiveAlertsCard() {
+    const { wsClient } = useWebSocket();
+    const [alerts, setAlerts] = useState<WebSocketMessage[]>([]);
+
+    useEffect(() => {
+        if (!wsClient) return;
+
+        const unsubscribe = wsClient.subscribe((msg) => {
+            // Add a timestamp to the message for display
+            const newAlert = { ...msg, receivedAt: new Date() };
+            setAlerts(prev => [newAlert, ...prev].slice(0, 5)); // Keep only the latest 5 alerts
+        });
+
+        // Cleanup subscription on component unmount
+        return () => unsubscribe();
+    }, [wsClient]);
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                    <Radio className="h-6 w-6 text-primary animate-pulse" /> Live School Alerts
+                </CardTitle>
+                <CardDescription>Real-time notifications and announcements.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {alerts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">No new alerts.</p>
+                ) : (
+                    <ul className="space-y-3">
+                        {alerts.map((alert, index) => (
+                            <li key={index} className="text-sm">
+                                <p className="font-semibold">{alert.payload.title || alert.type}</p>
+                                <p className="text-muted-foreground">{alert.payload.message}</p>
+                                <p className="text-xs text-muted-foreground/70 mt-1">{formatDistanceToNow(alert.receivedAt as Date, { addSuffix: true })}</p>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
@@ -284,6 +330,7 @@ export default function TeacherDashboard() {
         </Card>
         
         <div className="space-y-6">
+            <LiveAlertsCard />
             <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-3"><BookMarked className="h-6 w-6 text-primary" /> Your Courses</CardTitle>

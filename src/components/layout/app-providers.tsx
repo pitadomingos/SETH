@@ -2,40 +2,51 @@
 'use client';
 
 import { SchoolDataProvider } from "@/context/school-data-context";
-import { AuthProvider } from "@/context/auth-context";
-import { ReactNode, useEffect } from "react";
-import { WebSocketClient } from "@/lib/websocketClient";
+import { AuthProvider, useAuth } from "@/context/auth-context";
+import React, { ReactNode, useEffect, createContext, useContext, useMemo } from "react";
+import RoleBasedWebSocketClient from "@/lib/websocketClient";
 
-export function AppProviders({ children }: { children: ReactNode }) {
+// --- WebSocket Context ---
+interface WebSocketContextType {
+    wsClient: RoleBasedWebSocketClient | null;
+}
 
-    useEffect(() => {
-        // This check ensures the WebSocket client only runs in the browser
-        // and only if a WebSocket URL is explicitly provided.
-        if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_WEBSOCKET_URL) {
-            const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL;
-            const client = new WebSocketClient(wsUrl);
+const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
 
-            client.onOpen = () => {
-                console.log('WebSocket connected. Ready for real-time updates.');
-            };
+export const useWebSocket = () => {
+    const context = useContext(WebSocketContext);
+    if (!context) {
+        throw new Error('useWebSocket must be used within a WebSocketProvider');
+    }
+    return context;
+};
 
-            client.onMessage = (data) => {
-                // Here you would handle incoming real-time notifications
-                // For now, we'll just log them.
-                console.log('Real-time message received:', data);
-            };
+const WebSocketProvider = ({ children }: { children: ReactNode }) => {
+    const { role } = useAuth();
 
-            // Cleanup on component unmount
-            return () => {
-                client.close();
-            };
+    const wsClient = useMemo(() => {
+        if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_WEBSOCKET_URL && role) {
+            return new RoleBasedWebSocketClient(role, process.env.NEXT_PUBLIC_WEBSOCKET_URL);
         }
-    }, []);
+        return null;
+    }, [role]);
 
+    return (
+        <WebSocketContext.Provider value={{ wsClient }}>
+            {children}
+        </WebSocketContext.Provider>
+    );
+};
+
+
+// --- App Providers ---
+export function AppProviders({ children }: { children: ReactNode }) {
     return (
         <AuthProvider>
             <SchoolDataProvider>
-                {children}
+                <WebSocketProvider>
+                    {children}
+                </WebSocketProvider>
             </SchoolDataProvider>
         </AuthProvider>
     );

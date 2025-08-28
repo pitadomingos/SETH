@@ -1,81 +1,70 @@
+// websocketClient.ts
 
-type MessageHandler = (data: any) => void;
-type OpenHandler = () => void;
-type CloseHandler = (event: CloseEvent) => void;
-type ErrorHandler = (event: Event) => void;
+type WebSocketMessage<T = any> = {
+  role: string;         // target role for this message
+  type: string;         // message type (e.g., "notification", "update")
+  payload: T;           // actual message data
+};
 
-export class WebSocketClient {
-  private socket!: WebSocket;
-  private url: string;
-  private reconnectInterval: number;
-  private shouldReconnect: boolean;
-  private messageQueue: string[] = [];
-  private maxQueueSize: number;
+type Subscriber<T = any> = (msg: WebSocketMessage<T>) => void;
 
-  public onMessage: MessageHandler = () => {};
-  public onOpen: OpenHandler = () => {};
-  public onClose: CloseHandler = () => {};
-  public onError: ErrorHandler = () => {};
+class RoleBasedWebSocketClient {
+  private ws: WebSocket | null = null;
+  private subscribers: Subscriber[] = [];
+  private userRole: string;
 
-  constructor(url: string, reconnectInterval = 5000, maxQueueSize = 100) {
-    this.url = url;
-    this.reconnectInterval = reconnectInterval;
-    this.shouldReconnect = true;
-    this.maxQueueSize = maxQueueSize;
-
+  constructor(userRole: string, private url: string) {
+    this.userRole = userRole;
     this.connect();
   }
 
   private connect() {
-    this.socket = new WebSocket(this.url);
+    this.ws = new WebSocket(this.url);
 
-    this.socket.onopen = () => {
-      console.log(`Connected to ${this.url}`);
-      this.onOpen();
-      this.flushQueue(); // send all queued messages
+    this.ws.onopen = () => {
+      console.log('WebSocket connected');
+      // Optional: send initial handshake with role
+      this.send({ type: 'handshake', role: this.userRole, payload: {} });
     };
 
-    this.socket.onmessage = (event: MessageEvent) => {
-      this.onMessage(event.data);
-    };
-
-    this.socket.onclose = (event: CloseEvent) => {
-      console.log('Connection closed');
-      this.onClose(event);
-      if (this.shouldReconnect) {
-        console.log(`Reconnecting in ${this.reconnectInterval / 1000}s...`);
-        setTimeout(() => this.connect(), this.reconnectInterval);
+    this.ws.onmessage = (event) => {
+      try {
+        const data: WebSocketMessage = JSON.parse(event.data);
+        // Only notify subscribers if message matches the user's role
+        if (data.role === this.userRole || data.role === 'all') {
+          this.subscribers.forEach((fn) => fn(data));
+        }
+      } catch (error) {
+        console.error('WebSocket message parse error:', error);
       }
     };
 
-    this.socket.onerror = (event: Event) => {
-      console.error('WebSocket error:', event);
-      this.onError(event);
+    this.ws.onclose = () => {
+      console.log('WebSocket disconnected, reconnecting in 3s...');
+      setTimeout(() => this.connect(), 3000);
+    };
+
+    this.ws.onerror = (err) => {
+      console.error('WebSocket error:', err);
+      this.ws?.close();
     };
   }
 
-  sendMessage(message: string) {
-    if (this.socket.readyState === WebSocket.OPEN) {
-      this.socket.send(message);
+  send(message: WebSocketMessage<any>) {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(message));
     } else {
-      if (this.messageQueue.length >= this.maxQueueSize) {
-        console.warn('Message queue full, dropping oldest message');
-        this.messageQueue.shift(); // remove oldest
-      }
-      console.warn('WebSocket not open. Queuing message.');
-      this.messageQueue.push(message);
+      console.warn('WebSocket not connected, cannot send message');
     }
   }
 
-  private flushQueue() {
-    while (this.messageQueue.length > 0 && this.socket.readyState === WebSocket.OPEN) {
-      const msg = this.messageQueue.shift()!;
-      this.socket.send(msg);
-    }
-  }
-
-  close() {
-    this.shouldReconnect = false;
-    this.socket.close();
+  subscribe(fn: Subscriber) {
+    this.subscribers.push(fn);
+    return () => {
+      this.subscribers = this.subscribers.filter((sub) => sub !== fn);
+    };
   }
 }
+
+export default RoleBasedWebSocketClient;
+export type { WebSocketMessage };
