@@ -9,9 +9,10 @@ import { WebSocketClient } from "@/lib/websocketClient";
 export function AppProviders({ children }: { children: ReactNode }) {
 
     useEffect(() => {
-        // This check ensures the WebSocket client only runs in the browser.
-        if (typeof window !== 'undefined') {
-            const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'wss://placeholder.eduddesk.app/api/ws';
+        // This check ensures the WebSocket client only runs in the browser
+        // and only if a WebSocket URL is explicitly provided.
+        if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_WEBSOCKET_URL) {
+            const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL;
             const client = new WebSocketClient(wsUrl);
 
             client.onOpen = () => {
