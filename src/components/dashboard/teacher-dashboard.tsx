@@ -36,9 +36,8 @@ const messageSchema = z.object({
 type MessageFormValues = z.infer<typeof messageSchema>;
 
 function ContactAdminDialog() {
-  const { addMessage } = useSchoolData();
+  const { addMessage, schoolProfile } = useSchoolData();
   const [isOpen, setIsOpen] = useState(false);
-  const { schoolProfile, teachersData } = useSchoolData();
 
   const form = useForm<MessageFormValues>({
     resolver: zodResolver(messageSchema),
@@ -46,10 +45,8 @@ function ContactAdminDialog() {
   });
   
   const adminEmail = useMemo(() => {
-    if (!schoolProfile) return '';
-    const admin = teachersData.find(t => t.name === schoolProfile.head);
-    return admin?.email || '';
-  }, [schoolProfile, teachersData]);
+    return schoolProfile?.email || '';
+  }, [schoolProfile]);
 
   function onSubmit(values: MessageFormValues) {
     if (!adminEmail) return;
@@ -147,7 +144,7 @@ function ClassPerformanceTrendChart({ teacherCourses }) {
             <CartesianGrid vertical={false} />
             <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
             <YAxis domain={[10, 20]} />
-            <ChartTooltip content={<ChartTooltipContent formatter={(value, name) => `${formatGradeDisplay(value, schoolProfile?.gradingSystem)}`}/>} />
+            <ChartTooltip content={<ChartTooltipContent formatter={(value, name) => `${formatGradeDisplay(value as any, schoolProfile?.gradingSystem)}`}/>} />
             <Line type="monotone" dataKey="avgGrade" stroke="var(--color-avgGrade)" strokeWidth={2} dot={false} />
           </RechartsLineChart>
         </ChartContainer>

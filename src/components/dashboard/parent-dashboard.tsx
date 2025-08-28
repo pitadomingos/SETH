@@ -407,7 +407,7 @@ function AITierLockMessage({ schoolName, schoolAdminEmail }) {
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center text-center p-8">
         <p className="text-muted-foreground mb-4">
-          The AI Academic Advisor is not available for students at ${schoolName} because the school is on the Starter plan.
+          The AI Academic Advisor is not available for students at {schoolName} because the school is on the Starter plan.
         </p>
         <Button onClick={handleContactAdmin}>
           <MessageSquare className="mr-2 h-4 w-4" />
