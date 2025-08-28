@@ -4,38 +4,13 @@
 import { NewSchoolData, SchoolData, UserProfile, Teacher, Class, Syllabus, SyllabusTopic, Course, FinanceRecord, Expense, Team, Competition, Admission, Student, KioskMedia, BehavioralAssessment, Grade, AttendanceRecord, DeployedTest } from '@/context/school-data-context';
 import { revalidatePath } from 'next/cache';
 import { createSchoolInFirestore, addTeacherToFirestore, updateTeacherInFirestore, deleteTeacherFromFirestore, addClassToFirestore, updateClassInFirestore, deleteClassFromFirestore, updateSyllabusTopicInFirestore, deleteSyllabusTopicFromFirestore, addSyllabusToFirestore, addCourseToFirestore, updateCourseInFirestore, deleteCourseFromFirestore, addFeeToFirestore, recordPaymentInFirestore, addExpenseToFirestore, addTeamToFirestore, deleteTeamFromFirestore, addPlayerToTeamInFirestore, removePlayerFromTeamInFirestore, addCompetitionToFirestore, addCompetitionResultInFirestore, updateAdmissionStatusInFirestore, addStudentFromAdmissionInFirestore, addAssetToFirestore, addKioskMediaToFirestore, removeKioskMediaFromFirestore, addBehavioralAssessmentToFirestore, addGradeToFirestore, addLessonAttendanceToFirestore, addTestSubmissionToFirestore, createUserInFirestore } from '@/lib/firebase/firestore-service';
-import { sendEmail } from '@/lib/email-service';
 
-
-// This is now just a wrapper for the Firestore service function
 export async function createSchoolAction(data: NewSchoolData, groupId?: string): Promise<{ school: SchoolData, adminUser: { username: string, profile: UserProfile } } | null> {
     try {
         const { school, adminProfile, adminUsername } = await createSchoolInFirestore(data, groupId);
 
         if (school && adminProfile) {
             await createUserInFirestore(adminUsername, adminProfile);
-            
-            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
-            const emailHtml = `
-                <p>Dear ${adminProfile.user.name},</p>
-                <p>Welcome to EduDesk!</p>
-                <p>Your new account for <strong>${data.name}</strong> has been created. You can log in using the following temporary credentials:</p>
-                <ul>
-                    <li><strong>App Link:</strong> <a href="${appUrl}">${appUrl}</a></li>
-                    <li><strong>Username:</strong> ${adminUsername}</li>
-                    <li><strong>Password:</strong> ${adminProfile.password}</li>
-                </ul>
-                <p>We recommend that you change your password upon your first login.</p>
-                <br/>
-                <p>The EduDesk Team</p>
-            `;
-
-            await sendEmail({
-                to: adminProfile.user.email,
-                subject: `Welcome to EduDesk - Your Admin Account for ${data.name}`,
-                html: emailHtml,
-            });
-
             revalidatePath('/dashboard/global-admin/all-schools');
             revalidatePath('/dashboard/manage-schools');
             return { school, adminUser: { username: adminUsername, profile: adminProfile } };
@@ -394,5 +369,3 @@ export async function addTestSubmissionAction(schoolId: string, deployedTestId: 
         return { success: false, error: 'Server error submitting test.' };
     }
 }
-
-    
