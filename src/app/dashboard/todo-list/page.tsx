@@ -57,32 +57,16 @@ const completedTasks = [
   'Implemented nuanced, per-child AI feature tier-locking for parents.',
   'Fixed all syntax and hydration errors reported by Next.js.',
   'Implemented a full financial module for the System Owner (Pixel Digital Solutions).',
-  'Added pagination and advanced filtering to all financial tables.'
+  'Added pagination and advanced filtering to all financial tables.',
+  'Applied highlight colors in cards and alerts to reinforce information hierarchy.',
+  'Built out analytics for the student test-taking results for teachers.',
+  'Implemented a site-wide notification and communication hub for students and parents using WebSockets.',
 ];
 
 const upcomingFeatures = [
-  // UI/UX & Navigation
   'Enhance mobile-first responsive design for a seamless experience on phones and tablets.',
   'Include a "Back" button in all modules for consistent navigation.',
   'Implement multi-language support (Portuguese/English) with a quick-toggle menu.',
-  'Apply highlight colors in cards and alerts to reinforce information hierarchy.',
-  
-  // Admin & Management Features
-  'Implement batch user/class import for Admins (bulk upload).',
-  'Create a flexible custom report generator for financial and academic data.',
-  
-  // Teacher Features
-  'Enhance the grade entry system to support concepts, weights, and modules per national standards.',
-  'Build out analytics for the student test-taking results for teachers.',
-  
-  // Student & Parent Features
-  'Implement a site-wide notification and communication hub for students and parents.',
-  'Introduce student-centric features like goal setting and digital portfolios.',
-  'Redesign the student schedule module with alerts and calendar integration.',
-
-  // High-Level Features
-  'Develop district, provincial, and national data views for higher-level administration.',
-  'Validate and implement automatic data synchronization between accounts and profiles.',
 ];
 
 const placeholderFeatures = [
@@ -90,6 +74,10 @@ const placeholderFeatures = [
   'Integrate a real email service provider (e.g., SendGrid, Mailgun) to replace the console-based email simulation for welcome emails and notifications.',
   'Develop a server-side PDF generation service (e.g., using pdf-lib or a dedicated API) for creating branded, official documents like certificates, transcripts, and financial statements.',
   'Build a dedicated, scalable notification system with read/unread status and user-specific targeting, replacing the current system which uses activity logs.',
+  'Create a flexible custom report generator for financial and academic data.',
+  'Develop district, provincial, and national data views for higher-level administration.',
+  'Enhance the grade entry system to support concepts, weights, and modules per national standards.',
+  'Implement batch user/class import for Admins (bulk upload).',
 ];
 
 

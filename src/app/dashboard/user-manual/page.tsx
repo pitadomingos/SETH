@@ -2,7 +2,7 @@
 'use client';
 import { useAuth, Role } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2, List, Gem, MonitorPlay, Download, BrainCircuit, Users, FileText, LifeBuoy, User, GitBranch, Tv, Building, Mail, Trophy, Briefcase, BarChart, DollarSign as DollarSignIcon, Package, UserCheck as AdmissionsIcon } from 'lucide-react';
+import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2, List, Gem, MonitorPlay, Download, BrainCircuit, Users, FileText, LifeBuoy, User, GitBranch, Tv, Building, Mail, Trophy, Briefcase, BarChart, DollarSign as DollarSignIcon, Package, UserCheck as AdmissionsIcon, Radio } from 'lucide-react';
 import { type LucideIcon } from 'lucide-react';
 import { roleLinks, type NavLink } from '@/components/layout/app-sidebar';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
         'Settings: A central place to manage users, configure the academic calendar (terms & holidays), and define system-wide data like currency, exam boards, and fee descriptions. The system supports specialized roles (e.g., Finance Officer, Counselor) which can be assigned to users to delegate responsibilities.',
         'Messaging, Events, Leaderboards, Profile: Standard modules for communication, scheduling, tracking, and personal settings.',
         'Activity Logs: View a log of all significant actions taken by users within your school. This feed is specific to your school only.',
+        'Live Broadcasts: Use the "Contact & Broadcast" button on your dashboard to send real-time alerts to all connected teachers and parents.'
     ]
   },
   AcademicDean: {
@@ -114,10 +115,11 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
     title: 'Teacher Guide',
     points: [
       'Dashboard: Quickly access common tasks, view your courses, see upcoming deadlines, and run AI analysis on your classes. You can also contact your School Administrator from here.',
+      'Live Alerts: Receive real-time broadcast messages from your school administrator on your dashboard.',
       'Take Attendance: A dedicated interface to mark attendance for each of your lessons, including statuses like Present, Late, Absent, and Sick.',
       'AI Lesson Planner: Generate performance-aware weekly lesson plans based on the official syllabus. Plans are automatically saved and can be printed.',
-      'AI Test Generator: Create, save, and deploy ad-hoc tests based on syllabus topics. View results and AI analysis for completed tests.',
-      'Grading: Access a dedicated gradebook to enter grades for students in your classes. These grades are instantly reflected throughout the app.',
+      'AI Test Generator: Create, save, and deploy ad-hoc tests based on syllabus topics. View detailed analytics and results for completed tests.',
+      'Grading: Access a dedicated gradebook to enter grades for your students. You can specify the type of assessment (e.g., Test, Coursework) and provide a description.',
       'Behavioral Assessments: Periodically assess students on non-academic traits like respect, participation, social skills, and conduct. This data contributes to holistic student reports.',
       'Schedules: View your teaching schedule based on the courses assigned to you.',
       'Leaderboards: Check academic rankings to see how students are performing.',
@@ -130,6 +132,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
     title: 'Student Guide',
     points: [
       'Dashboard: See a summary of your academic progress, upcoming assignments, recent grades, an overview of your attendance, and your current school rank.',
+      'Live Alerts: Receive real-time broadcast messages from your school on your dashboard.',
       'End of Term Report: Download a comprehensive report card that includes your grades, attendance summary, and behavioral assessments from your teachers.',
       'Take Assigned Tests: View tests assigned to you on your dashboard, complete them through a dedicated interface, and receive your AI-generated score immediately upon submission.',
       'Schedules: Check your course schedule, see your teachers, and track your progress in each class.',
@@ -145,6 +148,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
     title: 'Parent Guide',
     points: [
       'Dashboard: Get a complete overview of your children\'s school life. Click on a child\'s card to update the dashboard with their specific information.',
+      'Live Alerts: Receive real-time broadcast messages from your child\'s school on your dashboard.',
       'End of Term Report: Download a comprehensive report card for your selected child, including their grades, attendance, and behavioral assessments.',
       'New Child Applications: Submit new admission applications for your other children. The form will show you available vacancies for the selected grade.',
       'AI-Powered Insights: Receive AI-generated advice based on grades and attendance data on how to support your selected child\'s learning, including their strengths and areas for improvement. This feature is dependent on the school\'s subscription tier.',

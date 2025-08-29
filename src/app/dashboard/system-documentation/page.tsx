@@ -3,7 +3,7 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Database, Layers, Cloud, KeyRound, Server, UploadCloud, GitBranch, FolderTree, Puzzle, UserCheck, BrainCircuit, Download, Trophy, DollarSign, LifeBuoy, Lightbulb, TrendingUp, BookCopy, Award, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound as KeyRoundIcon, MonitorPlay, Users } from 'lucide-react';
+import { Loader2, Database, Layers, Cloud, KeyRound, Server, UploadCloud, GitBranch, FolderTree, Puzzle, UserCheck, BrainCircuit, Download, Trophy, DollarSign, LifeBuoy, Lightbulb, TrendingUp, BookCopy, Award, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound as KeyRoundIcon, MonitorPlay, Users, Radio, Mail, FileText } from 'lucide-react';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -54,6 +54,7 @@ export default function SystemDocumentationPage() {
           <li><b>Database:</b> Google Firebase (Firestore) for a scalable, real-time NoSQL database.</li>
            <li><b>Authentication:</b> Firebase Authentication for managing user identity and sessions.</li>
            <li><b>File Storage:</b> Firebase Cloud Storage for handling all file uploads (e.g., logos, documents).</li>
+           <li><b>Real-time Communication:</b> Node.js WebSocket server for live alerts and notifications.</li>
         </CardContent>
       </Card>
 
@@ -74,27 +75,44 @@ export default function SystemDocumentationPage() {
               </ul>
             </li>
             <li><code>/src/lib/</code>: Contains utility functions (`utils.ts`), mock data for seeding (`mock-data.ts`), and Firebase service functions.</li>
+             <li><code>/src/lib/websocketClient.ts</code>: A client-side WebSocket wrapper for handling real-time communication.</li>
             <li><code>/src/ai/flows/</code>: Contains all the server-side Genkit flows that define the AI's capabilities.</li>
           </ul>
         </CardContent>
       </Card>
       
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Database /> Data Flow & State Management</CardTitle>
-          <CardDescription>How the application manages and persists its data.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">EduDesk uses a Firebase-backed, server-authoritative data model. All data is persistent and managed through a clear client-server flow.</p>
-            <ol className="list-decimal pl-6 text-sm text-muted-foreground space-y-2">
-                <li><b>Initialization:</b> On app load, <code>SchoolDataProvider</code> fetches the entire dataset from Firestore. If the database is empty, it's automatically seeded from <code>/src/lib/mock-data.ts</code>.</li>
-                <li><b>Data Slicing & Isolation:</b> The context uses the authenticated user's role and school ID to "slice" the global dataset, providing each component with only the data it's authorized to see. This is critical for the multi-tenant architecture.</li>
-                <li><b>Server-Side Mutations:</b> When a user performs a CRUD action (e.g., adding a student), the UI calls a function in <code>SchoolDataProvider</code>. This function then invokes a Next.js Server Action.</li>
-                <li><b>Database Interaction:</b> The Server Action calls a corresponding function in s<code>/src/lib/firebase/firestore-service.ts</code>, which executes the write, update, or delete operation in Firestore.</li>
-                 <li><b>State Synchronization:</b> After a successful database operation, the local state in <code>SchoolDataProvider</code> is updated to match, ensuring the UI re-renders instantly to reflect the persistent change without needing a full data refetch.</li>
-            </ol>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Database /> Data Flow & State Management</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">EduDesk uses a Firebase-backed, server-authoritative data model. All data is persistent and managed through a clear client-server flow.</p>
+                <ol className="list-decimal pl-6 text-sm text-muted-foreground space-y-2">
+                    <li><b>Initialization:</b> On app load, <code>SchoolDataProvider</code> fetches the entire dataset from Firestore. If the database is empty, it's automatically seeded from <code>/src/lib/mock-data.ts</code>.</li>
+                    <li><b>Data Slicing & Isolation:</b> The context uses the authenticated user's role and school ID to "slice" the global dataset, providing each component with only the data it's authorized to see. This is critical for the multi-tenant architecture.</li>
+                    <li><b>Server-Side Mutations:</b> When a user performs a CRUD action (e.g., adding a student), the UI calls a function in <code>SchoolDataProvider</code>. This function then invokes a Next.js Server Action.</li>
+                    <li><b>Database Interaction:</b> The Server Action calls a corresponding function in s<code>/src/lib/firebase/firestore-service.ts</code>, which executes the write, update, or delete operation in Firestore.</li>
+                    <li><b>State Synchronization:</b> After a successful database operation, the local state in <code>SchoolDataProvider</code> is updated to match, ensuring the UI re-renders instantly to reflect the persistent change without needing a full data refetch.</li>
+                </ol>
+            </CardContent>
+        </Card>
+         <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Radio className="text-primary"/> Real-time Communication</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-muted-foreground">
+                <p>The application features a real-time notification system for broadcasting important alerts from administrators to staff and parents.</p>
+                 <ol className="list-decimal pl-6 text-sm text-muted-foreground space-y-2">
+                    <li><b>WebSocket Server:</b> A simple Node.js WebSocket server runs as a separate process to handle real-time connections.</li>
+                    <li><b>Client Connection:</b> When a user logs in, the `WebSocketProvider` initializes a `RoleBasedWebSocketClient`. This client connects to the server and identifies itself with the user's role (e.g., 'Admin', 'Teacher', 'Parent').</li>
+                    <li><b>Broadcasting:</b> An administrator can use the "Broadcast" feature to send a message. This is sent to the WebSocket server.</li>
+                    <li><b>Targeted Delivery:</b> The server receives the message and broadcasts it to all connected clients whose role matches the target audience (e.g., 'all', 'teachers').</li>
+                    <li><b>UI Updates:</b> The `LiveAlertsCard` component on the Teacher and Parent dashboards subscribes to the client. When a relevant message is received, the component's state is updated, and the new alert is displayed instantly without a page refresh.</li>
+                </ol>
+            </CardContent>
+        </Card>
+      </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
@@ -126,83 +144,6 @@ export default function SystemDocumentationPage() {
             </CardContent>
         </Card>
       </div>
-
-       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Trophy /> System-Wide Awards & Persistent State</CardTitle>
-          <CardDescription>How global settings like the annual awards are managed.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <p>To ensure system-wide settings are persistent and not lost, the application uses a "master record" approach within its Firebase architecture.</p>
-            <ul className="list-disc pl-6 mt-1 space-y-2">
-                <li><b>Master Record:</b> The "Northwood High" school record (`documentId: northwood`) serves as the central storage for global configurations. For example, the `awardsAnnounced` flag is stored in `northwood.profile.awards`.</li>
-                <li><b>State Initialization:</b> On application startup, the `SchoolDataProvider` reads this value from the Northwood record to determine if the awards have been announced, ensuring the state persists across sessions.</li>
-                <li><b>Safeguard:</b> To make this approach robust, the "Delete School" functionality is disabled for the Northwood High record, preventing accidental deletion of critical system settings.</li>
-            </ul>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><GitBranch /> Backend Architecture</CardTitle>
-          <CardDescription>An overview of the server-side components and data persistence strategy.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm">
-            <div className="flex items-start gap-3">
-                <KeyRoundIcon className="h-4 w-4 text-accent mt-1 shrink-0" />
-                <div>
-                    <h4 className="font-semibold text-card-foreground">1. Firebase Authentication</h4>
-                    <p className="text-muted-foreground">Manages all user identities, sessions, and provides the foundation for role-based access control. All user profiles are stored in Firestore.</p>
-                </div>
-            </div>
-            <div className="flex items-start gap-3">
-                <Server className="h-4 w-4 text-accent mt-1 shrink-0" />
-                <div>
-                    <h4 className="font-semibold text-card-foreground">2. Firestore Database & Data Modeling</h4>
-                    <p className="text-muted-foreground">A single `schools` collection holds all data. Each school is a document, and its related data (students, teachers, etc.) are stored in arrays within that document. This model simplifies data fetching and ensures tenancy.</p>
-                </div>
-            </div>
-            <div className="flex items-start gap-3">
-                <UploadCloud className="h-4 w-4 text-accent mt-1 shrink-0" />
-                <div>
-                    <h4 className="font-semibold text-card-foreground">3. Next.js Server Actions</h4>
-                    <p className="text-muted-foreground">Serve as the primary API layer. All database mutations (CRUD operations) are handled through these server-side functions, ensuring that sensitive logic and database interaction code never runs on the client.</p>
-                </div>
-            </div>
-            <div className="flex items-start gap-3">
-                <Database className="h-4 w-4 text-accent mt-1 shrink-0" />
-                <div>
-                    <h4 className="font-semibold text-card-foreground">4. Firestore Service Layer</h4>
-                    <p className="text-muted-foreground">Located in s<code>/lib/firebase/firestore-service.ts</code>, this layer abstracts the direct Firebase SDK calls. Server Actions call functions in this service to interact with the database, centralizing all Firestore logic.</p>
-                </div>
-            </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Users /> Suggested Corporate Roles</CardTitle>
-          <CardDescription>A blueprint for the Pixel Digital Solutions team as the platform scales.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-4">
-                <h4 className="font-semibold flex items-center gap-2"><Server className="text-primary"/> Chief Technology Officer (CTO)</h4>
-                <p className="text-sm text-muted-foreground">Oversees technical vision, architecture, platform security, and scalability. Manages the development lifecycle and major integrations like payment gateways.</p>
-            </div>
-            <div className="space-y-4">
-                <h4 className="font-semibold flex items-center gap-2"><Lightbulb className="text-primary"/> Head of Product</h4>
-                <p className="text-sm text-muted-foreground">Defines the product roadmap based on user feedback and market analysis. Prioritizes new features, analyzes usage data, and ensures the product meets user needs.</p>
-            </div>
-            <div className="space-y-4">
-                <h4 className="font-semibold flex items-center gap-2"><TrendingUp className="text-primary"/> Head of Sales & Partnerships</h4>
-                <p className="text-sm text-muted-foreground">Drives customer acquisition and revenue. Manages the sales team, builds strategic partnerships, and uses platform dashboards to track growth and inform strategy.</p>
-            </div>
-            <div className="space-y-4">
-                <h4 className="font-semibold flex items-center gap-2"><LifeBuoy className="text-primary"/> Head of Customer Success & Support</h4>
-                <p className="text-sm text-muted-foreground">Focuses on customer onboarding, training, and retention. Manages the support team, develops user documentation, and uses platform tools like impersonation to resolve issues.</p>
-            </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
