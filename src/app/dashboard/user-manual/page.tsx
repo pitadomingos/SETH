@@ -2,7 +2,7 @@
 'use client';
 import { useAuth, Role } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download, Languages, MonitorPlay, CloudCog, Mail, FileText, LifeBuoy, List, HeartHandshake, PenSquare, GraduationCap, Package, UserPlus, History, CalendarCheck, Tv, BarChart, KeyRound as KeyRoundIcon } from 'lucide-react';
+import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign as DollarSignIcon, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download, Languages, MonitorPlay, CloudCog, Mail, FileText, LifeBuoy, List, HeartHandshake, PenSquare, GraduationCap, Package, UserPlus, History, CalendarCheck, Tv, BarChart, Globe } from 'lucide-react';
 import { type LucideIcon } from 'lucide-react';
 import { roleLinks, type NavLink } from '@/components/layout/app-sidebar';
 import { Button } from '@/components/ui/button';
