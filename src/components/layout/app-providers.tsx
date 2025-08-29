@@ -1,4 +1,3 @@
-
 'use client';
 
 import { SchoolDataProvider } from "@/context/school-data-context";

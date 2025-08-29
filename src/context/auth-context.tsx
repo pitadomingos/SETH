@@ -155,38 +155,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    const originalUserString = sessionStorage.getItem('originalUser');
-    if(originalUserString) {
-        const parsedOriginalUser = JSON.parse(originalUserString);
-        setUser(parsedOriginalUser);
-        setRole(parsedOriginalUser.role);
-        setSchoolId(parsedOriginalUser.schoolId || null);
-        setOriginalUser(null);
-        
-        sessionStorage.setItem('user', originalUserString);
-        sessionStorage.setItem('role', parsedOriginalUser.role);
-        if (parsedOriginalUser.schoolId) {
-          sessionStorage.setItem('schoolId', parsedOriginalUser.schoolId);
-        } else {
-          sessionStorage.removeItem('schoolId');
-        }
-
-        sessionStorage.removeItem('originalUser');
-        router.push('/dashboard/global-admin/all-schools');
-    } else {
-        setUser(null);
-        setRole(null);
-        setSchoolId(null);
-        setOriginalUser(null);
-        sessionStorage.clear();
-        router.push('/');
-    }
+    // Simplified logout logic
+    sessionStorage.clear();
+    setUser(null);
+    setRole(null);
+    setSchoolId(null);
+    setOriginalUser(null);
+    router.push('/');
   };
-
-  // 🔎 Debug: see if schoolId is set properly
-  useEffect(() => {
-    console.log("[Auth] role:", role, "schoolId:", schoolId, "user:", user?.email);
-  }, [role, schoolId, user]);
 
   return (
     <AuthContext.Provider value={{ user, role, schoolId, originalUser, login, logout, isLoading, impersonateUser, setUserProfilePicture, updateUserProfile }}>
