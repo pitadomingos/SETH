@@ -1,3 +1,4 @@
+
 'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
@@ -155,13 +156,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    // Simplified logout logic
-    sessionStorage.clear();
-    setUser(null);
-    setRole(null);
-    setSchoolId(null);
-    setOriginalUser(null);
-    router.push('/');
+    const storedOriginalUser = sessionStorage.getItem('originalUser');
+    if (storedOriginalUser) {
+        const originalUserData = JSON.parse(storedOriginalUser);
+        setUser(originalUserData);
+        setRole(originalUserData.role);
+        setSchoolId(originalUserData.schoolId || null);
+        sessionStorage.setItem('user', JSON.stringify(originalUserData));
+        sessionStorage.setItem('role', originalUserData.role);
+        if (originalUserData.schoolId) {
+            sessionStorage.setItem('schoolId', originalUserData.schoolId);
+        }
+        setOriginalUser(null);
+        sessionStorage.removeItem('originalUser');
+        router.push('/dashboard');
+    } else {
+        sessionStorage.clear();
+        setUser(null);
+        setRole(null);
+        setSchoolId(null);
+        setOriginalUser(null);
+        router.push('/');
+    }
   };
 
   return (
