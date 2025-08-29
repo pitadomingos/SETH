@@ -1,19 +1,14 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read/write access to all documents for prototyping
+  
+    // Allow any authenticated user to read and write to any document.
+    // This is suitable for development but should be replaced with more
+    // granular, role-based rules for a production environment.
     match /{document=**} {
-      allow read, write: if true;
-    }
-  }
-}
-
-service firebase.storage {
-  match /b/{bucket}/o {
-     match /profile-pictures/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null;
+      allow read, write: if request.auth != null;
     }
   }
 }

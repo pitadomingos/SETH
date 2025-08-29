@@ -192,7 +192,9 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
         const schoolData = await getSchoolsFromFirestore();
         if (!cancelled) setData(schoolData);
       } catch (error) {
-        console.error('[SchoolData] Failed to fetch or seed school data.', error);
+        console.error(
+          '[SchoolData] Failed to fetch or seed school data.', error
+        );
         if (!cancelled) setData(null);
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -200,6 +202,10 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     };
     fetchSchoolData();
     return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    setTimeout(() => console.log('--- Delayed allSchoolData Log:', data), 150);
   }, []);
 
   // ---------- Derived IDs & source-of-truth for current school ----------
@@ -233,11 +239,13 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
     if (!data) return [];
     return Object.values(data).flatMap(d => selector(d) ?? []);
   };
-  
+
   const uniq = <T,>(arr: T[]): T[] => [...new Set(arr)];
 
   const schoolGroups = useMemo(() => {
     if (!data) return {};
+    console.log('--- schoolGroups Memo - Data:', data);
+    console.log('--- schoolGroups Memo - Role:', role);
     const schoolWithGroups = Object.values(data).find(
       (d) => d.profile?.schoolGroups && Object.keys(d.profile.schoolGroups).length > 0
     );
@@ -246,11 +254,15 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
 
   const awardsAnnounced = useMemo(() => {
     if (!data) return false;
+    console.log('--- awardsAnnounced Memo - Data:', data);
+    console.log('--- awardsAnnounced Memo - Role:', role);
     const schoolWithAwards = Object.values(data).find((d) => (d.profile?.awards?.length ?? 0) > 0);
     return !!schoolWithAwards;
   }, [data]);
 
   const studentsData = useMemo(() => {
+    console.log('--- studentsData Memo - Data:', data);
+    console.log('--- studentsData Memo - Role:', role);
     if (!data || !role) return [];
     if (role === 'GlobalAdmin') {
       return aggregate(d => d.students?.map(s => ({ ...s, schoolName: d.profile.name, schoolId: d.profile.id })));
@@ -265,6 +277,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [data, role, user, schoolData]);
 
   const teachersData = useMemo(() => {
+    console.log('--- teachersData Memo - Data:', data);
+    console.log('--- teachersData Memo - Role:', role);
     if (!data || !role) return [];
     if (role === 'GlobalAdmin') {
       return aggregate(d => d.teachers?.map(t => ({ ...t, schoolName: d.profile.name, schoolId: d.profile.id })));
@@ -289,6 +303,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   const syllabi = useMemo(() => (role === 'GlobalAdmin' ? aggregate(d => d.syllabi) : schoolData?.syllabi) ?? [], [data, role, schoolData]);
 
   const financeData = useMemo(() => {
+    console.log('--- financeData Memo - Data:', data);
+    console.log('--- financeData Memo - Role:', role);
     if (!data || !role) return [];
     if (role === 'GlobalAdmin') return aggregate(d => d.finance);
     if (role === 'Parent' && studentsData.length > 0) {
@@ -299,6 +315,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [data, role, schoolData, studentsData]);
 
   const grades = useMemo(() => {
+    console.log('--- grades Memo - Data:', data);
+    console.log('--- grades Memo - Role:', role);
     if (!data || !role) return [];
     if (role === 'GlobalAdmin') return aggregate(d => d.grades);
     if (role === 'Parent' && studentsData.length > 0) {
@@ -309,6 +327,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [data, role, schoolData, studentsData]);
 
   const attendance = useMemo(() => {
+    console.log('--- attendance Memo - Data:', data);
+    console.log('--- attendance Memo - Role:', role);
     if (!data || !role) return [];
     if (role === 'GlobalAdmin') return aggregate(d => d.attendance);
     if (role === 'Parent' && studentsData.length > 0) {
@@ -319,6 +339,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [data, role, schoolData, studentsData]);
 
   const events = useMemo(() => {
+    console.log('--- events Memo - Data:', data);
+    console.log('--- events Memo - Role:', role);
     if (!data || !role) return [];
     if (role === 'GlobalAdmin') return aggregate(d => d.events?.map(e => ({ ...e, schoolName: d.profile.name })));
     if (role === 'Parent' && studentsData.length > 0) {
@@ -329,6 +351,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [data, role, schoolData, studentsData]);
 
   const teamsData = useMemo(() => {
+    console.log('--- teamsData Memo - Data:', data);
+    console.log('--- teamsData Memo - Role:', role);
     if (!data || !role) return [];
     if (role === 'GlobalAdmin') return aggregate(d => d.teams);
     if (role === 'Parent' && studentsData.length > 0) {
@@ -339,6 +363,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [data, role, schoolData, studentsData]);
 
   const competitionsData = useMemo(() => {
+    console.log('--- competitionsData Memo - Data:', data);
+    console.log('--- competitionsData Memo - Role:', role);
     if (!data || !role) return [];
     if (role === 'GlobalAdmin') return aggregate(d => d.competitions);
     if (role === 'Parent' && teamsData.length > 0) {
@@ -349,6 +375,8 @@ export const SchoolDataProvider = ({ children }: { children: ReactNode }) => {
   }, [data, role, schoolData, teamsData]);
 
   const messages = useMemo(() => {
+    console.log('--- messages Memo - Data:', data);
+    console.log('--- messages Memo - Role:', role);
     if (!data || !role || !user) return [];
     if (role === 'GlobalAdmin') return aggregate(d => d.messages);
     return schoolData?.messages?.filter(m => m.recipientUsername === user.email || m.senderUsername === user.email) ?? [];
