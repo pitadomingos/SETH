@@ -10,7 +10,7 @@ function PublicHomePage() {
   const { allSchoolData, isLoading } = useSchoolData();
 
   if (isLoading) {
-    return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    return <div className="flex h-[calc(100vh-128px)] w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   const partnerSchools = allSchoolData?.['northwood']?.profile?.partnerSchools || [];
@@ -76,8 +76,7 @@ function PublicHomePage() {
   );
 }
 
-
-export default function LandingPageWrapper() {
+export default function HomePageWrapper() {
     return (
         <SchoolDataProvider>
             <PublicHomePage />
