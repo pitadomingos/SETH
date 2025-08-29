@@ -4,7 +4,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Users, Briefcase, PlusCircle, Trash2, Save, Upload } from 'lucide-react';
+import { Loader2, Users, Briefcase, PlusCircle, Trash2, Save, Upload, Home } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useEffect, useState, useRef } from 'react';
 import { useForm, useFieldArray, Control, useFormContext } from 'react-hook-form';
@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import Link from 'next/link';
 
 const teamMemberSchema = z.object({
   name: z.string().min(3, "Name is required."),
@@ -203,9 +204,17 @@ export default function WebsiteManagementPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
-      <header>
-        <h2 className="text-3xl font-bold tracking-tight">Public Website Management</h2>
-        <p className="text-muted-foreground">Manage the content displayed on the public-facing homepage.</p>
+      <header className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+            <h2 className="text-3xl font-bold tracking-tight">Public Website Management</h2>
+            <p className="text-muted-foreground">Manage the content displayed on the public-facing homepage.</p>
+        </div>
+        <Button asChild variant="outline">
+            <Link href="/" target="_blank">
+                <Home className="mr-2 h-4 w-4" />
+                View Public Site
+            </Link>
+        </Button>
       </header>
 
       <Form {...form}>
