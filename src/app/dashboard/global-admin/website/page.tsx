@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Loader2, Users, Briefcase, Link as LinkIcon, PlusCircle, Trash2, Save, Upload } from 'lucide-react';
 import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 const teamMemberSchema = z.object({
   name: z.string().min(3, "Name is required."),
@@ -63,6 +64,13 @@ export default function WebsiteManagementPage() {
     name: "partnerSchools",
   });
 
+  const partnerSchoolIds = form.watch('partnerSchools').map(p => p.name);
+  const availableSchools = allSchoolData 
+    ? Object.values(allSchoolData)
+        .map(s => s.profile)
+        .filter(p => !partnerSchoolIds.includes(p.name))
+    : [];
+
   useEffect(() => {
     if (!isLoading && role !== 'GlobalAdmin') {
       router.push('/dashboard');
@@ -81,6 +89,30 @@ export default function WebsiteManagementPage() {
       toast({ title: 'Website Content Updated', description: 'Your changes have been published to the public website.' });
     } else {
       toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not save website content.' });
+    }
+  }
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        // In a real app this would upload to Firebase storage and return a URL
+        // For this prototype, we use a placeholder that visually confirms the change
+        const placeholderUrl = `https://placehold.co/200x200.png?text=${file.name.substring(0,3)}&v=${Date.now()}`;
+        form.setValue(`teamMembers.${index}.imageUrl`, placeholderUrl, { shouldValidate: true, shouldDirty: true });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleAddSchool = (schoolId: string) => {
+    const school = allSchoolData?.[schoolId];
+    if (school) {
+        appendSchool({
+            name: school.profile.name,
+            logoUrl: school.profile.logoUrl,
+        });
     }
   }
 
@@ -110,20 +142,23 @@ export default function WebsiteManagementPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {teamFields.map((field, index) => (
+                    {teamFields.map((field, index) => {
+                        const fileInputRef = useRef<HTMLInputElement>(null);
+                        return (
                         <div key={field.id} className="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-4 p-4 border rounded-lg items-start">
                             <div className="flex flex-col items-center gap-2">
                                 <Image src={form.watch(`teamMembers.${index}.imageUrl`)} alt={form.watch(`teamMembers.${index}.name`)} width={100} height={100} className="rounded-full object-cover" data-ai-hint="person photo"/>
-                                <FormField control={form.control} name={`teamMembers.${index}.imageUrl`} render={({ field }) => ( <FormItem className="w-full"><FormControl><Input className="h-8 text-xs" {...field} /></FormControl><FormMessage /></FormItem> )}/>
+                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, index)} />
+                                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}><Upload className="mr-2 h-4 w-4"/> Change</Button>
                             </div>
                             <div className="space-y-2">
-                                 <FormField control={form.control} name={`teamMembers.${index}.name`} render={({ field }) => ( <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
-                                 <FormField control={form.control} name={`teamMembers.${index}.role`} render={({ field }) => ( <FormItem><FormLabel>Role</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
-                                 <FormField control={form.control} name={`teamMembers.${index}.description`} render={({ field }) => ( <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea rows={2} {...field} /></FormControl><FormMessage /></FormItem> )}/>
+                                 <FormField control={form.control} name={`teamMembers.${index}.name`} render={({ field }) => ( <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                 <FormField control={form.control} name={`teamMembers.${index}.role`} render={({ field }) => ( <FormItem><FormLabel>Role</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                 <FormField control={form.control} name={`teamMembers.${index}.description`} render={({ field }) => ( <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea rows={2} {...field} /></FormControl><FormMessage /></FormItem> )} />
                             </div>
                             <Button type="button" variant="ghost" size="icon" onClick={() => removeTeam(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                         </div>
-                    ))}
+                    )})}
                 </CardContent>
             </Card>
 
@@ -134,22 +169,29 @@ export default function WebsiteManagementPage() {
                             <CardTitle className="flex items-center gap-2"><Briefcase/> Partner Schools</CardTitle>
                             <CardDescription>Manage the logos of schools showcased on the public site.</CardDescription>
                         </div>
-                        <Button type="button" variant="outline" onClick={() => appendSchool({ name: '', logoUrl: 'https://placehold.co/100x100.png' })}>
-                            <PlusCircle className="mr-2 h-4 w-4"/> Add School
-                        </Button>
+                         <div className="flex items-center gap-2">
+                            <Select onValueChange={handleAddSchool}>
+                                <SelectTrigger className="w-[250px]"><SelectValue placeholder="Add a school..." /></SelectTrigger>
+                                <SelectContent>
+                                    {availableSchools.map(school => (
+                                        <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                      {schoolFields.map((field, index) => (
-                        <div key={field.id} className="grid grid-cols-[auto_1fr_auto] gap-4 items-center p-4 border rounded-lg">
-                           <Image src={form.watch(`partnerSchools.${index}.logoUrl`)} alt={form.watch(`partnerSchools.${index}.name`)} width={64} height={64} className="rounded-lg object-contain bg-muted p-1" data-ai-hint="school logo"/>
-                           <div className="space-y-2">
-                                <FormField control={form.control} name={`partnerSchools.${index}.name`} render={({ field }) => ( <FormItem><FormLabel>School Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
-                                <FormField control={form.control} name={`partnerSchools.${index}.logoUrl`} render={({ field }) => ( <FormItem><FormLabel>Logo URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
+                        <div key={field.id} className="flex items-center justify-between p-3 border rounded-lg">
+                           <div className="flex items-center gap-3">
+                               <Image src={form.watch(`partnerSchools.${index}.logoUrl`)} alt={form.watch(`partnerSchools.${index}.name`)} width={40} height={40} className="rounded-lg object-contain bg-muted p-1" data-ai-hint="school logo"/>
+                               <p className="font-medium">{form.watch(`partnerSchools.${index}.name`)}</p>
                            </div>
                            <Button type="button" variant="ghost" size="icon" onClick={() => removeSchool(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                         </div>
                      ))}
+                     {schoolFields.length === 0 && <p className="text-muted-foreground col-span-full text-center py-8">No partner schools added yet.</p>}
                 </CardContent>
             </Card>
 
