@@ -1,3 +1,4 @@
+
 'use client';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -5,7 +6,7 @@ import { useAuth } from '@/context/auth-context';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, ShieldCheck, HeartHandshake, Rocket, ArrowRight } from 'lucide-react';
+import { GraduationCap, ShieldCheck, HeartHandshake, Rocket, ArrowRight, MonitorPlay } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LandingPage() {
@@ -35,10 +36,16 @@ export default function LandingPage() {
             <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl mt-4">
               EduDesk is a unified, AI-powered platform designed to streamline operations, empower educators, and connect with parents like never before.
             </p>
-            <div className="mt-6">
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button size="lg" asChild>
                 <Link href="/register">
                   Register Your School Today <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="https://studio--edudesk-h9avj.us-central1.hosted.app" target="_blank">
+                  <MonitorPlay className="mr-2 h-5 w-5" />
+                  View Live Demo
                 </Link>
               </Button>
             </div>
