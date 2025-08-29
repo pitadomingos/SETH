@@ -109,9 +109,11 @@ export async function seedInitialData(): Promise<void> {
 }
 
 async function getSubcollection<T>(schoolId: string, collectionName: string): Promise<T[]> {
-  const snapshot = await getDocs(collection(db, 'schools', schoolId, collectionName));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
+    const snapshot = await getDocs(collection(db, 'schools', schoolId, collectionName));
+    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
+    return data;
 }
+  
 
 // --- Data Fetching ---
 export async function getSchoolsFromFirestore(): Promise<Record<string, SchoolData>> {
