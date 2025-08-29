@@ -1,3 +1,4 @@
+
 'use client';
 import {
   SidebarHeader,
@@ -55,6 +56,7 @@ import {
     Database,
     Languages,
     UserCog,
+    Globe2,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -100,6 +102,7 @@ export const roleLinks: Record<Role, NavItem[]> = {
     {
       title: 'System & Info',
       links: [
+        { href: '/dashboard/global-admin/website', label: 'Website', icon: Globe2 },
         { href: '/dashboard/kiosk-showcase', label: 'Kiosk Showcase', icon: MonitorPlay },
         { href: '/kiosk/global', label: 'Public Kiosk', icon: Tv, dynamic: false, target: '_blank' },
         { href: '/dashboard/activity-logs', label: 'Activity Logs', icon: History },
