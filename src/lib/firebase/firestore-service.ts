@@ -111,7 +111,6 @@ export async function seedInitialData(): Promise<void> {
 async function getSubcollection<T>(schoolId: string, collectionName: string): Promise<T[]> {
     const snapshot = await getDocs(collection(db, 'schools', schoolId, collectionName));
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
-    console.log(`--- Raw data from Firestore for ${collectionName} in ${schoolId}:`, snapshot.docs.map(doc => doc.data())); // Add this log
     return data;
 }
   
@@ -125,8 +124,17 @@ export async function getSchoolsFromFirestore(): Promise<Record<string, SchoolDa
 
   const schoolDataPromises = schoolsSnapshot.docs.map(async (schoolDoc) => {
     const schoolId = schoolDoc.id;
-    const profile = { id: schoolId, ...schoolDoc.data().profile } as SchoolProfile;
-
+    const profileData = schoolDoc.data();
+    
+    // Ensure profile object exists and has an id
+    if (!profileData.profile) {
+      console.warn(`School document ${schoolId} is missing the 'profile' field.`);
+      profileData.profile = {}; // Create an empty profile to avoid errors
+    }
+    profileData.profile.id = schoolId;
+    
+    const profile = profileData.profile as SchoolProfile;
+    
     // Parallel fetch for all subcollections
     const [
       students, teachers, classes, courses, syllabi, admissions, finance,
@@ -181,26 +189,21 @@ export async function getSchoolsFromFirestore(): Promise<Record<string, SchoolDa
         holidays,
         kioskMedia,
         activityLogs,
-        terms, holidays, kioskMedia, activityLogs, messages, savedReports, deployedTests,
+        messages, 
+        savedReports, 
+        deployedTests,
         savedTests,
         feeDescriptions: profile.feeDescriptions || [],
         audiences: profile.audiences || [],
         expenseCategories: profile.expenseCategories || [],
         examBoards: profile.examBoards || [],
         schoolGroups: profile.schoolGroups || {},
+        lessonPlans: [], // Keep placeholder if not in DB
       }
     };
   });
 
   const allSchoolDataArray = await Promise.all(schoolDataPromises);
-  console.log("--- allSchoolDataArray before Object.assign:", allSchoolDataArray); // Add this log
-
-  // Add this loop to log data for each school and its subcollections
-  allSchoolDataArray.forEach(schoolDataEntry => {
-    const schoolId = Object.keys(schoolDataEntry)[0];
-    const schoolData = schoolDataEntry[schoolId];
-    console.log(`--- Data for school ${schoolId} before Object.assign:`, schoolData);
-  });
   return Object.assign({}, ...allSchoolDataArray);
 }
 
