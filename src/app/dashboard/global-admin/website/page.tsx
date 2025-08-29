@@ -1,13 +1,12 @@
-
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Users, Briefcase, PlusCircle, Trash2, Save, Upload, Home } from 'lucide-react';
+import { Loader2, Users, Briefcase, PlusCircle, Trash2, Save, Upload, Home, Globe2 } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useEffect, useState, useRef } from 'react';
-import { useForm, useFieldArray, Control, useFormContext } from 'react-hook-form';
+import { useForm, useFieldArray, useFormContext, Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -207,11 +206,11 @@ export default function WebsiteManagementPage() {
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
             <h2 className="text-3xl font-bold tracking-tight">Public Website Management</h2>
-            <p className="text-muted-foreground">Manage the content displayed on the public-facing homepage.</p>
+            <p className="text-muted-foreground">Manage the content displayed on the public-facing website.</p>
         </div>
         <Button asChild variant="outline">
             <Link href="/" target="_blank">
-                <Home className="mr-2 h-4 w-4" />
+                <Globe2 className="mr-2 h-4 w-4" />
                 View Public Site
             </Link>
         </Button>
