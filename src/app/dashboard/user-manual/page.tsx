@@ -2,7 +2,7 @@
 'use client';
 import { useAuth, Role } from '@/context/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, PenSquare, GraduationCap, HeartHandshake, Globe, Loader2, List, Gem, MonitorPlay, Download, BrainCircuit, Users, FileText, LifeBuoy, User, GitBranch, Tv, Building, Mail, Trophy, Briefcase, BarChart, DollarSign as DollarSignIcon, Package, UserCheck as AdmissionsIcon, Radio } from 'lucide-react';
+import { Loader2, Rocket, Lightbulb, Layers, Target, CalendarClock, DollarSign, BrainCircuit, Users, ShieldCheck, Gem, TrendingUp, BookCopy, Award, Trophy, School, Baby, Briefcase, Smartphone, LineChart, Club, KeyRound, Server, UploadCloud, Database, GitBranch, Cloud, Download, Languages, MonitorPlay, CloudCog, Mail, FileText, LifeBuoy, List, HeartHandshake, PenSquare, GraduationCap, Package, UserPlus, History, CalendarCheck, Tv, BarChart, KeyRound as KeyRoundIcon } from 'lucide-react';
 import { type LucideIcon } from 'lucide-react';
 import { roleLinks, type NavLink } from '@/components/layout/app-sidebar';
 import { Button } from '@/components/ui/button';
@@ -64,7 +64,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
       ],
   },
   AdmissionsOfficer: {
-      icon: AdmissionsIcon,
+      icon: UserPlus,
       title: 'Admissions Officer Guide',
       points: [
           'Admissions: The primary module to review and process new student applications.',
