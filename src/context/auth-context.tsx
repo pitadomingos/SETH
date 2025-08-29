@@ -176,7 +176,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setRole(null);
         setSchoolId(null);
         setOriginalUser(null);
-        router.push('/');
+        router.push('/login');
     }
   };
 
@@ -201,7 +201,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/');
+      router.push('/login');
     }
   }, [user, isLoading, router]);
 
