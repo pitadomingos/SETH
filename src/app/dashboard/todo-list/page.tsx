@@ -60,12 +60,12 @@ const completedTasks = [
   'Added pagination and advanced filtering to all financial tables.',
   'Applied highlight colors in cards and alerts to reinforce information hierarchy.',
   'Built out analytics for the student test-taking results for teachers.',
-  'Implemented a site-wide notification and communication hub for students and parents using WebSockets.',
+  'Implement a site-wide notification and communication hub for students and parents using WebSockets.',
+  'Enhanced mobile-first responsive design for a seamless experience on phones and tablets.',
+  'Included a "Back" button in all modules for consistent navigation.',
 ];
 
 const upcomingFeatures = [
-  'Enhance mobile-first responsive design for a seamless experience on phones and tablets.',
-  'Include a "Back" button in all modules for consistent navigation.',
   'Implement multi-language support (Portuguese/English) with a quick-toggle menu.',
 ];
 
