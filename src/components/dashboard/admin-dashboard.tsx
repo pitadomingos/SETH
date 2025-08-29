@@ -35,7 +35,8 @@ const messageSchema = z.object({
 type MessageFormValues = z.infer<typeof messageSchema>;
 
 function ContactDeveloperDialog() {
-  const { addMessage } = useSchoolData();
+  const { addMessage, schoolProfile } = useSchoolData();
+  const { wsClient } = useWebSocket();
   const [isOpen, setIsOpen] = useState(false);
 
   const form = useForm<MessageFormValues>({
@@ -54,28 +55,48 @@ function ContactDeveloperDialog() {
     form.reset();
     setIsOpen(false);
   }
+  
+  const handleBroadcast = (values: MessageFormValues) => {
+    if (wsClient && schoolProfile) {
+        wsClient.send({
+            role: 'all',
+            type: 'announcement',
+            payload: {
+                title: values.subject,
+                message: values.body,
+                schoolName: schoolProfile.name,
+            }
+        });
+        alert('Broadcast sent to all connected parents and teachers!');
+    }
+    form.reset();
+    setIsOpen(false);
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline"><Mail className="mr-2 h-4 w-4" /> Contact Developer</Button>
+        <Button variant="outline"><Mail className="mr-2 h-4 w-4" /> Contact & Broadcast</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Contact Developer</DialogTitle>
+          <DialogTitle>Contact Developer / Broadcast</DialogTitle>
           <DialogDescription>
-            Send a message regarding system issues or feedback.
+            Send a message to the developer or broadcast an announcement to all parents and teachers.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+          <form className="space-y-4 py-4">
             <FormField control={form.control} name="subject" render={({ field }) => ( <FormItem><FormLabel>Subject</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="body" render={({ field }) => ( <FormItem><FormLabel>Message</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <DialogFooter>
-              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Send Message
-              </Button>
+            <DialogFooter className="flex flex-row justify-between w-full">
+              <Button type="button" onClick={form.handleSubmit(handleBroadcast)} variant="secondary" disabled={form.formState.isSubmitting}>Broadcast</Button>
+              <div className="flex gap-2">
+                <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+                <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Send to Developer
+                </Button>
+              </div>
             </DialogFooter>
           </form>
         </Form>
@@ -221,7 +242,7 @@ function AttendanceTrendChart() {
             return d;
         });
         
-        const holidayDateStrings = holidays.map(h => format(h.date, 'yyyy-MM-dd'));
+        const holidayDateStrings = holidays.map(h => format(new Date(h.date), 'yyyy-MM-dd'));
 
         return last30Days.map(d => {
             const dateStr = format(d, 'yyyy-MM-dd');
@@ -492,35 +513,35 @@ export default function AdminDashboard() {
       </div>
 
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="bg-green-500/10 border-green-500/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-500">{formatCurrency(totalRevenue, schoolProfile?.currency)}</div>
+            <div className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenue, schoolProfile?.currency)}</div>
             <p className="text-xs text-muted-foreground">This academic year</p>
             <p className="text-xs text-muted-foreground pt-1">{formatCurrency(monthlyTotalRevenue, schoolProfile?.currency)} this month</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-orange-500/10 border-orange-500/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Fees</CardTitle>
             <Hourglass className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-500">{formatCurrency(pendingFees, schoolProfile?.currency)}</div>
+            <div className="text-2xl font-bold text-orange-600">{formatCurrency(pendingFees, schoolProfile?.currency)}</div>
             <p className="text-xs text-muted-foreground">Awaiting payment</p>
             <p className="text-xs text-muted-foreground pt-1">{formatCurrency(monthlyPendingFees, schoolProfile?.currency)} this month</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-red-500/10 border-red-500/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Overdue Fees</CardTitle>
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-500">{formatCurrency(overdueFees, schoolProfile?.currency)}</div>
+            <div className="text-2xl font-bold text-red-600">{formatCurrency(overdueFees, schoolProfile?.currency)}</div>
             <p className="text-xs text-muted-foreground">Action required</p>
             <p className="text-xs text-muted-foreground pt-1">{formatCurrency(monthlyOverdueFees, schoolProfile?.currency)} this month</p>
           </CardContent>

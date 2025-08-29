@@ -85,7 +85,7 @@ export default function GradingPage() {
     for (const studentId of Object.keys(data)) {
       const studentData = data[studentId];
       if (studentData && studentData.grade) {
-        const success = addGrade({
+        const success = await addGrade({
           studentId: studentId,
           subject: selectedCourse.subject,
           grade: studentData.grade,

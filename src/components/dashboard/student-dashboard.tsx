@@ -285,7 +285,7 @@ function AssignedTests({ student, studentClass }) {
             .filter(dt => dt.classId === studentClass.id && !dt.submissions.some(s => s.studentId === student.id))
             .map(dt => {
                 const testDetails = savedTests.find(st => st.id === dt.testId);
-                const deadlineDate = dt.deadline instanceof Date ? dt.deadline : new Date(dt.deadline);
+                const deadlineDate = new Date(dt.deadline);
                 return { ...dt, ...testDetails, deadline: deadlineDate };
             })
             .sort((a,b) => a.deadline.getTime() - b.deadline.getTime());
@@ -333,10 +333,12 @@ function LiveAlertsCard() {
         if (!wsClient) return;
 
         const unsubscribe = wsClient.subscribe((msg) => {
+            // Add a timestamp to the message for display
             const newAlert = { ...msg, receivedAt: new Date() };
-            setAlerts(prev => [newAlert, ...prev].slice(0, 3));
+            setAlerts(prev => [newAlert, ...prev].slice(0, 3)); // Keep only the latest 5 alerts
         });
 
+        // Cleanup subscription on component unmount
         return () => unsubscribe();
     }, [wsClient]);
     
