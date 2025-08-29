@@ -87,7 +87,7 @@ function GlobalLeaderboards() {
     return Object.values(allSchoolData).map(school => {
       const totalFees = school.finance.reduce((sum, f) => sum + f.totalAmount, 0);
       const totalRevenue = school.finance.reduce((sum, f) => sum + f.amountPaid, 0);
-      const collectionRate = totalFees > 0 ? (totalRevenue / totalFees) * 100 : 100;
+      const collectionRate = totalFees > 0 ? (totalRevenue / totalFees) * 100 : 0;
       return {
         id: school.profile.id,
         name: school.profile.name,
@@ -269,5 +269,4 @@ export default function GlobalAdminDashboard() {
   );
 }
 
-    
     
