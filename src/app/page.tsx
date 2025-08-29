@@ -40,7 +40,7 @@ export default function LandingPage() {
                     <Link href="/register">Register Your School Today</Link>
                   </Button>
                    <Button asChild size="lg" variant="secondary">
-                    <a href="https://studio.web.app" target="_blank" rel="noopener noreferrer">View Live Demo</a>
+                    <a href="https://studio--edudesk-h9avj.us-central1.hosted.app/" target="_blank" rel="noopener noreferrer">View Live Demo</a>
                   </Button>
                 </div>
               </div>
