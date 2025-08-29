@@ -68,34 +68,37 @@ export default function SystemDocumentationPage() {
             <pre className="text-xs p-4 bg-muted rounded-md overflow-x-auto">
 {`src
 ├── app
-│   ├── (public)
+│   ├── (public)                # Public-facing multi-page website
+│   │   ├── about/page.tsx
+│   │   ├── contact/page.tsx
+│   │   ├── team/page.tsx
+│   │   ├── vision/page.tsx
 │   │   ├── layout.tsx
-│   │   ├── page.tsx          # Public homepage
-│   │   ├── login/page.tsx
-│   │   └── register/page.tsx
+│   │   └── page.tsx            # Main homepage
 │   ├── dashboard
-│   │   ├── (routes)          # Each feature page (e.g., finance, students, etc.)
-│   │   ├── layout.tsx        # Main dashboard layout with sidebar and header
-│   │   └── page.tsx          # Root dashboard page that routes to specific role dashboards
-│   └── actions/              # Next.js Server Actions for all database mutations
+│   │   ├── (routes)            # Each feature page (e.g., finance, students, etc.)
+│   │   ├── layout.tsx          # Main dashboard layout with sidebar and header
+│   │   └── page.tsx            # Root dashboard page that routes to specific role dashboards
+│   ├── actions/                # Next.js Server Actions for all database mutations
+│   └── register/               # School and Parent registration pages
 ├── components
-│   ├── ui/                   # Core, unstyled components from ShadCN
-│   ├── layout/               # App layout components (Sidebar, Header, Providers)
-│   ├── dashboard/            # Components specific to dashboard pages
-│   └── auth/                 # Authentication-related components (Login Form)
+│   ├── ui/                     # Core, unstyled components from ShadCN
+│   ├── layout/                 # App layout components (Sidebar, Header, Providers)
+│   ├── dashboard/              # Components specific to dashboard pages
+│   └── auth/                   # Authentication-related components (Login Form)
 ├── context
-│   ├── auth-context.tsx      # Handles user session, roles, and impersonation
-│   └── school-data-context.tsx # Central client-side data cache and action dispatcher
+│   ├── auth-context.tsx        # Handles user session, roles, and impersonation
+│   └── school-data-context.tsx   # Central client-side data cache and action dispatcher
 ├── lib
 │   ├── firebase/
-│   │   ├── config.ts         # Firebase initialization and emulator connections
-│   │   └── firestore-service.ts # All direct interactions with Firestore (CRUD functions)
-│   ├── initial-seed-data.ts  # The complete initial dataset for seeding Firestore
-│   ├── email-service.ts      # (Simulated) Service for sending emails via Server Actions
-│   ├── websocketClient.ts    # Client-side class for managing WebSocket connections
-│   └── utils.ts              # General utility functions (cn, formatters, etc.)
+│   │   ├── config.ts           # Firebase initialization and emulator connections
+│   │   └── firestore-service.ts# All direct interactions with Firestore (CRUD functions)
+│   ├── initial-seed-data.ts    # The complete initial dataset for seeding Firestore
+│   ├── email-service.ts        # (Simulated) Service for sending emails via Server Actions
+│   ├── websocketClient.ts      # Client-side class for managing WebSocket connections
+│   └── utils.ts                # General utility functions (cn, formatters, etc.)
 └── ai
-    └── flows/                # All Genkit AI flow definitions
+    └── flows/                  # All Genkit AI flow definitions
 `}
             </pre>
         </CardContent>

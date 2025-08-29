@@ -17,9 +17,10 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
       'System Dashboard: Get a high-level overview of network-wide statistics and run AI-powered analyses across multiple schools.',
       'All Schools Management: View and provision new schools. From here, you can manage a school\'s status (Active, Suspended) and switch context to manage a school directly using the "Log in as user" feature.',
       'System Finance: A comprehensive financial module to manage the platform\'s finances (Annual Recurring Revenue from subscriptions) and the company\'s internal finances (Corporate Ledger and Asset Inventory).',
-      'Inbox: Receive, view, and track messages from School Administrators across the network.',
+      'Inbox: Receive, view, and track messages from School Administrators across the network. Also receives inquiries from the public website\'s "Contact Us" form.',
       'Global User Management: Access dedicated pages to view and manage every student and parent account across the entire network, including suspending access.',
       'EduDesk Awards: Configure prizes and announce the annual system-wide awards for top-performing schools, students, and teachers. Click on any winner to get a detailed AI analysis of their success.',
+      'Public Website Management: A CMS to manage the content on the multi-page public website. You can add/remove team members (with photo uploads) and manage which partner schools are showcased.',
       'Public Kiosk: Access and view the public-facing kiosk display for your corporate headquarters. This includes marketing slides and network-wide data.',
       'System Settings: A dedicated page to configure global settings, such as which slides are visible on the corporate kiosk display.',
       'Activity Logs: View a global feed of all significant actions taken by users across all schools for complete system oversight.',
@@ -32,7 +33,7 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
     icon: ShieldCheck,
     title: 'School Administrator Guide',
     points: [
-        'Dashboard: Get a high-level overview of your school\'s statistics. You can also contact the developer from here.',
+        'Dashboard: Get a high-level overview of your school\'s statistics. You can also contact the developer or broadcast real-time alerts to staff and parents from here.',
         'Premium Dashboard: If your school has a Premium subscription, your dashboard shows a multi-school management view. You can see aggregate stats for your group, add new schools to it, and manage each school individually.',
         'AI Academic Reports: Access a suite of AI-powered reports, including a School-Wide Analysis, Class Performance breakdowns, a list of Struggling Students, and data-driven Teacher Performance reviews.',
         'School Profile: View and edit your school\'s core information like name, address, and contact details. Upload a school logo and manage your subscription plan.',
@@ -43,12 +44,10 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
         'Finance: Track school-wide revenue and expenses. Record partial or full payments for student fees and create new ad-hoc fee transactions. Use filters and pagination to manage large datasets and print financial statements.',
         'Sports: Create sports teams, assign coaches, and manage player rosters. You can also delete teams, which will remove associated competitions.',
         'Assets: Manage school equipment and resources.',
-        'Examinations: Schedule and manage official examinations.',
         'Kiosk Showcase: Manage the media (images/videos) and configure the slides for your school\'s public-facing kiosk display.',
         'Settings: A central place to manage users, configure the academic calendar (terms & holidays), and define system-wide data like currency, exam boards, and fee descriptions. The system supports specialized roles (e.g., Finance Officer, Counselor) which can be assigned to users to delegate responsibilities.',
         'Messaging, Events, Leaderboards, Profile: Standard modules for communication, scheduling, tracking, and personal settings.',
         'Activity Logs: View a log of all significant actions taken by users within your school. This feed is specific to your school only.',
-        'Live Broadcasts: Use the "Contact & Broadcast" button on your dashboard to send real-time alerts to all connected teachers and parents.'
     ]
   },
   AcademicDean: {
@@ -59,7 +58,6 @@ const userGuides: Record<string, { icon: LucideIcon, title: string, points: stri
         'Classes: View and manage student groups.',
         'AI Reports: Access a suite of AI-powered academic reports.',
         'Teachers: View and manage teacher profiles and performance.',
-        'Examinations: Schedule and oversee official examinations.',
         'Leaderboards: Monitor school-wide academic rankings.',
       ],
   },

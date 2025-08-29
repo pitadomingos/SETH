@@ -60,9 +60,13 @@ const completedTasks = [
   'Added pagination and advanced filtering to all financial tables.',
   'Applied highlight colors in cards and alerts to reinforce information hierarchy.',
   'Built out analytics for the student test-taking results for teachers.',
-  'Implement a site-wide notification and communication hub for students and parents using WebSockets.',
+  'Implemented a site-wide notification and communication hub for students and parents using WebSockets.',
   'Enhanced mobile-first responsive design for a seamless experience on phones and tablets.',
   'Included a "Back" button in all modules for consistent navigation.',
+  'Created a multi-page public website with About, Vision, Team, and Contact pages.',
+  'Implemented a CMS for the public site to manage team members and partner schools.',
+  'Created a functional contact form that sends messages to the Global Admin\'s inbox.',
+  'Added full navigation and social media links to the public site\'s header and footer.',
 ];
 
 const upcomingFeatures = [
