@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-    const { isLoading } = useSchoolData();
+    const { isLoading, usedFallback, schoolProfile } = useSchoolData();
 
     if (isLoading) {
         return (
@@ -18,7 +18,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         );
     }
     
-    return <>{children}</>;
+    return (
+        <>
+            {usedFallback && (
+                <div className="bg-yellow-200 text-black px-4 py-2 text-sm font-semibold">
+                  ⚠️ You are seeing fallback data from{" "}
+                  <strong>{schoolProfile?.name || "Unknown School"}</strong>.  
+                  Please update this user’s <code>schoolId</code> in Firestore.
+                </div>
+             )}
+            {children}
+        </>
+    );
 }
 
 export default function DashboardLayout({

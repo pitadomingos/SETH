@@ -11,14 +11,12 @@ export type Role =
     | 'Teacher' 
     | 'Student' 
     | 'Parent'
-    // New School-Level Roles
     | 'AcademicDean'
     | 'AdmissionsOfficer'
     | 'Counselor'
     | 'FinanceOfficer'
     | 'SportsDirector'
     | 'ITAdmin';
-
 
 export interface User {
   username: string;
@@ -184,6 +182,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         router.push('/');
     }
   };
+
+  // 🔎 Debug: see if schoolId is set properly
+  useEffect(() => {
+    console.log("[Auth] role:", role, "schoolId:", schoolId, "user:", user?.email);
+  }, [role, schoolId, user]);
 
   return (
     <AuthContext.Provider value={{ user, role, schoolId, originalUser, login, logout, isLoading, impersonateUser, setUserProfilePicture, updateUserProfile }}>
