@@ -70,9 +70,8 @@ export async function seedInitialData(): Promise<void> {
       const { students, teachers, classes, courses, syllabi, admissions, finance, assets, exams, grades, attendance, events, expenses, teams, competitions, terms, holidays, kioskMedia, activityLogs, messages, savedReports, deployedTests, savedTests, ...rest } = schoolData;
       
       const schoolRef = doc(db, 'schools', schoolId);
-      batch.set(schoolRef, rest); // Sets the profile and other top-level fields
+      batch.set(schoolRef, rest);
       
-      // Seed subcollections
       students.forEach(item => batch.set(doc(db, 'schools', schoolId, 'students', item.id), item));
       teachers.forEach(item => batch.set(doc(db, 'schools', schoolId, 'teachers', item.id), item));
       classes.forEach(item => batch.set(doc(db, 'schools', schoolId, 'classes', item.id), item));
@@ -98,7 +97,6 @@ export async function seedInitialData(): Promise<void> {
       savedTests.forEach(item => batch.set(doc(db, 'schools', schoolId, 'savedTests', item.id), {...item, createdAt: Timestamp.fromDate(new Date(item.createdAt))}));
     }
 
-    // Seed users
     Object.entries(mockUsers).forEach(([username, userProfile]) => {
         const userRef = doc(db, 'users', username);
         batch.set(userRef, userProfile);
@@ -111,101 +109,78 @@ export async function seedInitialData(): Promise<void> {
 async function getSubcollection<T>(schoolId: string, collectionName: string): Promise<T[]> {
     const snapshot = await getDocs(collection(db, 'schools', schoolId, collectionName));
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
+    console.log(`--- Raw data from Firestore for ${collectionName} in ${schoolId}:`, data); // Diagnostic log
     return data;
 }
-  
 
 // --- Data Fetching ---
 export async function getSchoolsFromFirestore(): Promise<Record<string, SchoolData>> {
+  console.log("--- Starting to fetch all school data from Firestore ---");
   const schoolsSnapshot = await getDocs(collection(db, 'schools'));
   if (schoolsSnapshot.empty) {
+    console.log("--- No school documents found in Firestore. ---");
     return {};
   }
+  console.log(`--- Found ${schoolsSnapshot.docs.length} school documents. ---`);
 
-  const schoolDataPromises = schoolsSnapshot.docs.map(async (schoolDoc) => {
+  const allSchoolsData: Record<string, SchoolData> = {};
+
+  for (const schoolDoc of schoolsSnapshot.docs) {
     const schoolId = schoolDoc.id;
-    const profileData = schoolDoc.data();
-    
-    // Ensure profile object exists and has an id
-    if (!profileData.profile) {
-      console.warn(`School document ${schoolId} is missing the 'profile' field.`);
-      profileData.profile = {}; // Create an empty profile to avoid errors
-    }
-    profileData.profile.id = schoolId;
-    
-    const profile = profileData.profile as SchoolProfile;
-    
-    // Parallel fetch for all subcollections
-    const [
-      students, teachers, classes, courses, syllabi, admissions, finance,
-      assets, exams, grades, attendance, events, expenses, teams, competitions,
-      terms, holidays, kioskMedia, activityLogs, messages, savedReports,
-      deployedTests, savedTests
-    ] = await Promise.all([
-      getSubcollection<Student>(schoolId, 'students'),
-      getSubcollection<Teacher>(schoolId, 'teachers'),
-      getSubcollection<Class>(schoolId, 'classes'),
-      getSubcollection<Course>(schoolId, 'courses'),
-      getSubcollection<Syllabus>(schoolId, 'syllabi'),
-      getSubcollection<Admission>(schoolId, 'admissions'),
-      getSubcollection<FinanceRecord>(schoolId, 'finance'),
-      getSubcollection<any>(schoolId, 'assets'),
-      getSubcollection<Exam>(schoolId, 'exams'),
-      getSubcollection<Grade>(schoolId, 'grades'),
-      getSubcollection<Attendance>(schoolId, 'attendance'),
-      getSubcollection<Event>(schoolId, 'events'),
-      getSubcollection<Expense>(schoolId, 'expenses'),
-      getSubcollection<Team>(schoolId, 'teams'),
-      getSubcollection<Competition>(schoolId, 'competitions'),
-      getSubcollection<any>(schoolId, 'terms'),
-      getSubcollection<any>(schoolId, 'holidays'),
-      getSubcollection<KioskMedia>(schoolId, 'kioskMedia'),
-      getSubcollection<ActivityLog>(schoolId, 'activityLogs'),
-      getSubcollection<Message>(schoolId, 'messages'),
-      getSubcollection<SavedReport>(schoolId, 'savedReports'),
-      getSubcollection<DeployedTest>(schoolId, 'deployedTests'),
-      getSubcollection<SavedTest>(schoolId, 'savedTests'),
-    ]);
+    const profile = schoolDoc.data().profile as SchoolProfile;
+    profile.id = schoolId; // Ensure the id is set on the profile object
+    console.log(`--- Processing school: ${profile.name} (${schoolId}) ---`);
 
-    return {
-      [schoolId]: {
-        profile,
-        students,
-        teachers,
-        classes,
-        courses,
-        syllabi,
-        admissions,
-        finance,
-        assets,
-        exams,
-        grades,
-        attendance,
-        events,
-        expenses,
-        teams,
-        competitions,
-        terms,
-        holidays,
-        kioskMedia,
-        activityLogs,
-        messages, 
-        savedReports, 
-        deployedTests,
-        savedTests,
-        feeDescriptions: profile.feeDescriptions || [],
-        audiences: profile.audiences || [],
-        expenseCategories: profile.expenseCategories || [],
-        examBoards: profile.examBoards || [],
-        schoolGroups: profile.schoolGroups || {},
-        lessonPlans: [], // Keep placeholder if not in DB
-      }
+    const subcollectionNames = [
+      'students', 'teachers', 'classes', 'courses', 'syllabi', 'admissions', 'finance',
+      'assets', 'exams', 'grades', 'attendance', 'events', 'expenses', 'teams', 'competitions',
+      'terms', 'holidays', 'kioskMedia', 'activityLogs', 'messages', 'savedReports',
+      'deployedTests', 'savedTests'
+    ];
+    
+    const subcollectionPromises = subcollectionNames.map(name => getSubcollection(schoolId, name));
+    const subcollectionResults = await Promise.all(subcollectionPromises);
+
+    const schoolData: SchoolData = {
+      profile,
+      students: subcollectionResults[0] as Student[],
+      teachers: subcollectionResults[1] as Teacher[],
+      classes: subcollectionResults[2] as Class[],
+      courses: subcollectionResults[3] as Course[],
+      syllabi: subcollectionResults[4] as Syllabus[],
+      admissions: subcollectionResults[5] as Admission[],
+      finance: subcollectionResults[6] as FinanceRecord[],
+      assets: subcollectionResults[7] as any[],
+      exams: subcollectionResults[8] as Exam[],
+      grades: subcollectionResults[9] as Grade[],
+      attendance: subcollectionResults[10] as Attendance[],
+      events: subcollectionResults[11] as Event[],
+      expenses: subcollectionResults[12] as Expense[],
+      teams: subcollectionResults[13] as Team[],
+      competitions: subcollectionResults[14] as Competition[],
+      terms: subcollectionResults[15] as any[],
+      holidays: subcollectionResults[16] as any[],
+      kioskMedia: subcollectionResults[17] as KioskMedia[],
+      activityLogs: subcollectionResults[18] as ActivityLog[],
+      messages: subcollectionResults[19] as Message[],
+      savedReports: subcollectionResults[20] as SavedReport[],
+      deployedTests: subcollectionResults[21] as DeployedTest[],
+      savedTests: subcollectionResults[22] as SavedTest[],
+      feeDescriptions: profile.feeDescriptions || [],
+      audiences: profile.audiences || [],
+      expenseCategories: profile.expenseCategories || [],
+      examBoards: profile.examBoards || [],
+      schoolGroups: profile.schoolGroups || {},
+      lessonPlans: [],
     };
-  });
 
-  const allSchoolDataArray = await Promise.all(schoolDataPromises);
-  return Object.assign({}, ...allSchoolDataArray);
+    allSchoolsData[schoolId] = schoolData;
+  }
+  
+  console.log("--- Finished fetching all school data. ---", allSchoolsData);
+  return allSchoolsData;
 }
+
 
 export async function getUsersFromFirestore(): Promise<Record<string, UserProfile>> {
     const usersCollection = collection(db, 'users');
@@ -569,4 +544,3 @@ export async function sendMessageInFirestore(senderSchoolId: string, recipientSc
     return { id: docRef.id, ...newMessage, timestamp: new Date() } as Message;
 }
 
-    
