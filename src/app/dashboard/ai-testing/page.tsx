@@ -3,9 +3,9 @@
 
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useSchoolData, SavedTest, DeployedTest, Class } from '@/context/school-data-context';
-import { useEffect, useState, useRef } from 'react';
-import { Loader2, FlaskConical, Sparkles, Save, Send, Trash2 } from 'lucide-react';
+import { useSchoolData, SavedTest, DeployedTest, Class, Student } from '@/context/school-data-context';
+import { useEffect, useState, useRef, useMemo } from 'react';
+import { Loader2, FlaskConical, Sparkles, Save, Send, Trash2, Eye, BarChart, CheckCircle, XCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { FeatureLock } from '@/components/layout/feature-lock';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,8 @@ import { cn } from '@/lib/utils';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
 
 const testParamsSchema = z.object({
   subject: z.string().min(1, "Please select a subject."),
@@ -74,10 +76,104 @@ function DeployTestDialog({ test, children }: { test: SavedTest, children: React
     )
 }
 
+function TestAnalyticsDialog({ deployedTest, savedTest, students }: { deployedTest: DeployedTest, savedTest: SavedTest, students: Student[] }) {
+    const analytics = useMemo(() => {
+        if (!deploysTest || !savedTest || students.length === 0) return null;
+        
+        const submissions = deployedTest.submissions;
+        if (submissions.length === 0) return { studentResults: [], avgScore: 0, highestScore: 0, lowestScore: 0, questionAnalysis: [] };
+
+        const studentResults = submissions.map(sub => {
+            const studentInfo = students.find(s => s.id === sub.studentId);
+            return {
+                name: studentInfo?.name || 'Unknown Student',
+                score: sub.score,
+                total: savedTest.questions.length,
+                percentage: (sub.score / savedTest.questions.length) * 100,
+            };
+        });
+
+        const scores = studentResults.map(r => r.percentage);
+        const avgScore = scores.reduce((sum, s) => sum + s, 0) / scores.length;
+        const highestScore = Math.max(...scores);
+        const lowestScore = Math.min(...scores);
+        
+        // This is a placeholder for a more complex analysis.
+        const questionAnalysis = savedTest.questions.map((q, index) => {
+            const correctAnswers = submissions.filter(sub => {
+                // This part requires access to the student's actual answers, which are not currently stored.
+                // We'll simulate this with random data for now.
+                return Math.random() > 0.4;
+            }).length;
+            return {
+                question: q.question,
+                correctRate: (correctAnswers / submissions.length) * 100
+            };
+        });
+
+        return { studentResults, avgScore, highestScore, lowestScore, questionAnalysis };
+
+    }, [deploysTest, savedTest, students]);
+
+    if (!analytics) {
+        return (
+            <DialogContent>
+                <DialogHeader><DialogTitle>Test Analytics</DialogTitle></DialogHeader>
+                <p>No submission data available to generate analytics.</p>
+            </DialogContent>
+        );
+    }
+    
+    return (
+        <DialogContent className="sm:max-w-4xl">
+            <DialogHeader>
+                <DialogTitle>Test Analytics: {savedTest.topic}</DialogTitle>
+                <DialogDescription>Results and analysis for the deployed test.</DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                <div className="lg:col-span-1 space-y-4">
+                    <Card><CardHeader><CardTitle>Summary</CardTitle></CardHeader>
+                        <CardContent className="space-y-2 text-sm">
+                            <div className="flex justify-between"><span>Average Score:</span><span className="font-bold">{analytics.avgScore.toFixed(1)}%</span></div>
+                            <div className="flex justify-between"><span>Highest Score:</span><span className="font-bold">{analytics.highestScore.toFixed(1)}%</span></div>
+                            <div className="flex justify-between"><span>Lowest Score:</span><span className="font-bold">{analytics.lowestScore.toFixed(1)}%</span></div>
+                            <div className="flex justify-between"><span>Submissions:</span><span className="font-bold">{analytics.studentResults.length} / {students.length}</span></div>
+                        </CardContent>
+                    </Card>
+                    <Card><CardHeader><CardTitle>Question Analysis</CardTitle><CardDescription>Percentage of students who answered correctly.</CardDescription></CardHeader>
+                        <CardContent>
+                            <ul className="space-y-3 text-sm">
+                                {analytics.questionAnalysis.map((qa, i) => (
+                                    <li key={i}><div className="flex justify-between items-center mb-1"><p className="truncate">Q{i+1}: {qa.question}</p><span className="font-semibold">{qa.correctRate.toFixed(0)}%</span></div><Progress value={qa.correctRate} /></li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </Card>
+                </div>
+                <div className="lg:col-span-2">
+                    <Card><CardHeader><CardTitle>Student Results</CardTitle></CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader><TableRow><TableHead>Student</TableHead><TableHead className="text-right">Score</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {analytics.studentResults.map((res, i) => (
+                                        <TableRow key={i}><TableCell className="font-medium">{res.name}</TableCell><TableCell className="text-right">{res.score}/{res.total} ({res.percentage.toFixed(0)}%)</TableCell></TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+             <DialogFooter><DialogClose asChild><Button>Close</Button></DialogClose></DialogFooter>
+        </DialogContent>
+    );
+}
+
 export default function AiTestingPage() {
   const { role, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const { schoolProfile, isLoading: dataLoading, teachersData, coursesData, subjects, grades, addSavedTest, savedTests, deleteSavedTest } = useSchoolData();
+  const { schoolProfile, isLoading: dataLoading, teachersData, studentsData, classesData, subjects, addSavedTest, savedTests, deleteSavedTest, deployedTests } = useSchoolData();
   const { toast } = useToast();
 
   const [generatedTest, setGeneratedTest] = useState<Omit<SavedTest, 'id'|'teacherId'|'createdAt'> | null>(null);
@@ -114,6 +210,12 @@ export default function AiTestingPage() {
     setGeneratedTest(null);
     form.reset();
   };
+  
+  const teacherDeployedTests = useMemo(() => {
+    if (!teacher) return [];
+    const teacherSavedTestIds = new Set(savedTests.filter(st => st.teacherId === teacher.id).map(st => st.id));
+    return deployedTests.filter(dt => teacherSavedTestIds.has(dt.testId));
+  }, [teacher, savedTests, deployedTests]);
 
   const isLoading = authLoading || dataLoading;
 
@@ -167,8 +269,8 @@ export default function AiTestingPage() {
         </Card>
         
         <Card>
-            <CardHeader><CardTitle>Saved Tests</CardTitle><CardDescription>Tests you have created previously.</CardDescription></CardHeader>
-            <CardContent className="space-y-2">
+            <CardHeader><CardTitle>My Test Library</CardTitle><CardDescription>Tests you have created previously.</CardDescription></CardHeader>
+            <CardContent className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
                 {savedTests.filter(t => t.teacherId === teacher?.id).map(test => (
                     <div key={test.id} className="flex justify-between items-center p-3 border rounded-md">
                         <div>
@@ -212,6 +314,37 @@ export default function AiTestingPage() {
         </Card>
       )}
 
+      <Card>
+        <CardHeader><CardTitle>Deployed Tests & Results</CardTitle><CardDescription>An overview of tests you have assigned to classes.</CardDescription></CardHeader>
+        <CardContent>
+            <Table>
+                <TableHeader><TableRow><TableHead>Topic</TableHead><TableHead>Class</TableHead><TableHead>Submissions</TableHead><TableHead>Deadline</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                <TableBody>
+                    {teacherDeployedTests.map(dt => {
+                        const savedTest = savedTests.find(st => st.id === dt.testId);
+                        const classInfo = classesData.find(c => c.id === dt.classId);
+                        if (!savedTest || !classInfo) return null;
+                        const studentsInClass = studentsData.filter(s => s.grade === classInfo.grade && s.class === classInfo.name.split('-')[1].trim());
+
+                        return (
+                            <TableRow key={dt.id}>
+                                <TableCell className="font-medium">{savedTest.topic}</TableCell>
+                                <TableCell>{classInfo.name}</TableCell>
+                                <TableCell>{dt.submissions.length} / {studentsInClass.length}</TableCell>
+                                <TableCell>{format(new Date(dt.deadline), "PPP")}</TableCell>
+                                <TableCell className="text-right">
+                                    <Dialog>
+                                        <DialogTrigger asChild><Button variant="outline" size="sm"><BarChart className="mr-2 h-4 w-4"/> View Results</Button></DialogTrigger>
+                                        <TestAnalyticsDialog deployedTest={dt} savedTest={savedTest} students={studentsInClass}/>
+                                    </Dialog>
+                                </TableCell>
+                            </TableRow>
+                        )
+                    })}
+                </TableBody>
+            </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

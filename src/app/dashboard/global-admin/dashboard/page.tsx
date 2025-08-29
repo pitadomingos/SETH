@@ -4,7 +4,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Users, Presentation, Settings, BrainCircuit, DollarSign, School, Gem, TrendingDown, BarChart2, X } from 'lucide-react';
+import { Loader2, Users, Presentation, Settings, BrainCircuit, DollarSign, School, Gem, TrendingDown, BarChart2, X, Globe } from 'lucide-react';
 import { useSchoolData } from '@/context/school-data-context';
 import { useEffect, useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -106,11 +106,12 @@ function GlobalLeaderboards() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="schools">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="schools">Top Schools</TabsTrigger>
             <TabsTrigger value="students">Top Students</TabsTrigger>
             <TabsTrigger value="teachers">Top Teachers</TabsTrigger>
             <TabsTrigger value="finance">Financial Health</TabsTrigger>
+            <TabsTrigger value="national" disabled>National View</TabsTrigger>
           </TabsList>
 
           <TabsContent value="schools" className="pt-4">

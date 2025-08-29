@@ -4,8 +4,8 @@
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useSchoolData, SavedReport } from '@/context/school-data-context';
-import { useEffect, useState } from 'react';
-import { Loader2, BrainCircuit, Sparkles, Save, FileText, BarChart } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { Loader2, BrainCircuit, Sparkles, Save, FileText, BarChart, Download } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { FeatureLock } from '@/components/layout/feature-lock';
 import { Button } from '@/components/ui/button';
@@ -14,12 +14,14 @@ import { useToast } from '@/hooks/use-toast';
 import { analyzeSchoolPerformanceAction } from '@/app/actions/ai-actions';
 import { SchoolAnalysis, SchoolAnalysisParams } from '@/ai/flows/school-analysis-flow';
 import { format } from 'date-fns';
+import { useReactToPrint } from 'react-to-print';
 
 export default function AiReportsPage() {
   const { role, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { schoolProfile, isLoading: dataLoading, studentsData, teachersData, grades, attendance, addSavedReport, savedReports } = useSchoolData();
   const { toast } = useToast();
+  const reportRef = useRef(null);
 
   const [reportType, setReportType] = useState<SchoolAnalysisParams['type']>('School-Wide');
   const [generatedReport, setGeneratedReport] = useState<SchoolAnalysis | null>(null);
@@ -27,6 +29,11 @@ export default function AiReportsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const isLoading = authLoading || dataLoading;
+
+  const handlePrint = useReactToPrint({
+    content: () => reportRef.current,
+    documentTitle: generatedReport?.title || 'School Performance Report',
+  });
 
   useEffect(() => {
     if (!isLoading && role !== 'Admin') {
@@ -123,34 +130,37 @@ export default function AiReportsPage() {
 
        {generatedReport && (
         <Card>
-          <CardHeader>
-            <CardTitle>{generatedReport.title}</CardTitle>
-            <CardDescription>{generatedReport.summary}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-                <div className="p-4 bg-muted/50 rounded-lg">
-                    <h3 className="font-semibold mb-2 flex items-center gap-2"><BarChart /> Key Metrics</h3>
-                    <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
-                        {generatedReport.keyMetrics.map((metric, i) => <li key={i}><b>{metric.metric}:</b> {metric.value}</li>)}
-                    </ul>
-                </div>
-                <div className="p-4 bg-muted/50 rounded-lg">
-                    <h3 className="font-semibold mb-2 flex items-center gap-2"><BrainCircuit/> Insights</h3>
-                    <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
-                        {generatedReport.insights.map((insight, i) => <li key={i}>{insight}</li>)}
-                    </ul>
-                </div>
-            </div>
-             <div className="p-4 bg-primary/10 rounded-lg">
-                <h3 className="font-semibold mb-2 flex items-center gap-2">Recommendations</h3>
-                <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
-                    {generatedReport.recommendations.map((rec, i) => <li key={i}>{rec}</li>)}
-                </ul>
-            </div>
-          </CardContent>
-          <CardFooter>
+          <div ref={reportRef}>
+            <CardHeader>
+              <CardTitle>{generatedReport.title}</CardTitle>
+              <CardDescription>{generatedReport.summary}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                  <div className="p-4 bg-muted/50 rounded-lg">
+                      <h3 className="font-semibold mb-2 flex items-center gap-2"><BarChart /> Key Metrics</h3>
+                      <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
+                          {generatedReport.keyMetrics.map((metric, i) => <li key={i}><b>{metric.metric}:</b> {metric.value}</li>)}
+                      </ul>
+                  </div>
+                  <div className="p-4 bg-muted/50 rounded-lg">
+                      <h3 className="font-semibold mb-2 flex items-center gap-2"><BrainCircuit/> Insights</h3>
+                      <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
+                          {generatedReport.insights.map((insight, i) => <li key={i}>{insight}</li>)}
+                      </ul>
+                  </div>
+              </div>
+              <div className="p-4 bg-primary/10 rounded-lg">
+                  <h3 className="font-semibold mb-2 flex items-center gap-2">Recommendations</h3>
+                  <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
+                      {generatedReport.recommendations.map((rec, i) => <li key={i}>{rec}</li>)}
+                  </ul>
+              </div>
+            </CardContent>
+          </div>
+          <CardFooter className="flex gap-2">
             <Button onClick={handleSaveReport}><Save className="mr-2 h-4 w-4"/> Save Report</Button>
+            <Button variant="outline" onClick={handlePrint}><Download className="mr-2 h-4 w-4"/> Download PDF</Button>
           </CardFooter>
         </Card>
       )}
