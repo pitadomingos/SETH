@@ -2,12 +2,12 @@
 'use client';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Users, Briefcase, Link as LinkIcon, PlusCircle, Trash2, Save, Upload } from 'lucide-react';
-import { useSchoolData, SchoolProfile } from '@/context/school-data-context';
+import { Loader2, Users, Briefcase, PlusCircle, Trash2, Save, Upload } from 'lucide-react';
+import { useSchoolData } from '@/context/school-data-context';
 import { useEffect, useState, useRef } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -35,6 +35,101 @@ const websiteContentSchema = z.object({
 });
 
 type WebsiteContentFormValues = z.infer<typeof websiteContentSchema>;
+
+function TeamMemberCard({
+  field,
+  index,
+  control,
+  onRemove,
+}: {
+  field: Record<'id', string>;
+  index: number;
+  control: Control<WebsiteContentFormValues>;
+  onRemove: (index: number) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const form = useFormContext<WebsiteContentFormValues>();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        const placeholderUrl = `https://placehold.co/200x200.png?text=${file.name.substring(0, 3)}&v=${Date.now()}`;
+        form.setValue(`teamMembers.${index}.imageUrl`, placeholderUrl, { shouldValidate: true, shouldDirty: true });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  return (
+    <div key={field.id} className="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-4 p-4 border rounded-lg items-start">
+      <div className="flex flex-col items-center gap-2">
+        <Image
+          src={form.watch(`teamMembers.${index}.imageUrl`)}
+          alt={form.watch(`teamMembers.${index}.name`) || 'Team member'}
+          width={100}
+          height={100}
+          className="rounded-full object-cover"
+          data-ai-hint="person photo"
+        />
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept="image/*"
+          onChange={handleFileChange}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Upload className="mr-2 h-4 w-4" /> Change
+        </Button>
+      </div>
+      <div className="space-y-2">
+        <FormField
+          control={control}
+          name={`teamMembers.${index}.name`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl><Input {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name={`teamMembers.${index}.role`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Role</FormLabel>
+              <FormControl><Input {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name={`teamMembers.${index}.description`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl><Textarea rows={2} {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+      <Button type="button" variant="ghost" size="icon" onClick={() => onRemove(index)}>
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+    </div>
+  );
+}
 
 export default function WebsiteManagementPage() {
   const { role, isLoading: authLoading } = useAuth();
@@ -92,20 +187,6 @@ export default function WebsiteManagementPage() {
     }
   }
   
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        // In a real app this would upload to Firebase storage and return a URL
-        // For this prototype, we use a placeholder that visually confirms the change
-        const placeholderUrl = `https://placehold.co/200x200.png?text=${file.name.substring(0,3)}&v=${Date.now()}`;
-        form.setValue(`teamMembers.${index}.imageUrl`, placeholderUrl, { shouldValidate: true, shouldDirty: true });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-  
   const handleAddSchool = (schoolId: string) => {
     const school = allSchoolData?.[schoolId];
     if (school) {
@@ -142,23 +223,15 @@ export default function WebsiteManagementPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {teamFields.map((field, index) => {
-                        const fileInputRef = useRef<HTMLInputElement>(null);
-                        return (
-                        <div key={field.id} className="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-4 p-4 border rounded-lg items-start">
-                            <div className="flex flex-col items-center gap-2">
-                                <Image src={form.watch(`teamMembers.${index}.imageUrl`)} alt={form.watch(`teamMembers.${index}.name`)} width={100} height={100} className="rounded-full object-cover" data-ai-hint="person photo"/>
-                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, index)} />
-                                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}><Upload className="mr-2 h-4 w-4"/> Change</Button>
-                            </div>
-                            <div className="space-y-2">
-                                 <FormField control={form.control} name={`teamMembers.${index}.name`} render={({ field }) => ( <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                 <FormField control={form.control} name={`teamMembers.${index}.role`} render={({ field }) => ( <FormItem><FormLabel>Role</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                 <FormField control={form.control} name={`teamMembers.${index}.description`} render={({ field }) => ( <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea rows={2} {...field} /></FormControl><FormMessage /></FormItem> )} />
-                            </div>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeTeam(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                        </div>
-                    )})}
+                    {teamFields.map((field, index) => (
+                      <TeamMemberCard
+                        key={field.id}
+                        field={field}
+                        index={index}
+                        control={form.control}
+                        onRemove={removeTeam}
+                      />
+                    ))}
                 </CardContent>
             </Card>
 
