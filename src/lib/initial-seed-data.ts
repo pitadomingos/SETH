@@ -1,4 +1,5 @@
 
+
 import { type Role } from "@/context/auth-context";
 
 // This file is now used only for seeding the database for the first time.
@@ -25,11 +26,11 @@ export const initialSchoolData: Record<string, any> = {
             kioskConfig: { showDashboard: true, showLeaderboard: true, showTeacherLeaderboard: true, showAllSchools: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false },
             subscription: { status: 'Paid', amount: 300, dueDate: '2025-01-01' },
             awards: [],
-            feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform'],
-            audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Whole School Community', 'All Staff'],
-            expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics'],
+            feeDescriptions: ['Term Tuition', 'Lab Fees', 'Sports Uniform', 'Field Trip', 'Library Fund'],
+            audiences: ['All Students', 'Parents', 'Teachers', 'Grades 9-12', 'Grades 6-8', 'Whole School Community', 'All Staff'],
+            expenseCategories: ['Salaries', 'Utilities', 'Supplies', 'Maintenance', 'Academics', 'Marketing'],
             examBoards: ['Internal', 'Cambridge', 'IEB'],
-            schoolGroups: { 'miniarte_group': ['miniarte', 'miniarte_matola', 'miniarte_beira'] },
+            schoolGroups: {},
         },
         students: [
             { id: 'STU001', name: 'Miguel Santos', email: 'miguel.santos@northwood.edu', phone: '840000001', address: 'Rua de Kassuende', sex: 'Male', dateOfBirth: '2008-05-10', grade: '10', class: 'A', parentName: 'Ana Santos', parentEmail: 'ana.santos@email.com', status: 'Active', behavioralAssessments: [] },
@@ -41,29 +42,33 @@ export const initialSchoolData: Record<string, any> = {
         teachers: [
             { id: 'T01', name: 'Sérgio Almeida', email: 'sergio.almeida@northwood.edu', phone: '820000001', address: 'Av. da Guerra Popular', sex: 'Male', subject: 'Mathematics', experience: '10 years', qualifications: 'M.Sc. Mathematics', status: 'Active' },
             { id: 'T02', name: 'Catarina Martins', email: 'catarina.martins@northwood.edu', phone: '820000002', address: 'Rua da Argélia', sex: 'Female', subject: 'History', experience: '8 years', qualifications: 'M.A. History', status: 'Active' },
+            { id: 'T03', name: 'Vasco Nunes', email: 'vasco.nunes@northwood.edu', phone: '820000003', address: 'Av. Vladimir Lenine', sex: 'Male', subject: 'Physical Education', experience: '12 years', qualifications: 'B.Sc. Sports Science', status: 'Active' },
         ],
         classes: [
             { id: 'C01', name: 'Grade 10-A', grade: '10', teacher: 'Sérgio Almeida', students: 30, room: '101' },
             { id: 'C02', name: 'Grade 11-B', grade: '11', teacher: 'Catarina Martins', students: 28, room: '102' },
             { id: 'C03', name: 'Grade 9-C', grade: '9', teacher: 'Sérgio Almeida', students: 25, room: '103' },
-            { id: 'C04', name: 'Grade 8-B', grade: '8', teacher: 'Catarina Martins', students: 28, room: '104' },
+            { id: 'C04', name: 'Grade 8-A', grade: '8', teacher: 'Catarina Martins', students: 28, room: '104' },
+            { id: 'C05', name: 'Grade 5-B', grade: '5', teacher: 'Vasco Nunes', students: 22, room: '105' },
         ],
         courses: [
             { id: 'CRS01', subject: 'Mathematics', teacherId: 'T01', classId: 'C01', schedule: [{ day: 'Monday', startTime: '09:00', endTime: '10:00', room: '101' }] },
             { id: 'CRS02', subject: 'History', teacherId: 'T02', classId: 'C02', schedule: [{ day: 'Tuesday', startTime: '10:00', endTime: '11:00', room: '102' }] },
             { id: 'CRS03', subject: 'Mathematics', teacherId: 'T01', classId: 'C03', schedule: [{ day: 'Wednesday', startTime: '11:00', endTime: '12:00', room: '103' }] },
+            { id: 'CRS04', subject: 'Physical Education', teacherId: 'T03', classId: 'C05', schedule: [{ day: 'Friday', startTime: '14:00', endTime: '15:00', room: 'Gym' }] },
         ],
         grades: [
             { id: 'G01', studentId: 'STU001', subject: 'Mathematics', grade: '18', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
             { id: 'G02', studentId: 'STU002', subject: 'Mathematics', grade: '14', date: new Date('2024-03-15T00:00:00Z'), type: 'Test', description: 'Algebra Test', teacherId: 'T01' },
             { id: 'G03', studentId: 'STU003', subject: 'History', grade: '16', date: new Date('2024-04-10T00:00:00Z'), type: 'Coursework', description: 'WWII Essay', teacherId: 'T02' },
             { id: 'G04', studentId: 'STU004', subject: 'History', grade: '19', date: new Date('2024-04-12T00:00:00Z'), type: 'Coursework', description: 'Mozambique History Presentation', teacherId: 'T02' },
-            { id: 'G05', studentId: 'STU005', subject: 'Mathematics', grade: '17', date: new Date('2024-04-18T00:00:00Z'), type: 'Test', description: 'Geometry Quiz', teacherId: 'T01' },
+            { id: 'G05', studentId: 'STU005', subject: 'Physical Education', grade: '17', date: new Date('2024-04-18T00:00:00Z'), type: 'Test', description: 'Fitness Test', teacherId: 'T03' },
         ],
         finance: [
             { id: 'FIN01', studentId: 'STU001', studentName: 'Miguel Santos', description: 'Term 1 Tuition', totalAmount: 50000, amountPaid: 50000, dueDate: '2024-02-01', status: 'Paid' },
             { id: 'FIN02', studentId: 'STU002', studentName: 'Inês Pereira', description: 'Term 1 Tuition', totalAmount: 50000, amountPaid: 25000, dueDate: '2024-02-01', status: 'Partially Paid' },
             { id: 'FIN03', studentId: 'STU003', studentName: 'Tiago Rodrigues', description: 'Term 2 Tuition', totalAmount: 50000, amountPaid: 0, dueDate: '2024-05-01', status: 'Pending' },
+            { id: 'FIN04', studentId: 'STU004', studentName: 'Lucia Santos', description: 'Term 1 Tuition', totalAmount: 45000, amountPaid: 45000, dueDate: '2024-02-01', status: 'Paid' },
         ],
         activityLogs: [
             { id: 'LOG001', timestamp: new Date('2024-05-20T10:00:00Z'), schoolId: 'northwood', user: 'Amelia Costa', role: 'Admin', action: 'Update', details: 'Updated school profile.' },
@@ -71,8 +76,8 @@ export const initialSchoolData: Record<string, any> = {
         ],
         savedTests: [
             { id: 'ST01', teacherId: 'T01', subject: 'Mathematics', topic: 'Algebra Basics', grade: '10', createdAt: new Date(), questions: [
-                { question: 'What is 2 + 2?', options: ['3', '4', '5'], correctAnswer: '4' },
-                { question: 'What is x in x + 5 = 10?', options: ['3', '4', '5'], correctAnswer: '5' },
+                { question: 'What is 2 + 2?', options: ['3', '4', '5', '22'], correctAnswer: '4' },
+                { question: 'What is x in x + 5 = 10?', options: ['3', '4', '5', '15'], correctAnswer: '5' },
             ]},
         ],
         deployedTests: [
@@ -82,7 +87,7 @@ export const initialSchoolData: Record<string, any> = {
     },
     'miniarte': {
         profile: {
-            id: 'miniarte', name: 'MiniArte Creative School', head: 'Carlos Pereira', address: 'Rua da Cultura, Beira', phone: '+258 86 111 2233', email: 'carlos.pereira@miniarte.edu', motto: 'Creating the Future', tier: 'Premium', logoUrl: 'https://placehold.co/100x100.png', certificateTemplateUrl: 'https://placehold.co/800x600.png', transcriptTemplateUrl: 'https://placehold.co/600x800.png', gradingSystem: '20-Point', currency: 'USD', status: 'Active', schoolLevel: 'Full', gradeCapacity: { "1": 20, "2": 20, "3": 20, "4": 25, "5": 25, "6": 25, "7": 30, "8": 30, "9": 30, "10": 30, "11": 30, "12": 30 }, kioskConfig: { showDashboard: true, showLeaderboard: true, showTeacherLeaderboard: true, showAllSchools: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false }, subscription: { status: 'Paid', amount: 500, dueDate: '2025-01-01' }, awards: [],
+            id: 'miniarte', name: 'MiniArte Creative School', head: 'Carlos Pereira', address: 'Rua da Cultura, Beira', phone: '+258 86 111 2233', email: 'carlos.pereira@miniarte.edu', motto: 'Creating the Future', tier: 'Premium', logoUrl: 'https://placehold.co/100x100.png', certificateTemplateUrl: 'https://placehold.co/800x600.png', transcriptTemplateUrl: 'https://placehold.co/600x800.png', gradingSystem: '20-Point', currency: 'USD', status: 'Active', schoolLevel: 'Full', gradeCapacity: { "1": 20, "2": 20, "3": 20, "4": 25, "5": 25, "6": 25, "7": 30, "8": 30, "9": 30, "10": 30, "11": 30, "12": 30 }, kioskConfig: { showDashboard: true, showLeaderboard: true, showTeacherLeaderboard: true, showAllSchools: true, showAttendance: false, showAcademics: false, showAwards: false, showPerformers: false, showAwardWinner: false, showShowcase: false }, subscription: { status: 'Paid', amount: 500, dueDate: '2025-01-01' }, schoolGroups: { 'miniarte_group': ['miniarte', 'miniarte_matola', 'miniarte_beira'] },
         },
         students: [], teachers: [], classes: [], courses: [], syllabi: [], admissions: [], exams: [], finance: [], assets: [], grades: [], attendance: [], events: [], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], activityLogs: [], messages: [], savedReports: [], deployedTests: [], lessonPlans: [], savedTests: [],
     },
@@ -113,7 +118,10 @@ export const initialSchoolData: Record<string, any> = {
         classes: [
             { id: 'C501', name: 'Grade 8-A', grade: '8', teacher: 'Jorge Dias', students: 1, room: 'S1' }
         ],
-        courses: [], syllabi: [], admissions: [], exams: [], finance: [], assets: [], grades: [], attendance: [], events: [], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], activityLogs: [], messages: [], savedReports: [], deployedTests: [], lessonPlans: [], savedTests: [],
+        courses: [ { id: 'CRS501', subject: 'Science', teacherId: 'T501', classId: 'C501', schedule: [{ day: 'Tuesday', startTime: '08:00', endTime: '09:00', room: 'S1' }] }],
+        grades: [ { id: 'G501', studentId: 'STU501', subject: 'Science', grade: '15', date: new Date('2024-04-01T00:00:00Z'), type: 'Test', description: 'Biology Test', teacherId: 'T501' }],
+        finance: [ { id: 'FIN501', studentId: 'STU501', studentName: 'Laura Moreira', description: 'Term 1 Tuition', totalAmount: 35000, amountPaid: 35000, dueDate: '2024-02-01', status: 'Paid' }],
+        syllabi: [], admissions: [], exams: [], assets: [], attendance: [], events: [], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], activityLogs: [], messages: [], savedReports: [], deployedTests: [], lessonPlans: [], savedTests: [],
     },
     'plc': {
         profile: {
@@ -128,7 +136,10 @@ export const initialSchoolData: Record<string, any> = {
         classes: [
             { id: 'C601', name: 'Grade 11-A', grade: '11', teacher: 'Sofia Carvalho', students: 1, room: 'E1' }
         ],
-        courses: [], syllabi: [], admissions: [], exams: [], finance: [], assets: [], grades: [], attendance: [], events: [], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], activityLogs: [], messages: [], savedReports: [], deployedTests: [], lessonPlans: [], savedTests: [],
+        courses: [{ id: 'CRS601', subject: 'English', teacherId: 'T601', classId: 'C601', schedule: [{ day: 'Thursday', startTime: '10:00', endTime: '11:00', room: 'E1' }] }],
+        grades: [ { id: 'G601', studentId: 'STU601', subject: 'English', grade: '16', date: new Date('2024-04-05T00:00:00Z'), type: 'Coursework', description: 'Literature Essay', teacherId: 'T601' }],
+        finance: [ { id: 'FIN601', studentId: 'STU601', studentName: 'Daniela Fernandes', description: 'Term 1 Tuition', totalAmount: 60000, amountPaid: 60000, dueDate: '2024-02-01', status: 'Paid' }],
+        syllabi: [], admissions: [], exams: [], assets: [], attendance: [], events: [], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], activityLogs: [], messages: [], savedReports: [], deployedTests: [], lessonPlans: [], savedTests: [],
     },
     'trialschool': {
         profile: {
@@ -143,6 +154,11 @@ export const initialSchoolData: Record<string, any> = {
         classes: [
             { id: 'C701', name: 'Grade 4-A', grade: '4', teacher: 'Filipe Correia', students: 1, room: 'P1' }
         ],
-        courses: [], syllabi: [], admissions: [], exams: [], finance: [], assets: [], grades: [], attendance: [], events: [], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], activityLogs: [], messages: [], savedReports: [], deployedTests: [], lessonPlans: [], savedTests: [],
+        courses: [{ id: 'CRS701', subject: 'General Studies', teacherId: 'T701', classId: 'C701', schedule: [{ day: 'Monday', startTime: '08:00', endTime: '09:00', room: 'P1' }] }],
+        grades: [{ id: 'G701', studentId: 'STU701', subject: 'General Studies', grade: '14', date: new Date('2024-04-10T00:00:00Z'), type: 'Coursework', description: 'Project', teacherId: 'T701' }],
+        finance: [ { id: 'FIN701', studentId: 'STU701', studentName: 'Andre Ramos', description: 'Term 1 Tuition', totalAmount: 25000, amountPaid: 25000, dueDate: '2024-02-01', status: 'Paid' }],
+        syllabi: [], admissions: [], exams: [], assets: [], attendance: [], events: [], expenses: [], teams: [], competitions: [], terms: [], holidays: [], kioskMedia: [], activityLogs: [], messages: [], savedReports: [], deployedTests: [], lessonPlans: [], savedTests: [],
     },
 };
+
+    
